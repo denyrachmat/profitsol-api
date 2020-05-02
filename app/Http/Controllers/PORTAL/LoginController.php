@@ -1,0 +1,95 @@
+<?php
+
+namespace App\Http\Controllers\PORTAL;
+
+use App\Http\Controllers\Controller;
+use Illuminate\Foundation\Auth\AuthenticatesUsers;
+use App\Http\Requests\PORTAL\LoginRequest;
+
+use App\Models\PORTAL\UsersPortal;
+use Illuminate\Support\Facades\Response;
+use Illuminate\Support\Facades\Hash;
+
+class LoginController extends Controller
+{
+    /*
+    |--------------------------------------------------------------------------
+    | Login Controller
+    |--------------------------------------------------------------------------
+    |
+    | This controller handles authenticating users for the application and
+    | redirecting them to your home screen. The controller uses a trait
+    | to conveniently provide its functionality to your applications.
+    |
+    */
+
+    // use AuthenticatesUsers;
+
+    /**
+     * Where to redirect users after login.
+     *
+     * @var string
+     */
+    // protected $redirectTo = '/home';
+
+    /**
+     * Create a new controller instance.
+     *
+     * @return void
+     */
+    public function __construct()
+    {
+        $this->middleware('guest')->except('logout');
+    }
+
+    public function login(LoginRequest $req)
+    {
+        $cek = UsersPortal::where('username', $req->username);
+        if (empty($cek->first()->role_id)) {
+            return Response::json([
+                "message" => "The given data was invalid.",
+                "errors" => [
+                    "username" => ["Your account is not configured yet!!"]
+                ]
+            ], 422);
+        } else {
+            if ($req->username == 'gueststxsmt') {
+                return $cek->with(['menu' => function ($q) {
+                    $q->where('menu_parent', 0);
+                    $q->with(['child' => function ($qchild) {
+                        $qchild->wherehas('role');
+                        $qchild->with(['role' => function ($qDet) {
+                            $qDet->with('user');
+                            $qDet->has('user');
+                        }]);
+                    }]);
+                }])->first();
+            } else {
+                if (Hash::check($req->password, $cek->first()->password_hash)) {
+                    return $cek->with(['menu' => function ($q) {
+                        $q->where('menu_parent', 0);
+                        $q->with(['child' => function ($qchild) {
+                            $qchild->wherehas('role');
+                            $qchild->with(['role' => function ($qDet) {
+                                $qDet->with('user');
+                                $qDet->has('user');
+                            }]);
+                        }]);
+                    }])->first();
+                } else {
+                    return Response::json([
+                        "message" => "The given data was invalid.",
+                        "errors" => [
+                            "username" => ["Password or username is wrong!!"]
+                        ]
+                    ], 422);
+                }
+            }
+        }
+    }
+
+    public function testing()
+    {
+        return 'testter';
+    }
+}

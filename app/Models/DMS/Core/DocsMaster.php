@@ -1,0 +1,43 @@
+<?php
+
+namespace App\Models\DMS\Core;
+
+use Illuminate\Database\Eloquent\Model;
+
+class DocsMaster extends Model
+{
+    protected $connection = 'sqlsrv_dms';
+    protected $table = 'dms_doc_mstr';
+    protected $primaryKey = 'doc_id';
+    public $incrementing = false;
+    protected $keyType = 'string';
+
+    protected $fillable = [
+        'doc_id',
+        'doc_name',
+        'doc_path',
+        'doc_real_path',
+        'doc_author',
+        'doc_real_name'
+    ];
+
+    public function version()
+    {
+        return $this->hasOne('App\Models\DMS\Core\VerMaster','ver_docloc','doc_id');
+    }
+
+    public function currentversion()
+    {
+        return $this->hasOne('App\Models\DMS\Core\VerMaster','ver_docnm','doc_id');
+    }
+
+    public function users()
+    {
+        return $this->hasOne('App\Models\DMS\Auth\UsersMaster','username','doc_author');
+    }
+
+    public function apprvhist()
+    {
+        return $this->belongsTo('App\Models\DMS\Core\ApprovalHist','doc_id','apprv_hist_doc')->where('apprv_parent', '<>' ,'0')->orderBy('created_at', 'desc');
+    }
+}
