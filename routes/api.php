@@ -68,7 +68,7 @@ Route::group(['prefix' => 'dms'], function () {
     // Dashboard
     Route::get('/getdashboard/{user}', 'DMS\Core\DocsLocationController@getlist');
     Route::get('/getnotification/{user}', 'DMS\Core\DashboardController@listnotif');
-    Route::get('/readnotif/{idhist}', 'DMS\Core\DashboardController@readnotif');
+    Route::get('/readnotif/{userto}/{apprvid}/{ctnid}', 'DMS\Core\DashboardController@readnotif');
 
     // Folder Manage
     Route::get('/getdocs/{user}/{id}', 'DMS\Core\DocsLocationController@getlist');

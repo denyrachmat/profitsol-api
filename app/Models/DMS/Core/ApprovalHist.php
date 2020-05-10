@@ -3,9 +3,12 @@
 namespace App\Models\DMS\Core;
 
 use Illuminate\Database\Eloquent\Model;
+use Awobaz\Compoships\Compoships;
 
 class ApprovalHist extends Model
 {
+    use Compoships;
+
     protected $connection = 'sqlsrv_dms';
     protected $table = 'dms_apprv_hist';
     protected $primaryKey = 'id';
@@ -21,7 +24,9 @@ class ApprovalHist extends Model
         'apprv_hist_status',
         'apprv_hist_vwtime',
         'content_creator_id',
-        'id_approval'
+        'id_approval',
+        'content_def_id',
+        'approver_level'
     ];
 
     public function doc()
@@ -32,6 +37,11 @@ class ApprovalHist extends Model
     public function child()
     {
         return $this->hasOne('App\Models\DMS\Core\ApprovalHist', 'apprv_parent', 'id');
+    }
+
+    public function parent()
+    {
+        return $this->hasOne('App\Models\DMS\Core\ApprovalHist', 'id', 'apprv_parent');
     }
 
     public function allApproverList()

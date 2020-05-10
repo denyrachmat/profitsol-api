@@ -18,4 +18,9 @@ class DocApprovalSet extends Model
     {
         return $this->hasOne('App\Models\DMS\Core\DocsMaster','doc_id','doc_id');
     }
+
+    public function docHist()
+    {
+        return $this->hasMany('App\Models\DMS\Core\ApprovalHist','apprv_hist_doc','doc_id');
+    }
 }

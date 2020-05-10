@@ -119,7 +119,7 @@ class DocsManageController extends Controller
         $apprvdochist = ApprovalHist::where('apprv_hist_doc', $topdf)->first();
         if ($full === null) {
             if (!empty($apprvdochist)) {
-                $pdfnya = $this->ApproveDoc($topdf, $user);
+                $pdfnya = $this->ApproveDoc($topdf, $apprvdochist->id_approval);
                 // logger(base64_encode($pdfnya));
                 return response()->json([
                     'pdf' => base64_encode($pdfnya),
@@ -133,7 +133,7 @@ class DocsManageController extends Controller
             if (empty($apprvdochist)) {
                 return File::get('D:/data/' . $getpath['doc_real_path'] . $getpath['doc_name']);
             } else {
-                return $this->ApproveDoc($topdf, $user);
+                return $this->ApproveDoc($topdf, $apprvdochist->id_approval);
             }
         }
     }
@@ -184,10 +184,10 @@ class DocsManageController extends Controller
             $cekreject = ApprovalHist::where('apprv_hist_doc', $iddoc)->where('apprv_hist_status', '<>', '1')->first();
 
             if (empty($cekreject)) {
-                $cekjumlahapprover = ApprovalMaster::where('apprv_author', $author)->count();
+                $cekjumlahapprover = ApprovalMaster::where('apprv_id', $author)->count();
                 $cekjumlahyangapprove = ApprovalHist::where('apprv_hist_doc', $iddoc)->where('apprv_parent', '<>', '0')->count();
 
-                if ($cekjumlahapprover == $cekjumlahyangapprove) {
+                if ($cekjumlahapprover == $cekjumlahyangapprove && $cekjumlahapprover > 0) {
                     $pdf->Write(8, 'This document fully approved');
                 } else {
                     $pdf->Write(8, 'This document partially approved');
@@ -210,52 +210,54 @@ class DocsManageController extends Controller
 
                 $pdf->Write(0, 'Approval Status');
 
-                $cekapprvset = ApprovalMaster::where('apprv_author', $author)->with('user')->get()->toArray();
+                // $cekapprvset = ApprovalMaster::where('apprv_id', $author)->with('user')->get()->toArray();
+                $cekhist = ApprovalHist::where('apprv_hist_doc', $iddoc)
+                ->where('apprv_parent','<>','0')
+                ->with('users')
+                ->orderBy('created_at', 'asc')
+                ->get();
 
-                foreach ($cekapprvset as $key => $value) {
-                    $cekhist = ApprovalHist::where('apprv_hist_doc', $iddoc)->where('apprv_hist_user', $value['user']['username'])->first();
+                foreach ($cekhist as $key => $value) {
+                    $pdf->SetXY(10, (1 + $key) * 20);
 
-                    if (!empty($cekhist)) {
-                        $pdf->SetXY(10, ($key + 1) * 25);
+                    $cellWidth = $pdf->GetStringWidth($value['apprv_hist_comment']) < 100 ? 100 : $pdf->GetStringWidth($value['apprv_hist_comment']) + 25;
 
-                        $pdf->Cell(40, 5, ' ', 'LTR', 0, 'L', 0);   // empty cell with left,top, and right borders
-                        if ($cekhist['apprv_hist_status'] == '1') {
-                            $pdf->Cell(100, 5, 'Digitally signed by @' . $value['user']['username'], 'LTR', 0, 'L', 0);
-                        } else {
-                            $pdf->Cell(100, 5, 'Rejected by @' . $value['user']['username'], 'LTR', 0, 'L', 0);
-                        }
-
-                        $pdf->Ln();
-
-                        $pdf->SetFont('Times', 'BIU');
-                        if ($cekhist['apprv_hist_status'] == '1') {
-                            $pdf->Cell(40, 5, $value['user']["first_name"] . ' ' . $value['user']["last_name"], 'LR', 0, 'C', 0);  // cell with left and right borders
-                        } else {
-                            $pdf->SetFont('Helvetica');
-                            $pdf->SetTextColor(255, 0, 0);
-                            $pdf->Cell(40, 5, 'REJECTED', 'LR', 0, 'C', 0);  // cell with left and right borders
-                            $pdf->SetTextColor(0, 0, 0);
-                        }
-                        $pdf->SetFont('Helvetica');
-                        $pdf->Cell(100, 5, 'Email : ' . $value['user']["email"], 'LR', 0, 'L', 0);
-                        // $pdf->Cell(50, 5, '[ x ] che2', 'LR', 0, 'L', 0);
-
-                        $pdf->Ln();
-
-                        $pdf->Cell(40, 5, '', 'LR', 0, 'LR', 0);   // empty cell with left,bottom, and right borders
-                        $pdf->Cell(100, 5, 'Reason : ' . $cekhist['apprv_hist_comment'], 'LR', 0, 'L', 0);
-                        // $pdf->Cell(50, 5, '[ o ] def4', 'LRB', 0, 'L', 0);
-
-                        $pdf->Ln();
-
-                        $pdf->Cell(40, 5, '', 'LBR', 0, 'LR', 0);   // empty cell with left,bottom, and right borders
-                        $pdf->Cell(100, 5, 'Date : ' . $cekhist['created_at'], 'LRB', 0, 'L', 0);
-                        // $pdf->Cell(50, 5, '[ o ] def4', 'LRB', 0, 'L', 0);
-
-                        $pdf->Ln();
-                        $pdf->Ln();
-                        $pdf->Ln();
+                    $pdf->Cell(40, 5, ' ', 'LTR', 0, 'L', 0);   // empty cell with left,top, and right borders
+                    if ($value['apprv_hist_status'] == '1') {
+                        $pdf->Cell($cellWidth, 5, 'Digitally signed by @' . $value['users']['username'], 'LTR', 0, 'L', 0);
+                    } else {
+                        $pdf->Cell($cellWidth, 5, 'Rejected by @' . $value['users']['username'], 'LTR', 0, 'L', 0);
                     }
+
+                    $pdf->Ln();
+
+                    $pdf->SetFont('Times', 'BIU');
+                    if ($value['apprv_hist_status'] == '1') {
+                        $pdf->Cell(40, 5, $value['users']["first_name"] . ' ' . $value['users']["last_name"], 'LR', 0, 'C', 0);  // cell with left and right borders
+                    } else {
+                        $pdf->SetFont('Helvetica');
+                        $pdf->SetTextColor(255, 0, 0);
+                        $pdf->Cell(40, 5, 'REJECTED', 'LR', 0, 'C', 0);  // cell with left and right borders
+                        $pdf->SetTextColor(0, 0, 0);
+                    }
+                    $pdf->SetFont('Helvetica');
+                    $pdf->Cell($cellWidth, 5, 'Email : ' . $value['users']["email"], 'LR', 0, 'L', 0);
+                    // $pdf->Cell(50, 5, '[ x ] che2', 'LR', 0, 'L', 0);
+
+                    $pdf->Ln();
+                    $pdf->Cell(40, 5, '', 'LR', 0, 'LR', 0);   // empty cell with left,bottom, and right borders
+                    $pdf->Cell($cellWidth, 5, 'Reason : ' . $value['apprv_hist_comment'], 'LR', 0, 'L', 0);
+                    // $pdf->Cell(50, 5, '[ o ] def4', 'LRB', 0, 'L', 0);
+
+                    $pdf->Ln();
+
+                    $pdf->Cell(40, 5, '', 'LBR', 0, 'LR', 0);   // empty cell with left,bottom, and right borders
+                    $pdf->Cell($cellWidth, 5, 'Date : ' . $value['created_at'], 'LRB', 0, 'L', 0);
+                    // $pdf->Cell(50, 5, '[ o ] def4', 'LRB', 0, 'L', 0);
+
+                    $pdf->Ln();
+                    $pdf->Ln();
+                    $pdf->Ln();
                 }
             }
         }
