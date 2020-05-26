@@ -1,4 +1,0 @@
-INSERT INTO DMS.dbo.dms_locdoc_mstr (id,parent_loc,name_loc,creator_loc,created_at,updated_at) VALUES 
-('lXsdZ2WsybAzVwIa2snc8AymYiqnOm1QwMZuRJc1pUBklXl1RJ','0','Circular Technical','susi','2020-04-29 10:12:01.837','2020-04-29 10:12:01.837')
-,('6gn3dv9Kr6vTDULxKCMTAS8EjIyMvmOmvYAlkCz98AF1AXsgt4','0','IT Request','ricky','2020-04-30 16:05:30.820','2020-04-30 16:05:30.820')
-;

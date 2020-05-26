@@ -1,4 +1,0 @@
-INSERT INTO DMS.dbo.dms_apprv_hist (id,apprv_parent,apprv_hist_user,apprv_hist_doc,apprv_hist_comment,apprv_hist_status,created_at,updated_at,apprv_hist_vwtime,content_creator_id,id_approval) VALUES 
-('FGBDGRzBY4kHSAYJ9vVAd3rYPlSnetQXN8rGKl8wgjTtlNFd4Y','0','susi','WS9yd0CQEVc497XCPFUa2UlsIXoNKLseeLX2UXMKbExXBLjsqt','TEster',1,'2020-04-30 15:46:59.467','2020-04-30 15:46:59.467',NULL,'CRTR2004300001','APPRV200423001')
-,('i7SI28g7yNlQOqaNGkLDSo9fMQrHOvWGpahF4WDC4owEJXsE8p','0','susi','NWrLi5WMFifEdbi3smOvzil2sxMTEFGJePrGJ4sSqzlOxD2l8W','TEster',1,'2020-04-30 15:46:59.533','2020-04-30 15:46:59.533',NULL,'CRTR2004300001','APPRV200423001')
-;

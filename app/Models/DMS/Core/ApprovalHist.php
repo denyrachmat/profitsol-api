@@ -49,9 +49,14 @@ class ApprovalHist extends Model
         return $this->child()->with('allApproverList')->with('users');
     }
 
+    public function allPastApproverList()
+    {
+        return $this->parent()->with('allPastApproverList')->with('users');
+    }
+
     public function getallapprover()
     {
-        return $this->hasMany('App\Models\DMS\Core\ApprovalMaster','apprv_author','apprv_hist_user');
+        return $this->hasMany('App\Models\DMS\Core\ApprovalMaster','apprv_id','id_approval');
     }
 
     public function users()

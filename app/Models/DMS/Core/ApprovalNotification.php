@@ -20,17 +20,18 @@ class ApprovalNotification extends Model
         'apprv_content_id',
         'apprv_id',
         'content_def_id',
-        'approver_level'
+        'approver_level',
+        'approver_level_to'
     ];
 
     public function histFromByContentId()
     {
-        return $this->hasMany('App\Models\DMS\Core\ApprovalHist',['content_creator_id','apprv_hist_user','id_approval'], ['apprv_content_id','apprv_user_from','apprv_id']);
+        return $this->hasMany('App\Models\DMS\Core\ApprovalHist',['content_creator_id','apprv_hist_user','id_approval','approver_level'], ['apprv_content_id','apprv_user_from','apprv_id','approver_level']);
     }
 
     public function histToByContentId()
     {
-        return $this->hasMany('App\Models\DMS\Core\ApprovalHist',['content_creator_id','apprv_hist_user','id_approval'], ['apprv_content_id','apprv_user_to','apprv_id']);
+        return $this->hasMany('App\Models\DMS\Core\ApprovalHist',['content_creator_id','id_approval','approver_level'], ['apprv_content_id','apprv_id','approver_level_to']);
     }
 
     public function histFrom()
@@ -61,5 +62,10 @@ class ApprovalNotification extends Model
     public function contentDefine()
     {
         return $this->hasOne('App\Models\DMS\Core\ContentDefine','id','content_def_id');
+    }
+
+    public function approvalMaster()
+    {
+        return $this->hasMany('App\Models\DMS\Core\ApprovalMaster','apprv_id','apprv_id');
     }
 }

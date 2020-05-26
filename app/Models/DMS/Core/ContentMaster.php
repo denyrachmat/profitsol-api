@@ -18,4 +18,8 @@ class ContentMaster extends Model
     {
         return $this->hasMany('App\Models\DMS\Core\ContentDet','content_mstr_id','id');
     }
+
+    public function mappingApp(){
+        return $this->hasOne('App\Models\DMS\Custom\ContentMappingApp','content_id','id');
+    }
 }

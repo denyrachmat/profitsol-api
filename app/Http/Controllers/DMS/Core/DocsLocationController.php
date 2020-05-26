@@ -101,4 +101,32 @@ class DocsLocationController extends Controller
             'creator_loc' => $r->header('username')
         ]);
     }
+
+    public function deletefolder($id) {
+        $cek_isi_doc = DocsLocationMaster::where('id', $id)
+            ->doesnthave('getParents')
+            ->doesnthave('listdoc')
+            ->first();
+        $cek_isinyac = DocsLocationMaster::where('id', $id)->first();
+        
+        if (empty($cek_isi_doc)) {
+            return response([
+                'message' => "The given data was invalid.",
+                'errors' => [
+                    'id' => ['Folder '.$cek_isinyac['name_loc'].' not empty!!']
+                ]
+            ], 422);
+        } else {
+            DocsLocationMaster::where('id', $id)->delete();
+            return 'success';
+        }
+    }
+
+    public function getlistfolder($user)
+    {
+        return DocsLocationMaster::where('creator_loc', $user)
+            ->with('allChildFolder')
+            ->where('parent_loc','0')
+            ->get();
+    }
 }

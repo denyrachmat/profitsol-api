@@ -23,4 +23,9 @@ class ContentDefine extends Model
     {
         return $this->hasOne('App\Models\DMS\Core\ContentMaster','id','content_mstr_id');
     }
+
+    public function mappingApp()
+    {
+        return $this->hasOne('App\Models\DMS\Custom\ContentMappingApp','content_id','content_mstr_id');
+    }
 }

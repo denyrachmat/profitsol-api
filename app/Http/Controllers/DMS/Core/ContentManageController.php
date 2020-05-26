@@ -10,8 +10,16 @@ use App\Models\DMS\Core\ApprovalMaster;
 
 class ContentManageController extends Controller
 {
-    public function index()
+    public function index($tag = null, $app = null)
     {
+        if (!empty($tag) || !empty($app)) {
+            return ContentMaster::with('contentDet')->whereHas('mappingApp', function($q) use ($tag, $app){
+                $q->where('app_flag',$tag);
+            })
+            ->get()
+            ->toArray();
+        }
+
         return ContentMaster::with('contentDet')->get()->toArray();
     }
 
@@ -24,11 +32,14 @@ class ContentManageController extends Controller
             ]);
 
             ContentDet::where('content_mstr_id', $r->id)->delete();
-            foreach ($r->var as $key => $value) {
-                ContentDet::create([
-                    'content_mstr_id' => $r->id,
-                    'content_var' => $value
-                ]);
+
+            if ($r->var) {
+                foreach ($r->var as $key => $value) {
+                    ContentDet::create([
+                        'content_mstr_id' => $r->id,
+                        'content_var' => $value
+                    ]);
+                }
             }
         } else {
             $hasilStoreMaster = ContentMaster::create([
@@ -36,11 +47,13 @@ class ContentManageController extends Controller
                 'content_html' => $r->hasil
             ]);
 
-            foreach ($r->var as $key => $value) {
-                ContentDet::create([
-                    'content_mstr_id' => $hasilStoreMaster['id'],
-                    'content_var' => $value
-                ]);
+            if ($r->var) {
+                foreach ($r->var as $key => $value) {
+                    ContentDet::create([
+                        'content_mstr_id' => $hasilStoreMaster['id'],
+                        'content_var' => $value
+                    ]);
+                }
             }
         }
 

@@ -1,0 +1,3 @@
+INSERT INTO DMS.dbo.dms_doc_mstr (doc_id,doc_name,doc_path,doc_real_path,doc_author,doc_real_name,created_at,updated_at,doc_size,doc_lapprv_flag) VALUES 
+('w6ns34t0ePaAS2diUmHZXNPMrfoR1t0dv2QCL6bbXsK6sc5Phs','DMSDOC_5ec4f6fccbc8f815058247.bin','lXsdZ2WsybAzVwIa2snc8AymYiqnOm1QwMZuRJc1pUBklXl1RJ','Uploaded Docs/DMS/susi/Circular Technical/','susi','CIRCULAR_TEN_200520041914.pdf','2020-05-20 16:23:08.857','2020-05-20 16:23:13.037','23635','1')
+;

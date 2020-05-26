@@ -1,0 +1,3 @@
+INSERT INTO DMS.dbo.dms_apprv_hist (id,apprv_parent,apprv_hist_user,apprv_hist_doc,apprv_hist_comment,apprv_hist_status,created_at,updated_at,apprv_hist_vwtime,content_creator_id,id_approval,content_def_id,approver_level) VALUES 
+('TINBXuqBQ4rxqnLAni7ghusos5ILIKXjv67u6WNuS0jCXbFyLA','0','susi','w6ns34t0ePaAS2diUmHZXNPMrfoR1t0dv2QCL6bbXsK6sc5Phs','Please di approve ya.',1,'2020-05-20 16:23:35.110','2020-05-20 16:24:12.950','2020-05-20 16:24:12.000','CRTR2005200002','APPRV200423001','6','0')
+;

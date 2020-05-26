@@ -18,7 +18,9 @@ class DocsMaster extends Model
         'doc_path',
         'doc_real_path',
         'doc_author',
-        'doc_real_name'
+        'doc_real_name',
+        'doc_size',
+        'doc_lapprv_flag'
     ];
 
     public function version()
@@ -38,6 +40,16 @@ class DocsMaster extends Model
 
     public function apprvhist()
     {
-        return $this->belongsTo('App\Models\DMS\Core\ApprovalHist','doc_id','apprv_hist_doc')->where('apprv_parent', '<>' ,'0')->orderBy('created_at', 'desc');
+        return $this->belongsTo('App\Models\DMS\Core\ApprovalHist','doc_id','apprv_hist_doc');
+    }
+
+    public function docHist()
+    {
+        return $this->hasMany('App\Models\DMS\Core\ApprovalHist','apprv_hist_doc','doc_id');
+    }
+
+    public function cirten()
+    {
+        return $this->hasOne('App\Models\DMS\Custom\CircularTen','doc_id','doc_id');
     }
 }

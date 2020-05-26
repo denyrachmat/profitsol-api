@@ -24,7 +24,7 @@ class UploadDocsRequest extends FormRequest
     public function rules()
     {
         return [
-            'file' => 'mimes:pdf,doc,docx'
+            'file' => 'mimes:pdf,xls,xlsx'
         ];
     }
 }

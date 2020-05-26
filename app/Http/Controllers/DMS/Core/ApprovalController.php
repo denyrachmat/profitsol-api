@@ -142,7 +142,7 @@ class ApprovalController extends Controller
                     $hasil['errors'][] = ['Document ' . $doc['doc_real_name'] . ' already sent to the next approver!'];
                 } else {
                     $idhistory = Str::random(50);
-                    $hasilinsert = ApprovalHist::create([
+                    ApprovalHist::create([
                         'id' => $idhistory,
                         'apprv_parent' => $req->parent_apprv,
                         'apprv_hist_user' => $req->user_apprv,
@@ -152,11 +152,9 @@ class ApprovalController extends Controller
                         'content_creator_id' => $nextid,
                         'id_approval' => $req->master_apprv,
                         'content_def_id' => $req->contentDefine,
-                    ])->load('doc');
+                    ]);
 
                     if ($req->parent_apprv == '0') { // Jika si pembuat approval yang approve
-                        // $hasilsuccess[$cekapprover[0]['apprv_approver']]['APPROVAL_REQUEST'][] = $hasilinsert;
-                        // $hasilsuccess[$cekapprover[0]['apprv_approver']]['APPROVAL_DETAIL'] = $this->outstandingApprovalByApprover($cekapprover[0]['apprv_approver'])[0];
                         $hasilsuccess[$cekapprover[0]['apprv_approver']] = $this->outstandingApprovalByApprover($cekapprover[0]['apprv_approver']);
                         ApprovalNotification::create([
                             'apprv_user_from' => $req->user_apprv,
@@ -165,16 +163,40 @@ class ApprovalController extends Controller
                             'apprv_content_id' => $nextid,
                             'apprv_id' => $req->master_apprv,
                             'content_def_id' => $req->contentDefine,
+                            'approver_level' => "0",
+                            'approver_level_to' => "1"
                         ]);
 
                         ApprovalHist::where('id', $idhistory)->update([
                             'approver_level' => "0"
                         ]);
                     } else { // Jika approver yang approve
-                        $ceklagi = ApprovalMaster::where('apprv_author', $value['doc_author'])
-                            ->where('apprv_approver', $req->user_apprv)
+                        $cekLevelHist = ApprovalHist::where('apprv_hist_doc',$value['doc_id'])->where('apprv_hist_user', $req->user_apprv)->first();
+
+                        $masterApprv = ApprovalMaster::where('apprv_author', $value['doc_author'])->where('apprv_id', $req->master_apprv);
+
+                        $ceklagi = clone $masterApprv->where('apprv_approver', $req->user_apprv)->where('apprv_level','<>',$cekLevelHist->approver_level)->first();
+
+                        $getsamelevelapprover = ApprovalMaster::where('apprv_author', $value['doc_author'])
                             ->where('apprv_id', $req->master_apprv)
-                            ->first();
+                            ->where('apprv_approver', '<>', $req->user_apprv)
+                            ->where('apprv_level', $ceklagi['apprv_level'])
+                            ->get();
+
+                        foreach ($getsamelevelapprover as $key_same_level => $value_same_level) {
+                            ApprovalHist::create([
+                                'id' => Str::random(50),
+                                'apprv_parent' => $req->parent_apprv,
+                                'apprv_hist_user' => $value_same_level->apprv_approver,
+                                'apprv_hist_doc' => $value['doc_id'],
+                                'apprv_hist_comment'  => $req->comment,
+                                'apprv_hist_status'  => $req->status,
+                                'content_creator_id' => $nextid,
+                                'id_approval' => $req->master_apprv,
+                                'content_def_id' => $req->contentDefine,
+                                'approver_level' => $ceklagi['apprv_level']
+                            ]);
+                        }
 
                         ApprovalNotification::where('apprv_hist_from_id', $req->parent_apprv)
                             ->update([
@@ -197,12 +219,29 @@ class ApprovalController extends Controller
                                     'apprv_content_id' => $nextid,
                                     'apprv_id' => $req->master_apprv,
                                     'content_def_id' => $req->contentDefine,
+                                    'approver_level' => $ceklagi['apprv_level'],
+                                    'approver_level_to' => $ceklagi['apprv_level'] + 1
                                 ]);
 
                                 ApprovalHist::where('id', $idhistory)->update([
                                     'approver_level' => $ceklagi['apprv_level']
                                 ]);
                             }
+                        } else {
+                            ApprovalNotification::create([
+                                'apprv_user_from' => $req->user_apprv,
+                                'apprv_user_to' => $ceklagi['apprv_author'],
+                                'apprv_hist_from_id' => $idhistory,
+                                'apprv_content_id' => $nextid,
+                                'apprv_id' => $req->master_apprv,
+                                'content_def_id' => $req->contentDefine,
+                                'approver_level' => $ceklagi['apprv_level'],
+                                'approver_level_to' => 0
+                            ]);
+
+                            ApprovalHist::where('id', $idhistory)->update([
+                                'approver_level' => $ceklagi['apprv_level']
+                            ]);
                         }
                     }
                 }
@@ -326,7 +365,8 @@ class ApprovalController extends Controller
             'apprv_hist_vwtime',
             'created_at',
             'content_creator_id',
-            'id_approval'
+            'id_approval',
+            'approver_level'
         ];
 
         $selectNotif = [
@@ -335,24 +375,32 @@ class ApprovalController extends Controller
             'apprv_content_id',
             'apprv_id',
             'content_def_id',
-            'apprv_read_flag'
+            'apprv_read_flag',
+            'approver_level',
+            'approver_level_to'
         ];
 
         $ceknotif = ApprovalNotification::select($selectNotif)
             ->with(['histFromByContentId' => function ($q) use ($selecthist) {
                 $q->select($selecthist);
                 $q->with('doc.users');
+                $q->with('allPastApproverList');
+                $q->with('users');
             }])
             ->with(['histToByContentId' => function ($q) use ($selecthist) {
                 $q->select($selecthist);
                 $q->with('doc.users');
-                $q->with('parent');
+                $q->with('allApproverList');
             }])
             ->with('contentVariable')
             ->with('contentDefine.contentMstr')
             ->with(['userFrom', 'userTo'])
+            ->with('approvalMaster')
             ->where('apprv_user_to', $approver)
+            ->orWhere('apprv_user_from', $approver)
             ->groupBy($selectNotif)
+            ->orderBy('apprv_read_flag', 'desc')
+            ->orderBy('approver_level', 'desc')
             ->get()
             ->toArray();
 
@@ -396,10 +444,17 @@ class ApprovalController extends Controller
 
         $cekMaster = ApprovalMaster::select($selectMaster)
             ->where('apprv_author', $user)
-            ->with(['contentDef.contentDet', 'contentDef.contentMstr'])
+            ->with(['contentDef' => function ($q3){
+                $q3->with(['contentDet','contentMstr']);
+                $q3->doesnthave('mappingApp');
+            }])
             ->with(['approvalDocSet' => function ($q) {
                 $q->with('doc');
                 $q->wheredoesnthave('docHist');
+            }])
+            ->with(['docs' => function($q2){
+                $q2->where('doc_lapprv_flag', '1');
+                $q2->wheredoesnthave('docHist');
             }])
             ->groupBy($selectMaster)
             ->get()

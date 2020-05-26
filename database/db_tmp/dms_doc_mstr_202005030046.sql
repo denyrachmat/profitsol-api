@@ -1,7 +1,0 @@
-INSERT INTO DMS.dbo.dms_doc_mstr (doc_id,doc_name,doc_path,doc_real_path,doc_author,doc_real_name,created_at,updated_at) VALUES 
-('WS9yd0CQEVc497XCPFUa2UlsIXoNKLseeLX2UXMKbExXBLjsqt','DMSDOC_5ea9143e6d0ed717072060.pdf','lXsdZ2WsybAzVwIa2snc8AymYiqnOm1QwMZuRJc1pUBklXl1RJ','Uploaded Docs/DMS/susi/Circular Technical/','susi','MutasiKeluarExport.pdf','2020-04-29 12:44:30.460','2020-04-29 12:44:30.460')
-,('XoQiuzByxCTFuqAe72RP3jp5c5Bfmu4lw0jgZdK5DYFa3Og9Mh','DMSDOC_5eaa94fd6bb941012441331.pdf','6gn3dv9Kr6vTDULxKCMTAS8EjIyMvmOmvYAlkCz98AF1AXsgt4','Uploaded Docs/DMS/ricky/IT Request/','ricky','9011fc05-26c5-4bad-a579-3c3b3cd3a622.pdf','2020-04-30 16:06:05.627','2020-04-30 16:06:05.627')
-,('ovmxh5RpnHr80JCkHFwezk4qdN7X6UCbWrlvadsBmCI4kG08ug','DMSDOC_5eaa9519c6b431701458464.pdf','6gn3dv9Kr6vTDULxKCMTAS8EjIyMvmOmvYAlkCz98AF1AXsgt4','Uploaded Docs/DMS/ricky/IT Request/','ricky','Deny''s Resume.pdf','2020-04-30 16:06:33.837','2020-04-30 16:06:33.837')
-,('NWrLi5WMFifEdbi3smOvzil2sxMTEFGJePrGJ4sSqzlOxD2l8W','DMSDOC_5ea9143f372b31147439512.pdf','lXsdZ2WsybAzVwIa2snc8AymYiqnOm1QwMZuRJc1pUBklXl1RJ','Uploaded Docs/DMS/susi/Circular Technical/','susi','MutasiMasukExport.pdf','2020-04-29 12:44:31.257','2020-04-29 12:44:31.257')
-,('IjY3VvvDrImq773GS932R5YEr8vd1w8aQUBwwi0zq9V1FR6dwZ','DMSDOC_5ea9143f77a831057139695.pdf','lXsdZ2WsybAzVwIa2snc8AymYiqnOm1QwMZuRJc1pUBklXl1RJ','Uploaded Docs/DMS/susi/Circular Technical/','susi','323103605-Pedoman-Integrasi-Aplikasi-TPS-Online.pdf','2020-04-29 12:44:31.520','2020-04-29 12:44:31.520')
-;

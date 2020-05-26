@@ -1,5 +1,5 @@
 INSERT INTO DMS.dbo.dms_content_mstr (content_title,content_html,created_at,updated_at) VALUES 
-('Circular Technical','<h3>CIRCULAR {id}</h3>
+('Circular Technical','<h1><strong>CIRCULAR {id}</strong></h1>
 <p>&nbsp;</p>
 <h3>Date {date}</h3>
 <h3>Subject {subject}</h3>
@@ -44,11 +44,12 @@ INSERT INTO DMS.dbo.dms_content_mstr (content_title,content_html,created_at,upda
 </tbody>
 </table>
 <p>&nbsp;</p>
-<h3>&nbsp;</h3>
+<p><strong>3). Issued Document</strong></p>
+<p>|list_attached_doc_here|</p>
 <p>&nbsp;</p>
 <p>Execution Schedule : {exec}</p>
-<p>[Reason] : {reason}</p>','2020-04-24 09:31:36.017','2020-04-30 13:44:18.820')
-,('Technical Notes','<h4><strong>CIRCULAR {ID:string}</strong></h4>
+<p>[Reason] : {reason}</p>','2020-04-24 09:31:36.017','2020-05-18 09:34:48.877')
+,('Technical Notes','<h2><strong>CIRCULAR {ID:string}</strong></h2>
 <table style="border-collapse: collapse; width: 35.2688%; height: 41px;" border="1">
 <tbody>
 <tr style="height: 20px;">
@@ -138,5 +139,16 @@ INSERT INTO DMS.dbo.dms_content_mstr (content_title,content_html,created_at,upda
 <td style="width: 50%; height: 18px;">[Requested By] {Request By}</td>
 </tr>
 </tbody>
-</table>','2020-04-28 12:19:18.867','2020-04-30 13:43:22.927')
+</table>
+<div style="page-break-before: always;">
+<h2>Approval List</h2>
+<br />|approval_list_here|</div>','2020-04-28 12:19:18.867','2020-05-13 14:35:37.630')
+,('Email content Circular Ten','<h2><strong>Circular Technical.</strong></h2>
+<p>Hello, I have new Circular Technical approval that you need to approve if it suits with the specification.</p>
+<p>&nbsp;</p>
+<p>Best Regards,<br /><br /><br />|surname|</p>
+<p>&nbsp;</p>
+<div style="page-break-before: always;">
+<h2>Approval List</h2>
+|approval_list_here|</div>','2020-05-14 15:10:17.817','2020-05-18 14:20:35.377')
 ;

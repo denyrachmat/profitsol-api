@@ -14,15 +14,24 @@ use Illuminate\Support\Facades\File;
 use PDF;
 use App\Models\DMS\Core\ApprovalMaster;
 use App\Models\DMS\Core\DocApprovalSet;
+use App\Models\DMS\Core\ApprovalNotification;
+// use PhpOffice\PhpSpreadsheet\Writer\Pdf\Mpdf;
+use setasign\Fpdi\Fpdi;
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use Illuminate\Support\Facades\App;
 
 class DocsManageController extends Controller
 {
     public function getfiles($user, $idfolder = null)
     {
         if (empty($idfolder)) {
-            return DocsMaster::where('doc_path', '0')
-                ->where('doc_author', $user)
-                ->with(['users', 'currentversion', 'apprvhist'])->doesnthave('version')->get();
+            return DocsMaster::where('doc_author', $user)
+                ->with(['users', 'currentversion', 'apprvhist'])
+                ->doesnthave('version')
+                ->doesnthave('docHist')
+                ->doesnthave('cirten')
+                ->where('doc_lapprv_flag', '<>', '1')
+                ->get();
         } else {
             return DocsMaster::where('doc_path', $idfolder)
                 ->where('doc_author', $user)
@@ -30,8 +39,9 @@ class DocsManageController extends Controller
         }
     }
 
-    public function uploadDocument(UploadDocsRequest $req, $iddoc = null)
+    public function uploadDocument(Request $req, $iddoc = null)
     {
+        // return $req->file->getClientOriginalName();
         if (empty(DocsMaster::where('doc_real_name', 'like', '%' . $req->file->getClientOriginalName() . '%')->first())) {
 
             if ($iddoc !== null) {
@@ -53,9 +63,9 @@ class DocsManageController extends Controller
                         'ver_comment' => $iddoc == null ? 'First Upload' : "Updated version document from version " . $cekversionexist['ver_code'] . " to " . (string) $nextversion,
                     ]);
 
-                    DocApprovalSet::where('doc_id', $iddoc)->update([
-                        'doc_id' => $id,
-                    ]);
+                    // DocApprovalSet::where('doc_id', $iddoc)->update([
+                    //     'doc_id' => $id,
+                    // ]);
 
                     // Update semua dokumen terkait update di approval hist
                     ApprovalHist::where('apprv_hist_doc', $iddoc)->update([
@@ -65,12 +75,14 @@ class DocsManageController extends Controller
 
                     // delete history untuk meminta ulang approval di approval hist
                     ApprovalHist::where('apprv_hist_doc', $id)->where('apprv_hist_status', '2')->orderBy('ver_code', 'desc')->delete();
+
+                    ApprovalNotification::where('apprv_hist_to_id', $iddoc)->update([
+                        'apprv_hist_to_id' => NULL
+                    ]);
+                    ApprovalNotification::where('apprv_hist_from_id', $iddoc)->delete();
                 }
             } else {
                 $id = $this->storedocument($req);
-                $nama_file = uniqid('DMSDOC_') . rand() . '.' . $req->file->extension();
-                $folderstore = empty($req->folder_id) ? env('DMS_DOC_LOC') . $req->username . '/' : env('DMS_DOC_LOC') . $req->username . '/' . $req->folder_name . '/';
-                $req->file->storeAs($folderstore, $nama_file);
 
                 VerMaster::create([
                     'id' => Str::random(50),
@@ -80,10 +92,10 @@ class DocsManageController extends Controller
                     'ver_comment' => 'First Upload',
                 ]);
 
-                DocApprovalSet::create([
-                    'doc_id' => $id,
-                    'approval_id' => $req->approval_mapping
-                ]);
+                // DocApprovalSet::create([
+                //     'doc_id' => $id,
+                //     'approval_id' => $req->approval_mapping
+                // ]);
 
                 return 'success';
             }
@@ -95,7 +107,8 @@ class DocsManageController extends Controller
     public function storedocument($req)
     {
         $nama_file = uniqid('DMSDOC_') . rand() . '.' . $req->file->extension();
-        $folderstore = empty($req->folder_id) ? env('DMS_DOC_LOC') . $req->username . '/' : env('DMS_DOC_LOC') . $req->username . '/' . $req->folder_name . '/';
+        $rootfolder = 'Uploaded Docs/DMS/';
+        $folderstore = empty($req->folder_id) ? $rootfolder . $req->username . '/' : $rootfolder . $req->username . '/' . $req->folder_name . '/';
         $req->file->storeAs($folderstore, $nama_file);
         $id_document = Str::random(50);
 
@@ -106,7 +119,8 @@ class DocsManageController extends Controller
                 'doc_path' => empty($req->folder_id) ? '0' : $req->folder_id,
                 'doc_real_path' => $folderstore,
                 'doc_author' => $req->username,
-                'doc_real_name' => $req->file->getClientOriginalName()
+                'doc_real_name' => $req->file->getClientOriginalName(),
+                'doc_size' => $req->file->getSize()
             ]);
         }
 
@@ -125,25 +139,86 @@ class DocsManageController extends Controller
                     'pdf' => base64_encode($pdfnya),
                 ]);
             } else {
+                $filePDF = $this->checkExtension('D:/data/' . $getpath['doc_real_path'] . $getpath['doc_name'], explode('.', $getpath['doc_name'])[0], $full);
+
                 return response()->json([
-                    'pdf' => base64_encode(File::get('D:/data/' . $getpath['doc_real_path'] . $getpath['doc_name'])),
+                    'pdf' => base64_encode(File::get($filePDF)),
                 ]);
             }
         } else {
-            if (empty($apprvdochist)) {
-                return File::get('D:/data/' . $getpath['doc_real_path'] . $getpath['doc_name']);
+            if ($full == 'full') {
+                $filePDF = $this->checkExtension('D:/data/' . $getpath['doc_real_path'] . $getpath['doc_name'], explode('.', $getpath['doc_name'])[0], $full);
+                if (empty($apprvdochist)) {
+                    return File::get($filePDF);
+                } else {
+                    return $this->ApproveDoc($topdf, $apprvdochist->id_approval);
+                }
             } else {
-                return $this->ApproveDoc($topdf, $apprvdochist->id_approval);
+                $filePDF = $this->checkExtension('D:/data/' . $getpath['doc_real_path'] . $getpath['doc_name'], explode('.', $getpath['doc_name'])[0], $full);
+
+                $headers = array(
+                    'Content-Description: File Transfer',
+                    'Content-Type: application/octet-stream',
+                    'Content-Disposition: attachment; filename="' . $getpath['doc_real_name'] . '"',
+                );
+                if (empty($apprvdochist)) {
+                    return response()->file('D:/data/' . $getpath['doc_real_path'] . $getpath['doc_name'], $headers);
+                    return File::get($filePDF);
+                } else {
+                    if ($full == 'original') {
+                        return response()->file('D:/data/' . $getpath['doc_real_path'] . $getpath['doc_name'], $headers);
+                    } else {
+                        return $this->ApproveDoc($topdf, $apprvdochist->id_approval);
+                    }
+                }
             }
         }
     }
 
+    public function checkExtension($file, $filename, $met)
+    {
+        $cekExtension = File::extension($file);
+        if ($met !== null) {
+            return $file;
+        } else {
+            if ($cekExtension == 'pdf') {
+                return $file;
+            } elseif ($cekExtension == 'xls' || $cekExtension == 'xlsx') {
+                return $file;
+                return $this->convertExcelToPdf($file, $filename);
+            }
+        }
+    }
+
+    public function convertExcelToPdf($file, $filename)
+    {
+        $spreadsheet = \PhpOffice\PhpSpreadsheet\IOFactory::load($file);
+        $class = \PhpOffice\PhpSpreadsheet\Writer\Pdf\Dompdf::class;
+        \PhpOffice\PhpSpreadsheet\IOFactory::registerWriter('Pdf', $class);
+        $writer = \PhpOffice\PhpSpreadsheet\IOFactory::createWriter($spreadsheet, 'Pdf');
+
+        $writer = new \PhpOffice\PhpSpreadsheet\Writer\Pdf\Tcpdf($spreadsheet);
+        $writer->save($filename . ".pdf");
+
+        return $filename . '.pdf';
+    }
+
     public function deleteDocument($id)
     {
-        $cek = DocsMaster::where('doc_id', $id)->doesnthave('apprvhist')->first();
+        $cek = DocsMaster::where('doc_id', $id)->doesnthave('apprvhist')->doesnthave('cirten')->first();
         if (!empty($cek)) {
             $hasil = $cek;
-            Storage::delete($hasil['doc_real_path'] . $hasil['doc_name']);
+            if (Storage::exists($hasil['doc_real_path'] . $hasil['doc_name'])) {
+                Storage::disk('data_folder')->delete($hasil['doc_real_path'] . $hasil['doc_name']);
+            } else {
+                return response([
+                    'message' => "The given data was invalid.",
+                    'errors' => [
+                        'menu_id' => ["Error: File not found, cannot delete it!!"]
+                    ]
+                ], 422);
+            }
+            // Storage::delete($hasil['doc_real_path'] . $hasil['doc_name']);
 
             $cek->delete();
             VerMaster::where('ver_docnm', $id)->delete();
@@ -162,7 +237,8 @@ class DocsManageController extends Controller
     public function ApproveDoc($iddoc, $author)
     {
         $getpath = DocsMaster::where('doc_id', $iddoc)->first();
-        $pdf = new \setasign\Fpdi\Fpdi();
+        $pdf = new Fpdi();
+
         $pageCount = $pdf->setSourceFile('D:/data/' . $getpath['doc_real_path'] . $getpath['doc_name']);
         for ($pageNo = 1; $pageNo <= $pageCount; $pageNo++) {
             $templateId = $pdf->importPage($pageNo);
@@ -176,26 +252,31 @@ class DocsManageController extends Controller
                 $pdf->AddPage('P', array($size[0], $size[1]));
             }
 
+            $arrApprover = ApprovalMaster::where('apprv_id', $author)->orderBy('apprv_level', 'desc')->first();
+            $lastApprove = ApprovalHist::where('apprv_hist_doc', $iddoc)->orderBy('approver_level', 'desc')->first();
+
+            if ($arrApprover['apprv_level'] == $lastApprove['approver_level']) {
+                $pdf->SetFont('Arial', 'B', 30);
+                $pdf->SetTextColor(255, 192, 203);
+                $pdf->Text(($pdf->GetPageWidth() / 2) - $pdf->GetStringWidth('A P P R O V E D') / 2, $pdf->GetPageHeight() / 1.1, 'A P P R O V E D', 45);
+            } else {
+                if ($lastApprove->apprv_hist_status == 1) {
+                    $pdf->SetFont('Arial', 'B', 30);
+                    $pdf->SetTextColor(255, 192, 203);
+                    $pdf->Text(($pdf->GetPageWidth() / 2) - $pdf->GetStringWidth('D R A F T') / 2, $pdf->GetPageHeight() / 1.1, 'D R A F T', 45);
+                } else {
+                    $pdf->SetFont('Arial', 'B', 30);
+                    $pdf->SetTextColor(255, 192, 203);
+                    $pdf->Text(($pdf->GetPageWidth() / 2) - $pdf->GetStringWidth('R E J E C T E D') / 2, $pdf->GetPageHeight() / 1.1, 'R E J E C T E D', 45);
+                }
+            }
+
             $pdf->useTemplate($templateId);
 
             $pdf->SetFont('Helvetica');
             $pdf->SetXY(5, 5);
 
-            $cekreject = ApprovalHist::where('apprv_hist_doc', $iddoc)->where('apprv_hist_status', '<>', '1')->first();
-
-            if (empty($cekreject)) {
-                $cekjumlahapprover = ApprovalMaster::where('apprv_id', $author)->count();
-                $cekjumlahyangapprove = ApprovalHist::where('apprv_hist_doc', $iddoc)->where('apprv_parent', '<>', '0')->count();
-
-                if ($cekjumlahapprover == $cekjumlahyangapprove && $cekjumlahapprover > 0) {
-                    $pdf->Write(8, 'This document fully approved');
-                } else {
-                    $pdf->Write(8, 'This document partially approved');
-                }
-            } else {
-                $pdf->SetTextColor(255, 0, 0);
-                $pdf->Write(8, 'This document has been rejected');
-            }
+            $pdf->SetFont('Helvetica', '', 12);
 
             $pdf->SetTextColor(0, 0, 0);
 
@@ -212,15 +293,16 @@ class DocsManageController extends Controller
 
                 // $cekapprvset = ApprovalMaster::where('apprv_id', $author)->with('user')->get()->toArray();
                 $cekhist = ApprovalHist::where('apprv_hist_doc', $iddoc)
-                ->where('apprv_parent','<>','0')
-                ->with('users')
-                ->orderBy('created_at', 'asc')
-                ->get();
+                    ->where('apprv_parent', '<>', '0')
+                    ->with('users')
+                    ->orderBy('created_at', 'asc')
+                    ->get();
 
                 foreach ($cekhist as $key => $value) {
                     $pdf->SetXY(10, (1 + $key) * 20);
 
-                    $cellWidth = $pdf->GetStringWidth($value['apprv_hist_comment']) < 100 ? 100 : $pdf->GetStringWidth($value['apprv_hist_comment']) + 25;
+                    // $cellWidth = $pdf->GetStringWidth($value['apprv_hist_comment']) < 100 ? 100 : $pdf->GetStringWidth($value['apprv_hist_comment']) + 25;
+                    $cellWidth = $pdf->GetPageWidth() / 1.4;
 
                     $pdf->Cell(40, 5, ' ', 'LTR', 0, 'L', 0);   // empty cell with left,top, and right borders
                     if ($value['apprv_hist_status'] == '1') {
@@ -241,18 +323,21 @@ class DocsManageController extends Controller
                         $pdf->SetTextColor(0, 0, 0);
                     }
                     $pdf->SetFont('Helvetica');
-                    $pdf->Cell($cellWidth, 5, 'Email : ' . $value['users']["email"], 'LR', 0, 'L', 0);
+                    $pdf->Cell(20, 5, 'Email', 'L', 0, 'L', 0);
+                    $pdf->Cell($cellWidth - 20, 5, ': ' . $value['users']["email"], 'R', 0, 'L', 0);
                     // $pdf->Cell(50, 5, '[ x ] che2', 'LR', 0, 'L', 0);
 
                     $pdf->Ln();
                     $pdf->Cell(40, 5, '', 'LR', 0, 'LR', 0);   // empty cell with left,bottom, and right borders
-                    $pdf->Cell($cellWidth, 5, 'Reason : ' . $value['apprv_hist_comment'], 'LR', 0, 'L', 0);
+                    $pdf->Cell(20, 5, 'Reason', 'L', 0, 'L', 0);
+                    $pdf->Cell($cellWidth - 20, 5, ': ' . $value['apprv_hist_comment'], 'R', 0, 'L', 0);
                     // $pdf->Cell(50, 5, '[ o ] def4', 'LRB', 0, 'L', 0);
 
                     $pdf->Ln();
 
                     $pdf->Cell(40, 5, '', 'LBR', 0, 'LR', 0);   // empty cell with left,bottom, and right borders
-                    $pdf->Cell($cellWidth, 5, 'Date : ' . $value['created_at'], 'LRB', 0, 'L', 0);
+                    $pdf->Cell(20, 5, 'Date', 'LB', 0, 'L', 0);
+                    $pdf->Cell($cellWidth - 20, 5, ': ' . $value['created_at'], 'BR', 0, 'L', 0);
                     // $pdf->Cell(50, 5, '[ o ] def4', 'LRB', 0, 'L', 0);
 
                     $pdf->Ln();
@@ -264,6 +349,61 @@ class DocsManageController extends Controller
 
         return $pdf->Output("", "S");
 
-        return $pdf;
+        $ceklastapprover = ApprovalMaster::where('apprv_id', $author)->orderBy('apprv_level', 'desc')->first();
+        $cekjumlahyangapprove = ApprovalHist::where('apprv_hist_doc', $iddoc)->where('apprv_parent', '<>', '0')->orderBy('approver_level', 'desc')->first();
+
+        return $this->waterMark($pdf->Output("", "S"), $ceklastapprover, $cekjumlahyangapprove);
+    }
+
+    public function waterMark($pdf, $arrApprover, $lastApprove)
+    {
+        $mpdf = new \Mpdf\Mpdf();
+        if ($arrApprover['apprv_level'] == $lastApprove['approver_level']) {
+            $katakata = 'APPROVED';
+        } else {
+            if ($lastApprove->apprv_hist_status == 1) {
+                $katakata = 'DRAFT';
+            } else {
+                $katakata = 'REJECTED';
+            }
+        }
+        $pagecount = $mpdf->SetSourceFile('[path]');
+
+        $tplId = $mpdf->ImportPage(1);
+        $size = $mpdf->getTemplateSize($tplId);
+        $mpdf->SetSourceFile($pdf);
+
+        //Write into the instance and output it
+        for ($i = 1; $i <= $pagecount; $i++) {
+            $tplId = $mpdf->ImportPage($i);
+            $mpdf->addPage();
+            $mpdf->UseTemplate($tplId);
+            $mpdf->SetWatermarkText($katakata);
+            $mpdf->showWatermarkText = true;
+        }
+        $mpdf->Output();
+    }
+
+    public function printcover(Request $r)
+    {
+        $pdf = App::make('snappy.pdf.wrapper');
+        $pdf->loadHTML($r->html);
+
+        return  base64_encode($pdf->inline());
+
+        // PDF::SetTitle($r->title);
+        // PDF::AddPage();
+        // PDF::writeHTML($r->html, true, false, false, false, '');
+
+        // return base64_encode(PDF::Output($r->title.'.pdf', 'S'));
+    }
+
+    public function updateflagapprvdoc($iddoc, $flag)
+    {
+        DocsMaster::where('doc_id', $iddoc)->update([
+            'doc_lapprv_flag' => $flag
+        ]);
+
+        return 'success';
     }
 }

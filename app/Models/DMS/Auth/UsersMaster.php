@@ -60,4 +60,9 @@ class UsersMaster extends Model
     {
         return $this->hasMany('App\Models\DMS\Core\ApprovalMaster','apprv_author','username');
     }
+
+    public function group()
+    {
+        return $this->hasOne('App\Models\PORTAL\DivisisPortal','role_id','role_id');
+    }
 }

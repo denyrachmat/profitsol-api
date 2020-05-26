@@ -1,0 +1,3 @@
+INSERT INTO DMS.dbo.dms_approval_notification (apprv_user_from,apprv_user_to,apprv_hist_from_id,apprv_hist_to_id,apprv_read_flag,created_at,updated_at,apprv_content_id,apprv_id,content_def_id,approver_level,approver_level_to) VALUES 
+('susi','dadan','TINBXuqBQ4rxqnLAni7ghusos5ILIKXjv67u6WNuS0jCXbFyLA',NULL,'2020-05-20 16:24:12.000','2020-05-20 16:23:35.113','2020-05-20 16:24:12.933','CRTR2005200002','APPRV200423001','6','0','1')
+;

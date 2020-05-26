@@ -3,9 +3,12 @@
 namespace App\Models\DMS\Core;
 
 use Illuminate\Database\Eloquent\Model;
+use Awobaz\Compoships\Compoships;
 
 class ApprovalMaster extends Model
 {
+    use Compoships;
+
     protected $connection = 'sqlsrv_dms';
     protected $table = 'dms_apprv_mstr';
     protected $primaryKey = 'id';
@@ -38,6 +41,11 @@ class ApprovalMaster extends Model
         return $this->hasMany('App\Models\DMS\Core\ApprovalHist','id_approval','apprv_id');
     }
 
+    public function histConsiderLevel()
+    {
+        return $this->hasMany('App\Models\DMS\Core\ApprovalHist',['id_approval','approver_level'],['apprv_id', 'apprv_level']);
+    }
+
     public function histByApprover()
     {
         return $this->hasMany('App\Models\DMS\Core\ApprovalHist','apprv_hist_user','apprv_approver');
@@ -51,5 +59,10 @@ class ApprovalMaster extends Model
     public function approvalDocSet()
     {
         return $this->hasMany('App\Models\DMS\Core\DocApprovalSet','approval_id','apprv_id');
+    }
+
+    public function docs()
+    {
+        return $this->hasMany('App\Models\DMS\Core\DocsMaster','doc_author','apprv_author');
     }
 }

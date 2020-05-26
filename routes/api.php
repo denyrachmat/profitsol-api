@@ -66,14 +66,16 @@ Route::group(['prefix' => 'dms'], function () {
 
     // -- Core --
     // Dashboard
-    Route::get('/getdashboard/{user}', 'DMS\Core\DocsLocationController@getlist');
-    Route::get('/getnotification/{user}', 'DMS\Core\DashboardController@listnotif');
+    Route::get('/getdashboard/{user}', 'DMS\Core\DashboardController@listnotif');
     Route::get('/readnotif/{userto}/{apprvid}/{ctnid}', 'DMS\Core\DashboardController@readnotif');
 
     // Folder Manage
     Route::get('/getdocs/{user}/{id}', 'DMS\Core\DocsLocationController@getlist');
     Route::get('/getdocs/{user}', 'DMS\Core\DocsLocationController@getlist');
     Route::post('/docsadd', 'DMS\Core\DocsLocationController@store');
+    Route::get('/deletedoc/{id}', 'DMS\Core\DocsLocationController@deletefolder');
+
+    Route::get('/getallfolder/{user}', 'DMS\Core\DocsLocationController@getlistfolder');
 
     Route::post('/docsupload', 'DMS\Core\DocsManageController@uploadDocument');
     Route::post('/docsupload/{iddoc}', 'DMS\Core\DocsManageController@uploadDocument');
@@ -84,6 +86,8 @@ Route::group(['prefix' => 'dms'], function () {
 
     Route::get('/showpdf/{user}/{doc}/{full}', 'DMS\Core\DocsManageController@showpdf');
     Route::get('/showpdf/{user}/{doc}', 'DMS\Core\DocsManageController@showpdf');
+
+    Route::get('/toggleapprovedocflag/{iddoc}/{val}', 'DMS\Core\DocsManageController@updateflagapprvdoc');
     
     // Approval Manage    
     Route::get('/apprvdoc/{doc}/{author}', 'DMS\Core\ApprovalController@ApproveDoc'); 
@@ -105,7 +109,26 @@ Route::group(['prefix' => 'dms'], function () {
     Route::post('/storecontent', 'DMS\Core\ContentManageController@store');
     Route::get('/getcontentdatadef', 'DMS\Core\ContentManageController@contentDefineData');
     Route::get('/getcontentall', 'DMS\Core\ContentManageController@index');
+    Route::get('/getcontentall/{tag}/{app}', 'DMS\Core\ContentManageController@index');
 
     //Message Approval
     Route::get('/getapprovallist/{user}', 'DMS\Core\ApprovalController@ApprovalList');
+
+    //Print Cover
+    Route::post('/printcover', 'DMS\Core\DocsManageController@printcover');
+
+    //Circular Ten
+    Route::post('/storecirten', 'DMS\Customs\CircullarTenController@store');
+    Route::get('/testpdf', 'DMS\Customs\CircullarTenController@testSnappy');
+    Route::get('/testfolder/{id}', 'DMS\Customs\CircullarTenController@testfolder');
+
+    Route::get('/getallcirten', 'DMS\Customs\CircullarTenController@getcirten');
+    
+    Route::post('/uploadfilecirten', 'DMS\Customs\CircullarTenController@uploadCirtenAttachment');
+    
+    Route::get('/cekallfiles/{filename}', 'DMS\Customs\CircullarTenController@checkfile');
+    Route::get('/cekallfiles2', 'DMS\Customs\CircullarTenController@cekallfileswithpath');
+    Route::post('/deletefiles', 'DMS\Customs\CircullarTenController@deletefiles');
+
+    Route::get('/showattachment/{pathid}/{name?}', 'DMS\Customs\CircullarTenController@getfiles');
 });

@@ -21,12 +21,22 @@ class DocsLocationMaster extends Model
 
     public function getParents()
     {
-        return $this->hasOne('App\Models\DMS\Core\DocsLocationMaster','parent_loc', 'id');
+        return $this->hasMany('App\Models\DMS\Core\DocsLocationMaster','parent_loc', 'id');
+    }
+
+    public function getChild()
+    {
+        return $this->hasOne('App\Models\DMS\Core\DocsLocationMaster','id', 'parent_loc');
     }
 
     public function allChildFolder()
     {
-        return $this->getParents()->with('allChildFolder')->with('getParents');
+        return $this->getParents()->with('allChildFolder')->with('allParentFolder');
+    }
+
+    public function allParentFolder()
+    {
+        return $this->getChild()->with('allParentFolder');
     }
 
     public function users()
