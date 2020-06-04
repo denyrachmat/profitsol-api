@@ -55,8 +55,10 @@ class LoginController extends Controller
         } else {
             if ($req->username == 'gueststxsmt') {
                 return $cek->with(['menu' => function ($q) {
+                    $q->orderBy('menu_id');
                     $q->where('menu_parent', 0);
                     $q->with(['child' => function ($qchild) {
+                        $qchild->orderBy('menu_id','asc');
                         $qchild->wherehas('role');
                         $qchild->with(['role' => function ($qDet) {
                             $qDet->with('user');
@@ -67,8 +69,10 @@ class LoginController extends Controller
             } else {
                 if (Hash::check($req->password, $cek->first()->password_hash)) {
                     return $cek->with(['menu' => function ($q) {
+                        $q->orderBy('menu_id');
                         $q->where('menu_parent', 0);
                         $q->with(['child' => function ($qchild) {
+                            $qchild->orderBy('menu_id','asc');
                             $qchild->wherehas('role');
                             $qchild->with(['role' => function ($qDet) {
                                 $qDet->with('user');

@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\DMS\Core\ContentMaster;
 use App\Models\DMS\Core\ContentDet;
+use App\Models\DMS\Core\ContentDefine;
 use App\Models\DMS\Core\ApprovalMaster;
 
 class ContentManageController extends Controller
@@ -41,6 +42,8 @@ class ContentManageController extends Controller
                     ]);
                 }
             }
+
+            $id = $r->id;
         } else {
             $hasilStoreMaster = ContentMaster::create([
                 'content_title' => $r->title,
@@ -55,6 +58,8 @@ class ContentManageController extends Controller
                     ]);
                 }
             }
+
+            $id = $hasilStoreMaster['id'];
         }
 
         return $hasilStoreMaster;
@@ -75,5 +80,20 @@ class ContentManageController extends Controller
             'apprv' => $apprvMaster,
             'content' => $contentMstr
         ];
+    }    
+
+    public function StoreApprovalContent(Request $req)
+    {       
+        ContentDefine::updateOrCreate([
+            'content_mstr_id' => $req->id,
+            'apprv_mstr_id' =>  $req->apprv_id
+        ],
+        [
+            'content_mstr_id' => $req->id,
+            'apprv_mstr_id' =>  $req->apprv_id
+        ]);
+        
+
+        return 'success';
     }
 }

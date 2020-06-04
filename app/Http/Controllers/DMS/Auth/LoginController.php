@@ -29,11 +29,18 @@ class LoginController extends Controller
                 $tokenResult = $user->createToken('Personal Access Token');
                 $token = $tokenResult->token;
 
-                $data = $cek->with(['menu' => function ($q) {
+                $data = $cek->with(['menu' => function ($q) use ($user) {
                     $q->where('menu_parent', 0);
-                    $q->with(['child' => function ($qchild) {
-                        $qchild->wherehas('role');
-                        $qchild->with(['role' => function ($qDet) {
+                    $q->with(['child' => function ($qchild) use ($user) {
+                        $qchild->orderBy('id','desc');
+                        // $qchild->wherehas('role');
+                        $qchild->wherehas('role', function ($qDet) use ($user) {
+                            $qDet->where('role_identifier',$user->role_id);
+                            $qDet->with('user');
+                            $qDet->has('user');
+                        });
+                        $qchild->with(['role' => function ($qDet) use ($user) {
+                            $qDet->where('role_identifier',$user->role_id);
                             $qDet->with('user');
                             $qDet->has('user');
                         }]);

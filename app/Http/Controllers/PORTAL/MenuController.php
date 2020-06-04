@@ -22,6 +22,18 @@ class MenuController extends Controller
         }
     }
 
+    public function ceklistmenubyparent($parent, $ex = null)
+    {
+        $hasil = MenusPortal::with('child.child')
+            ->where('menu_parent',$parent);
+
+        if ($ex == null) {
+            return $hasil->get();
+        }
+
+        return $hasil->where('id','<>',$ex)->get();
+    }
+
     public function cekmenuid($id)
     {
         return MenusPortal::where('id',$id)->first();

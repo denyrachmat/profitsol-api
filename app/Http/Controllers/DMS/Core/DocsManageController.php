@@ -41,15 +41,18 @@ class DocsManageController extends Controller
 
     public function uploadDocument(Request $req, $iddoc = null)
     {
-        // return $req->file->getClientOriginalName();
         if (empty(DocsMaster::where('doc_real_name', 'like', '%' . $req->file->getClientOriginalName() . '%')->first())) {
+            //Jika nama file tidak ada yang sama di server
 
             if ($iddoc !== null) {
+                //Jika disisipkan id document berarti akan update version
                 $cekhistory = ApprovalHist::where('apprv_hist_doc', $iddoc)->orderBy('created_at', 'desc')->first();
 
                 if (empty($cekhistory) || $cekhistory['apprv_hist_status'] !== '2') {
+                    //Jika tidak ada reject dari approver maka tidak boleh update
                     return response('Before the revision update, there must be a revision request from the approver !', 402);
                 } else {
+                    // Jika ada reject dari approver
                     $id = $this->storedocument($req);
 
                     $cekversionexist = VerMaster::where('ver_docnm', $iddoc)->orderBy('ver_code', 'desc')->first();
@@ -63,10 +66,6 @@ class DocsManageController extends Controller
                         'ver_comment' => $iddoc == null ? 'First Upload' : "Updated version document from version " . $cekversionexist['ver_code'] . " to " . (string) $nextversion,
                     ]);
 
-                    // DocApprovalSet::where('doc_id', $iddoc)->update([
-                    //     'doc_id' => $id,
-                    // ]);
-
                     // Update semua dokumen terkait update di approval hist
                     ApprovalHist::where('apprv_hist_doc', $iddoc)->update([
                         'apprv_hist_doc' => $id,
@@ -74,12 +73,15 @@ class DocsManageController extends Controller
                     ]);
 
                     // delete history untuk meminta ulang approval di approval hist
-                    ApprovalHist::where('apprv_hist_doc', $id)->where('apprv_hist_status', '2')->orderBy('ver_code', 'desc')->delete();
-
-                    ApprovalNotification::where('apprv_hist_to_id', $iddoc)->update([
-                        'apprv_hist_to_id' => NULL
+                    $cekhist = ApprovalHist::where('apprv_hist_doc', $id)->where('apprv_hist_status', '2')->first();
+                    ApprovalNotification::where('apprv_hist_to_id', $cekhist->id)->update([
+                        'apprv_hist_to_id' => NULL,
+                        'apprv_read_flag' => NULL
                     ]);
-                    ApprovalNotification::where('apprv_hist_from_id', $iddoc)->delete();
+                    ApprovalNotification::where('apprv_hist_from_id', $cekhist->id)->delete();
+        
+                    ApprovalHist::where('apprv_hist_doc', $id)->where('apprv_hist_status', '2')->delete();
+
                 }
             } else {
                 $id = $this->storedocument($req);
@@ -104,9 +106,25 @@ class DocsManageController extends Controller
         }
     }
 
+    public function resendrejecteddoc($id)
+    {
+        $cekhist = ApprovalHist::where('apprv_hist_doc', $id)->where('apprv_hist_status', '2')->first();
+        
+        ApprovalNotification::where('apprv_hist_to_id', $cekhist->id)->update([
+            'apprv_hist_to_id' => NULL,
+            'apprv_read_flag' => NULL
+        ]);
+
+        ApprovalNotification::where('apprv_hist_from_id', $cekhist->id)->delete();
+
+        ApprovalHist::where('apprv_hist_doc', $id)->where('apprv_hist_status', '2')->delete();    
+
+        return 'success';
+    }
+
     public function storedocument($req)
     {
-        $nama_file = uniqid('DMSDOC_') . rand() . '.' . $req->file->extension();
+        $nama_file = uniqid('DMSDOC_') . rand() . '.' . $req->file->getClientOriginalExtension();
         $rootfolder = 'Uploaded Docs/DMS/';
         $folderstore = empty($req->folder_id) ? $rootfolder . $req->username . '/' : $rootfolder . $req->username . '/' . $req->folder_name . '/';
         $req->file->storeAs($folderstore, $nama_file);
@@ -127,19 +145,26 @@ class DocsManageController extends Controller
         return $id_document;
     }
 
-    public function showpdf($user, $topdf, $full = null)
+    public function showpdf($user, $topdf, $full = null, $showapprv = null)
     {
         $getpath = DocsMaster::where('doc_id', $topdf)->first();
         $apprvdochist = ApprovalHist::where('apprv_hist_doc', $topdf)->first();
         if ($full === null) {
             if (!empty($apprvdochist)) {
-                $pdfnya = $this->ApproveDoc($topdf, $apprvdochist->id_approval);
-                // logger(base64_encode($pdfnya));
+                if ($showapprv == null) {
+                    $pdfnya = $this->ApproveDoc($topdf, $apprvdochist->id_approval);
+                } else {
+                    // logger(env('ROOT_DMS_UPLOADED') . $getpath['doc_real_path'] . $getpath['doc_name']);
+                    $getpdf = $this->checkExtension(env('ROOT_DMS_UPLOADED') . $getpath['doc_real_path'] . $getpath['doc_name'], explode('.', $getpath['doc_name'])[0], $full);
+                    $pdfnya = File::get($getpdf);
+                }
+
                 return response()->json([
                     'pdf' => base64_encode($pdfnya),
                 ]);
             } else {
-                $filePDF = $this->checkExtension('D:/data/' . $getpath['doc_real_path'] . $getpath['doc_name'], explode('.', $getpath['doc_name'])[0], $full);
+                logger(env('ROOT_DMS_UPLOADED') . $getpath['doc_real_path'] . $getpath['doc_name']);
+                $filePDF = $this->checkExtension(env('ROOT_DMS_UPLOADED') . $getpath['doc_real_path'] . $getpath['doc_name'], explode('.', $getpath['doc_name'])[0], $full);
 
                 return response()->json([
                     'pdf' => base64_encode(File::get($filePDF)),
@@ -147,14 +172,19 @@ class DocsManageController extends Controller
             }
         } else {
             if ($full == 'full') {
-                $filePDF = $this->checkExtension('D:/data/' . $getpath['doc_real_path'] . $getpath['doc_name'], explode('.', $getpath['doc_name'])[0], $full);
+                $filePDF = $this->checkExtension(env('ROOT_DMS_UPLOADED') . $getpath['doc_real_path'] . $getpath['doc_name'], explode('.', $getpath['doc_name'])[0], $full);
                 if (empty($apprvdochist)) {
+                    logger($topdf);
                     return File::get($filePDF);
                 } else {
-                    return $this->ApproveDoc($topdf, $apprvdochist->id_approval);
+                    if ($showapprv == null) {
+                        return $this->ApproveDoc($topdf, $apprvdochist->id_approval);
+                    } else {
+                        return File::get($filePDF);
+                    }
                 }
             } else {
-                $filePDF = $this->checkExtension('D:/data/' . $getpath['doc_real_path'] . $getpath['doc_name'], explode('.', $getpath['doc_name'])[0], $full);
+                $filePDF = $this->checkExtension(env('ROOT_DMS_UPLOADED') . $getpath['doc_real_path'] . $getpath['doc_name'], explode('.', $getpath['doc_name'])[0], $full);
 
                 $headers = array(
                     'Content-Description: File Transfer',
@@ -162,17 +192,27 @@ class DocsManageController extends Controller
                     'Content-Disposition: attachment; filename="' . $getpath['doc_real_name'] . '"',
                 );
                 if (empty($apprvdochist)) {
-                    return response()->file('D:/data/' . $getpath['doc_real_path'] . $getpath['doc_name'], $headers);
+                    return response()->file(env('ROOT_DMS_UPLOADED') . $getpath['doc_real_path'] . $getpath['doc_name'], $headers);
                     return File::get($filePDF);
                 } else {
                     if ($full == 'original') {
-                        return response()->file('D:/data/' . $getpath['doc_real_path'] . $getpath['doc_name'], $headers);
+                        return response()->file(env('ROOT_DMS_UPLOADED') . $getpath['doc_real_path'] . $getpath['doc_name'], $headers);
                     } else {
-                        return $this->ApproveDoc($topdf, $apprvdochist->id_approval);
+                        if ($showapprv == null) {
+                            return $this->ApproveDoc($topdf, $apprvdochist->id_approval);
+                        } else {
+                            return response()->file(env('ROOT_DMS_UPLOADED') . $getpath['doc_real_path'] . $getpath['doc_name'], $headers);
+                        }
                     }
                 }
             }
         }
+    }
+
+    public function showpdforiginal($topdf, $showapprv = null, $full = null)
+    {
+        logger([null, $topdf, $full, $showapprv]);
+        return $this->showpdf(null, $topdf, $full, $showapprv);
     }
 
     public function checkExtension($file, $filename, $met)
@@ -205,7 +245,7 @@ class DocsManageController extends Controller
 
     public function deleteDocument($id)
     {
-        $cek = DocsMaster::where('doc_id', $id)->doesnthave('apprvhist')->doesnthave('cirten')->first();
+        $cek = DocsMaster::where('doc_id', $id)->doesnthave('apprvhist')->first();
         if (!empty($cek)) {
             $hasil = $cek;
             if (Storage::exists($hasil['doc_real_path'] . $hasil['doc_name'])) {

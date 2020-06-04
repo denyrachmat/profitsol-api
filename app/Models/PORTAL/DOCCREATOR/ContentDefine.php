@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Models\DMS\Core;
+namespace App\Models\PORTAL\DOCCREATOR;
 
 use Illuminate\Database\Eloquent\Model;
 use App\Helpers\CompositeKey;
@@ -9,8 +9,7 @@ class ContentDefine extends Model
 {
     use CompositeKey;
 
-    protected $connection = 'sqlsrv_dms';
-    protected $table = 'dms_content_def';
+    protected $table = 'portal_content_def';
     protected $primaryKey = [
         'content_mstr_id',
         'apprv_mstr_id'
@@ -23,12 +22,12 @@ class ContentDefine extends Model
 
     public function contentDet()
     {
-        return $this->hasMany('App\Models\DMS\Core\ContentDet','content_mstr_id','content_mstr_id');
+        return $this->hasMany('App\Models\PORTAL\DOCCREATOR\ContentDet','content_mstr_id','content_mstr_id');
     }
 
     public function contentMstr()
     {
-        return $this->hasOne('App\Models\DMS\Core\ContentMaster','id','content_mstr_id');
+        return $this->hasOne('App\Models\PORTAL\DOCCREATOR\ContentMaster','id','content_mstr_id');
     }
 
     public function mappingApp()

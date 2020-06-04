@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Models\DMS\Custom;
+namespace App\Models\PORTAL\CUSTOMS;
 
 use Illuminate\Database\Eloquent\Model;
 

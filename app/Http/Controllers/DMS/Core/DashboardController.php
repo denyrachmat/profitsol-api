@@ -14,26 +14,26 @@ use Illuminate\Support\Facades\DB;
 
 class DashboardController extends Controller
 {
-    public function masterQuery(){
+    public function masterQuery()
+    {
         return DocsMaster::select(
             'doc_id',
             'doc_real_name',
             'doc_path',
             'created_at',
             'doc_author'
-        )->with('version')->with(['apprvhist' => function ($q){
+        )->with('version')->with(['apprvhist' => function ($q) {
             $q->with('getallapprover');
-            $q->orderBy('approver_level', 'asc');
         }])
-        ->with('users.group')
-        // ->where('doc_author', $user)
-        ->orderBy('doc_author')
-        ->orderBy('created_at');
+            ->with('users.group')
+            // ->where('doc_author', $user)
+            ->orderBy('doc_author')
+            ->orderBy('created_at');
     }
 
     public function listnotif($user)
     {
-        $gettotaldoc = $this->masterQuery();
+        $gettotaldoc = $this->masterQuery()->where('created_at', '>=', date('Y-m-d H:i:s', strtotime("-1 Months")));
 
         // return $gettotaldoc->get();
         $hasil = [
@@ -45,61 +45,73 @@ class DashboardController extends Controller
         $countbygroup = 0;
 
         $datanya = clone $gettotaldoc->get();
-        
+
+        // return $datanya;
         foreach ($datanya as $key => $value) {
             $getapproverlevel = isset($value['apprvhist']) > 0 ? $value['apprvhist']['getallapprover'][count($value['apprvhist']['getallapprover']) - 1] : '';
-            $getdate = explode(' ', explode('T',$value['created_at'])[0])[0];
-            if ($key !== 0 && $getdate !== explode(' ', explode('T',$datanya[$key -1]['created_at'])[0])[0] ) {
+            $getdate = explode(' ', explode('T', $value['created_at'])[0])[0];
+            if ($key !== 0 && $getdate !== explode(' ', explode('T', $datanya[$key - 1]['created_at'])[0])[0]) {
                 $countbydate++;
             }
 
-            if ($key !== 0 && $value['users']['role_id'] !== $datanya[$key -1]['users']['role_id']) {
+            if ($key !== 0 && $value['users']['role_id'] !== $datanya[$key - 1]['users']['role_id']) {
                 $countbygroup++;
             }
 
             // By Date
             $hasil['uploaded_doc_det'][$countbydate]['upload_date'] = $getdate;
-            
+
             $hasil['uploaded_doc_det'][$countbydate]['data_det'][] = [
                 'doc_real_name' => $value['doc_real_name'],
                 'created_at' => $value['created_at'],
                 'last_approver' => $value['apprvhist'],
                 'approver_list' => $value['apprvhist']['getallapprover'],
                 'approver_level_count' => $getapproverlevel == '' ? 0 : $getapproverlevel['apprv_level'],
-                'approver_flag' => isset($value['apprvhist']) 
-                    ? (
-                        $value['apprvhist']['apprv_hist_status'] === "1"
-                        ? (
-                            $value['apprvhist']['approver_level'] === $getapproverlevel['apprv_level'] 
-                            ? 3 
-                            : 2
-                          )
-                        : 1
-                      )
+                'approver_flag' => isset($value['apprvhist'])
+                    ? ($value['apprvhist']['apprv_hist_status'] === "1"
+                        ? ($value['apprvhist']['approver_level'] === $getapproverlevel['apprv_level']
+                            ? 3
+                            : 2)
+                        : 1)
                     : 0
             ];
 
             // By group User
             $hasil['uploaded_doc_role'][$countbygroup]['group'] = $value['users']['group']['division_name'];
-            
+
             $hasil['uploaded_doc_role'][$countbygroup]['data_det'][] = [
                 'doc_real_name' => $value['doc_real_name'],
                 'created_at' => $value['created_at'],
                 'last_approver' => $value['apprvhist'],
                 'approver_list' => $value['apprvhist']['getallapprover'],
                 'approver_level_count' => $getapproverlevel == '' ? 0 : $getapproverlevel['apprv_level'],
-                'approver_flag' => isset($value['apprvhist']) 
-                    ? (
-                        $value['apprvhist']['apprv_hist_status'] === "1"
-                        ? (
-                            $value['apprvhist']['approver_level'] === $getapproverlevel['apprv_level'] 
-                            ? 3 
-                            : 2
-                          )
-                        : 1
-                      )
+                'approver_flag' => isset($value['apprvhist'])
+                    ? ($value['apprvhist']['apprv_hist_status'] === "1"
+                        ? ($value['apprvhist']['approver_level'] === $getapproverlevel['apprv_level']
+                            ? 3
+                            : 2)
+                        : 1)
                     : 0
             ];
+
+            // By User
+            if ($value['doc_author'] == $user) {
+                $hasil['uploaded_doc_det_by_user'][$countbydate]['upload_date'] = $getdate;
+                $hasil['uploaded_doc_det_by_user'][$countbydate]['data_det'][] = [
+                    'doc_real_name' => $value['doc_real_name'],
+                    'created_at' => $value['created_at'],
+                    'last_approver' => $value['apprvhist'],
+                    'approver_list' => $value['apprvhist']['getallapprover'],
+                    'approver_level_count' => $getapproverlevel == '' ? 0 : $getapproverlevel['apprv_level'],
+                    'approver_flag' => isset($value['apprvhist'])
+                        ? ($value['apprvhist']['apprv_hist_status'] === "1"
+                            ? ($value['apprvhist']['approver_level'] === $getapproverlevel['apprv_level']
+                                ? 3
+                                : 2)
+                            : 1)
+                        : 0
+                ];
+            }
         }
 
         return $hasil;

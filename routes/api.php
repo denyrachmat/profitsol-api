@@ -24,10 +24,10 @@ Route::group(['prefix' => 'portal'], function () {
     Route::post('resetpassword', 'PORTAL\RegisterController@ResetPassword');
     Route::post('login', 'PORTAL\LoginController@Login');
 
-    Route::get('verify/{username}/{token}','PORTAL\RegisterController@verify');
+    Route::get('verify/{username}/{token}', 'PORTAL\RegisterController@verify');
     Route::get('registereduser', 'PORTAL\RegisterController@GetAllUser');
 
-    Route::get('getmenulist/{url}', 'PORTAL\MenuController@show');    
+    Route::get('getmenulist/{url}', 'PORTAL\MenuController@show');
     Route::get('getmenu/{id}', 'PORTAL\MenuController@cekmenuid');
     Route::get('getmenuall/{cek}', 'PORTAL\MenuController@index');
     Route::post('menuadd/{method}', 'PORTAL\MenuController@getmenu');
@@ -38,6 +38,27 @@ Route::group(['prefix' => 'portal'], function () {
 
     Route::get('/getdivisi/{divid}', 'PORTAL\DivisiController@index');
     Route::get('/getdivisi', 'PORTAL\DivisiController@index');
+
+    Route::get('getmenuallbyparent/{cek}/{exept?}', 'PORTAL\MenuController@ceklistmenubyparent');
+
+    // Content 
+    Route::post('/storecontent', 'PORTAL\DocumentController@store');
+    Route::get('/getcontentdatadef', 'DMS\Core\ContentManageController@contentDefineData');
+    Route::get('/getcontentall', 'PORTAL\DocumentController@index');
+    Route::get('/getcontentall/{id_menu}', 'PORTAL\DocumentController@index');
+    Route::get('/deletecontent/{id_content}', 'PORTAL\DocumentController@deletecontent');    
+
+    // Print Cover
+    Route::post('/generatepdf', 'PORTAL\DocumentController@printcover');
+    
+    // Circular Ten
+    Route::post('/uploadfilecirten', 'PORTAL\Customs\CircullarTenController@uploadCirtenAttachment');
+    Route::get('/showattachment/{pathid}/{name?}', 'PORTAL\Customs\CircullarTenController@getfiles');
+    Route::post('/storecirten', 'PORTAL\Customs\CircullarTenController@store');
+    
+    Route::post('/deletefiles', 'PORTAL\Customs\CircullarTenController@deletefiles');
+    Route::get('/cekallfiles2', 'PORTAL\Customs\CircullarTenController@cekallfileswithpath');
+    Route::get('/cekallfiles2/{user}', 'PORTAL\Customs\CircullarTenController@cekallfileswithpath');
 });
 
 Route::group(['prefix' => 'dms'], function () {
@@ -45,16 +66,16 @@ Route::group(['prefix' => 'dms'], function () {
     Route::post('registeruser', 'DMS\Auth\RegisterController@create');
     Route::post('resetpassword', 'DMS\Auth\RegisterController@ResetPassword');
     Route::post('login', 'DMS\Auth\LoginController@Login');
-    
-    Route::get('verify/{username}/{token}','DMS\Auth\RegisterController@verify');
+
+    Route::get('verify/{username}/{token}', 'DMS\Auth\RegisterController@verify');
 
     // -- Settings --
-    
+
     // User
-    Route::get('registereduser', 'DMS\Auth\RegisterController@GetAllUser');    
-    
+    Route::get('registereduser', 'DMS\Auth\RegisterController@GetAllUser');
+
     // Menu
-    Route::get('getmenulist/{url}', 'DMS\Auth\MenuController@show');    
+    Route::get('getmenulist/{url}', 'DMS\Auth\MenuController@show');
     Route::get('getmenu/{id}', 'DMS\Auth\MenuController@cekmenuid');
     Route::get('getmenuall/{cek}', 'DMS\Auth\MenuController@index');
     Route::post('menuadd/{method}', 'DMS\Auth\MenuController@getmenu');
@@ -87,19 +108,28 @@ Route::group(['prefix' => 'dms'], function () {
     Route::get('/showpdf/{user}/{doc}/{full}', 'DMS\Core\DocsManageController@showpdf');
     Route::get('/showpdf/{user}/{doc}', 'DMS\Core\DocsManageController@showpdf');
 
+    Route::get('/showoriginalpdf/{doc}/{flag?}/{full?}', 'DMS\Core\DocsManageController@showpdforiginal');
+
     Route::get('/toggleapprovedocflag/{iddoc}/{val}', 'DMS\Core\DocsManageController@updateflagapprvdoc');
-    
+
+    Route::get('/resendrejecteddoc/{iddoc}', 'DMS\Core\DocsManageController@resendrejecteddoc');
+
     // Approval Manage    
-    Route::get('/apprvdoc/{doc}/{author}', 'DMS\Core\ApprovalController@ApproveDoc'); 
+    Route::get('/apprvdoc/{doc}/{author}', 'DMS\Core\ApprovalController@ApproveDoc');
 
     Route::get('/getallapprvrole', 'DMS\Auth\RoleController@groupFetch');
     Route::post('/addapproval', 'DMS\Core\ApprovalController@ApprovalSetup');
     Route::post('/approvalsent', 'DMS\Core\ApprovalController@ApprovalSent');
     Route::post('/approvalsentbycontent', 'DMS\Core\ApprovalController@ApprovalSentByContent');
+    Route::get('/getapprovallist', 'DMS\Core\ApprovalController@AllApprovalList');
+    Route::post('/updateapproval', 'DMS\Core\ApprovalController@updateApprovalList');
+
+    
+    Route::get('/emailtesting/{user}', 'DMS\Core\ApprovalController@emailtesting');
 
     // Approval List
     Route::get('/getallapprvoutstanding/{user}/{level?}', 'DMS\Core\ApprovalController@outstandingApproval');
-    Route::get('/getallapprvoutstandingbyapprover/{user}', 'DMS\Core\ApprovalController@outstandingApprovalByApprover');
+    Route::get('/getallapprvoutstandingbyapprover/{user}/{inoutbox?}', 'DMS\Core\ApprovalController@outstandingApprovalByApprover');
     Route::get('/getdocsenttoapprover/{user}', 'DMS\Core\ApprovalController@listDocSenttoApprover');
 
     // Document List
@@ -111,6 +141,8 @@ Route::group(['prefix' => 'dms'], function () {
     Route::get('/getcontentall', 'DMS\Core\ContentManageController@index');
     Route::get('/getcontentall/{tag}/{app}', 'DMS\Core\ContentManageController@index');
 
+    Route::post('/storeapprvcontent', 'DMS\Core\ContentManageController@StoreApprovalContent');
+
     //Message Approval
     Route::get('/getapprovallist/{user}', 'DMS\Core\ApprovalController@ApprovalList');
 
@@ -118,17 +150,12 @@ Route::group(['prefix' => 'dms'], function () {
     Route::post('/printcover', 'DMS\Core\DocsManageController@printcover');
 
     //Circular Ten
-    Route::post('/storecirten', 'DMS\Customs\CircullarTenController@store');
-    Route::get('/testpdf', 'DMS\Customs\CircullarTenController@testSnappy');
-    Route::get('/testfolder/{id}', 'DMS\Customs\CircullarTenController@testfolder');
+    // Route::post('/storecirten', 'DMS\Customs\CircullarTenController@store');
+    // Route::get('/testpdf', 'DMS\Customs\CircullarTenController@testSnappy');
+    // Route::get('/testfolder/{id}', 'DMS\Customs\CircullarTenController@testfolder');
 
-    Route::get('/getallcirten', 'DMS\Customs\CircullarTenController@getcirten');
-    
-    Route::post('/uploadfilecirten', 'DMS\Customs\CircullarTenController@uploadCirtenAttachment');
-    
-    Route::get('/cekallfiles/{filename}', 'DMS\Customs\CircullarTenController@checkfile');
-    Route::get('/cekallfiles2', 'DMS\Customs\CircullarTenController@cekallfileswithpath');
-    Route::post('/deletefiles', 'DMS\Customs\CircullarTenController@deletefiles');
+    // Route::get('/getallcirten', 'DMS\Customs\CircullarTenController@getcirten');
 
-    Route::get('/showattachment/{pathid}/{name?}', 'DMS\Customs\CircullarTenController@getfiles');
+    // Route::get('/cekallfiles/{filename}', 'DMS\Customs\CircullarTenController@checkfile');
+    // Route::post('/deletefiles', 'DMS\Customs\CircullarTenController@deletefiles');
 });

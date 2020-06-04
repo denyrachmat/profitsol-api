@@ -1,15 +1,14 @@
 <?php
 
-namespace App\Http\Controllers\DMS\Customs;
+namespace App\Http\Controllers\PORTAL\Customs;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 
-use App\Models\DMS\Custom\CircularTen;
-use App\Models\DMS\Core\ContentCreator;
-use App\Models\DMS\Core\DocsMaster;
-use App\Models\DMS\Core\VerMaster;
+use App\Models\PORTAL\CUSTOMS\CircularTen;
+use App\Models\PORTAL\DOCCREATOR\ContentCreator;
 use App\Models\DMS\Core\DocsLocationMaster;
+use App\Models\PORTAL\DOCCREATOR\ContentDefine;
 
 use Illuminate\Support\Facades\App;
 use Symfony\Component\HttpFoundation\Response;
@@ -24,11 +23,11 @@ class CircullarTenController extends Controller
     public function store(Request $req)
     {
         //Create Content
-        $ceklast = ContentCreator::where('content_creator_id', 'like', 'CRTR' . date('ymd') . '%')->orderBy('content_creator_id', 'desc')->first();
+        $ceklast = ContentCreator::where('content_creator_id', 'like', 'PCCRTR' . date('ymd') . '%')->orderBy('content_creator_id', 'desc')->first();
         if (empty($ceklast)) {
-            $nextid = 'CRTR' . date('ymd') . '0001';
+            $nextid = 'PCCRTR' . date('ymd') . '0001';
         } else {
-            $nextid = 'CRTR' . date('ymd') . sprintf('%04d', (int) substr($ceklast['content_creator_id'], -3) + 1);
+            $nextid = 'PCCRTR' . date('ymd') . sprintf('%04d', (int) substr($ceklast['content_creator_id'], -3) + 1);
         }
 
         $form = json_decode(json_encode($req->forms), true);
@@ -51,47 +50,12 @@ class CircullarTenController extends Controller
             ]);
         }
 
+        ContentDefine::create([
+            'content_mstr_id' => $nextid,
+            'apprv_mstr_id' => $req->content['id']
+        ]);
+
         return 'CIRCULAR_TEN_' . date('ymdhis');
-
-        $cekfolder = $this->getfullpathfolder(DocsLocationMaster::where('id', $req->folder)->with('allChildFolder')->first()->toArray());
-
-        //Save pdf nya
-        $folder = 'd:/data/Uploaded Docs/DMS/' . $req->users . '/' . $cekfolder . '/';
-
-        $pdfrootname = 'CIRCULAR_TEN_' . date('ymd');
-        $cekdoc = DocsMaster::where('doc_real_path', $folder)->where('doc_real_name', 'like', $pdfrootname)->orderBy('created_at', 'desc')->first();
-
-        if (empty($cekdoc)) {
-            $pdfname = $pdfrootname . '0001';
-        } else {
-            $pdfname = sprintf('%04d', (int) substr($cekdoc['doc_real_name'], -3) + 1);
-        }
-
-        $nama_file = uniqid('DMSDOC_') . rand();
-
-        $this->htmlConvertToPDF($req->parseHTML, $folder . $nama_file);
-
-        //Save ke doc master.
-        $id_document = Str::random(50);
-        DocsMaster::create([
-            'doc_id' => $id_document,
-            'doc_name' => $nama_file . '.pdf',
-            'doc_path' => $req->folder,
-            'doc_real_path' => 'Uploaded Docs/DMS/' . $req->users . '/' . $cekfolder . '/',
-            'doc_author' => $req->users,
-            'doc_real_name' => $pdfname . '.pdf',
-            'doc_size' => File::size($folder . $nama_file . '.pdf'),
-            'doc_lapprv_flag' => "1"
-        ]);
-
-        //Save ke versioning document
-        VerMaster::create([
-            'id' => Str::random(50),
-            'ver_docnm' => $id_document,
-            'ver_docloc' => $req->folder,
-            'ver_code' => 0,
-            'ver_comment' => 'First Circular Technical Upload',
-        ]);
     }
 
     public function testSnappy()
@@ -177,9 +141,8 @@ class CircullarTenController extends Controller
 
     public function uploadCirtenAttachment(Request $req)
     {
-        // return $req->file->getClientOriginalName();
         $nama_file = $req->file->getClientOriginalName();
-        $rootfolder = 'Uploaded Docs/Circular Ten/' . date('Y') . '/' . date('F') . '/' . date('D') . ' - ' . date('d') . '/';
+        $rootfolder = 'Uploaded Docs/Circular Ten/'.$req->header('username'). '/' . date('Y') . '/' . date('F') . '/' . date('D') . ' - ' . date('d') . '/';
         if (count($this->checkfile($nama_file)) == 0) {
             $req->file->storeAs($rootfolder, $nama_file);
 
@@ -216,9 +179,9 @@ class CircullarTenController extends Controller
         return dirToArray($dir);
     }
 
-    public function cekallfileswithpath()
+    public function cekallfileswithpath($user = null)
     {
-        $dir    = env('CIRCULAR_TEN_LOC');
+        $dir    = $user == null ? env('CIRCULAR_TEN_LOC') : env('CIRCULAR_TEN_LOC').$user.'/';
 
         function getDirContents($dir, &$results = array(), &$count = 0)
         {
@@ -273,7 +236,7 @@ class CircullarTenController extends Controller
         $cekdata = CircularTen::where('doc_id', $req['files']['FILE'])->first();
 
         if (empty($cekdata)) {
-            if (File::get($req['files']['PATH'])) {
+            if (File::exists($req['files']['PATH'])) {
                 File::delete($req['files']['PATH']);
                 return 'delete success';
             } else {
@@ -285,6 +248,11 @@ class CircullarTenController extends Controller
                 ], 422);
             }
         } else {
+            if ($req->has('force')) {
+                File::delete($req['files']['PATH']);
+                return 'delete success';
+            }
+            
             return response([
                 'message' => "The given data was invalid.",
                 'errors' => [
@@ -301,7 +269,11 @@ class CircullarTenController extends Controller
             'Content-Type: application/octet-stream',
             'Content-Disposition: attachment; filename="' . $name . '"',
         );
-
-        return response()->file(base64_decode($path), $headers);
+        if (File::exists(base64_decode($path))) {
+            return response()->file(base64_decode($path), $headers);
+        } else {
+            return view('PORTAL/filenotfound');
+            return 'Files not found';
+        }
     }
 }

@@ -4,10 +4,12 @@ namespace App\Models\DMS\Core;
 
 use Illuminate\Database\Eloquent\Model;
 use Awobaz\Compoships\Compoships;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class ApprovalHist extends Model
 {
     use Compoships;
+    use SoftDeletes;
 
     protected $connection = 'sqlsrv_dms';
     protected $table = 'dms_apprv_hist';
@@ -37,6 +39,11 @@ class ApprovalHist extends Model
     public function child()
     {
         return $this->hasOne('App\Models\DMS\Core\ApprovalHist', 'apprv_parent', 'id');
+    }
+
+    public function lastapprv()
+    {
+        return $this->hasOne('App\Models\DMS\Core\ApprovalHist', 'apprv_hist_doc', 'apprv_hist_doc')->orderBy('created_at','desc');
     }
 
     public function parent()

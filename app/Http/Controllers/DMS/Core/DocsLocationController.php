@@ -13,7 +13,7 @@ use App\Models\DMS\Core\ApprovalMaster;
 class DocsLocationController extends Controller
 {
     public function getlist($user, $idfolder = null)
-    {        
+    {
         $select = [
             'apprv_author',
             'apprv_title',
@@ -64,7 +64,7 @@ class DocsLocationController extends Controller
 
             $files = DocsMaster::where('doc_path', '0')
                 ->where('doc_author', $user)
-                ->with(['users', 'currentversion', 'apprvhist'])->doesnthave('version')->get()->toArray();
+                ->with(['users', 'currentversion', 'apprvhist.getallapprover'])->doesnthave('version')->get()->toArray();
             return [
                 'datafolder' => $folder,
                 'datafile' => $files,
@@ -82,7 +82,7 @@ class DocsLocationController extends Controller
 
             $files = DocsMaster::where('doc_path', $idfolder)
                 ->where('doc_author', $user)
-                ->with(['users', 'currentversion', 'apprvhist'])->doesnthave('version')->get();
+                ->with(['users', 'currentversion', 'apprvhist.getallapprover'])->doesnthave('version')->get();
 
             return [
                 'datafolder' => $folder,
@@ -108,7 +108,7 @@ class DocsLocationController extends Controller
             ->doesnthave('listdoc')
             ->first();
         $cek_isinyac = DocsLocationMaster::where('id', $id)->first();
-        
+
         if (empty($cek_isi_doc)) {
             return response([
                 'message' => "The given data was invalid.",

@@ -9,7 +9,12 @@ use App\Models\DMS\Core\ApprovalHist;
 use Illuminate\Support\Str;
 use App\Models\DMS\Core\DocsMaster;
 use App\Models\DMS\Core\ContentCreator;
+use App\Models\DMS\Core\ContentDefine;
 use App\Models\DMS\Core\ApprovalNotification;
+use Illuminate\Support\Facades\Mail;
+use App\Jobs\DMS\NotificationEmailQueue;
+
+use App\Mail\DMS\NotificationEmail;
 
 class ApprovalController extends Controller
 {
@@ -112,7 +117,7 @@ class ApprovalController extends Controller
             $nextid = "";
 
             if ($req->has('formnya')) { // Jika ada post dengan parameter 'formnya'
-                $ceklast = ContentCreator::where('content_creator_id', 'like', 'CRTR' . date('ymd') . '%')->orderBy('content_creator_id', 'desc')->first();
+                $ceklast = ApprovalHist::where('content_creator_id', 'like', 'CRTR' . date('ymd') . '%')->orderBy('content_creator_id', 'desc')->first();
                 if (empty($ceklast)) {
                     $nextid = 'CRTR' . date('ymd') . '0001';
                 } else {
@@ -155,17 +160,25 @@ class ApprovalController extends Controller
                     ]);
 
                     if ($req->parent_apprv == '0') { // Jika si pembuat approval yang approve
-                        $hasilsuccess[$cekapprover[0]['apprv_approver']] = $this->outstandingApprovalByApprover($cekapprover[0]['apprv_approver']);
-                        ApprovalNotification::create([
-                            'apprv_user_from' => $req->user_apprv,
-                            'apprv_user_to' => $cekapprover[0]['apprv_approver'],
-                            'apprv_hist_from_id' => $idhistory,
-                            'apprv_content_id' => $nextid,
-                            'apprv_id' => $req->master_apprv,
-                            'content_def_id' => $req->contentDefine,
-                            'approver_level' => "0",
-                            'approver_level_to' => "1"
-                        ]);
+                        $masterApprv = ApprovalMaster::where('apprv_author', $value['doc_author'])
+                            ->where('apprv_id', $req->master_apprv)
+                            ->where('apprv_level', '1')
+                            ->get();
+
+                        foreach ($masterApprv as $key => $value) {
+                            ApprovalNotification::create([
+                                'apprv_user_from' => $req->user_apprv,
+                                'apprv_user_to' => $value['apprv_approver'],
+                                'apprv_hist_from_id' => $idhistory,
+                                'apprv_content_id' => $nextid,
+                                'apprv_id' => $req->master_apprv,
+                                'content_def_id' => $req->contentDefine,
+                                'approver_level' => "0",
+                                'approver_level_to' => "1"
+                            ]);
+
+                            $hasilsuccess[$value['apprv_approver']] = $this->outstandingApprovalByApprover($value['apprv_approver'],null, true)->items();
+                        }
 
                         ApprovalHist::where('id', $idhistory)->update([
                             'approver_level' => "0"
@@ -176,27 +189,6 @@ class ApprovalController extends Controller
                         $masterApprv = ApprovalMaster::where('apprv_author', $value['doc_author'])->where('apprv_id', $req->master_apprv);
 
                         $ceklagi = clone $masterApprv->where('apprv_approver', $req->user_apprv)->where('apprv_level','<>',$cekLevelHist->approver_level)->first();
-
-                        $getsamelevelapprover = ApprovalMaster::where('apprv_author', $value['doc_author'])
-                            ->where('apprv_id', $req->master_apprv)
-                            ->where('apprv_approver', '<>', $req->user_apprv)
-                            ->where('apprv_level', $ceklagi['apprv_level'])
-                            ->get();
-
-                        foreach ($getsamelevelapprover as $key_same_level => $value_same_level) {
-                            ApprovalHist::create([
-                                'id' => Str::random(50),
-                                'apprv_parent' => $req->parent_apprv,
-                                'apprv_hist_user' => $value_same_level->apprv_approver,
-                                'apprv_hist_doc' => $value['doc_id'],
-                                'apprv_hist_comment'  => $req->comment,
-                                'apprv_hist_status'  => $req->status,
-                                'content_creator_id' => $nextid,
-                                'id_approval' => $req->master_apprv,
-                                'content_def_id' => $req->contentDefine,
-                                'approver_level' => $ceklagi['apprv_level']
-                            ]);
-                        }
 
                         ApprovalNotification::where('apprv_hist_from_id', $req->parent_apprv)
                             ->update([
@@ -211,7 +203,6 @@ class ApprovalController extends Controller
 
                         if (count($ceknextapprover) > 0 && $req->status == "1") {
                             foreach ($ceknextapprover as $keyDet => $valueDet) {
-                                $hasilsuccess[$valueDet['apprv_approver']] = $this->outstandingApprovalByApprover($valueDet['apprv_approver']);
                                 ApprovalNotification::create([
                                     'apprv_user_from' => $req->user_apprv,
                                     'apprv_user_to' => $valueDet['apprv_approver'],
@@ -222,6 +213,8 @@ class ApprovalController extends Controller
                                     'approver_level' => $ceklagi['apprv_level'],
                                     'approver_level_to' => $ceklagi['apprv_level'] + 1
                                 ]);
+
+                                $hasilsuccess[$valueDet['apprv_approver']] = $this->outstandingApprovalByApprover($valueDet['apprv_approver'],null, true)->items();
 
                                 ApprovalHist::where('id', $idhistory)->update([
                                     'approver_level' => $ceklagi['apprv_level']
@@ -242,6 +235,8 @@ class ApprovalController extends Controller
                             ApprovalHist::where('id', $idhistory)->update([
                                 'approver_level' => $ceklagi['apprv_level']
                             ]);
+                            
+                            $hasilsuccess[$ceklagi['apprv_author']] = $this->outstandingApprovalByApprover($ceklagi['apprv_author'],null, true)->items();
                         }
                     }
                 }
@@ -250,7 +245,15 @@ class ApprovalController extends Controller
             if (count($hasil) > 0) {
                 return response($hasil, 422);
             } else {
-                return $hasilsuccess;
+                $newhasil = [];
+                foreach ($hasilsuccess as $keyHasil => $valueHasil) {
+                    $newhasil[$keyHasil] = [
+                        'data' => $valueHasil,
+                        'email_status' => $this->emailsender($keyHasil, $this->outstandingApprovalByApprover($keyHasil, null, true)->items()[0])
+                    ];
+                }
+                
+                return $newhasil;
             }
         } else {
             return response([
@@ -258,6 +261,75 @@ class ApprovalController extends Controller
                     'approver' => ['Please setup the approver of this user first !!']
                 ]
             ], 422);
+        }
+    }
+
+    public function arrfet($arr, $gethasil)
+    {
+        if ($arr->approver_level !== '0') {
+            if ($arr->allPastApproverList !== null) {
+                return $this->arrfet($arr->allPastApproverList, array_merge($gethasil, [$arr]));
+            } else {
+                $gethasil[] = array_merge($gethasil, $arr);
+            }
+        }
+
+        return $gethasil;
+    }
+
+    public function emailsender($user, $data)
+    {
+        // return $this->outstandingApprovalByApprover($user, null, true)->items()[0];
+        $datadummy = $data;
+
+        logger(json_encode($datadummy));
+
+        $html = '<h2>Hello '.$datadummy->userTo->first_name.',</h2>
+        <!-- <p>We have inform you about your pending approval and need your action immediately.</p> -->
+        <p>We have got a notification for you, please login to link below and take an action immediately.</p>
+        <p><a href="http://192.168.100.32:8081/dms">STX DMS</a></p><hr>';
+
+        $html .= $datadummy->contentDefine->contentMstr->content_html;
+
+        if (strpos($html, '|surname|')) {
+            $html = str_replace('|surname|',$datadummy->histFromByContentId[0]->doc->users->first_name .' '.$datadummy->histFromByContentId[0]->doc->users->last_name, $html);
+        } 
+        
+        if (strpos($html, '|approval_list_here|')) {
+            $tableapprv = '<table style="border-collapse: collapse; width: 100%; height: 32px;" border="1">
+            <tbody>
+              <tr style="height: 16px;font-weight: bold">
+                <td>No</td>
+                <td>Signature</td>
+                <td>Username</td>
+                <td>Reason</td>
+                <td>Signed At</td>
+              </tr>';
+
+            $no = 1;
+            foreach (array_reverse($this->arrfet($datadummy->histFromByContentId[0], [])) as $key => $value) {
+                $tableapprv .= '<tr>';
+                $tableapprv .= '<td>'. $no .'</td>';
+                $tableapprv .= "<td>". $value->users->username .'</td>';
+                $tableapprv .= '<td>@'. $value->users->username .'</td>';
+                $tableapprv .= '<td>'. $value->apprv_hist_comment .'</td>';
+                $tableapprv .= '<td>'. $value->created_at .'</td>';
+                $tableapprv .= '</tr>';
+
+                $no++;
+            }
+
+            $html = str_replace('|approval_list_here|',$tableapprv, $html);
+        }
+
+        try {
+            $insertJob = (new NotificationEmailQueue($datadummy->userTo->email, $datadummy->userTo, $html));
+
+            dispatch($insertJob);            
+
+            return 'Email success';
+        } catch (\Exception $th) {
+            return 'Email error';
         }
     }
 
@@ -353,7 +425,7 @@ class ApprovalController extends Controller
         return $hasil;
     }
 
-    public function outstandingApprovalByApprover($approver, $author = null)
+    public function outstandingApprovalByApprover($approver, $inout = null, $last = false)
     {
         $selecthist = [
             'id',
@@ -389,6 +461,7 @@ class ApprovalController extends Controller
             }])
             ->with(['histToByContentId' => function ($q) use ($selecthist) {
                 $q->select($selecthist);
+                $q->with('users');
                 $q->with('doc.users');
                 $q->with('allApproverList');
             }])
@@ -396,31 +469,27 @@ class ApprovalController extends Controller
             ->with('contentDefine.contentMstr')
             ->with(['userFrom', 'userTo'])
             ->with('approvalMaster')
-            ->where('apprv_user_to', $approver)
-            ->orWhere('apprv_user_from', $approver)
             ->groupBy($selectNotif)
-            ->orderBy('apprv_read_flag', 'desc')
-            ->orderBy('approver_level', 'desc')
-            ->get()
-            ->toArray();
-
-        return $ceknotif;
-
-        $hasil = [];
-        $countDiffID = 0;
-        foreach ($ceknotif as $key => $value) {
-            if ($key !== 0 && $value['apprv_hist_from_id'] !== $ceknotif[$key - 1]['apprv_hist_from_id']) {
-                $countDiffID++;
-            }
-
-            $hasil[$countDiffID] = [
-                'apprv_user_from' => $value['apprv_user_from'],
-                'apprv_user_to' => $value['apprv_user_to'],
-                'apprv_hist_from_id' => $value['apprv_hist_from_id']
-            ];
+            ->orderBy('apprv_content_id', 'desc')
+            ->orderBy('approver_level', 'desc');
+            // ->get()
+            // ->toArray();
+        
+        if (!empty($inout)) {
+            $hasil = $inout == 'inc' 
+                ? $ceknotif->where('apprv_user_to', $approver) 
+                : $ceknotif->where('apprv_user_from', $approver);
+        } else {
+            $hasil = $ceknotif
+            ->where('apprv_user_to', $approver)
+            ->orWhere('apprv_user_from', $approver);
         }
 
-        return $hasil;
+        if ($last == true) {
+            return $hasil->paginate(1);
+        } else {
+            return $hasil->paginate(3);
+        }
     }
 
     public function listDocSenttoApprover($user)
@@ -430,12 +499,15 @@ class ApprovalController extends Controller
             ->with('doc.users')
             ->with('allApproverList')
             ->with('getallapprover.user')
+            ->with('lastapprv')
+            ->orderBy('created_at', 'desc')
             ->get()
             ->toArray();
     }
 
     public function ApprovalList($user)
     {
+        return $this->AllApprovalList($user);
         $selectMaster = [
             'apprv_author',
             'apprv_title',
@@ -461,5 +533,80 @@ class ApprovalController extends Controller
             ->toArray();
 
         return $cekMaster;
+    }
+
+    public function AllApprovalList($user = null)
+    {
+        $selectMaster = [
+            'apprv_author',
+            'apprv_approver',
+            'apprv_level',
+            'apprv_title',
+            'apprv_id'
+        ];
+        if (empty($user)) {
+            $cekall = ApprovalMaster::select($selectMaster)->with('userAuthor')->with(['contentDef' => function ($q3){
+                $q3->with(['contentDet','contentMstr']);
+                $q3->doesnthave('mappingApp');
+            }])
+            ->with(['docs' => function($q2){
+                $q2->where('doc_lapprv_flag', '1');
+                $q2->wheredoesnthave('docHist');
+                $q2->orderBy('created_at','desc');
+            }])
+            ->with('user')->get()->toArray();
+        } else {
+            $cekall = ApprovalMaster::select($selectMaster)->with('userAuthor')->with(['contentDef' => function ($q3){
+                $q3->with(['contentDet','contentMstr']);
+                $q3->doesnthave('mappingApp');
+            }])
+            ->with(['docs' => function($q2){
+                $q2->where('doc_lapprv_flag', '1');
+                $q2->wheredoesnthave('docHist');
+                $q2->orderBy('created_at','desc');
+            }])
+            ->where('apprv_author', $user)->with('user')->get()->toArray();
+        }
+        
+        // return $cekall;
+        $count = 0;
+        $countdet = 0;
+        $hasil = [];
+        foreach ($cekall as $key => $value) {
+            if ($key!== 0 && ($value['apprv_id'] !== $cekall[$key -1]['apprv_id'])) {
+                $count++;
+                $countdet = 0;
+            }
+
+            $hasil[$count]['USERNAME'] = $value['apprv_author'];
+            $hasil[$count]['AUTHOR'] = $value['user_author']['first_name'].' '.$value['user_author']['last_name'];
+            $hasil[$count]['TITLE_APPRV'] = $value['apprv_title'];
+            $hasil[$count]['ID_APPRV'] = $value['apprv_id'];
+            $hasil[$count]['DET'][$countdet] = $value;
+            $hasil[$count]['DOCS'] = $value['docs'];
+            $hasil[$count]['CONTENT_DEF'] = $value['content_def'];
+
+            $countdet++;
+        }
+
+        return $hasil;
+    }
+
+    public function updateApprovalList(Request $req){
+        ApprovalMaster::where('apprv_id', $req->id_apprv)->delete();
+        foreach ($req->datanya as $key => $value) {
+            ApprovalMaster::create([
+                'id' => Str::random(50),
+                'apprv_author' => $value['apprv_author'],
+                'apprv_approver' => $value['apprv_approver'],
+                'apprv_email_notify' => 1,
+                'apprv_level' => $value['apprv_level'],
+                'apprv_mandatory' => $value['apprv_mandatory'],
+                'apprv_title' => $value['apprv_title'],
+                'apprv_id' => $value['apprv_id'],
+            ]);
+        }
+
+        return 'success';
     }
 }

@@ -14,6 +14,8 @@ use Illuminate\Support\Str;
 use App\Http\Requests\PORTAL\ResetPassRequest;
 use Illuminate\Support\Facades\Response;
 
+use App\Http\Requests\PORTAL\RegisterRequest;
+
 class RegisterController extends Controller
 {
     /*
@@ -67,7 +69,7 @@ class RegisterController extends Controller
      * @param  array  $data
      * @return \App\User
      */
-    protected function create(Request $req)
+    protected function create(RegisterRequest $req)
     {        
         $usernya = UsersPortal::create([
             'username' => $req['username'],

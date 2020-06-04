@@ -4,11 +4,13 @@ namespace App\Models\DMS\Core;
 
 use Illuminate\Database\Eloquent\Model;
 use Awobaz\Compoships\Compoships;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class ApprovalNotification extends Model
 {
     use Compoships;
-
+    use SoftDeletes;
+    
     protected $connection = 'sqlsrv_dms';
     protected $table = 'dms_approval_notification';
     protected $fillable = [
