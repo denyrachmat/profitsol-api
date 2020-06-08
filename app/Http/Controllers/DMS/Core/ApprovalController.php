@@ -160,10 +160,18 @@ class ApprovalController extends Controller
                     ]);
 
                     if ($req->parent_apprv == '0') { // Jika si pembuat approval yang approve
+                        DocsMaster::where('doc_id', $value['doc_id'])->update([
+                            'doc_stat_flag' => '1'
+                        ]);
+
                         $masterApprv = ApprovalMaster::where('apprv_author', $value['doc_author'])
                             ->where('apprv_id', $req->master_apprv)
                             ->where('apprv_level', '1')
                             ->get();
+
+                        ApprovalHist::where('id', $idhistory)->update([
+                            'approver_level' => "0"
+                        ]);
 
                         foreach ($masterApprv as $key => $value) {
                             ApprovalNotification::create([
@@ -179,16 +187,12 @@ class ApprovalController extends Controller
 
                             $hasilsuccess[$value['apprv_approver']] = $this->outstandingApprovalByApprover($value['apprv_approver'],null, true)->items();
                         }
-
-                        ApprovalHist::where('id', $idhistory)->update([
-                            'approver_level' => "0"
-                        ]);
                     } else { // Jika approver yang approve
                         $cekLevelHist = ApprovalHist::where('apprv_hist_doc',$value['doc_id'])->where('apprv_hist_user', $req->user_apprv)->first();
 
                         $masterApprv = ApprovalMaster::where('apprv_author', $value['doc_author'])->where('apprv_id', $req->master_apprv);
 
-                        $ceklagi = clone $masterApprv->where('apprv_approver', $req->user_apprv)->where('apprv_level','<>',$cekLevelHist->approver_level)->first();
+                        $ceklagi = clone $masterApprv->where('apprv_approver', $req->user_apprv)->where('apprv_level','<>',$cekLevelHist->approver_level)->orderBy('created_at','asc')->first();
 
                         ApprovalNotification::where('apprv_hist_from_id', $req->parent_apprv)
                             ->update([
@@ -236,7 +240,13 @@ class ApprovalController extends Controller
                                 'approver_level' => $ceklagi['apprv_level']
                             ]);
                             
-                            $hasilsuccess[$ceklagi['apprv_author']] = $this->outstandingApprovalByApprover($ceklagi['apprv_author'],null, true)->items();
+                            $hasilsuccess[$ceklagi['apprv_author']] = $this->outstandingApprovalByApprover($ceklagi['apprv_author'],null, true)->items();                            
+
+                            if ($req->status == "1") {
+                                DocsMaster::where('doc_id', $value['doc_id'])->update([
+                                    'doc_stat_flag' => '2'
+                                ]);
+                            }
                         }
                     }
                 }

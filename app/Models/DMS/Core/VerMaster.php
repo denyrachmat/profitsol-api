@@ -19,4 +19,24 @@ class VerMaster extends Model
         'ver_code',
         'ver_comment'
     ];
+
+    public function doc()
+    {
+        return $this->hasOne('App\Models\DMS\Core\DocsMaster','doc_id','ver_docnm');
+    }
+
+    public function prevdoc()
+    {
+        return $this->hasOne('App\Models\DMS\Core\DocsMaster','doc_id','ver_docloc');
+    }
+    
+    public function getchild()
+    {
+        return $this->hasOne('App\Models\DMS\Core\VerMaster','ver_docnm','ver_docloc');
+    }
+
+    public function prevVersion()
+    {
+        return $this->getchild()->with('prevVersion')->with('doc.apprvhist');
+    }
 }

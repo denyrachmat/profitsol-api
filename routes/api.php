@@ -73,6 +73,10 @@ Route::group(['prefix' => 'dms'], function () {
 
     // User
     Route::get('registereduser', 'DMS\Auth\RegisterController@GetAllUser');
+    Route::get('getalldomain', 'DMS\Auth\RegisterController@GetAllDomain');
+
+    Route::get('updateuserrole/{username}/{newrole}', 'DMS\Auth\RegisterController@updateUserRole');
+    Route::get('updateuseractivation/{username}', 'DMS\Auth\RegisterController@updateuseractivation');
 
     // Menu
     Route::get('getmenulist/{url}', 'DMS\Auth\MenuController@show');
@@ -113,6 +117,8 @@ Route::group(['prefix' => 'dms'], function () {
     Route::get('/toggleapprovedocflag/{iddoc}/{val}', 'DMS\Core\DocsManageController@updateflagapprvdoc');
 
     Route::get('/resendrejecteddoc/{iddoc}', 'DMS\Core\DocsManageController@resendrejecteddoc');
+    
+    Route::get('/sharedoc/{iddoc}', 'DMS\Core\DocsManageController@sharedoc');
 
     // Approval Manage    
     Route::get('/apprvdoc/{doc}/{author}', 'DMS\Core\ApprovalController@ApproveDoc');
@@ -125,7 +131,7 @@ Route::group(['prefix' => 'dms'], function () {
     Route::post('/updateapproval', 'DMS\Core\ApprovalController@updateApprovalList');
 
     
-    Route::get('/emailtesting/{user}', 'DMS\Core\ApprovalController@emailtesting');
+    Route::get('/emailtesting/{user}', 'DMS\Core\DocsManageController@emailsender');
 
     // Approval List
     Route::get('/getallapprvoutstanding/{user}/{level?}', 'DMS\Core\ApprovalController@outstandingApproval');

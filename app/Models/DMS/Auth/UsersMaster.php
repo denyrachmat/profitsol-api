@@ -63,6 +63,6 @@ class UsersMaster extends Model
 
     public function group()
     {
-        return $this->hasOne('App\Models\PORTAL\DivisisPortal','role_id','role_id');
+        return $this->hasOne('App\Models\DMS\Auth\DomainMaster','role_id','role_id');
     }
 }

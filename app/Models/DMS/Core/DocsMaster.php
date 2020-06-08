@@ -20,7 +20,8 @@ class DocsMaster extends Model
         'doc_author',
         'doc_real_name',
         'doc_size',
-        'doc_lapprv_flag'
+        'doc_lapprv_flag',
+        'doc_stat_flag'
     ];
 
     public function version()
@@ -40,7 +41,7 @@ class DocsMaster extends Model
 
     public function apprvhist()
     {
-        return $this->belongsTo('App\Models\DMS\Core\ApprovalHist','doc_id','apprv_hist_doc')->orderBy('approver_level');
+        return $this->belongsTo('App\Models\DMS\Core\ApprovalHist','doc_id','apprv_hist_doc')->orderBy('approver_level')->withTrashed();
     }
 
     public function docHist()

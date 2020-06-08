@@ -7,10 +7,10 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
+use App\Mail\DMS\UpdatedDocsNotification;
 use Illuminate\Support\Facades\Mail;
-use App\Mail\DMS\NotificationEmail;
 
-class NotificationEmailQueue implements ShouldQueue
+class UpdatedDocsEmailJobs implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
@@ -19,13 +19,14 @@ class NotificationEmailQueue implements ShouldQueue
      *
      * @return void
      */
-    protected $to, $user, $html;
-    
-    public function __construct($to, $user, $html)
+
+    protected $user;
+    protected $data;
+
+    public function __construct($user, $data)
     {
-        $this->to = $to;
         $this->user = $user;
-        $this->html = $html;
+        $this->data = $data;
     }
 
     /**
@@ -35,6 +36,7 @@ class NotificationEmailQueue implements ShouldQueue
      */
     public function handle()
     {
-        Mail::to($this->to)->send(new NotificationEmail($this->user, $this->html));
+        logger([$this->user, $this->data]);
+        Mail::to($this->user->email)->send(new UpdatedDocsNotification($this->user, $this->data));
     }
 }

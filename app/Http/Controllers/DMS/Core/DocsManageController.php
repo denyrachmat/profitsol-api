@@ -5,6 +5,7 @@ namespace App\Http\Controllers\DMS\Core;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Http\Requests\DMS\Core\UploadDocsRequest;
+use App\Models\DMS\Auth\UsersMaster;
 use App\Models\DMS\Core\ApprovalHist;
 use App\Models\DMS\Core\DocsMaster;
 use App\Models\DMS\Core\VerMaster;
@@ -20,17 +21,23 @@ use setasign\Fpdi\Fpdi;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use Illuminate\Support\Facades\App;
 
+use App\Jobs\DMS\UpdatedDocsEmailJobs;
+
 class DocsManageController extends Controller
 {
     public function getfiles($user, $idfolder = null)
     {
         if (empty($idfolder)) {
             return DocsMaster::where('doc_author', $user)
-                ->with(['users', 'currentversion', 'apprvhist'])
+                ->with(['users','apprvhist'])
+                ->with(['currentversion' => function($q){
+                    $q->with(['doc.apprvhist']);
+                    $q->with('prevVersion.doc.apprvhist');
+                }])
                 ->doesnthave('version')
-                ->doesnthave('docHist')
-                ->doesnthave('cirten')
-                ->where('doc_lapprv_flag', '<>', '1')
+                // ->doesnthave('docHist')
+                // ->doesnthave('cirten')
+                // ->where('doc_lapprv_flag', '<>', '1')
                 ->get();
         } else {
             return DocsMaster::where('doc_path', $idfolder)
@@ -74,14 +81,26 @@ class DocsManageController extends Controller
 
                     // delete history untuk meminta ulang approval di approval hist
                     $cekhist = ApprovalHist::where('apprv_hist_doc', $id)->where('apprv_hist_status', '2')->first();
+
+                    $cekhistafterupdate = ApprovalMaster::where('apprv_id', $cekhist->id_approval)->where('apprv_level',strval(intval($cekhist->approver_level)))->get();
+                    
+                    foreach ($cekhistafterupdate as $key => $value) {
+                        $this->emailsender($value->apprv_approver, $id);
+                    }
+
                     ApprovalNotification::where('apprv_hist_to_id', $cekhist->id)->update([
                         'apprv_hist_to_id' => NULL,
                         'apprv_read_flag' => NULL
                     ]);
+
                     ApprovalNotification::where('apprv_hist_from_id', $cekhist->id)->delete();
         
                     ApprovalHist::where('apprv_hist_doc', $id)->where('apprv_hist_status', '2')->delete();
 
+                    DocsMaster::where('doc_id', $id)->update([
+                        'doc_stat_flag' => '1',
+                        'doc_lapprv_flag' => '1'
+                    ]);                    
                 }
             } else {
                 $id = $this->storedocument($req);
@@ -138,7 +157,8 @@ class DocsManageController extends Controller
                 'doc_real_path' => $folderstore,
                 'doc_author' => $req->username,
                 'doc_real_name' => $req->file->getClientOriginalName(),
-                'doc_size' => $req->file->getSize()
+                'doc_size' => $req->file->getSize(),
+                'doc_stat_flag' => '0'
             ]);
         }
 
@@ -152,6 +172,7 @@ class DocsManageController extends Controller
         if ($full === null) {
             if (!empty($apprvdochist)) {
                 if ($showapprv == null) {
+                    logger(env('ROOT_DMS_UPLOADED') . $getpath['doc_real_path'] . $getpath['doc_name']);
                     $pdfnya = $this->ApproveDoc($topdf, $apprvdochist->id_approval);
                 } else {
                     // logger(env('ROOT_DMS_UPLOADED') . $getpath['doc_real_path'] . $getpath['doc_name']);
@@ -445,5 +466,42 @@ class DocsManageController extends Controller
         ]);
 
         return 'success';
+    }
+
+    public function emailsender($user, $id_docnew)
+    {
+        $user = UsersMaster::where('username', $user)->first();
+        $datanya = VerMaster::where('ver_docnm',$id_docnew)
+            ->with(['doc.apprvhist'])
+            ->with('prevVersion.doc.apprvhist')
+            ->first();
+
+        function parsingdocver($arr, $passdata){
+            if ($arr->prevVersion !== null) {
+                return parsingdocver($arr->prevVersion, array_merge($passdata, [$arr]));
+            } else {                
+                return array_merge($passdata, [$arr]);
+            }
+        }
+
+        // return view('DMS.Email.updateddocsnotification',['user' => $user->first_name, 'data_doc' => parsingdocver($datanya, [])]);
+
+        try {
+            logger([$user, parsingdocver($datanya, [])]);
+            $insertJob = (new UpdatedDocsEmailJobs($user, parsingdocver($datanya, [])));
+
+            dispatch($insertJob);            
+
+            return 'Email success';
+        } catch (\Exception $th) {
+            return 'Email error';
+        }
+    }
+
+    public function sharedoc($iddoc)
+    {
+        return DocsMaster::where('doc_id',$iddoc)->update([
+            'doc_stat_flag' => '3'
+        ]);
     }
 }

@@ -10,6 +10,7 @@ use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Mail;
 use App\Mail\DMS\ActivationEmail;
 use App\Http\Requests\DMS\Auth\RegisterRequest;
+use App\Models\DMS\Auth\DomainMaster;
 
 class RegisterController extends Controller
 {
@@ -49,6 +50,25 @@ class RegisterController extends Controller
 
     public function GetAllUser()
     {
-        return UsersMaster::get();
+        return UsersMaster::with('group')->orderBy('role_id','asc')->get();
+    }
+
+    public function GetAllDomain()
+    {
+        return DomainMaster::get();
+    }
+
+    public function updateUserRole($username, $role)
+    {
+        return UsersMaster::where('username',$username)->update([
+            'role_id' => $role
+        ]);
+    }
+
+    public function updateuseractivation($username)
+    {
+        return UsersMaster::where('username',$username)->update([
+            'status' => 1
+        ]);
     }
 }

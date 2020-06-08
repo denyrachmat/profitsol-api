@@ -12,6 +12,8 @@ use App\Models\PORTAL\DivisisPortal;
 use App\Models\DMS\Core\ApprovalNotification;
 use Illuminate\Support\Facades\DB;
 
+use App\Models\DMS\Auth\DomainMaster;
+
 class DashboardController extends Controller
 {
     public function masterQuery()
@@ -77,7 +79,7 @@ class DashboardController extends Controller
             ];
 
             // By group User
-            $hasil['uploaded_doc_role'][$countbygroup]['group'] = $value['users']['group']['division_name'];
+            $hasil['uploaded_doc_role'][$countbygroup]['group'] = $value['users']['group']['domain_name'];
 
             $hasil['uploaded_doc_role'][$countbygroup]['data_det'][] = [
                 'doc_real_name' => $value['doc_real_name'],
@@ -152,11 +154,11 @@ class DashboardController extends Controller
     public function getalldocumentbyrole($div = null)
     {
         $selectdiv = [
-            'division_name',
+            'domain_name',
             'role_id'
         ];
         if (empty($div)) {
-            return DivisisPortal::select($selectdiv)
+            return DomainMaster::select($selectdiv)
                 ->where('ROLE_ID', 'not like', '%ROOT%')
                 ->where('ROLE_ID', 'like', '%DMS')
                 ->with(['userdms' => function ($q1) {
@@ -175,23 +177,25 @@ class DashboardController extends Controller
                             'doc_author',
                             'doc_real_name',
                             'doc_path',
+                            'doc_stat_flag',
                             'created_at'
                         );
+                        $q2->where('doc_stat_flag', '3');
                         $q2->doesnthave('version');
                         $q2->with('apprvhist.allApproverList');
                     }]);
                     $q1->with('docLocation.allChildFolder');
                     $q1->with('approver');
                 }])
-                ->orderBy('division_name')
+                ->orderBy('domain_name')
                 ->get()
                 ->toArray();
         } else {
-            return DivisisPortal::select($selectdiv)
+            return DomainMaster::select($selectdiv)
                 ->where('ROLE_ID', 'not like', '%ROOT%')
                 ->where('ROLE_ID', 'like', '%DMS')
                 ->where('id', $div)
-                ->orderBy('division_name')
+                ->orderBy('domain_name')
                 ->first()
                 ->toArray();
         }
