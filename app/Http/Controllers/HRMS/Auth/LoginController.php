@@ -1,20 +1,22 @@
 <?php
 
-namespace App\Http\Controllers\DMS\Auth;
+namespace App\Http\Controllers\HRMS\Auth;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
-use App\Models\DMS\Auth\UsersMaster;
-use Illuminate\Support\Facades\Response;
+use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Hash;
-use App\Http\Requests\DMS\Auth\LoginRequest;
 use Illuminate\Support\Carbon;
+
+use App\Models\HRMS\Auth\UserMaster;
+
+use App\Http\Requests\HRMS\Auth\LoginRequest;
 
 class LoginController extends Controller
 {
     public function login(LoginRequest $req)
     {
-        $cek = UsersMaster::where('username', $req->username);
+        $cek = UserMaster::where('username', $req->username);
 
         if (empty($cek->first()->role_id)) {
             return Response::json([
@@ -29,26 +31,15 @@ class LoginController extends Controller
                 $tokenResult = $user->createToken('Personal Access Token');
                 $token = $tokenResult->token;
 
-                $data = $cek->with(['menu' => function ($q) use ($user) {
-                    $q->where('menu_parent', 0);
-                    $q->with(['child' => function ($qchild) use ($user) {
-                        $qchild->orderBy('id','desc');
-                        // $qchild->wherehas('role');
-                        $qchild->wherehas('role', function ($qDet) use ($user) {
-                            $qDet->where('role_identifier',$user->role_id);
-                            $qDet->with('user');
-                            $qDet->has('user');
-                        });
-                        $qchild->with(['role' => function ($qDet) use ($user) {
-                            $qDet->where('role_identifier',$user->role_id);
-                            $qDet->with('user');
-                            $qDet->has('user');
+                $data = $cek->with('roleMaster.mappingMenu.menu.childMenu')
+                    ->with(['roleMaster.mappingMenu' => function ($q) {
+                        $q->where('parent_menu_id', 0);
+                        $q->with(['childRoleMenu' => function ($qdet) {
+                            $qdet->with('menu');
                         }]);
-                    }]);
-                    $q->orderBy('id');
-                }])
-                ->with('signature')
-                ->first();
+                        $q->orderBy('menu_id');
+                    }])
+                    ->first();
 
                 if ($req->remember_me) {
                     $token->expires_at = Carbon::now()->addWeeks(1);

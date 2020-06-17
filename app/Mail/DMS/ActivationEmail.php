@@ -28,6 +28,6 @@ class ActivationEmail extends Mailable
      */
     public function build()
     {
-        return $this->view('DMS.Email.confirmregistration', ['user' => $this->user]);
+        return $this->subject('DMS User Activation')->view('DMS.Email.confirmregistration', ['user' => $this->user]);
     }
 }

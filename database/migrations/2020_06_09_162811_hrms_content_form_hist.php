@@ -4,7 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-class DmsDomainMstr extends Migration
+class HrmsContentFormHist extends Migration
 {
     /**
      * Run the migrations.
@@ -13,11 +13,12 @@ class DmsDomainMstr extends Migration
      */
     public function up()
     {
-        Schema::connection('sqlsrv_dms')->create('dms_domain_mstr', function (Blueprint $table) {
+        Schema::connection('sqlsrv_hrms')->create('hrms_form_hist', function (Blueprint $table) {
             $table->bigIncrements('id');
-            $table->string('domain_id');
-            $table->string('domain_name')->nullable();
-            $table->string('role_id')->nullable();
+            $table->string('form_hist_id');
+            $table->string('form_id');
+            $table->string('form_hist_value');
+            $table->string('form_hist_username');
             $table->timestamps();
         });
     }
@@ -29,6 +30,6 @@ class DmsDomainMstr extends Migration
      */
     public function down()
     {
-        Schema::connection('sqlsrv_dms')->dropIfExists('dms_domain_mstr');
+        Schema::connection('sqlsrv_hrms')->dropIfExists('hrms_form_hist');
     }
 }

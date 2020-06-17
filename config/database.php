@@ -104,6 +104,19 @@ return [
             'prefix_indexes' => true,
         ],
 
+        'sqlsrv_hrms' => [
+            'driver' => 'sqlsrv',
+            'url' => env('DATABASE_URL'),
+            'host' => env('DB_HRMS_HOST', 'localhost'),
+            'port' => env('DB_HRMS_PORT', '1433'),
+            'database' => env('DB_HRMS_DATABASE', 'forge'),
+            'username' => env('DB_HRMS_USERNAME', 'forge'),
+            'password' => env('DB_HRMS_PASSWORD', ''),
+            'charset' => 'utf8',
+            'prefix' => '',
+            'prefix_indexes' => true,
+        ],
+
     ],
 
     /*

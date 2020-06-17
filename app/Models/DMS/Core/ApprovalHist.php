@@ -83,4 +83,9 @@ class ApprovalHist extends Model
     {
         return $this->hasOne('App\Models\DMS\Core\ContentDefine','apprv_mstr_id','id_approval');
     }
+
+    public function notificationFrom()
+    {
+        return $this->hasMany('App\Models\DMS\Core\ApprovalNotification','apprv_hist_from_id','id');
+    }
 }

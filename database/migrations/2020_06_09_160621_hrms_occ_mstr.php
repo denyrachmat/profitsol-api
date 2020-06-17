@@ -4,7 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-class DmsDomainMstr extends Migration
+class HrmsOccMstr extends Migration
 {
     /**
      * Run the migrations.
@@ -13,11 +13,12 @@ class DmsDomainMstr extends Migration
      */
     public function up()
     {
-        Schema::connection('sqlsrv_dms')->create('dms_domain_mstr', function (Blueprint $table) {
+        Schema::connection('sqlsrv_hrms')->create('hrms_occ_mstr', function (Blueprint $table) {
             $table->bigIncrements('id');
+            $table->string('occ_name');
+            $table->string('occ_parent_id');
+            $table->string('division_id');
             $table->string('domain_id');
-            $table->string('domain_name')->nullable();
-            $table->string('role_id')->nullable();
             $table->timestamps();
         });
     }
@@ -29,6 +30,6 @@ class DmsDomainMstr extends Migration
      */
     public function down()
     {
-        Schema::connection('sqlsrv_dms')->dropIfExists('dms_domain_mstr');
+        Schema::connection('sqlsrv_hrms')->dropIfExists('hrms_occ_mstr');
     }
 }

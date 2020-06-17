@@ -31,6 +31,6 @@ class UpdatedDocsNotification extends Mailable
      */
     public function build()
     {
-        return $this->view('DMS.Email.updateddocsnotification',['user' => $this->user->first_name, 'data_doc' => $this->data]);
+        return $this->subject('DMS Updated Rejected Approval')->view('DMS.Email.updateddocsnotification',['user' => $this->user->first_name, 'data_doc' => $this->data]);
     }
 }

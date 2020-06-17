@@ -60,6 +60,15 @@ class ContentManageController extends Controller
             }
 
             $id = $hasilStoreMaster['id'];
+
+            $getapprvid = ApprovalMaster::select('apprv_id')->where('apprv_author', $r->username)->groupBy('apprv_id')->get();
+
+            foreach ($getapprvid as $key => $value) {
+                ContentDefine::create([
+                    'content_mstr_id' => $hasilStoreMaster['id'],
+                    'apprv_mstr_id' => $value['apprv_id']
+                ]);
+            }
         }
 
         return $hasilStoreMaster;

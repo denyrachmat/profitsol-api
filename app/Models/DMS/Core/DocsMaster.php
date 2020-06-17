@@ -43,6 +43,11 @@ class DocsMaster extends Model
     {
         return $this->belongsTo('App\Models\DMS\Core\ApprovalHist','doc_id','apprv_hist_doc')->orderBy('approver_level')->withTrashed();
     }
+    
+    public function apprvhistlast()
+    {
+        return $this->belongsTo('App\Models\DMS\Core\ApprovalHist','doc_id','apprv_hist_doc')->orderBy('approver_level','desc');
+    }
 
     public function docHist()
     {

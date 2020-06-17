@@ -1,13 +1,13 @@
 <?php
 
-namespace App\Mail\DMS;
+namespace App\Mail\HRMS;
 
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Mail\Mailable;
 use Illuminate\Queue\SerializesModels;
 
-class NotificationEmail extends Mailable
+class ActivationEmail extends Mailable
 {
     use Queueable, SerializesModels;
 
@@ -16,12 +16,10 @@ class NotificationEmail extends Mailable
      *
      * @return void
      */
-    public function __construct($user, $html)
+    public function __construct($user)
     {
         $this->user = $user;
-        $this->html = $html;
     }
-
     /**
      * Build the message.
      *
@@ -29,9 +27,6 @@ class NotificationEmail extends Mailable
      */
     public function build()
     {
-        return $this->subject('DMS Approval Notification')->view('DMS.Email.approvalnotification', [ 
-            'user' => $this->user,
-            'html' => $this->html
-        ]);
+        return $this->view('HRMS.Email.confirmregistration', ['user' => $this->user]);
     }
 }

@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers\DMS\Core;
 
+const TEMPIMGLOC = 'tempimg.png';
+
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Http\Requests\DMS\Core\UploadDocsRequest;
@@ -355,7 +357,7 @@ class DocsManageController extends Controller
                 // $cekapprvset = ApprovalMaster::where('apprv_id', $author)->with('user')->get()->toArray();
                 $cekhist = ApprovalHist::where('apprv_hist_doc', $iddoc)
                     ->where('apprv_parent', '<>', '0')
-                    ->with('users')
+                    ->with('users.signature')
                     ->orderBy('created_at', 'asc')
                     ->get();
 
@@ -376,7 +378,15 @@ class DocsManageController extends Controller
 
                     $pdf->SetFont('Times', 'BIU');
                     if ($value['apprv_hist_status'] == '1') {
-                        $pdf->Cell(40, 5, $value['users']["first_name"] . ' ' . $value['users']["last_name"], 'LR', 0, 'C', 0);  // cell with left and right borders
+                        $pdf->Cell(40, 5, '', 'LR', 0, 'C', 0);  // cell with left and right borders                       
+                        
+                        if ($value['users']->signature !== null && $value['users']->signature->image_signature !== '') {
+                            $datauri = base64_decode($value['users']->signature->image_signature);
+                            $img  = explode(',',$datauri,2);
+                            $pic = 'data://text/plain;base64,'. $img[1];
+                            
+                            $pdf->Image($pic, 20, (1 + $key) * 20 - 2,20,20,'png');
+                        }
                     } else {
                         $pdf->SetFont('Helvetica');
                         $pdf->SetTextColor(255, 0, 0);
@@ -396,7 +406,10 @@ class DocsManageController extends Controller
 
                     $pdf->Ln();
 
-                    $pdf->Cell(40, 5, '', 'LBR', 0, 'LR', 0);   // empty cell with left,bottom, and right borders
+                    $pdf->SetFont('Times', 'BIU');
+                    // $pdf->Cell(40, 5, $value['users']["first_name"] . ' ' . $value['users']["last_name"], 'LR', 0, 'C', 0);
+                    $pdf->Cell(40, 5, $value['apprv_hist_status'] == '1' ? $value['users']["first_name"] . ' ' . $value['users']["last_name"] : '', 'LBR', 0, 'C', 0);   // empty cell with left,bottom, and right borders
+                    $pdf->SetFont('Helvetica');
                     $pdf->Cell(20, 5, 'Date', 'LB', 0, 'L', 0);
                     $pdf->Cell($cellWidth - 20, 5, ': ' . $value['created_at'], 'BR', 0, 'L', 0);
                     // $pdf->Cell(50, 5, '[ o ] def4', 'LRB', 0, 'L', 0);
@@ -468,6 +481,15 @@ class DocsManageController extends Controller
         return 'success';
     }
 
+    public function parsingdocver($arr, $passdata)
+    {
+        if ($arr->prevVersion !== null) {
+            return $this->parsingdocver($arr->prevVersion, array_merge($passdata, [$arr]));
+        } else {                
+            return array_merge($passdata, [$arr]);
+        }
+    }
+
     public function emailsender($user, $id_docnew)
     {
         $user = UsersMaster::where('username', $user)->first();
@@ -476,19 +498,9 @@ class DocsManageController extends Controller
             ->with('prevVersion.doc.apprvhist')
             ->first();
 
-        function parsingdocver($arr, $passdata){
-            if ($arr->prevVersion !== null) {
-                return parsingdocver($arr->prevVersion, array_merge($passdata, [$arr]));
-            } else {                
-                return array_merge($passdata, [$arr]);
-            }
-        }
-
-        // return view('DMS.Email.updateddocsnotification',['user' => $user->first_name, 'data_doc' => parsingdocver($datanya, [])]);
-
         try {
-            logger([$user, parsingdocver($datanya, [])]);
-            $insertJob = (new UpdatedDocsEmailJobs($user, parsingdocver($datanya, [])));
+            logger([$user, $this->parsingdocver($datanya, [])]);
+            $insertJob = (new UpdatedDocsEmailJobs($user, $this->parsingdocver($datanya, [])));
 
             dispatch($insertJob);            
 
@@ -500,8 +512,10 @@ class DocsManageController extends Controller
 
     public function sharedoc($iddoc)
     {
+        $cekdata = DocsMaster::where('doc_id',$iddoc)->first();
+        
         return DocsMaster::where('doc_id',$iddoc)->update([
-            'doc_stat_flag' => '3'
+            'doc_stat_flag' => $cekdata->doc_stat_flag == '3' ? '2' : '3'
         ]);
     }
 }

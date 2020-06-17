@@ -31,8 +31,16 @@ class CircullarTenController extends Controller
         }
 
         $form = json_decode(json_encode($req->forms), true);
-        // return $req->forms;
+        $cekid = '';
+        $cekdate = '';
         foreach ($form as $key_form => $value_form) {
+            if(strpos(strtolower($key_form),' id') || strpos(strtolower($key_form),' no')){
+                $cekid = $value_form;
+            }
+
+            if(strpos(strtolower($key_form),'date ')){
+                $cekdate = $value_form;
+            }
             ContentCreator::create([
                 'content_var_id' => $key_form,
                 'content_var_value' => $value_form,
@@ -54,8 +62,16 @@ class CircullarTenController extends Controller
             'content_mstr_id' => $nextid,
             'apprv_mstr_id' => $req->content['id']
         ]);
-
-        return 'CIRCULAR_TEN_' . date('ymdhis');
+        
+        if ($cekid == '') {
+            return 'CIRCULAR_TEN_' . date('ymdhis');
+        } else {
+            if ($cekdate == '') {
+                return 'CIRCULAR_'. $cekid .'_'.date('Y-m-d');
+            } else {
+                return 'CIRCULAR_'. $cekid .'_'.date('Y-m-d', strtotime($cekdate));
+            }
+        }
     }
 
     public function testSnappy()
@@ -142,7 +158,7 @@ class CircullarTenController extends Controller
     public function uploadCirtenAttachment(Request $req)
     {
         $nama_file = $req->file->getClientOriginalName();
-        $rootfolder = 'Uploaded Docs/Circular Ten/'.$req->header('username'). '/' . date('Y') . '/' . date('F') . '/' . date('D') . ' - ' . date('d') . '/';
+        $rootfolder = 'Uploaded Docs/Circular Ten/' . $req->header('username') . '/' . date('Y') . '/' . date('F') . '/' . date('D') . ' - ' . date('d') . '/';
         if (count($this->checkfile($nama_file)) == 0) {
             $req->file->storeAs($rootfolder, $nama_file);
 
@@ -181,7 +197,7 @@ class CircullarTenController extends Controller
 
     public function cekallfileswithpath($user = null)
     {
-        $dir    = $user == null ? env('CIRCULAR_TEN_LOC') : env('CIRCULAR_TEN_LOC').$user.'/';
+        $dir    = $user == null ? env('CIRCULAR_TEN_LOC') : env('CIRCULAR_TEN_LOC') . $user . '/';
 
         function getDirContents($dir, &$results = array(), &$count = 0)
         {
@@ -199,11 +215,23 @@ class CircullarTenController extends Controller
                     getDirContents($path, $results, $count);
                 }
             }
-
             return $results;
         }
 
-        return getDirContents($dir);
+
+        $hasil = getDirContents($dir);
+        usort($hasil, function ($a, $b) {
+            $ad = new \DateTime($a['MODIFIED']);
+            $bd = new \DateTime($b['MODIFIED']);
+
+            if ($ad == $bd) {
+                return 0;
+            }
+
+            return $ad > $bd ? -1 : 1;
+        });
+
+        return $hasil;
     }
 
     public function checkfile($filename)
@@ -252,7 +280,7 @@ class CircullarTenController extends Controller
                 File::delete($req['files']['PATH']);
                 return 'delete success';
             }
-            
+
             return response([
                 'message' => "The given data was invalid.",
                 'errors' => [

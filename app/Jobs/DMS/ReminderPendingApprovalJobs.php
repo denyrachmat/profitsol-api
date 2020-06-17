@@ -7,10 +7,10 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
-use App\Mail\DMS\UpdatedDocsNotification;
+use App\Mail\DMS\ReminderPendingApproval;
 use Illuminate\Support\Facades\Mail;
 
-class UpdatedDocsEmailJobs implements ShouldQueue
+class ReminderPendingApprovalJobs implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
@@ -19,11 +19,10 @@ class UpdatedDocsEmailJobs implements ShouldQueue
      *
      * @return void
      */
-
     protected $user;
     protected $data;
 
-    public function __construct($user, $data)
+    public function __construct($data, $user)
     {
         $this->user = $user;
         $this->data = $data;
@@ -36,6 +35,6 @@ class UpdatedDocsEmailJobs implements ShouldQueue
      */
     public function handle()
     {
-        Mail::to($this->user->email)->send(new UpdatedDocsNotification($this->user, $this->data));
+        Mail::to($this->user->email)->send(new ReminderPendingApproval($this->user, $this->data));
     }
 }

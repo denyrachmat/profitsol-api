@@ -7,7 +7,7 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Mail\Mailable;
 use Illuminate\Queue\SerializesModels;
 
-class NotificationEmail extends Mailable
+class ReminderPendingApproval extends Mailable
 {
     use Queueable, SerializesModels;
 
@@ -16,10 +16,12 @@ class NotificationEmail extends Mailable
      *
      * @return void
      */
-    public function __construct($user, $html)
+    protected $user, $data;
+
+    public function __construct($user, $data)
     {
         $this->user = $user;
-        $this->html = $html;
+        $this->data = $data;
     }
 
     /**
@@ -29,9 +31,6 @@ class NotificationEmail extends Mailable
      */
     public function build()
     {
-        return $this->subject('DMS Approval Notification')->view('DMS.Email.approvalnotification', [ 
-            'user' => $this->user,
-            'html' => $this->html
-        ]);
+        return $this->subject('DMS Reminder Pending Approval')->view('DMS.Email.remindernotification',['data' => $this->data, 'user' => $this->user]);
     }
 }

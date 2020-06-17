@@ -22,6 +22,7 @@ class UsersMaster extends Model
         'status',
         'first_name',
         'last_name',
+        'signature_id'
     ];
 
     public function role()
@@ -44,6 +45,11 @@ class UsersMaster extends Model
     public function approval()
     {
         return $this->hasMany('App\Models\DMS\Core\ApprovalMaster','apprv_author','username');
+    }
+
+    public function signature()
+    {
+        return $this->hasOne('App\Models\DMS\Auth\SignatureMaster','id','signature_id');
     }
 
     public function doc()

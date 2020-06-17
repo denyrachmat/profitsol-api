@@ -77,6 +77,10 @@ Route::group(['prefix' => 'dms'], function () {
 
     Route::get('updateuserrole/{username}/{newrole}', 'DMS\Auth\RegisterController@updateUserRole');
     Route::get('updateuseractivation/{username}', 'DMS\Auth\RegisterController@updateuseractivation');
+    
+    Route::post('updateprofile', 'DMS\Auth\RegisterController@updateuserprofile');
+
+    Route::get('deletesignature/{username}', 'DMS\Auth\RegisterController@deletesignature');
 
     // Menu
     Route::get('getmenulist/{url}', 'DMS\Auth\MenuController@show');
@@ -136,6 +140,7 @@ Route::group(['prefix' => 'dms'], function () {
     // Approval List
     Route::get('/getallapprvoutstanding/{user}/{level?}', 'DMS\Core\ApprovalController@outstandingApproval');
     Route::get('/getallapprvoutstandingbyapprover/{user}/{inoutbox?}', 'DMS\Core\ApprovalController@outstandingApprovalByApprover');
+    Route::post('/filtermail/{user}/{inout}', 'DMS\Core\ApprovalController@filtermail');
     Route::get('/getdocsenttoapprover/{user}', 'DMS\Core\ApprovalController@listDocSenttoApprover');
 
     // Document List
@@ -155,13 +160,30 @@ Route::group(['prefix' => 'dms'], function () {
     //Print Cover
     Route::post('/printcover', 'DMS\Core\DocsManageController@printcover');
 
-    //Circular Ten
-    // Route::post('/storecirten', 'DMS\Customs\CircullarTenController@store');
-    // Route::get('/testpdf', 'DMS\Customs\CircullarTenController@testSnappy');
-    // Route::get('/testfolder/{id}', 'DMS\Customs\CircullarTenController@testfolder');
+    //Scheduller
+    Route::group(['prefix' => 'scheduller'], function () {
+        Route::get('/getallpendingapproval', 'DMS\Core\ApprovalController@checkPendingApproval');
+    });
+});
 
-    // Route::get('/getallcirten', 'DMS\Customs\CircullarTenController@getcirten');
+Route::group(['prefix' => 'hrms'], function () {
 
-    // Route::get('/cekallfiles/{filename}', 'DMS\Customs\CircullarTenController@checkfile');
-    // Route::post('/deletefiles', 'DMS\Customs\CircullarTenController@deletefiles');
+    // Register
+    Route::post('registeruser', 'HRMS\Auth\RegisterController@create');    
+    Route::get('verify/{username}/{token}', 'HRMS\Auth\RegisterController@verify');
+    
+    // Login
+    Route::post('login', 'HRMS\Auth\LoginController@Login');
+
+    // Deep Login
+    // Menu Manage
+    Route::get('getmenulist/{url}', 'HRMS\Auth\MenuController@show');
+    Route::get('getmenu/{id}', 'HRMS\Auth\MenuController@cekmenuid');
+    Route::get('getmenuall/{cek}', 'HRMS\Auth\MenuController@index');
+    Route::post('menuadd/{method}', 'HRMS\Auth\MenuController@getmenu');
+
+    // Role
+    Route::get('/getallrole', 'HRMS\Auth\RoleController@index');
+    Route::get('/getrole/{id}', 'HRMS\Auth\RoleController@cekroleid');
+    Route::post('/roleadd/{met}', 'HRMS\Auth\RoleController@store');
 });
