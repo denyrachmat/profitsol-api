@@ -14,6 +14,8 @@ use App\Models\DMS\Core\ApprovalNotification;
 use Illuminate\Support\Facades\Mail;
 use App\Jobs\DMS\NotificationEmailQueue;
 use Illuminate\Support\Facades\DB;
+use Excel;
+use App\Exports\DMS\exportDocumentStatus;
 
 use App\Jobs\DMS\ReminderPendingApprovalJobs;
 
@@ -189,20 +191,30 @@ class ApprovalController extends Controller
                             $hasilsuccess[$value['apprv_approver']] = $this->outstandingApprovalByApprover($value['apprv_approver'], null, true)->items();
                         }
                     } else { // Jika approver yang approve
-                        $cekLevelHist = ApprovalHist::where('apprv_hist_doc', $value['doc_id'])->where('apprv_hist_user', $req->user_apprv)->first();
+                        // $cekLevelHist = ApprovalHist::where('apprv_hist_doc', $value['doc_id'])->where('apprv_hist_user', $req->user_apprv)->first();
+                        //Get last inserted approval
+                        $cekLevelHist = ApprovalHist::where('apprv_hist_doc', $value['doc_id'])
+                            ->with('doc.users')
+                            ->where('approver_level', '<>', null)
+                            ->latest()
+                            ->first();
 
-                        $masterApprv = ApprovalMaster::where('apprv_author', $value['doc_author'])->where('apprv_id', $req->master_apprv);
+                        // $ceklagi = ApprovalMaster::where('apprv_author', $value['doc_author'])
+                        //     ->where('apprv_id', $req->master_apprv)
+                        //     ->where('apprv_approver', $req->user_apprv)
+                        //     ->where('apprv_level', '<>', $cekLevelHist->approver_level)
+                        //     ->orderBy('created_at', 'asc')
+                        //     ->first();
 
-                        $ceklagi = clone $masterApprv->where('apprv_approver', $req->user_apprv)->where('apprv_level', '<>', $cekLevelHist->approver_level)->orderBy('created_at', 'asc')->first();
-
+                        //Update apprv_hist_to_id to latest approval hist
                         ApprovalNotification::where('apprv_hist_from_id', $req->parent_apprv)
                             ->update([
                                 'apprv_hist_to_id' => $idhistory,
                             ]);
 
-                        $ceknextapprover = ApprovalMaster::where('apprv_author', $ceklagi['apprv_author'])
+                        $ceknextapprover = ApprovalMaster::where('apprv_author', $cekLevelHist->doc->users->username)
                             ->where('apprv_id', $req->master_apprv)
-                            ->where('apprv_level', $ceklagi['apprv_level'] + 1)
+                            ->where('apprv_level', strval(intval($cekLevelHist['approver_level']) + 2))
                             ->get()
                             ->toArray();
 
@@ -215,39 +227,43 @@ class ApprovalController extends Controller
                                     'apprv_content_id' => $nextid,
                                     'apprv_id' => $req->master_apprv,
                                     'content_def_id' => $req->contentDefine,
-                                    'approver_level' => $ceklagi['apprv_level'],
-                                    'approver_level_to' => $ceklagi['apprv_level'] + 1
+                                    'approver_level' => $cekLevelHist['approver_level'] + 1,
+                                    'approver_level_to' => $valueDet['apprv_level']
                                 ]);
 
                                 $hasilsuccess[$valueDet['apprv_approver']] = $this->outstandingApprovalByApprover($valueDet['apprv_approver'], null, true)->items();
 
                                 ApprovalHist::where('id', $idhistory)->update([
-                                    'approver_level' => $ceklagi['apprv_level']
+                                    'approver_level' => $cekLevelHist['approver_level'] + 1
                                 ]);
                             }
                         } else {
                             ApprovalNotification::create([
                                 'apprv_user_from' => $req->user_apprv,
-                                'apprv_user_to' => $ceklagi['apprv_author'],
+                                'apprv_user_to' => $cekLevelHist->doc->users->username,
                                 'apprv_hist_from_id' => $idhistory,
                                 'apprv_content_id' => $nextid,
                                 'apprv_id' => $req->master_apprv,
                                 'content_def_id' => $req->contentDefine,
-                                'approver_level' => $ceklagi['apprv_level'],
+                                'approver_level' => $cekLevelHist['approver_level'] + 1,
                                 'approver_level_to' => 0
                             ]);
 
                             ApprovalHist::where('id', $idhistory)->update([
-                                'approver_level' => $ceklagi['apprv_level']
+                                'approver_level' => $cekLevelHist['approver_level'] + 1
                             ]);
-
-                            $hasilsuccess[$ceklagi['apprv_author']] = $this->outstandingApprovalByApprover($ceklagi['apprv_author'], null, true)->items();
 
                             if ($req->status == "1") {
                                 DocsMaster::where('doc_id', $value['doc_id'])->update([
                                     'doc_stat_flag' => '2'
                                 ]);
+                            } else {
+                                DocsMaster::where('doc_id', $value['doc_id'])->update([
+                                    'doc_stat_flag' => '0'
+                                ]);
                             }
+
+                            $hasilsuccess[$cekLevelHist->doc->users->username] = $this->outstandingApprovalByApprover($cekLevelHist->doc->users->username, null, true)->items();
                         }
                     }
                 }
@@ -294,8 +310,43 @@ class ApprovalController extends Controller
         $datadummy = $data;
         $html = '<h2>Hello ' . $datadummy->userTo->first_name . ',</h2>
         <!-- <p>We have inform you about your pending approval and need your action immediately.</p> -->
-        <p>We have got a notification for you, please login to link below and take an action immediately.</p>
+        <p>We have a notification for you, please login to link below and take an action immediately.</p>
         <p><a href="http://192.168.100.32:8081/dms">STX DMS</a></p><hr>';
+
+        $tableapprv = '<table style="border-collapse: collapse; width: 100%; height: 32px;" border="1">
+        <tbody>
+          <tr style="height: 16px;font-weight: bold">
+            <td>No</td>
+            <td>Signature</td>
+            <td>Username</td>
+            <td>Reason</td>
+            <td>Signed At</td>
+          </tr>';
+
+        $no = 1;
+        foreach (array_reverse($this->arrfet($datadummy->histFromByContentId[0], [])) as $key => $value) {
+            if ($value->apprv_hist_status == "1") {
+                $tableapprv .= '<tr>';
+                $tableapprv .= '<td>' . $no . '</td>';
+                $tableapprv .= "<td>" . $value->users->username . '</td>';
+                $tableapprv .= '<td>@' . $value->users->username . '</td>';
+                $tableapprv .= '<td>' . $value->apprv_hist_comment . '</td>';
+                $tableapprv .= '<td>' . $value->created_at . '</td>';
+                $tableapprv .= '</tr>';
+            } else {
+                $tableapprv .= '<tr style="background-color: red">';
+                $tableapprv .= '<td>' . $no . '</td>';
+                $tableapprv .= "<td>" . $value->users->username . '</td>';
+                $tableapprv .= '<td>@' . $value->users->username . '</td>';
+                $tableapprv .= '<td>' . $value->apprv_hist_comment . '</td>';
+                $tableapprv .= '<td>' . $value->created_at . '</td>';
+                $tableapprv .= '</tr>';
+            }
+
+            $no++;
+        }
+
+        $html .= $tableapprv;
 
         if ($datadummy->contentDefine !== null) {
             $html .= $datadummy->contentDefine->contentMstr->content_html;
@@ -305,30 +356,7 @@ class ApprovalController extends Controller
             }
 
             if (strpos($html, '|approval_list_here|')) {
-                $tableapprv = '<table style="border-collapse: collapse; width: 100%; height: 32px;" border="1">
-                <tbody>
-                  <tr style="height: 16px;font-weight: bold">
-                    <td>No</td>
-                    <td>Signature</td>
-                    <td>Username</td>
-                    <td>Reason</td>
-                    <td>Signed At</td>
-                  </tr>';
-
-                $no = 1;
-                foreach (array_reverse($this->arrfet($datadummy->histFromByContentId[0], [])) as $key => $value) {
-                    $tableapprv .= '<tr>';
-                    $tableapprv .= '<td>' . $no . '</td>';
-                    $tableapprv .= "<td>" . $value->users->username . '</td>';
-                    $tableapprv .= '<td>@' . $value->users->username . '</td>';
-                    $tableapprv .= '<td>' . $value->apprv_hist_comment . '</td>';
-                    $tableapprv .= '<td>' . $value->created_at . '</td>';
-                    $tableapprv .= '</tr>';
-
-                    $no++;
-                }
-
-                $html = str_replace('|approval_list_here|', $tableapprv, $html);
+                $html = str_replace('|approval_list_here|', '', $html);
             }
         }
 
@@ -475,6 +503,12 @@ class ApprovalController extends Controller
                 $q->with('doc.users');
                 $q->with('allApproverList');
             }])
+            ->with(['histToBySameLevel' => function ($q) use ($selecthist) {
+                $q->select($selecthist);
+                $q->with('users');
+                $q->with('doc.users');
+                $q->with('allApproverList');
+            }])
             ->with('contentVariable')
             ->with('contentDefine.contentMstr')
             ->with(['userFrom', 'userTo'])
@@ -531,17 +565,33 @@ class ApprovalController extends Controller
         return $this->outstandingApprovalByApprover($user, $type, false, $data);
     }
 
-    public function listDocSenttoApprover($user)
+    public function listDocSenttoApprover($user, $lastapprvstat = null, $date = null)
     {
-        return ApprovalHist::where('apprv_hist_user', $user)
+        $hasil = ApprovalHist::where('apprv_hist_user', $user)
             ->where('apprv_parent', '0')
-            ->with('doc.users')
             ->with('allApproverList')
             ->with('getallapprover.user')
-            ->with('lastapprv')
+            ->with('lastapprv.users')
             ->orderBy('created_at', 'desc')
-            ->get()
-            ->toArray();
+            ->with('doc.users');
+
+        if (empty($lastapprvstat) && empty($date)) {
+            $hasil;
+        } else {
+            if (!empty($lastapprvstat)) {
+                $hasil->whereHas('doc', function ($q) use ($lastapprvstat) {
+                    $q->where('doc_stat_flag', $lastapprvstat == 'partial' ? '1' : ($lastapprvstat == 'full' ? '2' : '0'));
+                    $q->with('users');
+                });
+            } 
+            
+            if (!empty($date)) {
+                $hasil->whereBetween('created_at', [$date .' 00:00:00', $date . ' 23:59:59']);
+            }
+        }
+
+        return $hasil
+            ->get();
     }
 
     public function ApprovalList($user)
@@ -687,21 +737,26 @@ class ApprovalController extends Controller
             }])
             ->with('userTo')
             ->get();
-        
+
         if (empty($ceknotifkosong)) {
             return 'No pending approval';
         } else {
             foreach ($ceknotifkosong as $key => $value) {
                 try {
                     $insertJob = (new ReminderPendingApprovalJobs($value->histFromByContentId, $value->userTo));
-    
+
                     dispatch($insertJob);
                 } catch (\Exception $th) {
                     logger('Email error Reminder Notification');
                 }
             }
-    
+
             return 'Email success';
         }
+    }
+
+    public function downloadDocstatus(Request $req)
+    {
+        return Excel::download(new exportDocumentStatus($req->data), 'StatusDocument.xlsx');
     }
 }

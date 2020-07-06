@@ -25,6 +25,7 @@ class HrmsUserEducationDet extends Migration
             $table->year('user_edu_year_from')->nullable();
             $table->date('user_edu_month_to')->nullable();
             $table->year('user_edu_year_to')->nullable();
+            $table->timestamps();
         });
     }
 

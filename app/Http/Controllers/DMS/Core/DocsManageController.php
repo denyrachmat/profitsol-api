@@ -31,8 +31,8 @@ class DocsManageController extends Controller
     {
         if (empty($idfolder)) {
             return DocsMaster::where('doc_author', $user)
-                ->with(['users','apprvhist'])
-                ->with(['currentversion' => function($q){
+                ->with(['users', 'apprvhist'])
+                ->with(['currentversion' => function ($q) {
                     $q->with(['doc.apprvhist']);
                     $q->with('prevVersion.doc.apprvhist');
                 }])
@@ -84,8 +84,8 @@ class DocsManageController extends Controller
                     // delete history untuk meminta ulang approval di approval hist
                     $cekhist = ApprovalHist::where('apprv_hist_doc', $id)->where('apprv_hist_status', '2')->first();
 
-                    $cekhistafterupdate = ApprovalMaster::where('apprv_id', $cekhist->id_approval)->where('apprv_level',strval(intval($cekhist->approver_level)))->get();
-                    
+                    $cekhistafterupdate = ApprovalMaster::where('apprv_id', $cekhist->id_approval)->where('apprv_level', strval(intval($cekhist->approver_level)))->get();
+
                     foreach ($cekhistafterupdate as $key => $value) {
                         $this->emailsender($value->apprv_approver, $id);
                     }
@@ -96,13 +96,17 @@ class DocsManageController extends Controller
                     ]);
 
                     ApprovalNotification::where('apprv_hist_from_id', $cekhist->id)->delete();
-        
+
                     ApprovalHist::where('apprv_hist_doc', $id)->where('apprv_hist_status', '2')->delete();
+
+                    DocsMaster::where('doc_id', $iddoc)->update([
+                        'doc_lapprv_flag' => '0'
+                    ]);
 
                     DocsMaster::where('doc_id', $id)->update([
                         'doc_stat_flag' => '1',
                         'doc_lapprv_flag' => '1'
-                    ]);                    
+                    ]);
                 }
             } else {
                 $id = $this->storedocument($req);
@@ -130,17 +134,23 @@ class DocsManageController extends Controller
     public function resendrejecteddoc($id)
     {
         $cekhist = ApprovalHist::where('apprv_hist_doc', $id)->where('apprv_hist_status', '2')->first();
-        
-        ApprovalNotification::where('apprv_hist_to_id', $cekhist->id)->update([
-            'apprv_hist_to_id' => NULL,
-            'apprv_read_flag' => NULL
-        ]);
+        if (!empty($cekhist)) {
+            DocsMaster::where('doc_id', $cekhist->id)->update([
+                'doc_lapprv_flag' => '1',
+                'doc_stat_flag' => '1'
+            ]);
 
-        ApprovalNotification::where('apprv_hist_from_id', $cekhist->id)->delete();
+            ApprovalNotification::where('apprv_hist_to_id', $cekhist->id)->update([
+                'apprv_hist_to_id' => NULL,
+                'apprv_read_flag' => NULL
+            ]);
 
-        ApprovalHist::where('apprv_hist_doc', $id)->where('apprv_hist_status', '2')->delete();    
+            ApprovalNotification::where('apprv_hist_from_id', $cekhist->id)->delete();
 
-        return 'success';
+            ApprovalHist::where('apprv_hist_doc', $id)->where('apprv_hist_status', '2')->delete();
+
+            return 'success';
+        }
     }
 
     public function storedocument($req)
@@ -301,132 +311,136 @@ class DocsManageController extends Controller
     {
         $getpath = DocsMaster::where('doc_id', $iddoc)->first();
         $pdf = new Fpdi();
+        try{            
+            $pageCount = $pdf->setSourceFile('D:/data/' . $getpath['doc_real_path'] . $getpath['doc_name']);
+            for ($pageNo = 1; $pageNo <= $pageCount; $pageNo++) {
+                $templateId = $pdf->importPage($pageNo);
+                // get the size of the imported page
+                $size = $pdf->getTemplateSize($templateId);
 
-        $pageCount = $pdf->setSourceFile('D:/data/' . $getpath['doc_real_path'] . $getpath['doc_name']);
-        for ($pageNo = 1; $pageNo <= $pageCount; $pageNo++) {
-            $templateId = $pdf->importPage($pageNo);
-            // get the size of the imported page
-            $size = $pdf->getTemplateSize($templateId);
-
-            // create a page (landscape or portrait depending on the imported page size)
-            if ($size[0] > $size[1]) {
-                $pdf->AddPage('L', array($size[0], $size[1]));
-            } else {
-                $pdf->AddPage('P', array($size[0], $size[1]));
-            }
-
-            $arrApprover = ApprovalMaster::where('apprv_id', $author)->orderBy('apprv_level', 'desc')->first();
-            $lastApprove = ApprovalHist::where('apprv_hist_doc', $iddoc)->orderBy('approver_level', 'desc')->first();
-
-            if ($arrApprover['apprv_level'] == $lastApprove['approver_level']) {
-                $pdf->SetFont('Arial', 'B', 30);
-                $pdf->SetTextColor(255, 192, 203);
-                $pdf->Text(($pdf->GetPageWidth() / 2) - $pdf->GetStringWidth('A P P R O V E D') / 2, $pdf->GetPageHeight() / 1.1, 'A P P R O V E D', 45);
-            } else {
-                if ($lastApprove->apprv_hist_status == 1) {
-                    $pdf->SetFont('Arial', 'B', 30);
-                    $pdf->SetTextColor(255, 192, 203);
-                    $pdf->Text(($pdf->GetPageWidth() / 2) - $pdf->GetStringWidth('D R A F T') / 2, $pdf->GetPageHeight() / 1.1, 'D R A F T', 45);
-                } else {
-                    $pdf->SetFont('Arial', 'B', 30);
-                    $pdf->SetTextColor(255, 192, 203);
-                    $pdf->Text(($pdf->GetPageWidth() / 2) - $pdf->GetStringWidth('R E J E C T E D') / 2, $pdf->GetPageHeight() / 1.1, 'R E J E C T E D', 45);
-                }
-            }
-
-            $pdf->useTemplate($templateId);
-
-            $pdf->SetFont('Helvetica');
-            $pdf->SetXY(5, 5);
-
-            $pdf->SetFont('Helvetica', '', 12);
-
-            $pdf->SetTextColor(0, 0, 0);
-
-            if ($pageNo === $pageCount) {
+                // create a page (landscape or portrait depending on the imported page size)
                 if ($size[0] > $size[1]) {
                     $pdf->AddPage('L', array($size[0], $size[1]));
                 } else {
                     $pdf->AddPage('P', array($size[0], $size[1]));
                 }
 
-                $pdf->SetXY(10, 15);
+                $arrApprover = ApprovalMaster::where('apprv_id', $author)->orderBy('apprv_level', 'desc')->first();
+                $lastApprove = ApprovalHist::where('apprv_hist_doc', $iddoc)->orderBy('approver_level', 'desc')->first();
 
-                $pdf->Write(0, 'Approval Status');
-
-                // $cekapprvset = ApprovalMaster::where('apprv_id', $author)->with('user')->get()->toArray();
-                $cekhist = ApprovalHist::where('apprv_hist_doc', $iddoc)
-                    ->where('apprv_parent', '<>', '0')
-                    ->with('users.signature')
-                    ->orderBy('created_at', 'asc')
-                    ->get();
-
-                foreach ($cekhist as $key => $value) {
-                    $pdf->SetXY(10, (1 + $key) * 20);
-
-                    // $cellWidth = $pdf->GetStringWidth($value['apprv_hist_comment']) < 100 ? 100 : $pdf->GetStringWidth($value['apprv_hist_comment']) + 25;
-                    $cellWidth = $pdf->GetPageWidth() / 1.4;
-
-                    $pdf->Cell(40, 5, ' ', 'LTR', 0, 'L', 0);   // empty cell with left,top, and right borders
-                    if ($value['apprv_hist_status'] == '1') {
-                        $pdf->Cell($cellWidth, 5, 'Digitally signed by @' . $value['users']['username'], 'LTR', 0, 'L', 0);
+                if ($arrApprover['apprv_level'] == $lastApprove['approver_level']) {
+                    $pdf->SetFont('Arial', 'B', 30);
+                    $pdf->SetTextColor(255, 192, 203);
+                    $pdf->Text(($pdf->GetPageWidth() / 2) - $pdf->GetStringWidth('A P P R O V E D') / 2, $pdf->GetPageHeight() / 1.1, 'A P P R O V E D', 45);
+                } else {
+                    if ($lastApprove->apprv_hist_status == 1) {
+                        $pdf->SetFont('Arial', 'B', 30);
+                        $pdf->SetTextColor(255, 192, 203);
+                        $pdf->Text(($pdf->GetPageWidth() / 2) - $pdf->GetStringWidth('D R A F T') / 2, $pdf->GetPageHeight() / 1.1, 'D R A F T', 45);
                     } else {
-                        $pdf->Cell($cellWidth, 5, 'Rejected by @' . $value['users']['username'], 'LTR', 0, 'L', 0);
+                        $pdf->SetFont('Arial', 'B', 30);
+                        $pdf->SetTextColor(255, 192, 203);
+                        $pdf->Text(($pdf->GetPageWidth() / 2) - $pdf->GetStringWidth('R E J E C T E D') / 2, $pdf->GetPageHeight() / 1.1, 'R E J E C T E D', 45);
+                    }
+                }
+
+                $pdf->useTemplate($templateId);
+
+                $pdf->SetFont('Helvetica');
+                $pdf->SetXY(5, 5);
+
+                $pdf->SetFont('Helvetica', '', 12);
+
+                $pdf->SetTextColor(0, 0, 0);
+
+                if ($pageNo === $pageCount) {
+                    if ($size[0] > $size[1]) {
+                        $pdf->AddPage('L', array($size[0], $size[1]));
+                    } else {
+                        $pdf->AddPage('P', array($size[0], $size[1]));
                     }
 
-                    $pdf->Ln();
+                    $pdf->SetXY(10, 15);
 
-                    $pdf->SetFont('Times', 'BIU');
-                    if ($value['apprv_hist_status'] == '1') {
-                        $pdf->Cell(40, 5, '', 'LR', 0, 'C', 0);  // cell with left and right borders                       
-                        
-                        if ($value['users']->signature !== null && $value['users']->signature->image_signature !== '') {
-                            $datauri = base64_decode($value['users']->signature->image_signature);
-                            $img  = explode(',',$datauri,2);
-                            $pic = 'data://text/plain;base64,'. $img[1];
-                            
-                            $pdf->Image($pic, 20, (1 + $key) * 20 - 2,20,20,'png');
+                    $pdf->Write(0, 'Approval Status');
+
+                    // $cekapprvset = ApprovalMaster::where('apprv_id', $author)->with('user')->get()->toArray();
+                    $cekhist = ApprovalHist::where('apprv_hist_doc', $iddoc)
+                        ->where('apprv_parent', '<>', '0')
+                        ->with('users.signature')
+                        ->orderBy('created_at', 'asc')
+                        ->get();
+
+                    foreach ($cekhist as $key => $value) {
+                        $pdf->SetXY(10, (1 + $key) * 20);
+
+                        // $cellWidth = $pdf->GetStringWidth($value['apprv_hist_comment']) < 100 ? 100 : $pdf->GetStringWidth($value['apprv_hist_comment']) + 25;
+                        $cellWidth = $pdf->GetPageWidth() / 1.4;
+
+                        $pdf->Cell(40, 5, ' ', 'LTR', 0, 'L', 0);   // empty cell with left,top, and right borders
+                        if ($value['apprv_hist_status'] == '1') {
+                            $pdf->Cell($cellWidth, 5, 'Digitally signed by @' . $value['users']['username'], 'LTR', 0, 'L', 0);
+                        } else {
+                            $pdf->Cell($cellWidth, 5, 'Rejected by @' . $value['users']['username'], 'LTR', 0, 'L', 0);
                         }
-                    } else {
+
+                        $pdf->Ln();
+
+                        $pdf->SetFont('Times', 'BIU');
+                        if ($value['apprv_hist_status'] == '1') {
+                            $pdf->Cell(40, 5, '', 'LR', 0, 'C', 0);  // cell with left and right borders                       
+
+                            if ($value['users']->signature !== null && $value['users']->signature->image_signature !== '') {
+                                $datauri = base64_decode($value['users']->signature->image_signature);
+                                $img  = explode(',', $datauri, 2);
+                                $pic = 'data://text/plain;base64,' . $img[1];
+
+                                $pdf->Image($pic, 20, (1 + $key) * 20 - 2, 20, 20, 'png');
+                            }
+                        } else {
+                            $pdf->SetFont('Helvetica');
+                            $pdf->SetTextColor(255, 0, 0);
+                            $pdf->Cell(40, 5, 'REJECTED', 'LR', 0, 'C', 0);  // cell with left and right borders
+                            $pdf->SetTextColor(0, 0, 0);
+                        }
                         $pdf->SetFont('Helvetica');
-                        $pdf->SetTextColor(255, 0, 0);
-                        $pdf->Cell(40, 5, 'REJECTED', 'LR', 0, 'C', 0);  // cell with left and right borders
-                        $pdf->SetTextColor(0, 0, 0);
+                        $pdf->Cell(20, 5, 'Email', 'L', 0, 'L', 0);
+                        $pdf->Cell($cellWidth - 20, 5, ': ' . $value['users']["email"], 'R', 0, 'L', 0);
+                        // $pdf->Cell(50, 5, '[ x ] che2', 'LR', 0, 'L', 0);
+
+                        $pdf->Ln();
+                        $pdf->Cell(40, 5, '', 'LR', 0, 'LR', 0);   // empty cell with left,bottom, and right borders
+                        $pdf->Cell(20, 5, 'Reason', 'L', 0, 'L', 0);
+                        $pdf->Cell($cellWidth - 20, 5, ': ' . $value['apprv_hist_comment'], 'R', 0, 'L', 0);
+                        // $pdf->Cell(50, 5, '[ o ] def4', 'LRB', 0, 'L', 0);
+
+                        $pdf->Ln();
+
+                        $pdf->SetFont('Times', 'BIU');
+                        // $pdf->Cell(40, 5, $value['users']["first_name"] . ' ' . $value['users']["last_name"], 'LR', 0, 'C', 0);
+                        $pdf->Cell(40, 5, $value['apprv_hist_status'] == '1' ? $value['users']["first_name"] . ' ' . $value['users']["last_name"] : '', 'LBR', 0, 'C', 0);   // empty cell with left,bottom, and right borders
+                        $pdf->SetFont('Helvetica');
+                        $pdf->Cell(20, 5, 'Date', 'LB', 0, 'L', 0);
+                        $pdf->Cell($cellWidth - 20, 5, ': ' . $value['created_at'], 'BR', 0, 'L', 0);
+                        // $pdf->Cell(50, 5, '[ o ] def4', 'LRB', 0, 'L', 0);
+
+                        $pdf->Ln();
+                        $pdf->Ln();
+                        $pdf->Ln();
                     }
-                    $pdf->SetFont('Helvetica');
-                    $pdf->Cell(20, 5, 'Email', 'L', 0, 'L', 0);
-                    $pdf->Cell($cellWidth - 20, 5, ': ' . $value['users']["email"], 'R', 0, 'L', 0);
-                    // $pdf->Cell(50, 5, '[ x ] che2', 'LR', 0, 'L', 0);
-
-                    $pdf->Ln();
-                    $pdf->Cell(40, 5, '', 'LR', 0, 'LR', 0);   // empty cell with left,bottom, and right borders
-                    $pdf->Cell(20, 5, 'Reason', 'L', 0, 'L', 0);
-                    $pdf->Cell($cellWidth - 20, 5, ': ' . $value['apprv_hist_comment'], 'R', 0, 'L', 0);
-                    // $pdf->Cell(50, 5, '[ o ] def4', 'LRB', 0, 'L', 0);
-
-                    $pdf->Ln();
-
-                    $pdf->SetFont('Times', 'BIU');
-                    // $pdf->Cell(40, 5, $value['users']["first_name"] . ' ' . $value['users']["last_name"], 'LR', 0, 'C', 0);
-                    $pdf->Cell(40, 5, $value['apprv_hist_status'] == '1' ? $value['users']["first_name"] . ' ' . $value['users']["last_name"] : '', 'LBR', 0, 'C', 0);   // empty cell with left,bottom, and right borders
-                    $pdf->SetFont('Helvetica');
-                    $pdf->Cell(20, 5, 'Date', 'LB', 0, 'L', 0);
-                    $pdf->Cell($cellWidth - 20, 5, ': ' . $value['created_at'], 'BR', 0, 'L', 0);
-                    // $pdf->Cell(50, 5, '[ o ] def4', 'LRB', 0, 'L', 0);
-
-                    $pdf->Ln();
-                    $pdf->Ln();
-                    $pdf->Ln();
                 }
             }
+
+            return $pdf->Output("", "S");
+
+            $ceklastapprover = ApprovalMaster::where('apprv_id', $author)->orderBy('apprv_level', 'desc')->first();
+            $cekjumlahyangapprove = ApprovalHist::where('apprv_hist_doc', $iddoc)->where('apprv_parent', '<>', '0')->orderBy('approver_level', 'desc')->first();
+
+            return $this->waterMark($pdf->Output("", "S"), $ceklastapprover, $cekjumlahyangapprove);
+        } catch (\Exception $e) {
+            return File::get('D:/data/' . $getpath['doc_real_path'] . $getpath['doc_name']);
+            // return $pdf->setSourceFile();
         }
-
-        return $pdf->Output("", "S");
-
-        $ceklastapprover = ApprovalMaster::where('apprv_id', $author)->orderBy('apprv_level', 'desc')->first();
-        $cekjumlahyangapprove = ApprovalHist::where('apprv_hist_doc', $iddoc)->where('apprv_parent', '<>', '0')->orderBy('approver_level', 'desc')->first();
-
-        return $this->waterMark($pdf->Output("", "S"), $ceklastapprover, $cekjumlahyangapprove);
     }
 
     public function waterMark($pdf, $arrApprover, $lastApprove)
@@ -485,7 +499,7 @@ class DocsManageController extends Controller
     {
         if ($arr->prevVersion !== null) {
             return $this->parsingdocver($arr->prevVersion, array_merge($passdata, [$arr]));
-        } else {                
+        } else {
             return array_merge($passdata, [$arr]);
         }
     }
@@ -493,7 +507,7 @@ class DocsManageController extends Controller
     public function emailsender($user, $id_docnew)
     {
         $user = UsersMaster::where('username', $user)->first();
-        $datanya = VerMaster::where('ver_docnm',$id_docnew)
+        $datanya = VerMaster::where('ver_docnm', $id_docnew)
             ->with(['doc.apprvhist'])
             ->with('prevVersion.doc.apprvhist')
             ->first();
@@ -502,7 +516,7 @@ class DocsManageController extends Controller
             logger([$user, $this->parsingdocver($datanya, [])]);
             $insertJob = (new UpdatedDocsEmailJobs($user, $this->parsingdocver($datanya, [])));
 
-            dispatch($insertJob);            
+            dispatch($insertJob);
 
             return 'Email success';
         } catch (\Exception $th) {
@@ -512,9 +526,9 @@ class DocsManageController extends Controller
 
     public function sharedoc($iddoc)
     {
-        $cekdata = DocsMaster::where('doc_id',$iddoc)->first();
-        
-        return DocsMaster::where('doc_id',$iddoc)->update([
+        $cekdata = DocsMaster::where('doc_id', $iddoc)->first();
+
+        return DocsMaster::where('doc_id', $iddoc)->update([
             'doc_stat_flag' => $cekdata->doc_stat_flag == '3' ? '2' : '3'
         ]);
     }

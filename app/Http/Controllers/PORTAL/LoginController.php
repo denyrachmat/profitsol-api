@@ -57,27 +57,31 @@ class LoginController extends Controller
                 return $cek->with(['menu' => function ($q) {
                     $q->orderBy('menu_id');
                     $q->where('menu_parent', 0);
-                    $q->with(['child' => function ($qchild) {
+                    $q->with(['childDeeper' => function ($qchild) {
                         $qchild->orderBy('menu_id','asc');
                         $qchild->wherehas('role');
                         $qchild->with(['role' => function ($qDet) {
                             $qDet->with('user');
                             $qDet->has('user');
+                            $qDet->orderBy('menu_id','asc');
                         }]);
                     }]);
                 }])->first();
             } else {
                 if (Hash::check($req->password, $cek->first()->password_hash)) {
-                    return $cek->with(['menu' => function ($q) {
+                    $cek2 = clone $cek->first();
+                    return $cek->with(['menu' => function ($q) use ($cek2) {
                         $q->orderBy('menu_id');
                         $q->where('menu_parent', 0);
-                        $q->with(['child' => function ($qchild) {
+                        $q->with(['childDeeper' => function ($qchild) use ($cek2) {
                             $qchild->orderBy('menu_id','asc');
-                            $qchild->wherehas('role');
-                            $qchild->with(['role' => function ($qDet) {
+                            $qchild->wherehas('role', function ($qDet) use ($cek2) {
+                                $qDet->where('role_identifier',$cek2->role_id);
                                 $qDet->with('user');
                                 $qDet->has('user');
-                            }]);
+                                // $qDet->orderBy('menu_id','asc');
+                            });
+                            $qchild->with('role');
                         }]);
                     }])->first();
                 } else {

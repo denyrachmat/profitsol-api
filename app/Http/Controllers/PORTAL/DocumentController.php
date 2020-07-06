@@ -18,7 +18,10 @@ class DocumentController extends Controller
     public function index($id_menu = null)
     {
         if (!empty($id_menu)) {
-            return ContentMaster::with(['contentDet','contentDef'])->whereHas('mappingApp')
+            return ContentMaster::with(['contentDet','contentDef'])
+            ->whereHas('mappingApp', function ($q) use($id_menu) {
+                $q->where('id', $id_menu);
+            })
             ->with('mappingApp')
             ->get()
             ->toArray();
@@ -99,5 +102,18 @@ class DocumentController extends Controller
         ContentDefine::where('apprv_mstr_id',$id)->delete();
 
         return 'success';
+    }
+
+    public function getContent($id)
+    {
+        $getcontentcreate = ContentDefine::where('content_mstr_id', $id)
+            ->with(['contentMstr' => function ($q) {
+                $q->with(['contentDet','contentDef']);
+                $q->with('mappingApp');
+            }])
+            ->with('contentCreator')
+            ->first();
+
+        return $getcontentcreate;
     }
 }

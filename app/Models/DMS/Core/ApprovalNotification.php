@@ -33,6 +33,11 @@ class ApprovalNotification extends Model
 
     public function histToByContentId()
     {
+        return $this->hasMany('App\Models\DMS\Core\ApprovalHist',['content_creator_id','apprv_hist_user','id_approval','approver_level'], ['apprv_content_id','apprv_user_to','apprv_id','approver_level_to']);
+    }
+
+    public function histToBySameLevel()
+    {
         return $this->hasMany('App\Models\DMS\Core\ApprovalHist',['content_creator_id','id_approval','approver_level'], ['apprv_content_id','apprv_id','approver_level_to']);
     }
 

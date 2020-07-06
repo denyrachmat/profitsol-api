@@ -17,6 +17,11 @@ class MenusPortal extends Model
     {
         return $this->hasMany('App\Models\PORTAL\MenusPortal','menu_parent','id');
     }
+    
+    public function childDeeper()
+    {
+        return $this->child()->with('childDeeper');
+    }
 
     public function role()
     {

@@ -46,13 +46,18 @@ Route::group(['prefix' => 'portal'], function () {
     Route::get('/getcontentdatadef', 'DMS\Core\ContentManageController@contentDefineData');
     Route::get('/getcontentall', 'PORTAL\DocumentController@index');
     Route::get('/getcontentall/{id_menu}', 'PORTAL\DocumentController@index');
-    Route::get('/deletecontent/{id_content}', 'PORTAL\DocumentController@deletecontent');    
+    Route::get('/deletecontent/{id_content}', 'PORTAL\DocumentController@deletecontent'); 
+
+    Route::get('/getcontentedit/{id}', 'PORTAL\DocumentController@getContent');   
 
     // Print Cover
     Route::post('/generatepdf', 'PORTAL\DocumentController@printcover');
     
     // Circular Ten
     Route::post('/uploadfilecirten', 'PORTAL\Customs\CircullarTenController@uploadCirtenAttachment');
+
+    Route::post('/uploadtogetdet', 'PORTAL\Customs\CircullarTenController@uploadtogetdet');
+
     Route::get('/showattachment/{pathid}/{name?}', 'PORTAL\Customs\CircullarTenController@getfiles');
     Route::post('/storecirten', 'PORTAL\Customs\CircullarTenController@store');
     
@@ -68,6 +73,8 @@ Route::group(['prefix' => 'dms'], function () {
     Route::post('login', 'DMS\Auth\LoginController@Login');
 
     Route::get('verify/{username}/{token}', 'DMS\Auth\RegisterController@verify');
+    
+    Route::get('portalloginoveride/{username}/{token}', 'DMS\Auth\LoginController@portalloginoveride');
 
     // -- Settings --
 
@@ -141,7 +148,9 @@ Route::group(['prefix' => 'dms'], function () {
     Route::get('/getallapprvoutstanding/{user}/{level?}', 'DMS\Core\ApprovalController@outstandingApproval');
     Route::get('/getallapprvoutstandingbyapprover/{user}/{inoutbox?}', 'DMS\Core\ApprovalController@outstandingApprovalByApprover');
     Route::post('/filtermail/{user}/{inout}', 'DMS\Core\ApprovalController@filtermail');
-    Route::get('/getdocsenttoapprover/{user}', 'DMS\Core\ApprovalController@listDocSenttoApprover');
+
+    Route::get('/getdocsenttoapprover/{user}/{apprstat?}/{date?}', 'DMS\Core\ApprovalController@listDocSenttoApprover');
+    Route::post('/downloaddocumentstatus', 'DMS\Core\ApprovalController@downloadDocstatus');
 
     // Document List
     Route::get('/getalldocumentbydivision', 'DMS\Core\DashboardController@getalldocumentbyrole');
@@ -176,6 +185,7 @@ Route::group(['prefix' => 'hrms'], function () {
     Route::post('login', 'HRMS\Auth\LoginController@Login');
 
     // Deep Login
+
     // Menu Manage
     Route::get('getmenulist/{url}', 'HRMS\Auth\MenuController@show');
     Route::get('getmenu/{id}', 'HRMS\Auth\MenuController@cekmenuid');
@@ -186,4 +196,19 @@ Route::group(['prefix' => 'hrms'], function () {
     Route::get('/getallrole', 'HRMS\Auth\RoleController@index');
     Route::get('/getrole/{id}', 'HRMS\Auth\RoleController@cekroleid');
     Route::post('/roleadd/{met}', 'HRMS\Auth\RoleController@store');
+
+    /*
+    -----------------------------------
+    CORE FUNCTION
+    -----------------------------------
+    */
+
+    // Need to authorization login
+    Route::middleware('api')->group(function ()
+    {
+        // Form and Component Creator
+        Route::post('/storeform', 'HRMS\Core\FormController@storeForm');
+        Route::get('/getform', 'HRMS\Core\FormController@getFormByID');
+        Route::get('/getform/{id}', 'HRMS\Core\FormController@getFormByID');
+    });
 });

@@ -9,6 +9,7 @@ use App\Models\PORTAL\CUSTOMS\CircularTen;
 use App\Models\PORTAL\DOCCREATOR\ContentCreator;
 use App\Models\DMS\Core\DocsLocationMaster;
 use App\Models\PORTAL\DOCCREATOR\ContentDefine;
+use App\Models\PORTAL\UsersPortal;
 
 use Illuminate\Support\Facades\App;
 use Symfony\Component\HttpFoundation\Response;
@@ -34,11 +35,11 @@ class CircullarTenController extends Controller
         $cekid = '';
         $cekdate = '';
         foreach ($form as $key_form => $value_form) {
-            if(strpos(strtolower($key_form),' id') || strpos(strtolower($key_form),' no')){
+            if (strpos(strtolower($key_form), ' id') || strpos(strtolower($key_form), ' no')) {
                 $cekid = $value_form;
             }
 
-            if(strpos(strtolower($key_form),'date ')){
+            if (strpos(strtolower($key_form), 'date ')) {
                 $cekdate = $value_form;
             }
             ContentCreator::create([
@@ -62,14 +63,14 @@ class CircullarTenController extends Controller
             'content_mstr_id' => $nextid,
             'apprv_mstr_id' => $req->content['id']
         ]);
-        
+
         if ($cekid == '') {
-            return 'CIRCULAR_TEN_' . date('ymdhis');
+            return $nextid . '_' . $req->file_name . date('Y-m-d');
         } else {
             if ($cekdate == '') {
-                return 'CIRCULAR_'. $cekid .'_'.date('Y-m-d');
+                return $nextid . '_' . $req->file_name . $cekid . '_' . date('Y-m-d');
             } else {
-                return 'CIRCULAR_'. $cekid .'_'.date('Y-m-d', strtotime($cekdate));
+                return $nextid . '_' . $req->file_name . $cekid . '_' . date('Y-m-d', strtotime($cekdate));
             }
         }
     }
@@ -155,16 +156,41 @@ class CircullarTenController extends Controller
         return CircularTen::get();
     }
 
+    public function uploadtogetdet(Request $req)
+    {
+        $nama_file = $req->file->getClientOriginalName();
+        $spliting = explode('_', $nama_file);
+
+        $cekvar = ContentCreator::where('content_creator_id', $spliting[0])->get();
+
+        if (count($cekvar) === 0) {
+            return response('Whoops, ID not found, or file name ID has been modified !', 422);
+        } else {
+            return $spliting[0];
+        }
+    }
+
     public function uploadCirtenAttachment(Request $req)
     {
         $nama_file = $req->file->getClientOriginalName();
         $rootfolder = 'Uploaded Docs/Circular Ten/' . $req->header('username') . '/' . date('Y') . '/' . date('F') . '/' . date('D') . ' - ' . date('d') . '/';
-        if (count($this->checkfile($nama_file)) == 0) {
+        // $req->file->storeAs($rootfolder, $nama_file);
+
+        // return 'success';
+        $cekusergroup = UsersPortal::where('username', $req->header('username'))->with('divisi')->first();
+
+        if ($cekusergroup->role_id === 'USER_PPC') {
             $req->file->storeAs($rootfolder, $nama_file);
 
             return 'success';
         } else {
-            return response('File ' . $nama_file . ' exists, please add other file !', 422);
+            if (count($this->checkfile($nama_file)) == 0) {
+                $req->file->storeAs($rootfolder, $nama_file);
+    
+                return 'success';
+            } else {
+                return response('File ' . $nama_file . ' exists, please add other file !', 422);
+            }
         }
     }
 
@@ -199,7 +225,7 @@ class CircullarTenController extends Controller
     {
         $dir    = $user == null ? env('CIRCULAR_TEN_LOC') : env('CIRCULAR_TEN_LOC') . $user . '/';
 
-        function getDirContents($dir, &$results = array(), &$count = 0)
+        function getDirContents($dir, $user, &$results = array(), &$count = 0)
         {
             $files = scandir($dir);
 
@@ -207,19 +233,31 @@ class CircullarTenController extends Controller
                 $path = realpath($dir . DIRECTORY_SEPARATOR . $value);
                 if (!is_dir($path)) {
                     // $cekdatacreated
-                    $results[$count]['PATH'] = $path;
-                    $results[$count]['FILE'] = $value;
-                    $results[$count]['MODIFIED'] = date('Y-m-d H:i:s', filemtime($path));
-                    $count++;
+                    $cekusergroup = UsersPortal::where('username', $user)->with('divisi')->first();
+                    $cekusedfiles = CircularTen::where('doc_id', $value)->first();
+
+                    if ($cekusergroup->role_id === 'USER_PPC') {
+                        if (empty($cekusedfiles)) {
+                            $results[$count]['PATH'] = $path;
+                            $results[$count]['FILE'] = $value;
+                            $results[$count]['MODIFIED'] = date('Y-m-d H:i:s', filemtime($path));
+                            $count++;
+                        }
+                    } else {
+                        $results[$count]['PATH'] = $path;
+                        $results[$count]['FILE'] = $value;
+                        $results[$count]['MODIFIED'] = date('Y-m-d H:i:s', filemtime($path));
+                        $count++;
+                    }
                 } else if ($value != "." && $value != "..") {
-                    getDirContents($path, $results, $count);
+                    getDirContents($path, $user, $results, $count);
                 }
             }
             return $results;
         }
 
 
-        $hasil = getDirContents($dir);
+        $hasil = is_dir($dir) ? getDirContents($dir, $user) : [];
         usort($hasil, function ($a, $b) {
             $ad = new \DateTime($a['MODIFIED']);
             $bd = new \DateTime($b['MODIFIED']);

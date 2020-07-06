@@ -36,4 +36,9 @@ class UsersPortal extends Model
             'menu_id'
         );
     }
+
+    public function divisi()
+    {
+        return $this->hasOne('App\Models\PORTAL\DivisisPortal','role_id','role_id');
+    }
 }

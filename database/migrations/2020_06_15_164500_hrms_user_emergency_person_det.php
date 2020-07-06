@@ -27,6 +27,7 @@ class HrmsUserEmergencyPersonDet extends Migration
             $table->string('emerg_suburban')->nullable();
             $table->string('emerg_addr_det')->nullable();
             $table->string('emerg_desc')->nullable();
+            $table->timestamps();
         });
     }
 

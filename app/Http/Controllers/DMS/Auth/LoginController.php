@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Response;
 use Illuminate\Support\Facades\Hash;
 use App\Http\Requests\DMS\Auth\LoginRequest;
 use Illuminate\Support\Carbon;
+use App\Models\PORTAL\UsersPortal;
 
 class LoginController extends Controller
 {
@@ -32,23 +33,23 @@ class LoginController extends Controller
                 $data = $cek->with(['menu' => function ($q) use ($user) {
                     $q->where('menu_parent', 0);
                     $q->with(['child' => function ($qchild) use ($user) {
-                        $qchild->orderBy('id','desc');
+                        $qchild->orderBy('id', 'desc');
                         // $qchild->wherehas('role');
                         $qchild->wherehas('role', function ($qDet) use ($user) {
-                            $qDet->where('role_identifier',$user->role_id);
+                            $qDet->where('role_identifier', $user->role_id);
                             $qDet->with('user');
                             $qDet->has('user');
                         });
                         $qchild->with(['role' => function ($qDet) use ($user) {
-                            $qDet->where('role_identifier',$user->role_id);
+                            $qDet->where('role_identifier', $user->role_id);
                             $qDet->with('user');
                             $qDet->has('user');
                         }]);
                     }]);
                     $q->orderBy('id');
                 }])
-                ->with('signature')
-                ->first();
+                    ->with('signature')
+                    ->first();
 
                 if ($req->remember_me) {
                     $token->expires_at = Carbon::now()->addWeeks(1);
@@ -71,6 +72,58 @@ class LoginController extends Controller
                     ]
                 ], 422);
             }
+        }
+    }
+
+    public function portalloginoveride($username, $token)
+    {
+        $users = UsersPortal::where('username', $username)->where('token', $token);
+
+        if (empty($users->first())) {
+            return Response::json([
+                "message" => "The given data was invalid.",
+                "errors" => [
+                    "username" => ["Portal overide failed, call your administrator!!"]
+                ]
+            ], 422);
+        } else {
+            $cek = UsersMaster::where('username', $username);
+            $user = $cek->first();
+            $tokenResult = $user->createToken('Personal Access Token');
+            $token = $tokenResult->token;
+
+            $data = $cek->with(['menu' => function ($q) use ($user) {
+                $q->where('menu_parent', 0);
+                $q->with(['child' => function ($qchild) use ($user) {
+                    $qchild->orderBy('id', 'desc');
+                    // $qchild->wherehas('role');
+                    $qchild->wherehas('role', function ($qDet) use ($user) {
+                        $qDet->where('role_identifier', $user->role_id);
+                        $qDet->with('user');
+                        $qDet->has('user');
+                    });
+                    $qchild->with(['role' => function ($qDet) use ($user) {
+                        $qDet->where('role_identifier', $user->role_id);
+                        $qDet->with('user');
+                        $qDet->has('user');
+                    }]);
+                }]);
+                $q->orderBy('id');
+            }])
+            ->with('signature')
+            ->first();
+
+            $token->expires_at = Carbon::now()->addWeeks(1);
+            $token->save();
+
+            return response()->json([
+                'access_token' => $tokenResult->accessToken,
+                'token_type' => 'Bearer',
+                'expires_at' => Carbon::parse(
+                    $tokenResult->token->expires_at
+                )->toDateTimeString(),
+                'data' => $data
+            ]);
         }
     }
 }

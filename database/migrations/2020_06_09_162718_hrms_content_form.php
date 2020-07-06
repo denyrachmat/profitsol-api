@@ -15,10 +15,11 @@ class HrmsContentForm extends Migration
     {
         Schema::connection('sqlsrv_hrms')->create('hrms_form_mstr', function (Blueprint $table) {
             $table->bigIncrements('id');
-            $table->string('form_var');
+            $table->string('form_id');
             $table->string('form_type');
+            $table->string('form_var');
+            $table->string('form_label');
             $table->boolean('form_req');
-            $table->string('content_id')->nullable();
             $table->string('form_username');
             $table->timestamps();
         });

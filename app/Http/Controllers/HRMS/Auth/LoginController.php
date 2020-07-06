@@ -18,6 +18,8 @@ class LoginController extends Controller
     {
         $cek = UserMaster::where('username', $req->username);
 
+        // return 'uess';
+
         if (empty($cek->first()->role_id)) {
             return Response::json([
                 "message" => "The given data was invalid.",
@@ -31,15 +33,18 @@ class LoginController extends Controller
                 $tokenResult = $user->createToken('Personal Access Token');
                 $token = $tokenResult->token;
 
-                $data = $cek->with('roleMaster.mappingMenu.menu.childMenu')
+                $data = $cek
                     ->with(['roleMaster.mappingMenu' => function ($q) {
                         $q->where('parent_menu_id', 0);
+                        $q->with('menu');
                         $q->with(['childRoleMenu' => function ($qdet) {
                             $qdet->with('menu');
                         }]);
                         $q->orderBy('menu_id');
                     }])
                     ->first();
+                    
+                    // return $data;
 
                 if ($req->remember_me) {
                     $token->expires_at = Carbon::now()->addWeeks(1);
@@ -55,7 +60,7 @@ class LoginController extends Controller
                     'data' => $data
                 ]);
             } else {
-                return Response::json([
+                return response()->json([
                     "message" => "The given data was invalid.",
                     "errors" => [
                         "username" => ["Password or username is wrong!!"]
