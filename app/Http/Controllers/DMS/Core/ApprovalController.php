@@ -627,6 +627,7 @@ class ApprovalController extends Controller
     public function AllApprovalList($user = null)
     {
         $selectMaster = [
+            'id',
             'apprv_author',
             'apprv_approver',
             'apprv_level',

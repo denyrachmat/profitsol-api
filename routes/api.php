@@ -169,6 +169,8 @@ Route::group(['prefix' => 'dms'], function () {
     //Print Cover
     Route::post('/printcover', 'DMS\Core\DocsManageController@printcover');
 
+    Route::get('/testingOcr', 'DMS\Core\LogicalController@testingOCR');
+
     //Scheduller
     Route::group(['prefix' => 'scheduller'], function () {
         Route::get('/getallpendingapproval', 'DMS\Core\ApprovalController@checkPendingApproval');
@@ -208,6 +210,7 @@ Route::group(['prefix' => 'hrms'], function () {
     {
         // Form and Component Creator
         Route::post('/storeform', 'HRMS\Core\FormController@storeForm');
+        Route::post('/storemappingcontentform', 'HRMS\Core\FormController@storeFormMappingContent');
         Route::get('/getform', 'HRMS\Core\FormController@getFormByID');
         Route::get('/getform/{id}', 'HRMS\Core\FormController@getFormByID');
     });

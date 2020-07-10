@@ -6,12 +6,13 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\HRMS\Core\Form\FormMaster;
 use App\Models\HRMS\Core\Form\FormDet;
+use App\Models\HRMS\Core\Form\FormContentMapping;
 
 class FormController extends Controller
 {
     public function storeForm(Request $req)
     {
-        $ceklastid = FormMaster::latest('created_at')->first();
+        $ceklastid = FormMaster::where('form_id', 'like', '%'.date('ymd').'%')->latest('created_at')->first();
         if(empty($ceklastid)) 
             $id = 'FRM-'.date('ymd').'0001';
         else
@@ -63,5 +64,34 @@ class FormController extends Controller
         }
 
         return $hasil;
+    }
+
+    public function storeFormMappingContent(Request $req) {
+        $ceklastid = FormContentMapping::latest('created_at')->first();
+        if(empty($ceklastid)) 
+            $id = 'FRM-DIV-'.date('ymd').'0001';
+        else
+            $id = 'FRM-DIV-'.date('ymd').sprintf("%04d", intval(substr($ceklastid->div_id,-4)) + 1);
+
+        foreach ($req->data as $key => $value) {
+            foreach ($value as $keyContent => $valueContent) {
+                $ceklastcontentid = FormContentMapping::where('div_id', $id)->latest('created_at')->first();
+                if(empty($ceklastcontentid)) 
+                    $id_content = 'FRM-CNTN-'.date('ymd').'0001';
+                else
+                    $id_content = 'FRM-CNTN-'.date('ymd').sprintf("%04d", intval(substr($ceklastcontentid->content_id,-4)) + 1);
+                    
+                FormContentMapping::create([
+                    'div_id' => $id,
+                    'form_name' => $req->title,
+                    'content_id' => $id_content,
+                    'div_content' => isset($valueContent['data']['id']) ? $valueContent['data']['id'] : $valueContent['data'],
+                    'div_type' => $valueContent['multipleInput'] === true ? 'MULTIPLE' : 'SINGLE',
+                    'div_username' => $req->header('username')
+                ]);
+            }
+        }
+
+        return 'success';
     }
 }

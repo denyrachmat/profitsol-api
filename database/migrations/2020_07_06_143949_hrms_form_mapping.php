@@ -13,9 +13,11 @@ class HrmsFormMapping extends Migration
      */
     public function up()
     {
-        Schema::connection('sqlsrv_hrms')->create('hrms_form_mapping', function (Blueprint $table) {
+        Schema::connection('sqlsrv_hrms')->create('hrms_form_content_mapping', function (Blueprint $table) {
             $table->bigIncrements('id');
             $table->string('div_id');
+            $table->string('form_name');
+            $table->string('content_id');
             $table->text('div_content');
             $table->string('div_type')->nullable();
             $table->string('div_username');
@@ -30,6 +32,6 @@ class HrmsFormMapping extends Migration
      */
     public function down()
     {
-        //
+        Schema::connection('sqlsrv_hrms')->dropIfExists('hrms_form_content_mapping');
     }
 }

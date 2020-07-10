@@ -28,7 +28,9 @@
         "pusher/pusher-php-server": "^4.1",
         "rap2hpoutre/laravel-log-viewer": "^1.4",
         "setasign/fpdf": "^1.8",
-        "setasign/fpdi": "^2.3"
+        "setasign/fpdi": "^2.3",
+        "thiagoalessio/tesseract_ocr": "^2.9",
+        "wapnen/google-cloud-vision-php": "dev-master"
     },
     "require-dev": {
         "facade/ignition": "^2.0",
