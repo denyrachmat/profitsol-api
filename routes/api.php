@@ -170,6 +170,8 @@ Route::group(['prefix' => 'dms'], function () {
     Route::post('/printcover', 'DMS\Core\DocsManageController@printcover');
 
     Route::get('/testingOcr', 'DMS\Core\LogicalController@testingOCR');
+    Route::post('/saveLogical', 'DMS\Core\LogicalController@saveLogical');
+    Route::get('/testingCo', 'DMS\Core\LogicalController@TesterCo');
 
     //Scheduller
     Route::group(['prefix' => 'scheduller'], function () {
@@ -206,12 +208,36 @@ Route::group(['prefix' => 'hrms'], function () {
     */
 
     // Need to authorization login
-    Route::middleware('api')->group(function ()
+    Route::middleware('auth:apihrms')->group(function ()
     {
+        // Auth Detail
+        Route::get('/getuserlist', 'HRMS\Core\userController@index');
+
         // Form and Component Creator
         Route::post('/storeform', 'HRMS\Core\FormController@storeForm');
         Route::post('/storemappingcontentform', 'HRMS\Core\FormController@storeFormMappingContent');
         Route::get('/getform', 'HRMS\Core\FormController@getFormByID');
         Route::get('/getform/{id}', 'HRMS\Core\FormController@getFormByID');
+
+        Route::post('/storebio', 'HRMS\Core\PersonalController@storeBio');
+
+        Route::get('/getmapping', 'HRMS\Core\FormController@getFormMapping');
+
+        // Mapping Organization
+        Route::get('/getdomain', 'HRMS\Core\domainController@index');
+        Route::post('/storedomain', 'HRMS\Core\domainController@save');
+        
+        Route::get('/getdivision', 'HRMS\Core\DivisionController@index');
+        Route::post('/storedivision', 'HRMS\Core\DivisionController@save');
+        
+        Route::get('/getocc', 'HRMS\Core\occController@index');
+        Route::post('/storeocc', 'HRMS\Core\occController@save');
+
+        Route::post('/defineuserocc', 'HRMS\Core\organizationController@save');
+
+        // E-Letter
+        Route::post('/saveelettertemp', 'HRMS\Core\eLetterController@save');
+        Route::get('/getletter', 'HRMS\Core\eLetterController@index');
+        Route::get('/getletter/{id}', 'HRMS\Core\eLetterController@index');
     });
 });

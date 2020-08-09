@@ -184,7 +184,6 @@ class DocsManageController extends Controller
         if ($full === null) {
             if (!empty($apprvdochist)) {
                 if ($showapprv == null) {
-                    logger(env('ROOT_DMS_UPLOADED') . $getpath['doc_real_path'] . $getpath['doc_name']);
                     $pdfnya = $this->ApproveDoc($topdf, $apprvdochist->id_approval);
                 } else {
                     // logger(env('ROOT_DMS_UPLOADED') . $getpath['doc_real_path'] . $getpath['doc_name']);

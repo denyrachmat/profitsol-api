@@ -3,11 +3,19 @@
 namespace App\Models\HRMS\Core\Bio;
 
 use Illuminate\Database\Eloquent\Model;
+use App\Helpers\CompositeKey;
 
 class UserPersonalDet extends Model
 {
+    use CompositeKey;
+
     protected $connection = 'sqlsrv_hrms';
     protected $table = 'hrms_user_personal_det';
+
+    protected $primaryKey = [
+        'username'
+    ];
+    
     protected $fillable = [
         'username',
         'user_nat',

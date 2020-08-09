@@ -16,6 +16,7 @@ class DmsFormApprovalLogic extends Migration
         Schema::connection('sqlsrv_dms')->create('dms_logic_mstr', function (Blueprint $table) {
             $table->bigIncrements('id');
             $table->string('logic_id');
+            $table->string('apprv_id');
             $table->string('comp_group_id');
             $table->string('comp_name');
             $table->string('logic_cond');

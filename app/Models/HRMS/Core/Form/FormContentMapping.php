@@ -16,4 +16,9 @@ class FormContentMapping extends Model
         'div_type',
         'div_username'
     ];
+
+    public function divRelation()
+    {
+        return $this->hasMany('App\Models\HRMS\Core\Form\FormMaster','form_id','div_content');
+    }
 }

@@ -46,6 +46,12 @@ return [
             'provider' => 'users',
             'hash' => false,
         ],
+
+        'apihrms' => [
+            'driver' => 'passport',
+            'provider' => 'hrmsusers',
+            'hash' => false,
+        ],
     ],
 
     /*
@@ -69,6 +75,11 @@ return [
         'users' => [
             'driver' => 'eloquent',
             'model' => App\User::class,
+            // 'model' => App\Models\DMS\Auth\UsersMaster::class
+        ],
+        'hrmsusers' => [
+            'driver' => 'eloquent',
+            'model' => App\Models\HRMS\Auth\UserMaster::class,
             // 'model' => App\Models\DMS\Auth\UsersMaster::class
         ],
 

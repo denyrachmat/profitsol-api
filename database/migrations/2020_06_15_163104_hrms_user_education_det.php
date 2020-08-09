@@ -15,15 +15,15 @@ class HrmsUserEducationDet extends Migration
     {
         Schema::connection('sqlsrv_hrms')->create('hrms_user_education_det', function (Blueprint $table) {
             $table->bigIncrements('id');
-            $table->string('username')->unique();
+            $table->string('username');
             $table->integer('user_edu_level')->nullable();
             $table->string('user_edu_level_desc')->nullable();
             $table->string('user_edu_sc_name')->nullable();
             $table->string('user_edu_major')->nullable();
             $table->string('user_edu_city')->nullable();
-            $table->date('user_edu_month_from')->nullable();
+            $table->integer('user_edu_month_from')->nullable();
             $table->year('user_edu_year_from')->nullable();
-            $table->date('user_edu_month_to')->nullable();
+            $table->integer('user_edu_month_to')->nullable();
             $table->year('user_edu_year_to')->nullable();
             $table->timestamps();
         });

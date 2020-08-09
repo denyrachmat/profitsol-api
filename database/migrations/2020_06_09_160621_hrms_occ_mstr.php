@@ -18,6 +18,7 @@ class HrmsOccMstr extends Migration
             $table->string('occ_name');
             $table->string('occ_parent_id');
             $table->string('division_id');
+            $table->integer('occ_emp_count');
             $table->string('domain_id');
             $table->timestamps();
         });

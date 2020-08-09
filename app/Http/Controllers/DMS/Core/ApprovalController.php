@@ -16,6 +16,11 @@ use App\Jobs\DMS\NotificationEmailQueue;
 use Illuminate\Support\Facades\DB;
 use Excel;
 use App\Exports\DMS\exportDocumentStatus;
+use Symfony\Component\Process\Process;
+use Illuminate\Support\Facades\File;
+use App\Models\DMS\Core\LogicalMaster;
+
+use Illuminate\Support\Carbon;
 
 use App\Jobs\DMS\ReminderPendingApprovalJobs;
 
@@ -84,18 +89,19 @@ class ApprovalController extends Controller
 
     public function ApprovalSetup(Request $req)
     {
-        // return $req;
         $tot = [];
         $ceklast = ApprovalMaster::where('apprv_id', 'like', 'APPRV' . date('ymd') . '%')->orderBy('apprv_id', 'desc')->first();
         if (empty($ceklast)) {
             $nextid = 'APPRV' . date('ymd') . '001';
         } else {
-            $nextid = 'APPRV' . date('ymd') . sprintf('%04d', (int) substr($nextid->apprv_id, -3) + 1);
+            $nextid = 'APPRV' . date('ymd') . sprintf('%04d', (int) substr($ceklast->apprv_id, -3) + 1);
         }
+
         foreach ($req->author as $key => $value) {
             foreach ($req->apprv as $key_apprv => $value_apprv) {
+                $idApprv = Str::random(50);
                 $tot[$value['username']][] = ApprovalMaster::create([
-                    'id' => Str::random(50),
+                    'id' => $idApprv,
                     'apprv_author' => $value['username'],
                     'apprv_approver' => $value_apprv['user']['username'],
                     'apprv_email_notify' => 1,
@@ -104,6 +110,34 @@ class ApprovalController extends Controller
                     'apprv_title' => $req->title,
                     'apprv_id' => $nextid
                 ]);
+
+                if (isset($value_apprv['logics'])) {
+                    $idAccum = [];
+                    foreach ($value_apprv['logics'] as $key_logics => $value_logics) {
+                        foreach ($value_logics as $key_logics_det => $value_logics_det) {
+                            $ceklastid = LogicalMaster::latest('created_at')->first();
+                            if (empty($ceklastid))
+                                $id = 'LOG-' . date('ymd') . '0001';
+                            else
+                                $id = 'LOG-' . date('ymd') . sprintf("%04d", intval(substr($ceklastid->logical_id, -4)) + 1);
+
+                            LogicalMaster::create([
+                                'logical_id' => $id,
+                                'apprv_group_id' => $nextid,
+                                'apprv_id' => $idApprv,
+                                'logical_connection' => isset($value_logics_det['andor']) ? $value_logics_det['andor'] : '',
+                                'logical_type' => $value_logics_det['type'],
+                                'logical_cond' => isset($value_logics_det['condition']) ? $value_logics_det['condition'] : '',
+                                'logical_param' => isset($value_logics_det['logicsCond']) ? $value_logics_det['logicsCond'] : '',
+                                'logical_val_opt' => isset($value_logics_det['optCond']) ? $value_logics_det['optCond'] : '',
+                                'logical_val' => $value_logics_det['valueCond'],
+                                'logical_parent' => $key_logics_det === 0 ? '0' : $idAccum[$key_logics_det - 1]
+                            ]);
+
+                            $idAccum[$key_logics_det] = $id;
+                        }
+                    }
+                }
             }
         }
 
@@ -199,71 +233,63 @@ class ApprovalController extends Controller
                             ->latest()
                             ->first();
 
-                        // $ceklagi = ApprovalMaster::where('apprv_author', $value['doc_author'])
-                        //     ->where('apprv_id', $req->master_apprv)
-                        //     ->where('apprv_approver', $req->user_apprv)
-                        //     ->where('apprv_level', '<>', $cekLevelHist->approver_level)
-                        //     ->orderBy('created_at', 'asc')
-                        //     ->first();
-
                         //Update apprv_hist_to_id to latest approval hist
                         ApprovalNotification::where('apprv_hist_from_id', $req->parent_apprv)
                             ->update([
                                 'apprv_hist_to_id' => $idhistory,
                             ]);
 
-                        $ceknextapprover = ApprovalMaster::where('apprv_author', $cekLevelHist->doc->users->username)
-                            ->where('apprv_id', $req->master_apprv)
-                            ->where('apprv_level', strval(intval($cekLevelHist['approver_level']) + 2))
+                        $ceknotifjuga = ApprovalNotification::where('apprv_hist_from_id', $cekLevelHist->id)->first();
+
+                        $nextLevel = empty($ceknotifjuga) ? strval(intval($cekLevelHist['approver_level']) + 2) : strval(intval($ceknotifjuga['approver_level_to']) + 1);
+
+                        // $nextLevel = strval(intval($cekLevelHist['approver_level']) + 2);
+                        $ceknextapprover = ApprovalMaster::where('apprv_id', $req->master_apprv)
+                            ->where('apprv_level', $nextLevel)
+                            ->with('logical.allChildList')
+                            ->with(['logical' => function ($q) {
+                                $q->where('logical_parent', '0');
+                                $q->with('allChildList');
+                            }])
                             ->get()
                             ->toArray();
 
+                        logger(json_encode($ceknextapprover));
+
                         if (count($ceknextapprover) > 0 && $req->status == "1") {
-                            foreach ($ceknextapprover as $keyDet => $valueDet) {
-                                ApprovalNotification::create([
-                                    'apprv_user_from' => $req->user_apprv,
-                                    'apprv_user_to' => $valueDet['apprv_approver'],
-                                    'apprv_hist_from_id' => $idhistory,
-                                    'apprv_content_id' => $nextid,
-                                    'apprv_id' => $req->master_apprv,
-                                    'content_def_id' => $req->contentDefine,
-                                    'approver_level' => $cekLevelHist['approver_level'] + 1,
-                                    'approver_level_to' => $valueDet['apprv_level']
-                                ]);
+                            logger([$nextLevel, $ceknextapprover, $value['doc_id'], $idhistory, $nextid, empty($ceknotifjuga) ? $cekLevelHist['approver_level'] : $ceknotifjuga['approver_level_to'], $req]);
+                            $notifnya = $this->checkTheApprovalCycle($nextLevel, $ceknextapprover, $value['doc_id'], $idhistory, $nextid, empty($ceknotifjuga) ? $cekLevelHist['approver_level'] : $ceknotifjuga['approver_level_to'], $req);
 
-                                $hasilsuccess[$valueDet['apprv_approver']] = $this->outstandingApprovalByApprover($valueDet['apprv_approver'], null, true)->items();
-
-                                ApprovalHist::where('id', $idhistory)->update([
-                                    'approver_level' => $cekLevelHist['approver_level'] + 1
-                                ]);
-                            }
+                            $hasilsuccess = $notifnya;
                         } else {
-                            ApprovalNotification::create([
-                                'apprv_user_from' => $req->user_apprv,
-                                'apprv_user_to' => $cekLevelHist->doc->users->username,
-                                'apprv_hist_from_id' => $idhistory,
-                                'apprv_content_id' => $nextid,
-                                'apprv_id' => $req->master_apprv,
-                                'content_def_id' => $req->contentDefine,
-                                'approver_level' => $cekLevelHist['approver_level'] + 1,
-                                'approver_level_to' => 0
-                            ]);
+                            $hasilsuccess = $this->checkTheApprovalCycle($nextLevel, $ceknextapprover, $value['doc_id'], $idhistory, $nextid, $ceknotifjuga['approver_level_to'], $req, 0, true);
+                            // logger([$ceknextapprover, $req->status]);
+                            // ApprovalNotification::create([
+                            //     'apprv_user_from' => $req->user_apprv,
+                            //     'apprv_user_to' => $cekLevelHist->doc->users->username,
+                            //     'apprv_hist_from_id' => $idhistory,
+                            //     'apprv_content_id' => $nextid,
+                            //     'apprv_id' => $req->master_apprv,
+                            //     'content_def_id' => $req->contentDefine,
+                            //     'approver_level' => $cekLevelHist['approver_level'] + 1,
+                            //     'approver_level_to' => 0
+                            // ]);
 
-                            ApprovalHist::where('id', $idhistory)->update([
-                                'approver_level' => $cekLevelHist['approver_level'] + 1
-                            ]);
+                            // ApprovalHist::where('id', $idhistory)->update([
+                            //     'approver_level' => $cekLevelHist['approver_level'] + 1
+                            // ]);
 
-                            if ($req->status == "1") {
-                                DocsMaster::where('doc_id', $value['doc_id'])->update([
-                                    'doc_stat_flag' => '2'
-                                ]);
-                            } else {
-                                DocsMaster::where('doc_id', $value['doc_id'])->update([
-                                    'doc_stat_flag' => '0'
-                                ]);
-                            }
+                            // if ($req->status == "1") {
+                            //     DocsMaster::where('doc_id', $value['doc_id'])->update([
+                            //         'doc_stat_flag' => '2'
+                            //     ]);
+                            // } else {
+                            //     DocsMaster::where('doc_id', $value['doc_id'])->update([
+                            //         'doc_stat_flag' => '0'
+                            //     ]);
+                            // }
 
-                            $hasilsuccess[$cekLevelHist->doc->users->username] = $this->outstandingApprovalByApprover($cekLevelHist->doc->users->username, null, true)->items();
+                            // $hasilsuccess[$cekLevelHist->doc->users->username] = $this->outstandingApprovalByApprover($cekLevelHist->doc->users->username, null, true)->items();
                         }
                     }
                 }
@@ -289,6 +315,95 @@ class ApprovalController extends Controller
                 ]
             ], 422);
         }
+    }
+
+    public function checkTheApprovalCycle($qLevel, $valnextapprv, $doc, $idhistory, $idcontent, $currentLevel, $req, $count = 0, $backToSender = false)
+    {
+        $data = $this->sendNotification($valnextapprv, $doc, $idhistory, $idcontent, $currentLevel, $req, $backToSender);
+        if (count($data) === 0) {
+            logger('tidak ada datanya');
+            logger(json_encode([$valnextapprv, $doc, $idhistory, $idcontent, $currentLevel]));
+            $nextLevel = strval(intval($qLevel) + 1);
+
+            $ceknextapprover = ApprovalMaster::where('apprv_id', $req->master_apprv)
+                ->where('apprv_level', $nextLevel)
+                ->with('logical.allChildList')
+                ->with(['logical' => function ($q) {
+                    $q->where('logical_parent', '0');
+                    $q->with('allChildList');
+                }])
+                ->get()
+                ->toArray();
+
+            if (!empty($ceknextapprover)) {
+                $count++;
+                return $this->checkTheApprovalCycle($nextLevel, $ceknextapprover, $doc, $idhistory, $idcontent, $currentLevel, $req, $count);
+            } else {
+                return $this->checkTheApprovalCycle($nextLevel, $ceknextapprover, $doc, $idhistory, $idcontent, $currentLevel, $req, $count, true);
+            }
+        } else {
+            return $data;
+        }
+    }
+
+    public function sendNotification($valnextapprv, $doc, $idhistory, $idcontent, $currentLevel, $req, $backToSender = false)
+    {
+        $cekSukses = [];
+        if (!$backToSender) {
+            foreach ($valnextapprv as $keyDet => $valueDet) {
+                $cekLogical = $this->logicalCheck($valueDet['logical'], $doc);
+                $hasilLogic = !$cekLogical ? 'false' : (count($cekLogical) === 1 ? $cekLogical[0] : implode('&&', $cekLogical));
+                if (!$valueDet['logical'] || ($cekLogical && global_parse_condition($hasilLogic) === true)) {
+                    ApprovalNotification::create([
+                        'apprv_user_from' => $req->user_apprv,
+                        'apprv_user_to' => $valueDet['apprv_approver'],
+                        'apprv_hist_from_id' => $idhistory,
+                        'apprv_content_id' => $idcontent,
+                        'apprv_id' => $req->master_apprv,
+                        'content_def_id' => $req->contentDefine,
+                        'approver_level' => $currentLevel,
+                        'approver_level_to' => $valueDet['apprv_level']
+                    ]);
+
+                    $cekSukses[$valueDet['apprv_approver']] = $this->outstandingApprovalByApprover($valueDet['apprv_approver'], null, true)->items();
+
+                    ApprovalHist::where('id', $idhistory)->update([
+                        'approver_level' => $currentLevel
+                    ]);
+                }
+            }
+        } else {
+            $getSender = ApprovalMaster::where('apprv_id', $req->master_apprv)->first();
+
+            ApprovalNotification::create([
+                'apprv_user_from' => $req->user_apprv,
+                'apprv_user_to' => $getSender->apprv_author,
+                'apprv_hist_from_id' => $idhistory,
+                'apprv_content_id' => $idcontent,
+                'apprv_id' => $req->master_apprv,
+                'content_def_id' => $req->contentDefine,
+                'approver_level' => $currentLevel,
+                'approver_level_to' => 0
+            ]);
+
+            ApprovalHist::where('id', $idhistory)->update([
+                'approver_level' => $currentLevel
+            ]);
+
+            if ($req->status == "1") {
+                DocsMaster::where('doc_id', $doc)->update([
+                    'doc_stat_flag' => '2'
+                ]);
+            } else {
+                DocsMaster::where('doc_id', $doc)->update([
+                    'doc_stat_flag' => '0'
+                ]);
+            }
+
+            $cekSukses[$getSender->apprv_author] = $this->outstandingApprovalByApprover($getSender->apprv_author, null, true)->items();
+        }
+
+        return $cekSukses;
     }
 
     public function arrfet($arr, $gethasil)
@@ -491,23 +606,32 @@ class ApprovalController extends Controller
         ];
 
         $ceknotif = ApprovalNotification::select($selectNotif)
-            ->with(['histFromByContentId' => function ($q) use ($selecthist) {
+            ->with(['histFromByContentId' => function ($q) use ($selecthist, $approver) {
                 $q->select($selecthist);
                 $q->with('doc.users');
+                $q->with(['notificationFrom' => function ($q2) use ($approver) {
+                    $q2->where('apprv_user_to', $approver);
+                }]);
                 $q->with('allPastApproverList');
                 $q->with('users');
             }])
-            ->with(['histToByContentId' => function ($q) use ($selecthist) {
+            ->with(['histToByContentId' => function ($q) use ($selecthist, $approver) {
                 $q->select($selecthist);
                 $q->with('users');
                 $q->with('doc.users');
+                $q->with(['notificationTo' => function ($q2) use ($approver) {
+                    $q2->where('apprv_user_from', $approver);
+                }]);
                 $q->with('allApproverList');
             }])
-            ->with(['histToBySameLevel' => function ($q) use ($selecthist) {
+            ->with(['histToBySameLevel' => function ($q) use ($selecthist, $approver) {
                 $q->select($selecthist);
                 $q->with('users');
                 $q->with('doc.users');
                 $q->with('allApproverList');
+                // $q->whereHas('notificationTo' , function ($q2) use ($approver) {
+                //     $q2->where('apprv_user_from', $approver);
+                // });
             }])
             ->with('contentVariable')
             ->with('contentDefine.contentMstr')
@@ -570,7 +694,9 @@ class ApprovalController extends Controller
         $hasil = ApprovalHist::where('apprv_hist_user', $user)
             ->where('apprv_parent', '0')
             ->with('allApproverList')
-            ->with('getallapprover.user')
+            ->with(['getallapprover' => function ($q) {
+                $q->with('user')->with('logical');
+            }])
             ->with('lastapprv.users')
             ->orderBy('created_at', 'desc')
             ->with('doc.users');
@@ -583,10 +709,10 @@ class ApprovalController extends Controller
                     $q->where('doc_stat_flag', $lastapprvstat == 'partial' ? '1' : ($lastapprvstat == 'full' ? '2' : '0'));
                     $q->with('users');
                 });
-            } 
-            
+            }
+
             if (!empty($date)) {
-                $hasil->whereBetween('created_at', [$date .' 00:00:00', $date . ' 23:59:59']);
+                $hasil->whereBetween('created_at', [$date . ' 00:00:00', $date . ' 23:59:59']);
             }
         }
 
@@ -617,6 +743,7 @@ class ApprovalController extends Controller
                 $q2->where('doc_lapprv_flag', '1');
                 $q2->wheredoesnthave('docHist');
             }])
+            ->with('user')
             ->groupBy($selectMaster)
             ->get()
             ->toArray();
@@ -644,7 +771,9 @@ class ApprovalController extends Controller
                     $q2->wheredoesnthave('docHist');
                     $q2->orderBy('created_at', 'desc');
                 }])
-                ->with('user')->get()->toArray();
+                ->with('user')
+                ->with('logical')
+                ->orderBy('apprv_id')->get()->toArray();
         } else {
             $cekall = ApprovalMaster::select($selectMaster)->with('userAuthor')->with(['contentDef' => function ($q3) {
                 $q3->with(['contentDet', 'contentMstr']);
@@ -655,7 +784,8 @@ class ApprovalController extends Controller
                     $q2->wheredoesnthave('docHist');
                     $q2->orderBy('created_at', 'desc');
                 }])
-                ->where('apprv_author', $user)->with('user')->get()->toArray();
+                ->with('logical')
+                ->orderBy('apprv_id')->where('apprv_author', $user)->with('user')->get()->toArray();
         }
 
         // return $cekall;
@@ -685,9 +815,11 @@ class ApprovalController extends Controller
     public function updateApprovalList(Request $req)
     {
         ApprovalMaster::where('apprv_id', $req->id_apprv)->delete();
+        LogicalMaster::where('apprv_group_id', $req->id_apprv)->delete();
         foreach ($req->datanya as $key => $value) {
+            $idApprv = Str::random(50);
             ApprovalMaster::create([
-                'id' => Str::random(50),
+                'id' => $idApprv,
                 'apprv_author' => $value['apprv_author'],
                 'apprv_approver' => $value['apprv_approver'],
                 'apprv_email_notify' => 1,
@@ -696,6 +828,32 @@ class ApprovalController extends Controller
                 'apprv_title' => $value['apprv_title'],
                 'apprv_id' => $value['apprv_id'],
             ]);
+
+            if (count($value['logical']) > 0) {
+                $idAccum = [];
+                foreach ($value['logical'] as $key_logics_det => $value_logics_det) {
+                    $ceklastid = LogicalMaster::latest('created_at')->first();
+                    if (empty($ceklastid))
+                        $id = 'LOG-' . date('ymd') . '0001';
+                    else
+                        $id = 'LOG-' . date('ymd') . sprintf("%04d", intval(substr($ceklastid->logical_id, -4)) + 1);
+
+                    LogicalMaster::create([
+                        'logical_id' => $id,
+                        'apprv_group_id' => $value['apprv_id'],
+                        'apprv_id' => $idApprv,
+                        'logical_connection' => isset($value_logics_det['logical_connection']) ? $value_logics_det['logical_connection'] : '',
+                        'logical_type' => isset($value_logics_det['logical_type']) ? $value_logics_det['logical_type'] : '',
+                        'logical_cond' => isset($value_logics_det['logical_cond']) ? $value_logics_det['logical_cond'] : '',
+                        'logical_param' => isset($value_logics_det['logical_param']) ? $value_logics_det['logical_param'] : '',
+                        'logical_val_opt' => isset($value_logics_det['logical_val_opt']) ? $value_logics_det['logical_val_opt'] : '',
+                        'logical_val' => isset($value_logics_det['logical_val']) ? $value_logics_det['logical_val'] : '',
+                        'logical_parent' => $key_logics_det === 0 ? '0' : $idAccum[$key_logics_det - 1]
+                    ]);
+
+                    $idAccum[$key_logics_det] = $id;
+                }
+            }
         }
 
         return 'success';
@@ -759,5 +917,155 @@ class ApprovalController extends Controller
     public function downloadDocstatus(Request $req)
     {
         return Excel::download(new exportDocumentStatus($req->data), 'StatusDocument.xlsx');
+    }
+
+    public function logicalCheck($dataLogic, $fileLoc)
+    {
+        $hasilAll = [];
+        foreach ($dataLogic as $key => $value) {
+            $getpath = DocsMaster::where('doc_id', $fileLoc)->first();
+            $file = env('ROOT_DMS_UPLOADED') . $getpath['doc_real_path'] . $getpath['doc_name'];
+
+            $fileTempName = 'DEN-OCR-' . Str::random(50);
+            $to = 'C:/Windows/temp/' . $fileTempName . '.txt';
+            $process = new Process(['pdftotext', $file, $to]);
+            $process->run();
+
+            $file = File::get($to);
+
+            logger(json_encode($value));
+
+            $cek = $this->checkerFoo([], $value, $file);
+
+            logger($cek);
+            if (global_parse_condition($cek)) {
+                $hasilAll[] = $cek;
+            }
+        }
+
+        return $hasilAll;
+    }
+
+    public function checkerFoo($currArr, $val, $file)
+    {
+        if ($val['logical_type'] === 'condition') {
+            if ($val['logical_connection']) {
+                $currArr[] = $val['logical_connection'] === 'AND' ? '&&' : '||';
+            }
+
+            if ($val['logical_cond'] === 'after_word') {
+                $splitByWord = explode($val['logical_val_opt'], $file);
+                $getAfterWordExactly = explode(' ', $splitByWord[1]);
+                if ($val['logical_param'] === 'contain') {
+                    if (strpos($splitByWord[1], $val['logical_val'])) {
+                        $currArr[] = 'true';
+                    } else {
+                        $currArr[] = 'false';
+                    }
+                } elseif ($val['logical_param'] === 'not_contain') {
+                    if (strpos($splitByWord[1], $val['logical_val'])) {
+                        $currArr[] = 'false';
+                    } else {
+                        $currArr[] = 'true';
+                    }
+                } elseif ($val['logical_cond'] === '===') {
+                    if ($getAfterWordExactly[0] === $val['logical_val']) {
+                        $currArr[] = 'true';
+                    } else {
+                        $currArr[] = 'false';
+                    }
+                } elseif ($val['logical_cond'] === '>') {
+                    if ($getAfterWordExactly[0] > $val['logical_val']) {
+                        $currArr[] = 'true';
+                    } else {
+                        $currArr[] = 'false';
+                    }
+                } elseif ($val['logical_cond'] === '>=') {
+                    if ($getAfterWordExactly[0] >= $val['logical_val']) {
+                        $currArr[] = 'true';
+                    } else {
+                        $currArr[] = 'false';
+                    }
+                } elseif ($val['logical_cond'] === '<') {
+                    if ($getAfterWordExactly[0] < $val['logical_val']) {
+                        $currArr[] = 'true';
+                    } else {
+                        $currArr[] = 'false';
+                    }
+                } elseif ($val['logical_cond'] === '<=') {
+                    if ($getAfterWordExactly[0] <= $val['logical_val']) {
+                        $currArr[] = 'true';
+                    } else {
+                        $currArr[] = 'false';
+                    }
+                } elseif ($val['logical_cond'] === '<>') {
+                    if ($getAfterWordExactly[0] <> $val['logical_val']) {
+                        $currArr[] = 'false';
+                    } else {
+                        $currArr[] = 'true';
+                    }
+                }
+
+                return $this->checkerFoo($currArr, $val['all_child_list'], $file);
+            } else {
+                $getAfterWordExactly = explode(' ', $file);
+                if ($val['logical_param'] === 'contain') {
+                    if (strpos($file, $val['logical_val'])) {
+                        $currArr[] = 'true';
+                    } else {
+                        $currArr[] = 'false';
+                    }
+                } elseif ($val['logical_param'] === 'not_contain') {
+                    if (strpos($splitByWord[1], $val['logical_val'])) {
+                        $currArr[] = 'false';
+                    } else {
+                        $currArr[] = 'true';
+                    }
+                } elseif ($val['logical_cond'] === '===') {
+                    if ($getAfterWordExactly[0] === $val['logical_val']) {
+                        $currArr[] = 'true';
+                    } else {
+                        $currArr[] = 'false';
+                    }
+                } elseif ($val['logical_cond'] === '>') {
+                    if ($getAfterWordExactly[0] > $val['logical_val']) {
+                        $currArr[] = 'true';
+                    } else {
+                        $currArr[] = 'false';
+                    }
+                } elseif ($val['logical_cond'] === '>=') {
+                    if ($getAfterWordExactly[0] >= $val['logical_val']) {
+                        $currArr[] = 'true';
+                    } else {
+                        $currArr[] = 'false';
+                    }
+                } elseif ($val['logical_cond'] === '<') {
+                    if ($getAfterWordExactly[0] < $val['logical_val']) {
+                        $currArr[] = 'true';
+                    } else {
+                        $currArr[] = 'false';
+                    }
+                } elseif ($val['logical_cond'] === '<=') {
+                    if ($getAfterWordExactly[0] <= $val['logical_val']) {
+                        $currArr[] = 'true';
+                    } else {
+                        $currArr[] = 'false';
+                    }
+                } elseif ($val['logical_cond'] === '<>') {
+                    if ($getAfterWordExactly[0] <> $val['logical_val']) {
+                        $currArr[] = 'false';
+                    } else {
+                        $currArr[] = 'true';
+                    }
+                }
+
+                return $this->checkerFoo($currArr, $val['all_child_list'], $file);
+            }
+        } else {
+            $currArr[] = '===';
+            $currArr[] = $val['logical_val'] === 'selected_notif_only' ? 'true' : 'false';
+
+            return implode(' ', $currArr);
+        }
     }
 }

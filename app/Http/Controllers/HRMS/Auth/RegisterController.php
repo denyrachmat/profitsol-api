@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 
 use App\Models\HRMS\Auth\UserMaster;
+use App\Models\HRMS\Core\Bio\UserPersonalDet;
 
 use App\Http\Requests\HRMS\Auth\RegisterRequest;
 
@@ -41,6 +42,10 @@ class RegisterController extends Controller
             $cektoken->update([
                 'status' => 1,
                 'verified_at' => date('Y-m-d h:i:s')
+            ]);
+
+            UserPersonalDet::create([
+                'username' => $username
             ]);
 
             return 'Email verification success, now please wait administrator for reviewing your request and configuring your account.';

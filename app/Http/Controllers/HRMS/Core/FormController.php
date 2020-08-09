@@ -86,12 +86,22 @@ class FormController extends Controller
                     'form_name' => $req->title,
                     'content_id' => $id_content,
                     'div_content' => isset($valueContent['data']['id']) ? $valueContent['data']['id'] : $valueContent['data'],
-                    'div_type' => $valueContent['multipleInput'] === true ? 'MULTIPLE' : 'SINGLE',
+                    'div_type' => $valueContent['type'] === true ? 'MULTIPLE' : 'SINGLE',
                     'div_username' => $req->header('username')
                 ]);
             }
         }
 
         return 'success';
+    }
+
+    public function getFormMapping($id = null)
+    {
+        if (empty($id))
+            $sourceData = FormContentMapping::with('divRelation.getDetail')->orderBy('content_id')->get();
+        else
+            $sourceData = FormContentMapping::with('divRelation.getDetail')->where('div_id', $id)->orderBy('content_id')->get();
+
+        return $sourceData;
     }
 }

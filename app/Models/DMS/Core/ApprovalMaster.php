@@ -65,4 +65,14 @@ class ApprovalMaster extends Model
     {
         return $this->hasMany('App\Models\DMS\Core\DocsMaster','doc_author','apprv_author');
     }
+
+    public function logic()
+    {
+        return $this->hasMany('App\Models\DMS\Core\LogicMaster','apprv_id','id');
+    }
+
+    public function logical()
+    {
+        return $this->hasMany('App\Models\DMS\Core\LogicalMaster','apprv_id','id');
+    }
 }

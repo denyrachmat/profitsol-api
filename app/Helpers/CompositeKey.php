@@ -50,4 +50,42 @@ trait CompositeKey
 
         return $this->getAttribute($keyName);
     }
+
+    public function getKey()
+    {
+        $keys = $this->getKeyName();
+        if(!is_array($keys)){
+            return parent::getKey();
+        }
+
+        $pk = [];
+
+        foreach($keys as $keyName){
+            $pk[$keyName] = $this->getAttribute($keyName);
+        }
+
+        return $pk;
+    }
+
+    public function find($id, $columns = ['*'])
+    {
+        if (is_array($id) || $id instanceof Arrayable) {
+            $out = null;
+            foreach ($id as $key => $value) {
+                //echo "{$key} => {$value} ";
+                if ($out == null)
+                {
+                    $out = $this->where($key, $value);
+                }
+                else
+                {
+                    $out = $out->where($key, $value);
+                }
+            }
+
+            return $out->first($columns);
+        }
+
+        return $this->whereKey($id)->first($columns);
+    }
 }

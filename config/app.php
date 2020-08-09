@@ -163,7 +163,7 @@ return [
         Illuminate\View\ViewServiceProvider::class,
         Elibyy\TCPDF\ServiceProvider::class,
         Maatwebsite\Excel\ExcelServiceProvider::class,
-
+        Hedii\ArtisanLogCleaner\ArtisanLogCleanerServiceProvider::class,
         /*
          * Package Service Providers...
          */

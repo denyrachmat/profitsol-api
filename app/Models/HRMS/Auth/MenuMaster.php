@@ -11,7 +11,7 @@ class MenuMaster extends Model
 
     public function parent()
     {
-        return $this->belongsTo('App\Models\HRMS\Auth\MenuMaster','id','menu_parent_id');
+        return $this->hasOne('App\Models\HRMS\Auth\MenuMaster','id','menu_parent_id');
     }
 
     public function child()

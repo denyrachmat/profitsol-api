@@ -21,12 +21,8 @@ class HrmsUserEmergencyPersonDet extends Migration
             $table->string('emerg_email')->nullable();
             $table->string('emerg_phone');
             $table->string('emerg_handphone')->nullable();
-            $table->string('emerg_province');
-            $table->string('emerg_city');
-            $table->string('emerg_urban')->nullable();
-            $table->string('emerg_suburban')->nullable();
-            $table->string('emerg_addr_det')->nullable();
-            $table->string('emerg_desc')->nullable();
+            $table->text('emerg_address')->nullable();
+            $table->string('emerg_relation')->nullable();
             $table->timestamps();
         });
     }

@@ -15,7 +15,7 @@ class HrmsUserWorkExpDet extends Migration
     {
         Schema::connection('sqlsrv_hrms')->create('hrms_user_work_exp_det', function (Blueprint $table) {
             $table->bigIncrements('id');
-            $table->string('username')->unique();
+            $table->string('username');
             $table->string('company_name');
             $table->text('company_address');
             $table->date('company_start_work');

@@ -16,9 +16,9 @@ class HrmsUserPersonalDet extends Migration
         Schema::connection('sqlsrv_hrms')->create('hrms_user_personal_det', function (Blueprint $table) {
             $table->bigIncrements('id');
             $table->string('username')->unique();
-            $table->string('user_nat'); //Indonesia
-            $table->string('user_province1'); //Jawa Barat
-            $table->string('user_province2');
+            $table->string('user_nat')->nullable(); //Indonesia
+            $table->string('user_province1')->nullable(); //Jawa Barat
+            $table->string('user_province2')->nullable();
             $table->string('user_city1')->nullable(); //Bekasi
             $table->string('user_city2')->nullable();
             $table->string('user_district1')->nullable(); //Cibarusah
@@ -29,7 +29,7 @@ class HrmsUserPersonalDet extends Migration
             $table->string('user_zip2')->nullable();
             $table->text('user_detaddr1')->nullable();
             $table->text('user_detaddr2')->nullable();
-            $table->string('user_phone');
+            $table->string('user_phone')->nullable();
             $table->string('user_handphone')->nullable();
             $table->string('user_religion')->nullable();
             $table->string('user_bloodtype')->nullable();

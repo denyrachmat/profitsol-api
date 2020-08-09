@@ -30,7 +30,7 @@ class LoginController extends Controller
         } else {
             if (Hash::check($req->password, $cek->first()->password_hash)) {
                 $user = $cek->first();
-                $tokenResult = $user->createToken('Personal Access Token');
+                $tokenResult = $user->createToken($req->username.' HRMS Personal Access Token');
                 $token = $tokenResult->token;
 
                 $data = $cek
@@ -40,14 +40,18 @@ class LoginController extends Controller
                         $q->with(['childRoleMenu' => function ($qdet) {
                             $qdet->with('menu');
                         }]);
-                        $q->orderBy('menu_id');
+                        $q->orderByRaw('cast(menu_id as int)');
                     }])
+                    ->with(['personalDetail','educationDetail','childrenDetail','expDetail'])
                     ->first();
                     
                     // return $data;
 
                 if ($req->remember_me) {
                     $token->expires_at = Carbon::now()->addWeeks(1);
+                    $token->save();
+                } else {
+                    $token->expires_at = Carbon::now()->addMinutes(1);
                     $token->save();
                 }
 
