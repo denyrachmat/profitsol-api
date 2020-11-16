@@ -23,6 +23,11 @@ class divisionMaster extends Model
         'domain_id',
     ];
 
+    public function domain()
+    {
+        return $this->hasOne('App\Models\HRMS\Core\Structure\domainMaster','id','domain_id');
+    }
+
     public function occ()
     {
         return $this->hasMany('App\Models\HRMS\Core\Structure\occMaster','division_id','id')->where('occ_parent_id', 0);

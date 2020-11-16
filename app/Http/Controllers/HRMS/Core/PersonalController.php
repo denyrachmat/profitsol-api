@@ -59,14 +59,16 @@ class PersonalController extends Controller
                     'username' => $r->header('username')
                 ],
                 [
+                    'user_birthplace' => $personale['user_birthplace'],
+                    'user_birthdate' => $personale['user_birthdate'],
                     'user_phone' => $personale['user_phone'],
-                    'user_handphone' => $personale['user_handphone'],
+                    'user_handphone' => isset($personale['user_handphone']) ? $personale['user_handphone'] : '',
                     'user_religion' => $personale['user_religion'],
                     'user_bloodtype' => $personale['user_bloodtype'],
                     'user_height' => $personale['user_height'],
                     'user_weight' => $personale['user_weight'],
                     'user_gender' => $personale['user_gender'],
-                    'user_marital_status' => $personale['user_marital_status'],
+                    'user_marital_status' => isset($personale['user_marital_status']) ? $personale['user_marital_status'] : '',
                 ]
             );
         }
@@ -169,7 +171,7 @@ class PersonalController extends Controller
             }]);
             $q->orderBy('menu_id');
         }])
-            ->with(['personalDetail', 'educationDetail', 'childrenDetail', 'expDetail'])
+        ->with(['personalDetail','educationDetail','childrenDetail','expDetail','occ.parentList','occ.division'])
             ->first();
 
         return $user;

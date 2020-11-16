@@ -15,9 +15,15 @@ class HrmsFormPageMapping extends Migration
     {
         Schema::connection('sqlsrv_hrms')->create('hrms_form_page_mapping', function (Blueprint $table) {
             $table->bigIncrements('id');
-            $table->string('menu_id');
-            $table->string('form_id');
+            $table->string('content_id');
+            $table->string('menu_id')->nullable();
+            $table->string('publish_flag');
+            $table->string('publish_token');
             $table->string('username');
+            $table->datetime('active_start');
+            $table->datetime('active_end');
+            $table->boolean('revised_answer');
+            $table->boolean('reviewed_answer');
             $table->timestamps();
         });
     }

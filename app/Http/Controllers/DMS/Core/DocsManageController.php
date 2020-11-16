@@ -24,6 +24,8 @@ use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use Illuminate\Support\Facades\App;
 
 use App\Jobs\DMS\UpdatedDocsEmailJobs;
+use App\Models\DMS\Core\DocsLocationMaster;
+use DmsLocdocMaster;
 
 class DocsManageController extends Controller
 {
@@ -310,7 +312,7 @@ class DocsManageController extends Controller
     {
         $getpath = DocsMaster::where('doc_id', $iddoc)->first();
         $pdf = new Fpdi();
-        try{            
+        try {
             $pageCount = $pdf->setSourceFile('D:/data/' . $getpath['doc_real_path'] . $getpath['doc_name']);
             for ($pageNo = 1; $pageNo <= $pageCount; $pageNo++) {
                 $templateId = $pdf->importPage($pageNo);
@@ -327,9 +329,9 @@ class DocsManageController extends Controller
                 $arrApprover = ApprovalMaster::where('apprv_id', $author)->orderBy('apprv_level', 'desc')->first();
                 $lastApprove = ApprovalHist::where('apprv_hist_doc', $iddoc)->orderBy('approver_level', 'desc')->first();
 
-                if ($arrApprover['apprv_level'] == $lastApprove['approver_level']) {
+                if ($getpath['doc_stat_flag'] === '2' || $getpath['doc_stat_flag'] === '3') {
                     $pdf->SetFont('Arial', 'B', 30);
-                    $pdf->SetTextColor(255, 192, 203);
+                    $pdf->SetTextColor(102, 153, 255);
                     $pdf->Text(($pdf->GetPageWidth() / 2) - $pdf->GetStringWidth('A P P R O V E D') / 2, $pdf->GetPageHeight() / 1.1, 'A P P R O V E D', 45);
                 } else {
                     if ($lastApprove->apprv_hist_status == 1) {
@@ -342,6 +344,21 @@ class DocsManageController extends Controller
                         $pdf->Text(($pdf->GetPageWidth() / 2) - $pdf->GetStringWidth('R E J E C T E D') / 2, $pdf->GetPageHeight() / 1.1, 'R E J E C T E D', 45);
                     }
                 }
+                // if ($arrApprover['apprv_level'] == $lastApprove['approver_level']) {
+                //     $pdf->SetFont('Arial', 'B', 30);
+                //     $pdf->SetTextColor(255, 192, 203);
+                //     $pdf->Text(($pdf->GetPageWidth() / 2) - $pdf->GetStringWidth('A P P R O V E D') / 2, $pdf->GetPageHeight() / 1.1, 'A P P R O V E D', 45);
+                // } else {
+                //     if ($lastApprove->apprv_hist_status == 1) {
+                //         $pdf->SetFont('Arial', 'B', 30);
+                //         $pdf->SetTextColor(255, 192, 203);
+                //         $pdf->Text(($pdf->GetPageWidth() / 2) - $pdf->GetStringWidth('D R A F T') / 2, $pdf->GetPageHeight() / 1.1, 'D R A F T', 45);
+                //     } else {
+                //         $pdf->SetFont('Arial', 'B', 30);
+                //         $pdf->SetTextColor(255, 192, 203);
+                //         $pdf->Text(($pdf->GetPageWidth() / 2) - $pdf->GetStringWidth('R E J E C T E D') / 2, $pdf->GetPageHeight() / 1.1, 'R E J E C T E D', 45);
+                //     }
+                // }
 
                 $pdf->useTemplate($templateId);
 
@@ -410,7 +427,7 @@ class DocsManageController extends Controller
                         $pdf->Ln();
                         $pdf->Cell(40, 5, '', 'LR', 0, 'LR', 0);   // empty cell with left,bottom, and right borders
                         $pdf->Cell(20, 5, 'Reason', 'L', 0, 'L', 0);
-                        $pdf->Cell($cellWidth - 20, 5, ': ' . $value['apprv_hist_comment'], 'R', 0, 'L', 0);
+                        $pdf->Cell($cellWidth - 20, 5, ': ' . (json_decode($value->apprv_hist_comment, true)) ? 'Please see reason on DMS' : $value['apprv_hist_comment'], 'R', 0, 'L', 0);
                         // $pdf->Cell(50, 5, '[ o ] def4', 'LRB', 0, 'L', 0);
 
                         $pdf->Ln();
@@ -529,6 +546,21 @@ class DocsManageController extends Controller
 
         return DocsMaster::where('doc_id', $iddoc)->update([
             'doc_stat_flag' => $cekdata->doc_stat_flag == '3' ? '2' : '3'
+        ]);
+    }
+
+    public function moveDocument($user, $idDoc, $newFolder)
+    {
+        $folderMaster = DocsLocationMaster::where('id', $newFolder)->first();
+        $rootfolder = 'Uploaded Docs/DMS/';
+        $folderPath = $rootfolder . $user.'/'.$folderMaster->name_loc.'/';
+        
+        $dataDoc = DocsMaster::where('doc_id', $idDoc)->first();
+        Storage::disk('data_folder')->move($dataDoc->doc_real_path.$dataDoc->doc_name, $folderPath.$dataDoc->doc_name);
+        
+        return DocsMaster::where('doc_id', $idDoc)->where('doc_author', $user)->update([
+            'doc_path' => $newFolder,
+            'doc_real_path' => $folderPath
         ]);
     }
 }

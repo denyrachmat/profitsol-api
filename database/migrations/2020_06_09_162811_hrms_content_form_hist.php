@@ -16,7 +16,9 @@ class HrmsContentFormHist extends Migration
         Schema::connection('sqlsrv_hrms')->create('hrms_form_hist', function (Blueprint $table) {
             $table->bigIncrements('id');
             $table->string('form_hist_id');
-            $table->string('form_id');
+            $table->string('form_id');            
+            $table->string('publish_token');      
+            $table->string('publish_id');
             $table->string('form_hist_value');
             $table->string('form_hist_username');
             $table->timestamps();

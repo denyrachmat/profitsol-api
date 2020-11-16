@@ -24,9 +24,7 @@ class DashboardController extends Controller
             'doc_path',
             'created_at',
             'doc_author'
-        )->with('version')->with(['apprvhist' => function ($q) {
-            $q->with('getallapprover');
-        }])
+        )->with('version')
             ->with('users.group')
             // ->where('doc_author', $user)
             ->orderBy('doc_author')
@@ -35,12 +33,16 @@ class DashboardController extends Controller
 
     public function listnotif($user)
     {
-        $gettotaldoc = $this->masterQuery()->where('created_at', '>=', date('Y-m-d H:i:s', strtotime("-1 Months")));
+        $gettotaldoc = $this->masterQuery()->with(['apprvhist' => function ($q) {
+            $q->with('getallapprover')->with('notificationTo');
+        }])->where('created_at', '>=', date('Y-m-d H:i:s', strtotime("-1 Months")));
 
         // return $gettotaldoc->get();
         $hasil = [
             'total_uploaded_doc' => $gettotaldoc->count(),
-            'total_uploaded_user_doc' => $this->masterQuery()->where('doc_author', $user)->count(),
+            'total_uploaded_user_doc' => $this->masterQuery()->with(['apprvhist' => function ($q) {
+                $q->with('getallapprover')->with('notificationTo');
+            }])->where('doc_author', $user)->count(),
         ];
 
         $countbydate = 0;
@@ -199,5 +201,43 @@ class DashboardController extends Controller
                 ->first()
                 ->toArray();
         }
+    }
+
+    public function getOutstandingByUser($user)
+    {
+        $gettotaldoc = $this->masterQuery()
+            ->where('doc_stat_flag','1')
+            ->with(['apprvhist' => function ($q) use ($user) {
+                $q->with('getallapprover')->with(['notificationFrom' => function ($qdet) use ($user) {
+                    $qdet->where('apprv_user_to', $user);
+                }])->whereHas('notificationFrom', function ($qdet) use ($user) {
+                    $qdet->where('apprv_user_to', $user)->whereNull('apprv_hist_to_id');
+                });
+            }])->whereHas('apprvhist', function ($q) use ($user) {
+                $q->with('getallapprover')->with(['notificationFrom' => function ($qdet) use ($user) {
+                    $qdet->where('apprv_user_to', $user);
+                }])->whereHas('notificationFrom', function ($qdet) use ($user) {
+                    $qdet->where('apprv_user_to', $user)->whereNull('apprv_hist_to_id');
+                });
+            })->get()
+            ->toArray();
+
+        $hasil = [];
+
+        $countbygroup = 0;
+        foreach ($gettotaldoc as $key => $value) {
+            if ($key !== 0 && $value['users']['role_id'] !== $gettotaldoc[$key - 1]['users']['role_id']) {
+                $countbygroup++;
+            }
+
+            $hasil[$countbygroup]['group'] = $value['users']['group']['domain_name'];
+            $hasil[$countbygroup]['value'] = count(array_filter($gettotaldoc, function($q) use ($value) {
+                if ($q['users']['group']['role_id'] === $value['users']['group']['role_id']) {
+                    return true;
+                }
+            }));
+        }
+
+        return $hasil;
     }
 }

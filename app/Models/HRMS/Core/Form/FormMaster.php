@@ -4,10 +4,11 @@ namespace App\Models\HRMS\Core\Form;
 
 use Illuminate\Database\Eloquent\Model;
 use Awobaz\Compoships\Compoships;
+use App\Helpers\CompositeKey;
 
 class FormMaster extends Model
 {
-    use Compoships;
+    use Compoships, CompositeKey;
 
     protected $connection = 'sqlsrv_hrms';
     protected $table = 'hrms_form_mstr';
@@ -20,8 +21,27 @@ class FormMaster extends Model
         'form_label'
     ];
 
-    public function getDetail()
+    protected $primaryKey = [
+        'form_id'
+    ];
+
+    public function formDet()
     {
-        return $this->hasMany('App\Models\HRMS\Core\Form\FormDet', ['form_mstr_id', 'form_var_id'], ['form_id', 'form_var']);
+        return $this->hasMany('App\Models\HRMS\Core\Form\FormDet', 'form_mstr_id', 'form_id');
+    }
+
+    public function formAnswersDet()
+    {
+        return $this->hasMany('App\Models\HRMS\Core\Form\FormAnswersDet', 'form_id', 'form_id');
+    }
+
+    public function formLogics()
+    {
+        return $this->hasMany('App\Models\HRMS\Core\Form\FormLogicsMstr','form_content_id','form_id');
+    }
+
+    public function formHist()
+    {
+        return $this->hasMany('App\Models\HRMS\Core\Form\FormHist','form_hist_id','form_id');
     }
 }

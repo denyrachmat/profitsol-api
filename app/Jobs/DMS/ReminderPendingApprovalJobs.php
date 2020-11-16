@@ -20,11 +20,13 @@ class ReminderPendingApprovalJobs implements ShouldQueue
      * @return void
      */
     protected $user;
+    protected $userFrom;
     protected $data;
 
-    public function __construct($data, $user)
+    public function __construct($data, $user, $userFrom)
     {
         $this->user = $user;
+        $this->userFrom = $userFrom;
         $this->data = $data;
     }
 
@@ -35,6 +37,16 @@ class ReminderPendingApprovalJobs implements ShouldQueue
      */
     public function handle()
     {
-        Mail::to($this->user->email)->send(new ReminderPendingApproval($this->user, $this->data));
+        $mail = Mail::to($this->user->email);
+
+        if ($this->userFrom->email === $this->data[0]->users->email) {
+            $mail
+            ->cc($this->userFrom->email)
+            ->send(new ReminderPendingApproval($this->user, $this->data));
+        } else {
+            $mail
+            ->cc([$this->userFrom->email, $this->data[0]->users->email])
+            ->send(new ReminderPendingApproval($this->user, $this->data));
+        }
     }
 }

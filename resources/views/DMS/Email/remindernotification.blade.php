@@ -31,7 +31,7 @@ function time_elapsed_string($datetime, $full = false) {
 <h1 style="text-align: left;">Hello {{$user->first_name}},</h1>
 <p>We have to inform you about a pending approval which is you need to approve, because the author waiting the document to fully approved.</p>
 <p>Click link below to login DMS.</p>
-<p><a href="192.168.100.32:8081/dms">Login to DMS</a></p>
+<p><a href="http://192.168.100.32:8081/dms">Login to DMS</a></p>
 <table class="tg" style="border-collapse: collapse;border-color: #C44D58;border-spacing: 0;width:100%">
 <thead>
   <tr>

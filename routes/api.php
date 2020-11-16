@@ -112,6 +112,7 @@ Route::group(['prefix' => 'dms'], function () {
     Route::get('/deletedoc/{id}', 'DMS\Core\DocsLocationController@deletefolder');
 
     Route::get('/getallfolder/{user}', 'DMS\Core\DocsLocationController@getlistfolder');
+    Route::get('/updatedoclocation/{user}/{iddoc}/{idloc}', 'DMS\Core\DocsManageController@moveDocument');
 
     Route::post('/docsupload', 'DMS\Core\DocsManageController@uploadDocument');
     Route::post('/docsupload/{iddoc}', 'DMS\Core\DocsManageController@uploadDocument');
@@ -149,11 +150,14 @@ Route::group(['prefix' => 'dms'], function () {
     Route::get('/getallapprvoutstandingbyapprover/{user}/{inoutbox?}', 'DMS\Core\ApprovalController@outstandingApprovalByApprover');
     Route::post('/filtermail/{user}/{inout}', 'DMS\Core\ApprovalController@filtermail');
 
-    Route::get('/getdocsenttoapprover/{user}/{apprstat?}/{date?}', 'DMS\Core\ApprovalController@listDocSenttoApprover');
+    Route::get('/getdocsenttoapprover/{user}/{apprstat?}/{date?}/{doc?}', 'DMS\Core\ApprovalController@listDocSenttoApprover');
+    Route::get('/getdataapprovalbydoc/{user}/{doc?}', 'DMS\Core\ApprovalController@listDocSenttoApproverByDoc');
+
     Route::post('/downloaddocumentstatus', 'DMS\Core\ApprovalController@downloadDocstatus');
 
     // Document List
     Route::get('/getalldocumentbydivision', 'DMS\Core\DashboardController@getalldocumentbyrole');
+    Route::get('/getalloutstanding/{user}', 'DMS\Core\DashboardController@getOutstandingByUser');
 
     // Content 
     Route::post('/storecontent', 'DMS\Core\ContentManageController@store');
@@ -172,6 +176,9 @@ Route::group(['prefix' => 'dms'], function () {
     Route::get('/testingOcr', 'DMS\Core\LogicalController@testingOCR');
     Route::post('/saveLogical', 'DMS\Core\LogicalController@saveLogical');
     Route::get('/testingCo', 'DMS\Core\LogicalController@TesterCo');
+
+    //View List of Approved Doc
+    Route::get('/showapprovedlist/{user}/{stat?}/{date?}', 'DMS\Core\ApprovalController@getDocByApprover');
 
     //Scheduller
     Route::group(['prefix' => 'scheduller'], function () {
@@ -206,6 +213,15 @@ Route::group(['prefix' => 'hrms'], function () {
     CORE FUNCTION
     -----------------------------------
     */
+    Route::get('/testing', 'HRMS\Core\FormController@tester');
+
+    Route::get('/getmapping', 'HRMS\Core\FormController@getFormMapping');
+    Route::get('/getformbytokenpublic/{id}', 'HRMS\Core\FormController@getFormDataByToken'); 
+    Route::get('/getformbytokenpublic/{id}/{ansid}', 'HRMS\Core\FormController@getFormDataByToken'); 
+    Route::post('/storemappingcontentform', 'HRMS\Core\FormController@storeFormMappingContent');
+    Route::post('/storeformhist', 'HRMS\Core\FormController@storeFormHist');
+    
+    Route::get('/getdomain', 'HRMS\Core\domainController@index');
 
     // Need to authorization login
     Route::middleware('auth:apihrms')->group(function ()
@@ -215,16 +231,15 @@ Route::group(['prefix' => 'hrms'], function () {
 
         // Form and Component Creator
         Route::post('/storeform', 'HRMS\Core\FormController@storeForm');
-        Route::post('/storemappingcontentform', 'HRMS\Core\FormController@storeFormMappingContent');
         Route::get('/getform', 'HRMS\Core\FormController@getFormByID');
         Route::get('/getform/{id}', 'HRMS\Core\FormController@getFormByID');
+        Route::post('/storelogics', 'HRMS\Core\FormController@storeLogics');
+        Route::post('/storeformmapping', 'HRMS\Core\FormController@storeFormMapping');
+        Route::get('/getformbytoken/{id}', 'HRMS\Core\FormController@getFormDataByToken');        
 
         Route::post('/storebio', 'HRMS\Core\PersonalController@storeBio');
 
-        Route::get('/getmapping', 'HRMS\Core\FormController@getFormMapping');
-
         // Mapping Organization
-        Route::get('/getdomain', 'HRMS\Core\domainController@index');
         Route::post('/storedomain', 'HRMS\Core\domainController@save');
         
         Route::get('/getdivision', 'HRMS\Core\DivisionController@index');

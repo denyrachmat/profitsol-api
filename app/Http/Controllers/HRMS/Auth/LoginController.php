@@ -42,7 +42,7 @@ class LoginController extends Controller
                         }]);
                         $q->orderByRaw('cast(menu_id as int)');
                     }])
-                    ->with(['personalDetail','educationDetail','childrenDetail','expDetail'])
+                    ->with(['personalDetail','educationDetail','childrenDetail','expDetail','occ.parentList','occ.division'])
                     ->first();
                     
                     // return $data;

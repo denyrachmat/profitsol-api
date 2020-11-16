@@ -10,7 +10,7 @@ class domainController extends Controller
 {
     public function index()
     {
-        return domainMaster::with(['division.children', 'children'])->where('domain_parent', 0)->get();
+        return domainMaster::with(['division.children', 'division.domain', 'division.occ.user', 'division.occ.children', 'children'])->where('domain_parent', 0)->get();
     }
 
     public function save(Request $r)

@@ -17,10 +17,13 @@ class HrmsFormMapping extends Migration
             $table->bigIncrements('id');
             $table->string('div_id');
             $table->string('form_name');
-            $table->string('content_id');
+            $table->string('row_id');
+            $table->string('col_id');
             $table->text('div_content');
             $table->string('div_type')->nullable();
             $table->string('div_username');
+            $table->integer('page_id');
+            $table->string('content_parent')->nullable();
             $table->timestamps();
         });
     }

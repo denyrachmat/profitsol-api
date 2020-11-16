@@ -58,4 +58,9 @@ class DocsMaster extends Model
     {
         return $this->hasOne('App\Models\DMS\Custom\CircularTen','doc_id','doc_id');
     }
+
+    public function location()
+    {
+        return $this->hasOne('App\Models\DMS\Core\DocsLocationMaster','doc_id','doc_id');
+    }
 }

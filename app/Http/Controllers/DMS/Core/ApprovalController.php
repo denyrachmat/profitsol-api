@@ -419,6 +419,18 @@ class ApprovalController extends Controller
         return $gethasil;
     }
 
+    public function findSenderComment($data) {
+        if ($data['approver_level'] === '0') {
+            return $data['apprv_hist_comment'];
+        } else {
+            if (empty($data->allPastApproverList)) {
+                return $data['apprv_hist_comment'];
+            } else {
+                return $this->findSenderComment($data->allPastApproverList);
+            }
+        }
+    }
+
     public function emailsender($user, $data)
     {
         // return $this->outstandingApprovalByApprover($user, null, true)->items()[0];
@@ -426,7 +438,10 @@ class ApprovalController extends Controller
         $html = '<h2>Hello ' . $datadummy->userTo->first_name . ',</h2>
         <!-- <p>We have inform you about your pending approval and need your action immediately.</p> -->
         <p>We have a notification for you, please login to link below and take an action immediately.</p>
-        <p><a href="http://192.168.100.32:8081/dms">STX DMS</a></p><hr>';
+        <p><a href="http://192.168.100.32:8081/dms">STX DMS</a></p><hr>
+        <p>Files: <b>'.$datadummy->histFromByContentId[0]->doc->doc_real_name.'</b></p>
+        <hr>
+        <p>Sender Remark: '.$this->findSenderComment($datadummy->histFromByContentId[0]).'<b></b></p>';
 
         $tableapprv = '<table style="border-collapse: collapse; width: 100%; height: 32px;" border="1">
         <tbody>
@@ -440,12 +455,14 @@ class ApprovalController extends Controller
 
         $no = 1;
         foreach (array_reverse($this->arrfet($datadummy->histFromByContentId[0], [])) as $key => $value) {
+            $json_array = json_decode( $value->apprv_hist_comment, true );
+
             if ($value->apprv_hist_status == "1") {
                 $tableapprv .= '<tr>';
                 $tableapprv .= '<td>' . $no . '</td>';
                 $tableapprv .= "<td>" . $value->users->username . '</td>';
                 $tableapprv .= '<td>@' . $value->users->username . '</td>';
-                $tableapprv .= '<td>' . $value->apprv_hist_comment . '</td>';
+                $tableapprv .= '<td>' . $json_array !== NULL ? 'Login to view comment' : $value->apprv_hist_comment. '</td>';
                 $tableapprv .= '<td>' . $value->created_at . '</td>';
                 $tableapprv .= '</tr>';
             } else {
@@ -453,7 +470,7 @@ class ApprovalController extends Controller
                 $tableapprv .= '<td>' . $no . '</td>';
                 $tableapprv .= "<td>" . $value->users->username . '</td>';
                 $tableapprv .= '<td>@' . $value->users->username . '</td>';
-                $tableapprv .= '<td>' . $value->apprv_hist_comment . '</td>';
+                $tableapprv .= '<td>' . $json_array !== NULL ? 'Login to view comment' : $value->apprv_hist_comment. '</td>';
                 $tableapprv .= '<td>' . $value->created_at . '</td>';
                 $tableapprv .= '</tr>';
             }
@@ -636,7 +653,7 @@ class ApprovalController extends Controller
             ->with('contentVariable')
             ->with('contentDefine.contentMstr')
             ->with(['userFrom', 'userTo'])
-            ->with('approvalMaster')
+            ->with('approvalMaster.userAuthor')
             ->groupBy($selectNotif)
             ->orderBy('apprv_content_id', 'desc')
             ->orderBy('approver_level', 'desc');
@@ -659,40 +676,58 @@ class ApprovalController extends Controller
                 $test->{$value['op']}($value['col'], $value['condition'], $value['val']);
             }
 
-            return $test->paginate();
+            $perpage = $test->count();
+
+            return $test->paginate(-1);
         }
 
         if ($last == true) {
             return $hasil->paginate(1);
         } else {
-            return $hasil->paginate(3);
+            return $hasil->paginate(5);
         }
     }
 
     public function filtermail(Request $r, $user, $type)
     {
-        $data = [
-            [
+        if ($r->has('receivedate') && !empty($r->receivedate)) {
+            $dataawal = [
+                [
+                    'op' => 'where',
+                    'col' => 'created_at',
+                    'condition' => '>=',
+                    'val' => $r->receivedate . ' 00:00:00'
+                ],
+                [
+                    'op' => 'where',
+                    'col' => 'created_at',
+                    'condition' => '<=',
+                    'val' => $r->receivedate . ' 23:59:59'
+                ]
+            ];
+        } else {
+            $dataawal = [];
+        }
+
+        if ($r->has('reviewed') && $r->reviewed === 'unread') {
+            $data = array_merge($dataawal, [[
                 'op' => 'where',
-                'col' => 'created_at',
-                'condition' => '>=',
-                'val' => $r->receivedate . ' 00:00:00'
-            ],
-            [
-                'op' => 'where',
-                'col' => 'created_at',
-                'condition' => '<=',
-                'val' => $r->receivedate . ' 23:59:59'
-            ]
-        ];
+                'col' => 'apprv_hist_to_id',
+                'condition' => '=',
+                'val' => NULL
+            ]]);
+        } else {
+            $data = $dataawal;
+        }
+
+        // return $data;
 
         return $this->outstandingApprovalByApprover($user, $type, false, $data);
     }
 
-    public function listDocSenttoApprover($user, $lastapprvstat = null, $date = null)
+    public function listDocSenttoApprover($user, $lastapprvstat = null, $date = null, $doc = null)
     {
-        $hasil = ApprovalHist::where('apprv_hist_user', $user)
-            ->where('apprv_parent', '0')
+        $hasil = ApprovalHist::where('apprv_parent', '0')
             ->with('allApproverList')
             ->with(['getallapprover' => function ($q) {
                 $q->with('user')->with('logical');
@@ -700,6 +735,14 @@ class ApprovalController extends Controller
             ->with('lastapprv.users')
             ->orderBy('created_at', 'desc')
             ->with('doc.users');
+
+        if (!empty($doc)) {
+            $hasil->whereHas('doc', function ($q) use ($doc) {
+                $q->where('doc_id', $doc);
+            });
+        } else {
+            $hasil->where('apprv_hist_user', $user);
+        }
 
         if (empty($lastapprvstat) && empty($date)) {
             $hasil;
@@ -716,8 +759,20 @@ class ApprovalController extends Controller
             }
         }
 
+        // $parsing = [];
+
+        // foreach ($hasil->get()->toArray() as $key => $valueNya) {
+        //     $parsing[] = $valueNya;
+        //     // $parsing[] = array_merge($valueNya, ['status_logical_doc' => $this->logicalCheck($valueNya['logical'], $doc)]);
+        // }
+
         return $hasil
             ->get();
+    }
+
+    public function listDocSenttoApproverByDoc($user, $doc = null)
+    {
+        return $this->listDocSenttoApprover($user, null, null, $doc);
     }
 
     public function ApprovalList($user)
@@ -889,20 +944,25 @@ class ApprovalController extends Controller
         $ceknotifkosong = ApprovalNotification::select($selectNotif)
             ->where('apprv_hist_to_id', null)
             ->where('created_at', '<=', date('Y-m-d H:i:s', strtotime("-1 week")))
+            ->where('approver_level_to', '<>', '0')
             ->with(['histFromByContentId' => function ($q) use ($selecthist) {
                 $q->select($selecthist);
                 $q->with('doc.users');
                 $q->with('users');
             }])
+            ->with('userFrom')
             ->with('userTo')
             ->get();
 
+        logger('scheduller jalan loh');
+
+        // return $ceknotifkosong;
         if (empty($ceknotifkosong)) {
             return 'No pending approval';
         } else {
             foreach ($ceknotifkosong as $key => $value) {
                 try {
-                    $insertJob = (new ReminderPendingApprovalJobs($value->histFromByContentId, $value->userTo));
+                    $insertJob = (new ReminderPendingApprovalJobs($value->histFromByContentId, $value->userTo, $value->userFrom));
 
                     dispatch($insertJob);
                 } catch (\Exception $th) {
@@ -937,7 +997,6 @@ class ApprovalController extends Controller
 
             $cek = $this->checkerFoo([], $value, $file);
 
-            logger($cek);
             if (global_parse_condition($cek)) {
                 $hasilAll[] = $cek;
             }
@@ -1067,5 +1126,75 @@ class ApprovalController extends Controller
 
             return implode(' ', $currArr);
         }
+    }
+
+    public function getDocByApprover($user, $stat = '0', $date = '')
+    {
+        $selected = [
+            'apprv_hist_user',
+            'apprv_hist_doc'
+        ];
+
+        $cekHist = ApprovalHist::select($selected)
+            ->where('apprv_hist_user', $user)
+            ->with('notificationFrom');
+
+        if ($stat !== '0') {
+            if ($stat === 'full') {
+                return $cekHist->with(['doc' => function ($q) {
+                    $q
+                        ->where('doc_stat_flag', '2')
+                        ->orWhere('doc_stat_flag', '3')
+                        ->with('users');
+                }])
+                    ->whereHas('doc', function ($q) {
+                        $q
+                            ->where('doc_stat_flag', '2')
+                            ->orWhere('doc_stat_flag', '3')
+                            ->with('users');
+                    })
+                    ->groupBy($selected)
+                    ->get();
+            } else {
+                if ($stat === 'partial') {
+                    return $cekHist->with(['doc' => function ($q) {
+                        $q
+                            ->where('doc_stat_flag', '1')
+                            ->with('users');
+                    }])
+                        ->whereHas('doc', function ($q) {
+                            $q
+                                ->where('doc_stat_flag', '1')
+                                ->with('users');
+                        })->where('apprv_hist_status', '1')
+                        ->groupBy($selected)
+                        ->get();
+                }
+
+                return $cekHist->with('doc.users')->where('apprv_hist_status', '0')
+                    ->groupBy($selected)
+                    ->get();
+            }
+        }
+
+        if ($date !== '') {
+            return $cekHist->with(['doc' => function ($q) use ($date) {
+                $q
+                    ->whereBetween('created_at', [$date . ' 00:00:00', $date . ' 23:59:59'])
+                    ->with('users');
+            }])
+                ->whereHas('doc', function ($q) use ($date) {
+                    $q
+                        ->whereBetween('created_at', [$date . ' 00:00:00', $date . ' 23:59:59'])
+                        ->with('users');
+                })
+                ->groupBy($selected)
+                ->get();
+        }
+
+        return $cekHist
+            ->with('doc.users')
+            ->groupBy($selected)
+            ->get();
     }
 }

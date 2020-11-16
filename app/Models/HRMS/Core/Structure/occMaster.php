@@ -32,7 +32,17 @@ class occMaster extends Model
 
     public function children()
     {
-        return $this->child()->with('children')->with('user');
+        return $this->child()->with('children')->with('user')->with('division');
+    }
+
+    public function parent()
+    {
+        return $this->hasMany('App\Models\HRMS\Core\Structure\occMaster','id','occ_parent_id');
+    }
+
+    public function parentList()
+    {
+        return $this->parent()->with('parentList')->with('user')->with('division');
     }
 
     public function user()

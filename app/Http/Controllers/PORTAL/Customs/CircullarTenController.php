@@ -16,6 +16,8 @@ use Symfony\Component\HttpFoundation\Response;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Storage;
 
+use Illuminate\Support\Carbon;
+
 use SnappyPDF;
 use Illuminate\Support\Str;
 
@@ -178,6 +180,8 @@ class CircullarTenController extends Controller
 
         // return 'success';
         $cekusergroup = UsersPortal::where('username', $req->header('username'))->with('divisi')->first();
+        
+        CircularTen::where('doc_id', $nama_file)->delete();
 
         if ($cekusergroup->role_id === 'USER_PPC') {
             $req->file->storeAs($rootfolder, $nama_file);
@@ -189,6 +193,15 @@ class CircullarTenController extends Controller
     
                 return 'success';
             } else {
+                if (File::exists($rootfolder. $nama_file)) {
+                    File::delete($rootfolder. $nama_file);
+
+                    $req->file->storeAs($rootfolder, $nama_file);
+                } else {
+                    $req->file->storeAs($rootfolder, $nama_file);
+                }
+                return 'success';
+
                 return response('File ' . $nama_file . ' exists, please add other file !', 422);
             }
         }
