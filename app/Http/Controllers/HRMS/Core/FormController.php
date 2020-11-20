@@ -12,6 +12,7 @@ use App\Models\HRMS\Core\Form\FormLogicsMstr;
 use App\Models\HRMS\Core\Form\FormPageMapping;
 use App\Models\HRMS\Core\Form\FormPageMappingDet;
 use App\Models\HRMS\Core\Form\FormHist;
+use App\Models\HRMS\Auth\UserMaster;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Str;
 
@@ -169,6 +170,7 @@ class FormController extends Controller
                                 'form_id' => $idForm,
                                 'ans_key' => $valueAns['ans_key'],
                                 'ans_val' => $valueAns['ans_val'],
+                                'ans_remark' => $valueAns['ans_remark'],
                                 'ans_creator' => $username
                             ]);
                         }
@@ -451,6 +453,27 @@ class FormController extends Controller
         } else {
             return false;
         }
+    }
+
+    public function getAllForm($username)
+    {
+        $unameDetail = UserMaster::with('occ.division')->where('username', $username)->first();
+        $getID = FormPageMapping::with('contentDetail')
+            ->with('hist')
+            ->with(['detail' => function ($q) use ($unameDetail) {
+                $q->where('username', $unameDetail->username);
+                $q->orWhere('division_id', $unameDetail->occ->division->id);
+                $q->orWhere('domain_id', $unameDetail->occ->domain_id);
+            }])
+            ->whereHas('detail', function ($q) use ($unameDetail) {
+                $q->where('username', $unameDetail->username);
+                $q->orWhere('division_id', $unameDetail->occ->division->id);
+                $q->orWhere('domain_id', $unameDetail->occ->domain_id);
+            })
+            ->get()
+            ->toArray();
+
+        return $getID;
     }
 
     public function storeFormHist(Request $req)

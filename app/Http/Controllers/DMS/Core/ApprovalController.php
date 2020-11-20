@@ -455,14 +455,14 @@ class ApprovalController extends Controller
 
         $no = 1;
         foreach (array_reverse($this->arrfet($datadummy->histFromByContentId[0], [])) as $key => $value) {
-            $json_array = json_decode( $value->apprv_hist_comment, true );
+            $json_array = json_decode($value->apprv_hist_comment);
 
             if ($value->apprv_hist_status == "1") {
                 $tableapprv .= '<tr>';
                 $tableapprv .= '<td>' . $no . '</td>';
                 $tableapprv .= "<td>" . $value->users->username . '</td>';
                 $tableapprv .= '<td>@' . $value->users->username . '</td>';
-                $tableapprv .= '<td>' . $json_array !== NULL ? 'Login to view comment' : $value->apprv_hist_comment. '</td>';
+                $tableapprv .= '<td>' . $json_array === null ? $value->apprv_hist_comment. '</td>' : 'Login to view comment'. '</td>';
                 $tableapprv .= '<td>' . $value->created_at . '</td>';
                 $tableapprv .= '</tr>';
             } else {
@@ -470,7 +470,7 @@ class ApprovalController extends Controller
                 $tableapprv .= '<td>' . $no . '</td>';
                 $tableapprv .= "<td>" . $value->users->username . '</td>';
                 $tableapprv .= '<td>@' . $value->users->username . '</td>';
-                $tableapprv .= '<td>' . $json_array !== NULL ? 'Login to view comment' : $value->apprv_hist_comment. '</td>';
+                $tableapprv .= '<td>' . $json_array === null ? $value->apprv_hist_comment. '</td>' : 'Login to view comment'. '</td>';
                 $tableapprv .= '<td>' . $value->created_at . '</td>';
                 $tableapprv .= '</tr>';
             }

@@ -13,6 +13,7 @@ class FormAnswersDet extends Model
         'form_id',
         'ans_key',
         'ans_val',
-        'ans_creator'
+        'ans_creator',
+        'ans_remark'
     ];
 }

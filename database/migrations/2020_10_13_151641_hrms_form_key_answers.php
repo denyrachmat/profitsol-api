@@ -19,6 +19,7 @@ class HrmsFormKeyAnswers extends Migration
             $table->string('ans_key');
             $table->string('ans_val');
             $table->string('ans_creator');
+            $table->string('ans_remark')->nullable();
             $table->timestamps();
         });
     }

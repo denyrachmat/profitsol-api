@@ -33,4 +33,9 @@ class FormPageMapping extends Model
     {
         return $this->hasMany('App\Models\HRMS\Core\Form\FormPageMappingDet', 'mapping_id', 'id');
     }
+
+    public function hist()
+    {
+        return $this->hasMany('App\Models\HRMS\Core\Form\FormHist', 'publish_token', 'publish_token');
+    }
 }

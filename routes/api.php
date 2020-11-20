@@ -235,7 +235,8 @@ Route::group(['prefix' => 'hrms'], function () {
         Route::get('/getform/{id}', 'HRMS\Core\FormController@getFormByID');
         Route::post('/storelogics', 'HRMS\Core\FormController@storeLogics');
         Route::post('/storeformmapping', 'HRMS\Core\FormController@storeFormMapping');
-        Route::get('/getformbytoken/{id}', 'HRMS\Core\FormController@getFormDataByToken');        
+        Route::get('/getformbytoken/{id}', 'HRMS\Core\FormController@getFormDataByToken'); 
+        Route::get('/getallform/{username}', 'HRMS\Core\FormController@getAllForm');       
 
         Route::post('/storebio', 'HRMS\Core\PersonalController@storeBio');
 

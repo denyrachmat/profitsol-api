@@ -24,6 +24,7 @@ class HrmsFormPageMapping extends Migration
             $table->datetime('active_end');
             $table->boolean('revised_answer');
             $table->boolean('reviewed_answer');
+            $table->boolean('active_flag');
             $table->timestamps();
         });
     }

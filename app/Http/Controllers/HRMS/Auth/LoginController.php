@@ -21,7 +21,7 @@ class LoginController extends Controller
         // return 'uess';
 
         if (empty($cek->first()->role_id)) {
-            return Response::json([
+            return response()->json([
                 "message" => "The given data was invalid.",
                 "errors" => [
                     "username" => ["Your account is not configured yet!!"]
