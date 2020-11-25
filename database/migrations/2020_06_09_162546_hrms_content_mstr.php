@@ -15,10 +15,10 @@ class HrmsContentMstr extends Migration
     {
         Schema::connection('sqlsrv_hrms')->create('hrms_content_mstr', function (Blueprint $table) {
             $table->bigIncrements('id');
-            $table->string('content_title');
-            $table->text('content_html');
-            $table->string('content_type');
+            $table->string('page_mapping_id');
+            $table->string('menu_url');
             $table->string('content_username');
+            $table->string('publish_methods')->nullable();
             $table->timestamps();
         });
     }

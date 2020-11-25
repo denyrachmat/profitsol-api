@@ -21,6 +21,7 @@ class FormPageMapping extends Model
         'publish_token',
         'username',
         'active_end',
+        'active_start',
         'revised_answer'
     ];
 

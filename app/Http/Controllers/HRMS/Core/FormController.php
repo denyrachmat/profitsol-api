@@ -234,6 +234,7 @@ class FormController extends Controller
                     ->with('divRelation.formLogics')
                     ->with('divRelation.formAnswersDet')
                     ->with('divRelation.formHist')
+                    ->with('pageMapping.detail')
                     ->orderBy('div_id')
                     ->orderBy('row_id')
                     ->orderBy('col_id')
@@ -249,6 +250,7 @@ class FormController extends Controller
                     ->with('divRelation.formLogics')
                     ->with('divRelation.formAnswersDet')
                     ->with('divRelation.formHist')
+                    ->with('pageMapping.detail')
                     ->where('div_id', $id)
                     ->orderBy('row_id')
                     ->orderBy('col_id')
@@ -279,6 +281,7 @@ class FormController extends Controller
                 $hasil[$countArr]['div_id'] = $value['div_id'];
                 $hasil[$countArr]['title'] = $value['form_name'];
                 $hasil[$countArr]['logics'] = $value['formLogics'];
+                $hasil[$countArr]['page_mapping'] = $value['pageMapping'];
 
                 $hasil[$countArr]['rows'][$countRow]['row_id'] = $value['row_id'];
                 $hasil[$countArr]['rows'][$countRow]['rows'] = $countRow + 1;
@@ -407,6 +410,7 @@ class FormController extends Controller
             'menu_id' => $req->menu_id,
             'publish_flag' => $req->publish_flag,
             'publish_token' => $randToken,
+            'active_start' => $req->active_start,
             'active_end' => $req->active_end,
             'revised_answer' => $req->revised_answer,
             'username' => $req->header('username'),
@@ -455,25 +459,45 @@ class FormController extends Controller
         }
     }
 
-    public function getAllForm($username)
+    public function getAllForm($username, $met = 'info')
     {
         $unameDetail = UserMaster::with('occ.division')->where('username', $username)->first();
         $getID = FormPageMapping::with('contentDetail')
             ->with('hist')
             ->with(['detail' => function ($q) use ($unameDetail) {
                 $q->where('username', $unameDetail->username);
-                $q->orWhere('division_id', $unameDetail->occ->division->id);
-                $q->orWhere('domain_id', $unameDetail->occ->domain_id);
+                if (isset($unameDetail->occ->division)) {
+                    $q->orWhere('division_id', $unameDetail->occ->division->id);
+                    $q->orWhere('domain_id', $unameDetail->occ->domain_id);
+                }
             }])
             ->whereHas('detail', function ($q) use ($unameDetail) {
                 $q->where('username', $unameDetail->username);
-                $q->orWhere('division_id', $unameDetail->occ->division->id);
-                $q->orWhere('domain_id', $unameDetail->occ->domain_id);
+                if (isset($unameDetail->occ->division)) {
+                    $q->orWhere('division_id', $unameDetail->occ->division->id);
+                    $q->orWhere('domain_id', $unameDetail->occ->domain_id);
+                }
             })
+            ->where('active_flag', 1)
             ->get()
             ->toArray();
-
-        return $getID;
+            
+        if ($met === 'info') {
+            $hasil = [];
+            foreach ($getID as $key => $val) {
+                if (!empty($val['active_end'])) {
+                    if (date('Y-m-d H:i:s') <= $val['active_end']) {
+                        $hasil[] = $val;
+                    }
+                } else {
+                    $hasil[] = $val;
+                }
+            }
+    
+            return $hasil;
+        } else {
+            return $getID;
+        }
     }
 
     public function storeFormHist(Request $req)
@@ -502,6 +526,20 @@ class FormController extends Controller
         }
 
         return $cekHasil;
+    }
+
+    public function getTrainingForm()
+    {
+        $getID = FormPageMapping::with(['contentDetail.divRelation.formAnswersDet', 'contentDetail.divRelation.formHist'])
+            ->with('hist')
+            ->with(['detail.users'])
+            ->whereHas('detail')
+            ->where('publish_flag', 'prv_form')
+            ->orderBy('created_at', 'desc')
+            ->get()
+            ->toArray();
+        
+        return $getID;
     }
 
     public function tester()

@@ -15,4 +15,9 @@ class FormPageMappingDet extends Model
         'division_id',
         'username'
     ];
+
+    public function users()
+    {
+        return $this->hasOne('App\Models\HRMS\Auth\UserMaster','username','username');
+    }
 }

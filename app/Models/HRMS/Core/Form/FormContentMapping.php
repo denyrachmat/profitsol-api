@@ -48,4 +48,9 @@ class FormContentMapping extends Model
     {
         return $this->child()->with('formMappingChild');
     }
+
+    public function pageMapping()
+    {
+        return $this->hasOne('App\Models\HRMS\Core\Form\FormPageMapping','content_id','div_id');
+    }
 }

@@ -16,8 +16,7 @@ class HrmsContentLetterHist extends Migration
         Schema::connection('sqlsrv_hrms')->create('hrms_content_form_hist', function (Blueprint $table) {
             $table->bigIncrements('id');
             $table->string('content_id');
-            $table->string('form_id');
-            $table->string('letter_content');
+            $table->string('form_hist_id');
             $table->string('username');
             $table->timestamps();
         });

@@ -455,14 +455,15 @@ class ApprovalController extends Controller
 
         $no = 1;
         foreach (array_reverse($this->arrfet($datadummy->histFromByContentId[0], [])) as $key => $value) {
-            $json_array = json_decode($value->apprv_hist_comment);
+            // $json_array = json_decode($value->apprv_hist_comment);
 
+            // logger($json_array);
             if ($value->apprv_hist_status == "1") {
                 $tableapprv .= '<tr>';
                 $tableapprv .= '<td>' . $no . '</td>';
                 $tableapprv .= "<td>" . $value->users->username . '</td>';
                 $tableapprv .= '<td>@' . $value->users->username . '</td>';
-                $tableapprv .= '<td>' . $json_array === null ? $value->apprv_hist_comment. '</td>' : 'Login to view comment'. '</td>';
+                $tableapprv .= !json_decode($value->apprv_hist_comment) ? '<td>' .json_encode($value->apprv_hist_comment). '</td>' : '<td>Login to view comment</td>';
                 $tableapprv .= '<td>' . $value->created_at . '</td>';
                 $tableapprv .= '</tr>';
             } else {
@@ -470,7 +471,7 @@ class ApprovalController extends Controller
                 $tableapprv .= '<td>' . $no . '</td>';
                 $tableapprv .= "<td>" . $value->users->username . '</td>';
                 $tableapprv .= '<td>@' . $value->users->username . '</td>';
-                $tableapprv .= '<td>' . $json_array === null ? $value->apprv_hist_comment. '</td>' : 'Login to view comment'. '</td>';
+                $tableapprv .= !json_decode($value->apprv_hist_comment) ? '<td>' .json_encode($value->apprv_hist_comment). '</td>' : '<td>Login to view comment</td>';
                 $tableapprv .= '<td>' . $value->created_at . '</td>';
                 $tableapprv .= '</tr>';
             }
@@ -1014,55 +1015,59 @@ class ApprovalController extends Controller
 
             if ($val['logical_cond'] === 'after_word') {
                 $splitByWord = explode($val['logical_val_opt'], $file);
-                $getAfterWordExactly = explode(' ', $splitByWord[1]);
-                if ($val['logical_param'] === 'contain') {
-                    if (strpos($splitByWord[1], $val['logical_val'])) {
-                        $currArr[] = 'true';
-                    } else {
-                        $currArr[] = 'false';
+                if (isset($splitByWord[1])) {
+                    $getAfterWordExactly = explode(' ', $splitByWord[1]);
+                    if ($val['logical_param'] === 'contain') {
+                        if (strpos($splitByWord[1], $val['logical_val'])) {
+                            $currArr[] = 'true';
+                        } else {
+                            $currArr[] = 'false';
+                        }
+                    } elseif ($val['logical_param'] === 'not_contain') {
+                        if (strpos($splitByWord[1], $val['logical_val'])) {
+                            $currArr[] = 'false';
+                        } else {
+                            $currArr[] = 'true';
+                        }
+                    } elseif ($val['logical_cond'] === '===') {
+                        if ($getAfterWordExactly[0] === $val['logical_val']) {
+                            $currArr[] = 'true';
+                        } else {
+                            $currArr[] = 'false';
+                        }
+                    } elseif ($val['logical_cond'] === '>') {
+                        if ($getAfterWordExactly[0] > $val['logical_val']) {
+                            $currArr[] = 'true';
+                        } else {
+                            $currArr[] = 'false';
+                        }
+                    } elseif ($val['logical_cond'] === '>=') {
+                        if ($getAfterWordExactly[0] >= $val['logical_val']) {
+                            $currArr[] = 'true';
+                        } else {
+                            $currArr[] = 'false';
+                        }
+                    } elseif ($val['logical_cond'] === '<') {
+                        if ($getAfterWordExactly[0] < $val['logical_val']) {
+                            $currArr[] = 'true';
+                        } else {
+                            $currArr[] = 'false';
+                        }
+                    } elseif ($val['logical_cond'] === '<=') {
+                        if ($getAfterWordExactly[0] <= $val['logical_val']) {
+                            $currArr[] = 'true';
+                        } else {
+                            $currArr[] = 'false';
+                        }
+                    } elseif ($val['logical_cond'] === '<>') {
+                        if ($getAfterWordExactly[0] <> $val['logical_val']) {
+                            $currArr[] = 'false';
+                        } else {
+                            $currArr[] = 'true';
+                        }
                     }
-                } elseif ($val['logical_param'] === 'not_contain') {
-                    if (strpos($splitByWord[1], $val['logical_val'])) {
-                        $currArr[] = 'false';
-                    } else {
-                        $currArr[] = 'true';
-                    }
-                } elseif ($val['logical_cond'] === '===') {
-                    if ($getAfterWordExactly[0] === $val['logical_val']) {
-                        $currArr[] = 'true';
-                    } else {
-                        $currArr[] = 'false';
-                    }
-                } elseif ($val['logical_cond'] === '>') {
-                    if ($getAfterWordExactly[0] > $val['logical_val']) {
-                        $currArr[] = 'true';
-                    } else {
-                        $currArr[] = 'false';
-                    }
-                } elseif ($val['logical_cond'] === '>=') {
-                    if ($getAfterWordExactly[0] >= $val['logical_val']) {
-                        $currArr[] = 'true';
-                    } else {
-                        $currArr[] = 'false';
-                    }
-                } elseif ($val['logical_cond'] === '<') {
-                    if ($getAfterWordExactly[0] < $val['logical_val']) {
-                        $currArr[] = 'true';
-                    } else {
-                        $currArr[] = 'false';
-                    }
-                } elseif ($val['logical_cond'] === '<=') {
-                    if ($getAfterWordExactly[0] <= $val['logical_val']) {
-                        $currArr[] = 'true';
-                    } else {
-                        $currArr[] = 'false';
-                    }
-                } elseif ($val['logical_cond'] === '<>') {
-                    if ($getAfterWordExactly[0] <> $val['logical_val']) {
-                        $currArr[] = 'false';
-                    } else {
-                        $currArr[] = 'true';
-                    }
+                } else {
+                    $currArr[] = 'false';
                 }
 
                 return $this->checkerFoo($currArr, $val['all_child_list'], $file);
