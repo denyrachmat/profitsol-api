@@ -22,7 +22,8 @@ class FormPageMapping extends Model
         'username',
         'active_end',
         'active_start',
-        'revised_answer'
+        'revised_answer',
+        'active_flag'
     ];
 
     public function contentDetail()

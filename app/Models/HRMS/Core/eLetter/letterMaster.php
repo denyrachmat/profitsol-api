@@ -14,17 +14,11 @@ class letterMaster extends Model
     protected $connection = 'sqlsrv_hrms';
     protected $table = 'hrms_content_mstr';
     protected $fillable = [
-        'id',
-        'content_title',
-        'content_html',
-        'content_type',
+        'page_mapping_id',
+        'menu_url',
         'content_username',
+        'publish_methods'
     ];
-
-    public function letterDetail()
-    {
-        return $this->hasMany('App\Models\HRMS\Core\eLetter\letterFormDetail','content_id','id');
-    }
 
     public function menuList()
     {

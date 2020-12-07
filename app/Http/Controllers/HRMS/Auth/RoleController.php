@@ -6,19 +6,26 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Http\Requests\HRMS\Auth\RoleRequest;
 use App\Models\HRMS\Auth\RoleMappingMenu;
+use App\Models\HRMS\Auth\RoleMaster;
+use App\Models\HRMS\Auth\MenuMaster;
 
 class RoleController extends Controller
 {
     public function index()
     {
-        $cek = RoleMappingMenu::select([
-            'role_id',
-            'menu_id'
-        ])
-        ->with('menu')
-        ->with('group')
-        ->with('user')
-        ->get();
+        $cek = RoleMaster::with([
+          'mappingMenu.menu',
+          'mappingMenu.group',
+          'mappingMenu.user'
+        ])->get();
+        // $cek = RoleMappingMenu::select([
+        //     'role_id',
+        //     'menu_id'
+        // ])
+        // ->with('menu')
+        // ->with('group')
+        // ->with('user')
+        // ->get();
 
         return $cek;
 
@@ -42,10 +49,20 @@ class RoleController extends Controller
     {
         if ($met == 'new') {
             $id = $req->role_id;
+            RoleMaster::updateOrCreate([
+                'role_id' => $req->role_id,
+            ],[
+                'role_id' => $req->role_id,
+                'role_name' => $req->role_name,
+            ]);
+
+            RoleMappingMenu::where('role_id', $req->role_id)->delete();
             foreach ($req->selected as $key => $value) {
+                $checkMenu = MenuMaster::where('menu_order', $value)->first();
                 RoleMappingMenu::insert([
                     'role_id' => $req->role_id,
-                    'menu_id' => $value
+                    'menu_id' => $value,
+                    'parent_menu_id' => $checkMenu->menu_parent_id
                 ]);
             }
 
@@ -55,16 +72,19 @@ class RoleController extends Controller
             foreach ($req->selected as $key => $value) {
                 $cekid = RoleMappingMenu::where('role_id', $id)->where('menu_id', $value)->first();
 
+                $checkMenu = MenuMaster::where('menu_order', $value)->first();
                 if (!empty($cekid)) {
                     RoleMappingMenu::where('role_id', $id)->where('menu_id', $value)
                         ->update([
                             'role_id' => $id,
-                            'menu_id' => $value
+                            'menu_id' => $value,
+                            'parent_menu_id' => $checkMenu->menu_parent_id
                         ]);
                 } else {
                     RoleMappingMenu::insert([
                         'role_id' => $id,
-                        'menu_id' => $value
+                        'menu_id' => $value,
+                        'parent_menu_id' => $checkMenu->menu_parent_id
                     ]);
                 }
             }

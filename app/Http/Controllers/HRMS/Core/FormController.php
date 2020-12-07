@@ -12,7 +12,16 @@ use App\Models\HRMS\Core\Form\FormLogicsMstr;
 use App\Models\HRMS\Core\Form\FormPageMapping;
 use App\Models\HRMS\Core\Form\FormPageMappingDet;
 use App\Models\HRMS\Core\Form\FormHist;
+
+use App\Models\HRMS\Core\Structure\domainMaster;
+use App\Models\HRMS\Core\Structure\divisionMaster;
 use App\Models\HRMS\Auth\UserMaster;
+
+use App\Jobs\HRMS\formNotification;
+
+use App\Exports\HRMS\exportTrainingValue;
+
+use Excel;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Str;
 
@@ -260,7 +269,7 @@ class FormController extends Controller
         }
         // return $sourceData;
 
-        $countRow = $countArr = $countCol = 0;
+        $countRow = $countArr = $countCol = $countForm = 0;
         $hasil = [];
         foreach ($sourceData as $key => $value) {
             if ($key !== 0 && $value['col_id'] !== $sourceData[$key - 1]['col_id']) {
@@ -275,6 +284,10 @@ class FormController extends Controller
             if ($key !== 0 && $value['div_id'] !== $sourceData[$key - 1]['div_id']) {
                 $countArr++;
                 $countRow = 0;
+            }
+
+            if (isset($value->divRelation)) {
+                $countForm++;
             }
 
             if ($data === null) {
@@ -293,6 +306,7 @@ class FormController extends Controller
                 $hasil[$countArr]['rows'][$countRow]['data'][$countCol]['content'] = isset($value->divRelation)
                     ? [
                         'type' => 'form',
+                        'count' => $countForm,
                         'data' => [
                             "form_id" => $value->divRelation['form_id'],
                             "form_type" => json_decode($value->divRelation['form_type']),
@@ -330,6 +344,7 @@ class FormController extends Controller
                 $hasil[$countRow]['data'][$countCol]['content'] = isset($value->divRelation)
                     ? [
                         'type' => 'form',
+                        'count' => $countForm,
                         'data' => [
                             "form_id" => $value->divRelation['form_id'],
                             "form_type" => json_decode($value->divRelation['form_type']),
@@ -415,37 +430,142 @@ class FormController extends Controller
             'revised_answer' => $req->revised_answer,
             'username' => $req->header('username'),
         ]);
-        
+
         FormPageMappingDet::where('mapping_id', $master->id)->delete();
         if (count($req->detail['domain']) > 0) {
             foreach ($req->detail['domain'] as $key => $value) {
-                FormPageMappingDet::create([
-                    'mapping_id' => $master->id,
-                    'domain_id' => $value
-                ]);
-            }
-        }
-        
-        if (count($req->detail['div']) > 0) {
-            foreach ($req->detail['div'] as $key => $value) {
-                FormPageMappingDet::create([
-                    'mapping_id' => $master->id,
-                    'division_id' => $value
-                ]);
+                $cekdomain = domainMaster::with([
+                    'division.children',
+                    'division.domain',
+                    'division.occ.user',
+                    'division.occ.children',
+                    'children'
+                ])
+                ->where('id', $value)
+                ->first();
+
+                $getUserList = $this->getUserList($this->flatten($cekdomain));
+                
+                foreach ($getUserList as $key => $valueUser) {
+                    FormPageMappingDet::create([
+                        'mapping_id' => $master->id,
+                        'domain_id' => 1,
+                        'division_id' => 0,
+                        'username' => $valueUser['username']
+                    ]);
+
+                    $getContent = FormContentMapping::where('div_id', $req->content_id)->first()->toArray();
+
+                    $insertJob = (new formNotification($valueUser['email'], $valueUser, $getContent));
+
+                    dispatch($insertJob);
+                }
             }
         }
 
-        
+        if (count($req->detail['div']) > 0) {
+            foreach ($req->detail['div'] as $key => $value) {
+                $cekdiv = divisionMaster::with([
+                    'children',
+                    'domain',
+                    'occ.user',
+                    'occ.children'
+                ])
+                ->where('id', $value)
+                ->first();
+
+                $getUserList = $this->getUserList($this->flatten($cekdiv));
+
+                foreach ($getUserList as $key => $valueUser) {
+                    FormPageMappingDet::create([
+                        'mapping_id' => $master->id,
+                        'domain_id' => 0,
+                        'division_id' => 1,
+                        'username' => $valueUser['username']
+                    ]);
+
+                    $getContent = FormContentMapping::where('div_id', $req->content_id)->first()->toArray();
+
+                    $insertJob = (new formNotification($valueUser['email'], $valueUser, $getContent));
+
+                    dispatch($insertJob);
+                }
+            }
+        }
+
+
         if (count($req->detail['user']) > 0) {
             foreach ($req->detail['user'] as $key => $value) {
                 FormPageMappingDet::create([
-                    'mapping_id' => $master->id,
+                    'mapping_id' => $master->id,                    
+                    'domain_id' => 0,
+                    'division_id' => 0,
                     'username' => $value['username']
                 ]);
+
+                $getContent = FormContentMapping::where('div_id', $req->content_id)->first()->toArray();
+
+                logger([$value['email'], $value, $getContent]);
+
+                $insertJob = (new formNotification($value['email'], $value, $getContent));
+
+                dispatch($insertJob);
             }
         }
 
         return $master;
+    }
+
+    public function flatten($array, $prefix = '') {
+        $return = [];
+        foreach ($array as $key => $value) {
+            if (is_array($value)) {
+                $return = array_merge($return, $this->flatten($value, $prefix . $key . '_'));
+            } else {
+                $return[$prefix . $key] = $value;
+            }
+        }
+        return $return;
+    }
+
+    public function testing()
+    {
+        return array_values($this->flatten($this->getUserList(
+            divisionMaster::with([
+                'children',
+                'domain',
+                'occ.user',
+                'occ.children'
+            ])
+            ->where('id', 31)
+            ->first()
+        )));
+    }
+
+    public function getUserList($data)
+    {
+        $hasil = [];
+
+        if (isset($data->children)) {
+            foreach ($data->children as $key => $value) {
+                $hasil[] = $this->getUserList($value);
+            }
+        }
+        if (isset($data->user)) {
+            foreach ($data->user as $key => $value) {
+                $hasil[] = $value;
+            }
+        } elseif (isset($data->division)) {
+            foreach ($data->division as $key => $value) {
+                $hasil[] = $this->getUserList($value);
+            }
+        } elseif (isset($data->occ)) {
+            foreach ($data->occ as $key => $value) {
+                $hasil[] = $this->getUserList($value);
+            }
+        }
+
+        return $hasil;
     }
 
     public function getFormDataByToken($token, $ansid = '')
@@ -453,7 +573,53 @@ class FormController extends Controller
         # code...contentDetail
         $getID = FormPageMapping::with('contentDetail')->with('detail')->where('publish_token', $token)->first();
         if (!empty($getID)) {
-            return array_merge(['mapping' => $getID], empty($ansid) ? $this->getFormMapping($getID->content_id)[0] : $this->getFormMapping($getID->content_id, null, $ansid)[0]);
+            if (!empty($getID->active_start)){
+                if (date('Y-m-d h:i:s') < $getID->active_start){
+                    FormPageMapping::with('contentDetail')->with('detail')->where('publish_token', $token)->update([
+                        'active_flag' => 2
+                    ]);
+
+                    $getIDagain = FormPageMapping::with('contentDetail')->with('detail')->where('publish_token', $token)->first();
+                    return array_merge(
+                        ['mapping' => $getIDagain],
+                        empty($ansid) ? $this->getFormMapping($getIDagain->content_id)[0] : $this->getFormMapping($getIDagain->content_id, null, $ansid)[0]
+                    );
+                } else {  
+                    FormPageMapping::with('contentDetail')->with('detail')->where('publish_token', $token)->update([
+                        'active_flag' => 1
+                    ]);
+
+                    $getIDagain = FormPageMapping::with('contentDetail')->with('detail')->where('publish_token', $token)->first();
+                    return array_merge(
+                        ['mapping' => $getIDagain],
+                        empty($ansid) ? $this->getFormMapping($getIDagain->content_id)[0] : $this->getFormMapping($getIDagain->content_id, null, $ansid)[0]
+                    );
+                }
+            }
+
+            if (!empty($getID->active_end)){
+                if (date('Y-m-d h:i:s') > $getID->active_end){
+                    FormPageMapping::with('contentDetail')->with('detail')->where('publish_token', $token)->update([
+                        'active_flag' => 0
+                    ]);
+
+                    $getIDagain = FormPageMapping::with('contentDetail')->with('detail')->where('publish_token', $token)->first();
+                    return array_merge(
+                        ['mapping' => $getIDagain],
+                        empty($ansid) ? $this->getFormMapping($getIDagain->content_id)[0] : $this->getFormMapping($getIDagain->content_id, null, $ansid)[0]
+                    );
+                } else {                    
+                    return array_merge(
+                        ['mapping' => $getID],
+                        empty($ansid) ? $this->getFormMapping($getID->content_id)[0] : $this->getFormMapping($getID->content_id, null, $ansid)[0]
+                    );
+                }
+            }
+            
+            return array_merge(
+                ['mapping' => $getID],
+                empty($ansid) ? $this->getFormMapping($getID->content_id)[0] : $this->getFormMapping($getID->content_id, null, $ansid)[0]
+            );
         } else {
             return false;
         }
@@ -478,10 +644,10 @@ class FormController extends Controller
                     $q->orWhere('domain_id', $unameDetail->occ->domain_id);
                 }
             })
-            ->where('active_flag', 1)
+            ->where('active_flag', '<>' , '0')
             ->get()
             ->toArray();
-            
+
         if ($met === 'info') {
             $hasil = [];
             foreach ($getID as $key => $val) {
@@ -493,7 +659,7 @@ class FormController extends Controller
                     $hasil[] = $val;
                 }
             }
-    
+
             return $hasil;
         } else {
             return $getID;
@@ -506,7 +672,7 @@ class FormController extends Controller
         if ($req->has('creator')) {
             $username = $req->creator;
         } else {
-            $username = $req->header('username') !== 'undefined' ? $req->header('username') : Str::random(50);
+            $username = $req->header('username') !== 'undefined' ? $req->header('username') : Str::random(50).date('ymd');
         }
         FormHist::where('form_hist_username', $username)->delete();
         foreach ($req->data as $key => $value) {
@@ -538,61 +704,12 @@ class FormController extends Controller
             ->orderBy('created_at', 'desc')
             ->get()
             ->toArray();
-        
+
         return $getID;
     }
 
-    public function tester()
+    public function exportTrainingValue(Request $req)
     {
-        function g($str)
-        {
-            $i = 0;
-            $new = '';
-
-            while ($i < strlen($str) - 1) {
-                $new .= $new . (string)$i;
-
-                $i++;
-            }
-
-            return $new;
-        }
-
-        function f($str)
-        {
-            if (strlen($str) === 0) {
-                return "";
-            } elseif (strlen($str) === 1) {
-                return $str;
-            } else {
-                return f(g($str)) . $str[0];
-            }
-        }
-
-        function h($n, $str)
-        {
-            while ($n != 1) {
-                if ($n % 2 === 0) {
-                    $n = $n / 2;
-                } else {
-                    $n = 3 * $n + 1;
-                }
-
-                $str = f($str);
-            }
-
-            return $str;
-        }
-
-        function pow($x, $y)
-        {
-            if ($y === 0) {
-                return 1;
-            } else {
-                return $x * pow($x, $y - 1);
-            }
-        }
-
-        return h(2, "fruits");
+        return (new exportTrainingValue($req->data))->store('LogTrainingOnline.xlsx', 'public');
     }
 }

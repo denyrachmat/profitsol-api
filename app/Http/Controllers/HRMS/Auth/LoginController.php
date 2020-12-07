@@ -32,6 +32,7 @@ class LoginController extends Controller
                 $user = $cek->first();
                 $tokenResult = $user->createToken($req->username.' HRMS Personal Access Token');
                 $token = $tokenResult->token;
+                // return $token;
 
                 $data = $cek
                     ->with(['roleMaster.mappingMenu' => function ($q) {

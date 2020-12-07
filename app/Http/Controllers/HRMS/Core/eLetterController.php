@@ -7,9 +7,15 @@ use Illuminate\Http\Request;
 use App\Models\HRMS\Core\eLetter\letterMaster;
 use App\Models\HRMS\Core\eLetter\letterFormDetail;
 use App\Models\HRMS\Core\eLetter\letterFormHist;
+use App\Models\HRMS\Core\Form\FormPageMapping;
 
 class eLetterController extends Controller
 {
+    public function getlistform()
+    {
+        return FormPageMapping::with(['contentDetail', 'detail'])->where('publish_flag', 'add_to_menu')->get();
+    }
+
     public function save(Request $r)
     {
         // return $r;

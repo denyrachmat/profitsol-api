@@ -188,12 +188,17 @@ Route::group(['prefix' => 'dms'], function () {
 
 Route::group(['prefix' => 'hrms'], function () {
 
+    // Send default password    
+    Route::get('sendDefaultPass', 'HRMS\Auth\RegisterController@sendDefaultPass');
+
     // Register
     Route::post('registeruser', 'HRMS\Auth\RegisterController@create');    
     Route::get('verify/{username}/{token}', 'HRMS\Auth\RegisterController@verify');
+    Route::get('cekHasilParsing', 'HRMS\Auth\RegisterController@parsePassword');
     
     // Login
     Route::post('login', 'HRMS\Auth\LoginController@Login');
+    Route::post('resetpassword', 'HRMS\Auth\RegisterController@ResetPassword');
 
     // Deep Login
 
@@ -213,7 +218,7 @@ Route::group(['prefix' => 'hrms'], function () {
     CORE FUNCTION
     -----------------------------------
     */
-    Route::get('/testing', 'HRMS\Core\FormController@tester');
+    Route::get('/testing', 'HRMS\Core\FormController@testing');
 
     Route::get('/getmapping', 'HRMS\Core\FormController@getFormMapping');
     Route::get('/getformbytokenpublic/{id}', 'HRMS\Core\FormController@getFormDataByToken'); 
@@ -236,7 +241,8 @@ Route::group(['prefix' => 'hrms'], function () {
         Route::post('/storelogics', 'HRMS\Core\FormController@storeLogics');
         Route::post('/storeformmapping', 'HRMS\Core\FormController@storeFormMapping');
         Route::get('/getformbytoken/{id}', 'HRMS\Core\FormController@getFormDataByToken'); 
-        Route::get('/getallform/{username}/{met}', 'HRMS\Core\FormController@getAllForm');      
+        Route::get('/getallform/{username}/{met}', 'HRMS\Core\FormController@getAllForm');   
+        Route::post('/exportTrainingValue', 'HRMS\Core\FormController@exportTrainingValue');   
 
         // getTrainingForm
         Route::get('/getTrainingForm', 'HRMS\Core\FormController@getTrainingForm');       
@@ -258,5 +264,7 @@ Route::group(['prefix' => 'hrms'], function () {
         Route::post('/saveelettertemp', 'HRMS\Core\eLetterController@save');
         Route::get('/getletter', 'HRMS\Core\eLetterController@index');
         Route::get('/getletter/{id}', 'HRMS\Core\eLetterController@index');
+        
+        Route::get('/getform', 'HRMS\Core\eLetterController@getlistform');
     });
 });

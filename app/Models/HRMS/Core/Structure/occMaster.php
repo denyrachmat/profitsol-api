@@ -35,6 +35,11 @@ class occMaster extends Model
         return $this->child()->with('children')->with('user')->with('division');
     }
 
+    public function childrenWithoutDiv()
+    {
+        return $this->child()->with('children')->with('user');
+    }
+
     public function parent()
     {
         return $this->hasMany('App\Models\HRMS\Core\Structure\occMaster','id','occ_parent_id');
@@ -43,6 +48,11 @@ class occMaster extends Model
     public function parentList()
     {
         return $this->parent()->with('parentList')->with('user')->with('division');
+    }
+
+    public function parentListWithoutDiv()
+    {
+        return $this->parent()->with('parentList')->with('user');
     }
 
     public function user()
