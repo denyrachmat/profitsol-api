@@ -79,114 +79,20 @@ class RegisterController extends Controller
 
     public function parsePassword()
     {
-        $arr = [
-            'OQOVc6',
-            'nzwHOT',
-            'QChqOQ',
-            'JWFCOr',
-            'QVKkNJ',
-            'UeGjGK',
-            'wL0pxx',
-            'SElX9a',
-            'NdH2Ak',
-            'Zt8pcC',
-            '6dqC0A',
-            'A9FeD9',
-            'Jqn7HV',
-            'nICOqJ',
-            'SHIF40',
-            'Kx3Iur',
-            '172KqG',
-            'UGVviw',
-            '92OYm6',
-            'gWsM45',
-            'vzpCtH',
-            'pIHIYC',
-            '08V71X',
-            'yP6rNi',
-            'Jg7Nzg',
-            'Aqwqgo',
-            'pAqkpj',
-            'P7qaLe',
-            'Cn7cvj',
-            'd2fDN6',
-            'tKWkM8',
-            'O5Tael',
-            'xaD8gi',
-            'yceUhR',
-            'enejvg',
-            'b0hrLC',
-            'zPNcgh',
-            'FntvG7',
-            'PEbNec',
-            'TUOpTg',
-            '6XMalE',
-            'DlyPTH',
-            '2QP4Mh',
-            'fy4dst',
-            'hIC1Pi',
-            'WxBYlK',
-            'MPevNx',
-            'y0KaRm',
-            'LLIFl2',
-            'DtjBKo',
-            'ynUPwW',
-            'rXl3UP',
-            '5IvMdi',
-            'gx66lg',
-            'HphSn3',
-            'OovXW6',
-            'YPuRTO',
-            'UHsKJl',
-            '8hwuQE',
-            'Q4jlHY',
-            'EsAK69',
-            '0yo0mr',
-            'tuNJLf',
-            'AFsmUN',
-            '18GXez',
-            'noUH1d',
-            'c2cGx5',
-            'tbz8UG',
-            '8CaM9C',
-            'tOrsuw',
-            'JN441k',
-            'etkukW',
-            'ylQpt1',
-            'frACKY',
-            'OedOjY',
-            'Kd1sF2',
-            '6S8Kbf',
-            'tHgqli',
-            'b6Ug7W',
-            '0kaWYB',
-            'wTn5gt',
-            'FdOnA9',
-            'zybU4R',
-            'H5gG2g',
-            'o4p96T',
-            'Rg4rDZ',
-            'yj96id',
-            'wwcUEw',
-            'T7Jy3w',
-            'QK81a7',
-            'Vd2dAi',
-            '3O49yN',
-            'xFNkev',
-            'KuabgH',
-        ];
-
         $content = [];
-        foreach ($arr as $key => $value) {
-            $content[] = Hash::make($value);
+        foreach (UserMaster::get()->toArray() as $key => $value) {
+            $content[] = UserMaster::where('username', $value['username'])->update([
+                'password_hash' => Hash::make($value['api_token'])
+            ]);
         }
 
         return $content;
     }
 
-    public function sendDefaultPass()
+    public function sendDefaultPass($user = '')
     {
-        foreach (UserMaster::where('username', 'deny')->get()->toArray() as $key => $value) {
+        $userList = empty($user) ? UserMaster::get()->toArray() : UserMaster::where('username', $user)->get()->toArray();
+        foreach ($userList as $key => $value) {
             $insertJob = (new sendDefaultLoginPass($value));
 
             dispatch($insertJob);

@@ -190,6 +190,7 @@ Route::group(['prefix' => 'hrms'], function () {
 
     // Send default password    
     Route::get('sendDefaultPass', 'HRMS\Auth\RegisterController@sendDefaultPass');
+    Route::get('sendDefaultPass/{user}', 'HRMS\Auth\RegisterController@sendDefaultPass');
 
     // Register
     Route::post('registeruser', 'HRMS\Auth\RegisterController@create');    
