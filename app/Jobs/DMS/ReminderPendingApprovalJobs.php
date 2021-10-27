@@ -41,11 +41,11 @@ class ReminderPendingApprovalJobs implements ShouldQueue
 
         if ($this->userFrom->email === $this->data[0]->users->email) {
             $mail
-            ->cc($this->userFrom->email)
+            // ->cc($this->userFrom->email)
             ->send(new ReminderPendingApproval($this->user, $this->data));
         } else {
             $mail
-            ->cc([$this->userFrom->email, $this->data[0]->users->email])
+            // ->cc([$this->userFrom->email, $this->data[0]->users->email])
             ->send(new ReminderPendingApproval($this->user, $this->data));
         }
     }
