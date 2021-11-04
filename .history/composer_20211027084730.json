@@ -35,8 +35,7 @@
         "spatie/pdf-to-text": "^1.3",
         "symfony/process": "^5.1",
         "thiagoalessio/tesseract_ocr": "^2.9",
-        "wapnen/google-cloud-vision-php": "dev-master",
-        "lcobucci/jwt": "3.3.3"
+        "wapnen/google-cloud-vision-php": "dev-master"
     },
     "require-dev": {
         "facade/ignition": "^2.0",

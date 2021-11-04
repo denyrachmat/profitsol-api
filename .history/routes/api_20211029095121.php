@@ -113,7 +113,7 @@ Route::group(['prefix' => 'dms'], function () {
     // New
     Route::get('/getApprovalList/{user}', 'DMS\Core\DocsLocationController@getApprovalList');
     Route::get('/getFolderList/{user}/{id?}', 'DMS\Core\DocsLocationController@getFolder');
-    Route::post('/getFileList/{user}/{id?}', 'DMS\Core\DocsLocationController@getFiles');
+    Route::get('/getFileList/{user}/{id?}', 'DMS\Core\DocsLocationController@getFiles');
 
     Route::post('/docsadd', 'DMS\Core\DocsLocationController@store');
     Route::get('/deletedoc/{id}', 'DMS\Core\DocsLocationController@deletefolder');

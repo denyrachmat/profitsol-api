@@ -39,7 +39,7 @@ class DocsLocationController extends Controller
         $apprvMaster = [];
         $count = 0;
         foreach ($apprvMasterFirst as $key => $value) {
-            if ($key !== 0 && $apprvMasterFirst[$key - 1]['apprv_id'] !== $value['apprv_id']) {
+            if ($key !== 0 && $apprvMasterFirst[$key-1]['apprv_id'] !== $value['apprv_id']) {
                 $count++;
             }
             $apprvMaster[$count]['apprv_author'] = $value['apprv_author'];
@@ -74,10 +74,7 @@ class DocsLocationController extends Controller
 
             $files = DocsMaster::where('doc_path', '0')
                 ->where('doc_author', $user)
-                ->with(['users', 'currentversion', 'apprvhist.getallapprover', 'tags.tagsMaster'])
-                ->doesnthave('version')
-                ->get()
-                ->toArray();
+                ->with(['users', 'currentversion', 'apprvhist.getallapprover','tags.tagsMaster'])->doesnthave('version')->get()->toArray();
 
             return [
                 'datafolder' => $folder,
@@ -97,7 +94,7 @@ class DocsLocationController extends Controller
 
             $files = DocsMaster::where('doc_path', $idfolder)
                 // ->where('doc_author', $user)
-                ->with(['users', 'currentversion', 'apprvhist.getallapprover', 'tags.tagsMaster'])
+                ->with(['users', 'currentversion', 'apprvhist.getallapprover','tags.tagsMaster'])
                 ->doesnthave('version')
                 ->get();
 
@@ -106,7 +103,7 @@ class DocsLocationController extends Controller
             $sharedFiles = [];
             if (!empty($cekSharedFiles['files_id'])) {
                 $sharedFiles = DocsMaster::where('doc_path', $idfolder)
-                    ->with(['users', 'currentversion', 'apprvhist.getallapprover', 'tags.tagsMaster'])
+                    ->with(['users', 'currentversion', 'apprvhist.getallapprover','tags.tagsMaster'])
                     ->doesnthave('version')
                     ->get();
             }
@@ -145,7 +142,7 @@ class DocsLocationController extends Controller
         $apprvMaster = [];
         $count = 0;
         foreach ($apprvMasterFirst as $key => $value) {
-            if ($key !== 0 && $apprvMasterFirst[$key - 1]['apprv_id'] !== $value['apprv_id']) {
+            if ($key !== 0 && $apprvMasterFirst[$key-1]['apprv_id'] !== $value['apprv_id']) {
                 $count++;
             }
             $apprvMaster[$count]['apprv_author'] = $value['apprv_author'];
@@ -157,59 +154,6 @@ class DocsLocationController extends Controller
             $apprvMaster[$count]['apprv_detail'][$key]['apprv_approver'] = $value['apprv_approver'];
             $apprvMaster[$count]['apprv_detail'][$key]['apprv_level'] = $value['apprv_level'];
             $apprvMaster[$count]['apprv_detail'][$key]['user_approver'] = $value['user'];
-        }
-
-        return $apprvMaster;
-    }
-
-    public function getFolder($user, $idFolder = '')
-    {
-        $folder = DocsLocationMaster::with('getParents')
-            ->with('users')
-            ->with(['listDoc' => function ($q) {
-                $q->with(['users', 'currentversion', 'apprvhist'])->doesnthave('version');
-            }])
-            ->where('creator_loc', $user);
-
-        if (empty($idFolder)) {
-            $sharedFolder = sharedMapping::where('shared_to', $user)
-                ->with(['docMaster.listDoc' => function ($q2) {
-                    $q2->with(['users', 'currentversion', 'apprvhist'])->doesnthave('version');
-                }])
-                ->with('docMaster.users')
-                ->get();
-
-            return [
-                'dataFolder' => $folder->where('parent_loc', '0')->get(),
-                'sharedfolder' => $sharedFolder
-            ];
-        } else {
-            $cekSharedFiles = sharedMapping::where('shared_to', $user)->where('folder_id', $idFolder)->first();
-
-            $sharedFiles = [];
-            if (!empty($cekSharedFiles['files_id'])) {
-                $sharedFiles = DocsMaster::where('doc_path', $idFolder)
-                    ->with(['users', 'currentversion', 'apprvhist.getallapprover', 'tags.tagsMaster'])
-                    ->doesnthave('version')
-                    ->get();
-            }
-
-            return [
-                'dataFolder' => $folder->with('getParents')->where('parent_loc', $idFolder)->get(),
-                'sharedfolder' => $sharedFiles
-            ];
-        }
-    }
-
-    public function getFiles(Request $r, $user, $idFolder = '')
-    {
-        $files = DocsMaster::with(['users', 'currentversion', 'apprvhist.getallapprover', 'tags.tagsMaster'])
-            ->doesnthave('version');
-
-        if (empty($idFolder)) {
-            return $files->where('doc_path', '0')->where('doc_author', $user)->paginate($r->rowsPerPage, ['*'], 'page', $r->page);
-        } else {
-            return $files->where('doc_path', $idFolder)->paginate($r->rowsPerPage, ['*'], 'page', $r->page);
         }
     }
 
@@ -223,8 +167,7 @@ class DocsLocationController extends Controller
         ]);
     }
 
-    public function deletefolder($id)
-    {
+    public function deletefolder($id) {
         $cek_isi_doc = DocsLocationMaster::where('id', $id)
             ->doesnthave('getParents')
             ->doesnthave('listdoc')
@@ -235,7 +178,7 @@ class DocsLocationController extends Controller
             return response([
                 'message' => "The given data was invalid.",
                 'errors' => [
-                    'id' => ['Folder ' . $cek_isinyac['name_loc'] . ' not empty!!']
+                    'id' => ['Folder '.$cek_isinyac['name_loc'].' not empty!!']
                 ]
             ], 422);
         } else {
@@ -248,7 +191,7 @@ class DocsLocationController extends Controller
     {
         return DocsLocationMaster::where('creator_loc', $user)
             ->with('allChildFolder')
-            ->where('parent_loc', '0')
+            ->where('parent_loc','0')
             ->get();
     }
 }

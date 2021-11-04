@@ -201,15 +201,15 @@ class DocsLocationController extends Controller
         }
     }
 
-    public function getFiles(Request $r, $user, $idFolder = '')
+    public function getFiles($user, $idFolder = '')
     {
         $files = DocsMaster::with(['users', 'currentversion', 'apprvhist.getallapprover', 'tags.tagsMaster'])
             ->doesnthave('version');
 
         if (empty($idFolder)) {
-            return $files->where('doc_path', '0')->where('doc_author', $user)->paginate($r->rowsPerPage, ['*'], 'page', $r->page);
+            return $files->where('doc_path', '0')->where('doc_author', $user)->paginate();
         } else {
-            return $files->where('doc_path', $idFolder)->paginate($r->rowsPerPage, ['*'], 'page', $r->page);
+            return $files->where('doc_path', $idFolder)->paginate();
         }
     }
 

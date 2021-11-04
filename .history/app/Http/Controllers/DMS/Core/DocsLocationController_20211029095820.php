@@ -169,7 +169,8 @@ class DocsLocationController extends Controller
             ->with(['listDoc' => function ($q) {
                 $q->with(['users', 'currentversion', 'apprvhist'])->doesnthave('version');
             }])
-            ->where('creator_loc', $user);
+            ->where('creator_loc', $user)
+            ->where('parent_loc', '0');
 
         if (empty($idFolder)) {
             $sharedFolder = sharedMapping::where('shared_to', $user)
@@ -180,7 +181,7 @@ class DocsLocationController extends Controller
                 ->get();
 
             return [
-                'dataFolder' => $folder->where('parent_loc', '0')->get(),
+                'dataFolder' => $folder->get(),
                 'sharedfolder' => $sharedFolder
             ];
         } else {
@@ -195,21 +196,21 @@ class DocsLocationController extends Controller
             }
 
             return [
-                'dataFolder' => $folder->with('getParents')->where('parent_loc', $idFolder)->get(),
+                'dataFolder' => $folder->where('parent_loc', $idFolder)->get(),
                 'sharedfolder' => $sharedFiles
             ];
         }
     }
 
-    public function getFiles(Request $r, $user, $idFolder = '')
+    public function getFiles($user, $idFolder = '')
     {
         $files = DocsMaster::with(['users', 'currentversion', 'apprvhist.getallapprover', 'tags.tagsMaster'])
             ->doesnthave('version');
 
         if (empty($idFolder)) {
-            return $files->where('doc_path', '0')->where('doc_author', $user)->paginate($r->rowsPerPage, ['*'], 'page', $r->page);
+            return $files->where('doc_path', '0')->where('doc_author', $user)->get()->toArray();
         } else {
-            return $files->where('doc_path', $idFolder)->paginate($r->rowsPerPage, ['*'], 'page', $r->page);
+            return $files->where('doc_path', $idFolder)->get()->toArray();
         }
     }
 

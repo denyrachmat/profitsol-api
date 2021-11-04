@@ -158,8 +158,6 @@ class DocsLocationController extends Controller
             $apprvMaster[$count]['apprv_detail'][$key]['apprv_level'] = $value['apprv_level'];
             $apprvMaster[$count]['apprv_detail'][$key]['user_approver'] = $value['user'];
         }
-
-        return $apprvMaster;
     }
 
     public function getFolder($user, $idFolder = '')
@@ -169,47 +167,17 @@ class DocsLocationController extends Controller
             ->with(['listDoc' => function ($q) {
                 $q->with(['users', 'currentversion', 'apprvhist'])->doesnthave('version');
             }])
-            ->where('creator_loc', $user);
+            ->where('creator_loc', $user)
+            ->where('parent_loc', '0');
+
+        $sharedFolder = sharedMapping::where('shared_to', $user)
+            ->with(['docMaster.listDoc' => function ($q2) {
+                $q2->with(['users', 'currentversion', 'apprvhist'])->doesnthave('version');
+            }])
+            ->with('docMaster.users');
 
         if (empty($idFolder)) {
-            $sharedFolder = sharedMapping::where('shared_to', $user)
-                ->with(['docMaster.listDoc' => function ($q2) {
-                    $q2->with(['users', 'currentversion', 'apprvhist'])->doesnthave('version');
-                }])
-                ->with('docMaster.users')
-                ->get();
-
-            return [
-                'dataFolder' => $folder->where('parent_loc', '0')->get(),
-                'sharedfolder' => $sharedFolder
-            ];
-        } else {
-            $cekSharedFiles = sharedMapping::where('shared_to', $user)->where('folder_id', $idFolder)->first();
-
-            $sharedFiles = [];
-            if (!empty($cekSharedFiles['files_id'])) {
-                $sharedFiles = DocsMaster::where('doc_path', $idFolder)
-                    ->with(['users', 'currentversion', 'apprvhist.getallapprover', 'tags.tagsMaster'])
-                    ->doesnthave('version')
-                    ->get();
-            }
-
-            return [
-                'dataFolder' => $folder->with('getParents')->where('parent_loc', $idFolder)->get(),
-                'sharedfolder' => $sharedFiles
-            ];
-        }
-    }
-
-    public function getFiles(Request $r, $user, $idFolder = '')
-    {
-        $files = DocsMaster::with(['users', 'currentversion', 'apprvhist.getallapprover', 'tags.tagsMaster'])
-            ->doesnthave('version');
-
-        if (empty($idFolder)) {
-            return $files->where('doc_path', '0')->where('doc_author', $user)->paginate($r->rowsPerPage, ['*'], 'page', $r->page);
-        } else {
-            return $files->where('doc_path', $idFolder)->paginate($r->rowsPerPage, ['*'], 'page', $r->page);
+            # code...
         }
     }
 
