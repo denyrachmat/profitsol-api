@@ -300,7 +300,7 @@ class ApprovalController extends Controller
                 foreach ($hasilsuccess as $keyHasil => $valueHasil) {
                     $newhasil[$keyHasil] = [
                         'data' => $valueHasil,
-                        'email_status' => $this->emailsender($keyHasil, $this->outstandingApprovalByApprover($keyHasil, null, true)->items()[0])
+                        'email_status' => $this->emailsender($this->outstandingApprovalByApprover($keyHasil, null, true)->items()[0])
                     ];
                 }
 
@@ -767,6 +767,7 @@ class ApprovalController extends Controller
             if (!empty($lastapprvstat)) {
                 $hasil->whereHas('doc', function ($q) use ($lastapprvstat) {
                     $q->where('doc_stat_flag', $lastapprvstat == 'partial' ? '1' : ($lastapprvstat == 'full' ? '2' : '0'));
+                    $q->where(DB::raw("SELECT COUNT(*) FROM dms_apprv_hist WHERE apprv_hist_doc = doc_id"), '>', 0);
                     $q->with('users');
                 });
             }

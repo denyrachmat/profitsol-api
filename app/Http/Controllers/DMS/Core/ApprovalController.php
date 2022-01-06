@@ -767,6 +767,7 @@ class ApprovalController extends Controller
             if (!empty($lastapprvstat)) {
                 $hasil->whereHas('doc', function ($q) use ($lastapprvstat) {
                     $q->where('doc_stat_flag', $lastapprvstat == 'partial' ? '1' : ($lastapprvstat == 'full' ? '2' : '0'));
+                    $q->where(DB::raw("SELECT COUNT(*) FROM dms_apprv_hist WHERE apprv_hist_doc = doc_id"), '>', 0);
                     $q->with('users');
                 });
             }
