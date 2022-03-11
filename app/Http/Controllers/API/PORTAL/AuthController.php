@@ -17,7 +17,7 @@ class AuthController extends BaseController
         if($attemptUsername || $attmeptEmail){ 
             $auth = Auth::user(); 
             $success['token'] =  $auth->createToken('LaravelSanctumAuth')->plainTextToken; 
-            $success['name'] =  $auth->name;
+            $success['username'] =  $auth->username;
    
             return $this->handleResponse($success, 'User logged-in!');
         } 
