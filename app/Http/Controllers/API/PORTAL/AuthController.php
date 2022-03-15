@@ -6,12 +6,21 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use App\Http\Controllers\API\PORTAL\BaseController as BaseController;
 use App\Models\User;
-use Validator;
+use Illuminate\Support\Facades\Validator;
 
 class AuthController extends BaseController
 {
     public function login(Request $request)
     {
+        $validator = Validator::make($request->all(), [
+            'username' => 'required',
+            'password' => 'required'
+        ]);
+
+        if($validator->fails()){
+            return $this->handleError($validator->errors());       
+        }
+
         $attemptUsername = Auth::attempt(['username' => $request->username, 'password' => $request->password]);
         $attmeptEmail = Auth::attempt(['email' => $request->username, 'password' => $request->password]);
         if($attemptUsername || $attmeptEmail){ 
