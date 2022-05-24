@@ -16,8 +16,17 @@ use App\Http\Controllers\API\PORTAL\ProfileController;
 |
 */
 
-Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
-    return $request->user();
+// Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
+//     return $request->user();
+//     Route::post('profile', ProfileController::class);
+//     // Route::group(['prefix' => 'portal'], function() {
+//     //     Route::post('profile', ProfileController::class);
+//     // });
+// });
+
+Route::group(['prefix' => 'portal', 'middleware' => 'auth:sanctum'], function() {
+    Route::post('profile', [ProfileController::class, 'store']);
+    Route::get('countryList', [ProfileController::class, 'getCountryList']);
 });
 
 Route::post('login', [AuthController::class, 'login']);
