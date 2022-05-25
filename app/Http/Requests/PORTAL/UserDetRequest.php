@@ -24,7 +24,6 @@ class UserDetRequest extends FormRequest
     public function rules()
     {
         return [
-            'username' => 'required',
             'firstName' => 'required',
             'lastName' => 'required'
         ];
