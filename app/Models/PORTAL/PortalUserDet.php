@@ -27,6 +27,7 @@ class PortalUserDet extends Model
         'pud_birth_place',
         'pud_birth_date',
         'pud_country_rsdn',
+        'pud_states_rsdn',
         'pud_district_rsdn',
         'pud_subdistrict_rsdn',
         'pud_addr1_rsdn',

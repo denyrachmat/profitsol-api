@@ -24,22 +24,34 @@ class ProfileController extends BaseController
             'u_username' => $request->header('Username'),
             'pud_id_card' => $request->IDNum,
             'pud_photo' => $request->ava,
-            'pud_country' => '',
-            'pud_states' => '',
-            'pud_district' => '',
-            'pud_subdistrict' => '',
-            'pud_addr1' => '',
+            'pud_country' => $request->country,
+            'pud_states' => $request->province,
+            'pud_district' => $request->district,
+            'pud_subdistrict' => $request->subdistrict,
+            'pud_addr1' => $request->detLoc,
             'pud_addr2' => '',
-            'pud_id_type' => '',
-            'pud_birth_place' => '',
-            'pud_birth_date' => '',
-            'pud_country_rsdn' => '',
-            'pud_district_rsdn' => '',
-            'pud_subdistrict_rsdn' => '',
-            'pud_addr1_rsdn' => '',
+            'pud_id_type' => $request->IDType,
+            'pud_birth_place' => $request->birthplace,
+            'pud_birth_date' => $request->birthday,
+            'pud_country_rsdn' => $request->countryCurrent,
+            'pud_states_rsdn' => $request->provinceCurrent,
+            'pud_district_rsdn' => $request->districtCurent,
+            'pud_subdistrict_rsdn' => $request->subdistrictCurrent,
+            'pud_addr1_rsdn' => $request->detLocCurrent,
             'pud_addr2_rsdn' => ''
         ];
-        return $request;
+
+        if ($request->has('educations') && count(json_decode($request->educations)) > 0) {
+            # code...
+        }
+
+        if ($request->has('families') && count(json_decode($request->families)) > 0) {
+            # code...
+        }
+
+        return json_decode($request->educations);
+
+        return $dataReqConvertToDB;
         return PortalUserDet::create($request);
     }
 }

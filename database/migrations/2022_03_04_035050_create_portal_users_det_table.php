@@ -28,6 +28,15 @@ class CreatePortalUsersDetTable extends Migration
             $table->string('pud_subdistrict')->nullable();
             $table->text('pud_addr1')->nullable();
             $table->text('pud_addr2')->nullable();
+            $table->string('pud_id_type')->nullable();
+            $table->string('pud_birth_place')->nullable();
+            $table->date('pud_birth_date')->nullable();
+            $table->string('pud_country_rsdn')->nullable();
+            $table->string('pud_states_rsdn')->nullable();
+            $table->string('pud_district_rsdn')->nullable();
+            $table->string('pud_subdistrict_rsdn')->nullable();
+            $table->text('pud_addr1_rsdn')->nullable();
+            $table->text('pud_addr2_rsdn')->nullable();
             $table->timestamps();
         });
     }

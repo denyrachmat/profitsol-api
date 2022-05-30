@@ -24,6 +24,7 @@ class CreatePortalUsersStudyDetTable extends Migration
             $table->string('pusd_sch_addr')->nullable();
             $table->date('pusd_sch_start')->nullable();
             $table->date('pusd_sch_end')->nullable();
+            $table->string('pusd_grade')->nullable();
             $table->boolean('pusd_sch_passed');
             $table->timestamps();
         });

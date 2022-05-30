@@ -24,8 +24,8 @@ use App\Http\Controllers\API\PORTAL\ProfileController;
 //     // });
 // });
 
-Route::group(['prefix' => 'portal', 'middleware' => 'auth:sanctum'], function() {
-    Route::post('profile', [ProfileController::class, 'store']);
+Route::group(['prefix' => 'portal', 'middleware' => 'auth:sanctum', 'verify' => true], function() {
+    Route::post('profile', [ProfileController::class, 'store'])->middleware('verified');
     Route::get('countryList', [ProfileController::class, 'getCountryList']);
 });
 
