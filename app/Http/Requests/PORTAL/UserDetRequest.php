@@ -3,6 +3,7 @@
 namespace App\Http\Requests\PORTAL;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class UserDetRequest extends FormRequest
 {
@@ -23,9 +24,14 @@ class UserDetRequest extends FormRequest
      */
     public function rules()
     {
-        return [
-            'firstName' => 'required',
-            'lastName' => 'required'
-        ];
+        if (in_array($this->method(), ['PUT', 'PATCH'])) {
+            $username = $this->route()->parameter('username');
+
+            return [
+                'firstName' => 'required',
+                'lastName' => 'required',
+                Rule::unique('users')->ignore($username)
+            ];
+        }
     }
 }
