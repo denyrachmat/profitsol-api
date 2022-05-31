@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use App\Models\PORTAL\PortalFamDet;
+use App\Models\PORTAL\PortalUserDet;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -40,5 +42,20 @@ class User extends Authenticatable implements MustVerifyEmail
      */
     protected $casts = [
         'email_verified_at' => 'datetime',
-    ];
+    ];    
+
+    public function edu()
+    {
+        return $this->hasMany(PortalEduDet::class, 'username', 'u_username');
+    }
+
+    public function fam()
+    {
+        return $this->hasMany(PortalFamDet::class, 'username', 'u_username');
+    }
+
+    public function det()
+    {
+        return $this->hasOne(PortalUserDet::class, 'username', 'u_username');
+    }
 }

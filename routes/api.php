@@ -4,6 +4,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\API\PORTAL\AuthController;
 use App\Http\Controllers\API\PORTAL\ProfileController;
+use App\Http\Controllers\API\PORTAL\UsersController;
 
 /*
 |--------------------------------------------------------------------------
@@ -25,6 +26,12 @@ use App\Http\Controllers\API\PORTAL\ProfileController;
 // });
 
 Route::group(['prefix' => 'portal', 'middleware' => 'auth:sanctum', 'verify' => true], function() {
+    
+    // Settings Menu
+    Route::resource('users', UsersController::class);
+    Route::resource('profiles', ProfilesController::class);
+
+    // Dashboard
     Route::post('profile', [ProfileController::class, 'store'])->middleware('verified');
     Route::get('countryList', [ProfileController::class, 'getCountryList']);
 });
