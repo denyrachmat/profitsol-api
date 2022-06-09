@@ -32,6 +32,11 @@ class UserDetRequest extends FormRequest
                 'lastName' => 'required',
                 Rule::unique('users')->ignore($username)
             ];
+        } else {
+            return [
+                'firstName' => 'required',
+                'lastName' => 'required'
+            ];
         }
     }
 }

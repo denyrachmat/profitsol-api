@@ -21,9 +21,11 @@ class CreatePortalUsersDetTable extends Migration
             $table->string('pud_first_name');
             $table->string('pud_last_name');
             $table->string('pud_id_card');
-            $table->string('pud_photo');
+            $table->string('pud_photo')->nullable();
+            $table->string('pud_phone')->nullable();
             $table->string('pud_country')->nullable();
             $table->string('pud_states')->nullable();
+            $table->string('pud_cities')->nullable();
             $table->string('pud_district')->nullable();
             $table->string('pud_subdistrict')->nullable();
             $table->text('pud_addr1')->nullable();
@@ -33,6 +35,7 @@ class CreatePortalUsersDetTable extends Migration
             $table->date('pud_birth_date')->nullable();
             $table->string('pud_country_rsdn')->nullable();
             $table->string('pud_states_rsdn')->nullable();
+            $table->string('pud_cities_rsdn')->nullable();
             $table->string('pud_district_rsdn')->nullable();
             $table->string('pud_subdistrict_rsdn')->nullable();
             $table->text('pud_addr1_rsdn')->nullable();

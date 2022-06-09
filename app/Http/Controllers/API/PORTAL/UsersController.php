@@ -4,7 +4,8 @@ namespace App\Http\Controllers\API\PORTAL;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
-use Illuminate\Foundation\Auth\User;
+// use Illuminate\Foundation\Auth\User;
+use App\Models\User;
 
 class UsersController extends Controller
 {
@@ -15,7 +16,7 @@ class UsersController extends Controller
      */
     public function index()
     {
-        return User::get();
+        return User::with('det')->get();
     }
 
     /**

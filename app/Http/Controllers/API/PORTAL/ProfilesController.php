@@ -7,6 +7,10 @@ use Illuminate\Http\Request;
 
 use App\Http\Requests\PORTAL\UserDetRequest;
 
+use App\Models\PORTAL\PortalUserDet;
+use App\Models\PORTAL\PortalEduDet;
+use App\Models\PORTAL\PortalFamDet;
+
 class ProfilesController extends Controller
 {
     /**
@@ -71,12 +75,17 @@ class ProfilesController extends Controller
      */
     public function update(UserDetRequest $request, $id)
     {
+        // return 'masuk sini';
         $dataReqConvertToDB = [
             'u_username' => $id,
             'pud_id_card' => $request->IDNum,
+            'pud_first_name' => $request->firstName,
+            'pud_last_name' => $request->lastName,
             'pud_photo' => $request->ava,
+            'pud_phone' => $request->phoneNum,
             'pud_country' => $request->country,
             'pud_states' => $request->province,
+            'pud_cities' => $request->cities,
             'pud_district' => $request->district,
             'pud_subdistrict' => $request->subdistrict,
             'pud_addr1' => $request->detLoc,
@@ -86,19 +95,58 @@ class ProfilesController extends Controller
             'pud_birth_date' => $request->birthday,
             'pud_country_rsdn' => $request->countryCurrent,
             'pud_states_rsdn' => $request->provinceCurrent,
-            'pud_district_rsdn' => $request->districtCurent,
+            'pud_cities_rsdn' => $request->citiesCurrent,
+            'pud_district_rsdn' => $request->districtCurrent,
             'pud_subdistrict_rsdn' => $request->subdistrictCurrent,
             'pud_addr1_rsdn' => $request->detLocCurrent,
             'pud_addr2_rsdn' => ''
         ];
 
+        // return $dataReqConvertToDB;
+
+        $userDet = PortalUserDet::updateOrCreate(['u_username' => $id], $dataReqConvertToDB);
+
+        $userEdu = null;
+        $userFam = null;
         if ($request->has('educations') && count(json_decode($request->educations)) > 0) {
-            # code...
+            $edu = json_decode($request->educations);
+            // return $edu;
+            PortalEduDet::where('u_username', $id)->delete();
+            foreach ($edu as $key => $value) {
+                PortalEduDet::create([
+                    'u_username' => $id,
+                    'pusd_level' => $value->sch_type,
+                    'pusd_sch_name' => $value->sch_name,
+                    'pusd_sch_majors' => $value->sch_major,
+                    'pusd_sch_minors' => $value->sch_minor,
+                    'pusd_sch_end' => $value->sch_grade_years,
+                    'pusd_grade' => $value->sch_grade,
+                    'pusd_sch_passed' => $value->sch_grade_years ? 1 : 0,
+                ]);
+            }
         }
 
         if ($request->has('families') && count(json_decode($request->families)) > 0) {
-            # code...
+            $fam = json_decode($request->families);
+
+            PortalFamDet::where('u_username', $id)->delete();
+            foreach ($fam as $key => $value) {
+                PortalFamDet::create([
+                    'pufd_first_name' => $value->fam_f_name,
+                    'pufd_last_name' => $value->fam_l_name,
+                    'pufd_relation' => $value->fam_rel
+                ]);
+            }
         }
+
+        return [
+            'status' => true,
+            'data' => [
+                'detail' => $userDet,
+                'edu' => $userEdu,
+                'fam' => $userFam
+            ]
+        ];
     }
 
     /**

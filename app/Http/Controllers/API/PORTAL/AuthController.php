@@ -5,8 +5,11 @@ namespace App\Http\Controllers\API\PORTAL;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use App\Http\Controllers\API\PORTAL\BaseController as BaseController;
-use App\Models\User;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\DB;
+
+use App\Models\PORTAL\PortalEduDet;
+use App\Models\User;
 
 class AuthController extends BaseController
 {
@@ -25,8 +28,21 @@ class AuthController extends BaseController
         $attmeptEmail = Auth::attempt(['email' => $request->username, 'password' => $request->password]);
         if($attemptUsername || $attmeptEmail){ 
             $auth = Auth::user(); 
+            $edu = PortalEduDet::select(
+                DB::raw('pusd_level as sch_type'),
+                DB::raw('pusd_sch_name as sch_name'),
+                DB::raw('pusd_sch_majors as sch_major'),
+                DB::raw('pusd_sch_minors as sch_minor'),
+                DB::raw('pusd_sch_end as sch_grade_years'),
+                DB::raw('pusd_grade as sch_grade'),
+            )->where('u_username', $auth->username)
+            ->get()->toArray();
+            
             $success['token'] =  $auth->createToken('LaravelSanctumAuth')->plainTextToken;
             $success['username'] =  $auth->username;
+            $success['user_det'] = User::where('username', $auth->username)->first()->det;
+            $success['edu'] = $edu;
+            $success['fam'] = User::where('username', $auth->username)->first()->fam;
    
             return $this->handleResponse($success, 'User logged-in!');
         } 

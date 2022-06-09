@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\PORTAL\PortalEduDet;
 use App\Models\PORTAL\PortalFamDet;
 use App\Models\PORTAL\PortalUserDet;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
@@ -56,6 +57,6 @@ class User extends Authenticatable implements MustVerifyEmail
 
     public function det()
     {
-        return $this->hasOne(PortalUserDet::class, 'username', 'u_username');
+        return $this->hasOne(PortalUserDet::class, 'u_username', 'username');
     }
 }

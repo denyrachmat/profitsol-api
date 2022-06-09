@@ -19,6 +19,8 @@ class CreatePortalUsersFamDetTable extends Migration
             $table->string('pufd_first_name');
             $table->string('pufd_last_name')->nullable();
             $table->string('pufd_relation');
+            $table->string('pufd_phone')->nullable();
+            $table->date('pufd_birthday')->nullable();
             $table->timestamps();
         });
     }
