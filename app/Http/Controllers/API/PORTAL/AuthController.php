@@ -47,7 +47,9 @@ class AuthController extends BaseController
             return $this->handleResponse($success, 'User logged-in!');
         } 
         else{ 
-            return $this->handleError('User or Password wrong !');
+            return $this->handleError([
+                'password' => ["User or Password wrong !"]
+            ]);
         } 
     }
 

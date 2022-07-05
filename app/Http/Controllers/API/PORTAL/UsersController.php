@@ -16,7 +16,28 @@ class UsersController extends Controller
      */
     public function index()
     {
-        return User::with('det')->get();
+        $data = User::with('det')->get()->toArray();
+
+        return array_map(function($item){ 
+            $hasil = array_merge($item, $item['det']);
+            unset($hasil['det']);
+
+            return $hasil;
+        }, $data);
+    }
+
+    public function _flattened($array)
+    {
+        $result = [];
+        foreach ($array as $item) {
+            if (is_array($item)) {
+                $result[] = array_filter($item, function($array) {
+                    return ! is_array($array);
+                });
+                $result = array_merge($result, $this->_flattened($item));
+            } 
+        }
+        return array_filter($result);
     }
 
     /**
