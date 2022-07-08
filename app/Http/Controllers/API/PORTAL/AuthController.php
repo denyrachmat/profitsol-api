@@ -13,6 +13,27 @@ use App\Models\User;
 
 class AuthController extends BaseController
 {
+    /**
+     * @OA\Post(
+     *     path="/api/login",
+     *     tags={"Portal"},
+     *     @OA\Parameter(
+     *         name="username",
+     *         in="query",
+     *         description="Username of login portal user",
+     *         required=true,
+     *         @OA\Schema(type="string")
+     *     ),
+     *     @OA\Parameter(
+     *         name="password",
+     *         in="query",
+     *         description="Password of login portal user",
+     *         required=true,
+     *         @OA\Schema(type="string", format="password")
+     *     ),
+     *     @OA\Response(response="200", description="Login portal")
+     * )
+     */
     public function login(Request $request)
     {
         $validator = Validator::make($request->all(), [
@@ -53,6 +74,41 @@ class AuthController extends BaseController
         } 
     }
 
+    /**
+     * @OA\Post(
+     *     path="/api/register",
+     *     tags={"Portal"},
+     *     @OA\Parameter(
+     *         name="username",
+     *         in="query",
+     *         description="Username of login portal user",
+     *         required=true,
+     *         @OA\Schema(type="string")
+     *     ),
+     *     @OA\Parameter(
+     *         name="email",
+     *         in="query",
+     *         description="Email of login portal user",
+     *         required=true,
+     *         @OA\Schema(type="string")
+     *     ),
+     *     @OA\Parameter(
+     *         name="password",
+     *         in="query",
+     *         description="Password of login portal user",
+     *         required=true,
+     *         @OA\Schema(type="string", format="password")
+     *     ),
+     *     @OA\Parameter(
+     *         name="confirm_password",
+     *         in="query",
+     *         description="Password Confirmation of login portal user",
+     *         required=true,
+     *         @OA\Schema(type="string", format="password")
+     *     ),
+     *     @OA\Response(response="200", description="Login portal")
+     * )
+     */
     public function register(Request $request)
     {
         $validator = Validator::make($request->all(), [
