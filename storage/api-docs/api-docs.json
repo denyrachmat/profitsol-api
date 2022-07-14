@@ -96,6 +96,39 @@
                     }
                 }
             }
+        },
+        "/api/portal/users": {
+            "get": {
+                "tags": [
+                    "Portal"
+                ],
+                "operationId": "e21a6149608ec1065103b3be108f642f",
+                "parameters": [
+                    {
+                        "name": "Authorization",
+                        "in": "header",
+                        "description": "Auth token from login",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "Username",
+                        "in": "header",
+                        "description": "Username from login",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Get list of all users"
+                    }
+                }
+            }
         }
     }
 }

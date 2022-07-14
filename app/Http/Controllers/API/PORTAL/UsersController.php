@@ -2,23 +2,29 @@
 
 namespace App\Http\Controllers\API\PORTAL;
 
-use App\Http\Controllers\Controller;
+use App\Http\Controllers\API\PORTAL\BaseController as BaseController;
 use Illuminate\Http\Request;
 // use Illuminate\Foundation\Auth\User;
 use App\Models\User;
+use App\Models\PORTAL\PortalUserDet;
 
-class UsersController extends Controller
+use App\Http\Requests\PORTAL\usersControllerUpdateRequest;
+
+class UsersController extends BaseController
 {
     /**
-     * Display a listing of the resource.
-     *
-     * @return \Illuminate\Http\Response
+     * @OA\Get(
+     *     path="/api/portal/users",
+     *     tags={"Portal"},
+     *     security={{"bearerAuth": {}}},
+     *     @OA\Response(response="200", description="Get list of all users")
+     * )
      */
     public function index()
     {
         $data = User::with('det')->get()->toArray();
 
-        return array_map(function($item){ 
+        return array_map(function ($item) {
             $hasil = array_merge($item, $item['det']);
             unset($hasil['det']);
 
@@ -31,11 +37,11 @@ class UsersController extends Controller
         $result = [];
         foreach ($array as $item) {
             if (is_array($item)) {
-                $result[] = array_filter($item, function($array) {
-                    return ! is_array($array);
+                $result[] = array_filter($item, function ($array) {
+                    return !is_array($array);
                 });
                 $result = array_merge($result, $this->_flattened($item));
-            } 
+            }
         }
         return array_filter($result);
     }
@@ -58,7 +64,21 @@ class UsersController extends Controller
      */
     public function store(Request $request)
     {
-        //
+        $users = User::create([
+            'username' => $request->username,
+            'email' => $request->email,
+            'email_verified_at' => $request->email_verified_at
+        ]);
+
+        $users->det()->create([
+            'u_username' => $request->username,
+            'pud_first_name' => $request->pud_first_name,
+            'pud_last_name' => $request->pud_last_name
+        ]);
+
+        return $this->handleResponse([
+            $users
+        ], 'Create user Success !');
     }
 
     /**
@@ -90,9 +110,22 @@ class UsersController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function update(Request $request, $id)
+    public function update(usersControllerUpdateRequest $request, $id)
     {
-        //
+        $hasilUser = User::where('username', $id)->update([
+            'email' => $request->email,
+            'email_verified_at' => $request->email_verified_at
+        ]);
+
+        $hasilUserDet = PortalUserDet::where('u_username', $id)->update([
+            'pud_first_name' => $request->pud_first_name,
+            'pud_last_name' => $request->pud_last_name
+        ]);
+
+        return $this->handleResponse([
+            $hasilUser,
+            $hasilUserDet
+        ], 'Update Success !');
     }
 
     /**
