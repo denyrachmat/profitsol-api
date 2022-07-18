@@ -28,14 +28,14 @@ class UserDetRequest extends FormRequest
             $username = $this->route()->parameter('username');
 
             return [
-                'firstName' => 'required',
-                'lastName' => 'required',
+                'form.pud_first_name' => 'required',
+                'form.pud_last_name' => 'required',
                 Rule::unique('users')->ignore($username)
             ];
         } else {
             return [
-                'firstName' => 'required',
-                'lastName' => 'required'
+                'form.pud_first_name' => 'required',
+                'form.pud_last_name' => 'required'
             ];
         }
     }

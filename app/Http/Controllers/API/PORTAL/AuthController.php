@@ -42,13 +42,13 @@ class AuthController extends BaseController
         ]);
 
         if($validator->fails()){
-            return $this->handleError($validator->errors());       
+            return $this->handleError($validator->errors());
         }
 
         $attemptUsername = Auth::attempt(['username' => $request->username, 'password' => $request->password]);
         $attmeptEmail = Auth::attempt(['email' => $request->username, 'password' => $request->password]);
-        if($attemptUsername || $attmeptEmail){ 
-            $auth = Auth::user(); 
+        if($attemptUsername || $attmeptEmail){
+            $auth = Auth::user();
             $edu = PortalEduDet::select(
                 DB::raw('pusd_level as sch_type'),
                 DB::raw('pusd_sch_name as sch_name'),
@@ -58,20 +58,20 @@ class AuthController extends BaseController
                 DB::raw('pusd_grade as sch_grade'),
             )->where('u_username', $auth->username)
             ->get()->toArray();
-            
+
             $success['token'] =  $auth->createToken('LaravelSanctumAuth')->plainTextToken;
             $success['username'] =  $auth->username;
             $success['user_det'] = User::where('username', $auth->username)->first()->det;
             $success['edu'] = $edu;
             $success['fam'] = User::where('username', $auth->username)->first()->fam;
-   
+
             return $this->handleResponse($success, 'User logged-in!');
-        } 
-        else{ 
+        }
+        else{
             return $this->handleError([
-                'password' => ["User or Password wrong !"]
+                'password' => ["User or Password not match !"]
             ]);
-        } 
+        }
     }
 
     /**
@@ -112,16 +112,16 @@ class AuthController extends BaseController
     public function register(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'username' => 'required|unique:users',
-            'email' => 'required|email',
+            'username' => 'required|unique:users,username',
+            'email' => 'required|email|unique:users,email',
             'password' => 'required',
-            'confirm_password' => 'required|same:password',
+            'password_confirmation' => 'required|same:password',
         ]);
-   
+
         if($validator->fails()){
-            return $this->handleError($validator->errors());       
+            return $this->handleError($validator->errors());
         }
-   
+
         $input = $request->all();
         $input['password'] = bcrypt($input['password']);
         $user = User::create($input);
@@ -133,7 +133,7 @@ class AuthController extends BaseController
 
         $success['token'] =  $user->createToken('LaravelSanctumAuth')->plainTextToken;
         $success['username'] =  $user->username;
-   
+
         return $this->handleResponse($success, 'User successfully registered!');
     }
 }
