@@ -24,12 +24,12 @@ class UsersController extends BaseController
     {
         $data = User::with('det')->get()->toArray();
 
-        return array_map(function ($item) {
+        return $this->handleResponse(array_map(function ($item) {
             $hasil = array_merge($item, $item['det']);
             unset($hasil['det']);
 
             return $hasil;
-        }, $data);
+        }, $data), 'Data fetched !');
     }
 
     public function _flattened($array)
