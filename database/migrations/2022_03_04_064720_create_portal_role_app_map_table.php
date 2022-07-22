@@ -15,6 +15,7 @@ class CreatePortalRoleAppMapTable extends Migration
     {
         Schema::create('portal_role_app_map', function (Blueprint $table) {
             $table->id();
+            $table->integer('u_username');
             $table->integer('rm_role_id');
             $table->integer('am_app_id');
             $table->integer('am_app_parent_id')->nullable();

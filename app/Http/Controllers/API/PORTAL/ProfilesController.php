@@ -10,6 +10,7 @@ use App\Http\Requests\PORTAL\UserDetRequest;
 use App\Models\PORTAL\PortalUserDet;
 use App\Models\PORTAL\PortalEduDet;
 use App\Models\PORTAL\PortalFamDet;
+use App\Models\User;
 
 class ProfilesController extends BaseController
 {
@@ -103,6 +104,11 @@ class ProfilesController extends BaseController
         // ];
 
         $id = base64_decode($idDet);
+
+        $users = User::updateOrCreate(['username' => $id], [
+            'email' => $request->form['email'],
+            'email_verified_at' => $request->form['email_verified_at']
+        ]);
 
         $userDet = PortalUserDet::updateOrCreate(['u_username' => $id], $request->form);
 

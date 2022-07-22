@@ -6,6 +6,7 @@ use App\Http\Controllers\API\PORTAL\AuthController;
 use App\Http\Controllers\API\PORTAL\ProfileController;
 use App\Http\Controllers\API\PORTAL\ProfilesController;
 use App\Http\Controllers\API\PORTAL\UsersController;
+use App\Http\Controllers\STXI\EMS2\deliveryMethodToPSIController;
 
 /*
 |--------------------------------------------------------------------------
@@ -27,14 +28,26 @@ use App\Http\Controllers\API\PORTAL\UsersController;
 // });
 
 Route::group(['prefix' => 'portal', 'middleware' => 'auth:sanctum', 'verify' => true], function() {
-    
+
     // Settings Menu
     Route::resource('users', UsersController::class);
     Route::resource('profiles', ProfilesController::class);
+    Route::resource('apps', AppController::class);
 
     // Dashboard
     Route::post('profile', [ProfileController::class, 'store'])->middleware('verified');
     Route::get('countryList', [ProfileController::class, 'getCountryList']);
+});
+
+Route::group(['prefix' => 'div'], function () {
+    Route::group(['prefix' => 'ems2'], function () {
+        Route::get('itemSearch/{filter}', [deliveryMethodToPSIController::class, 'searchItemMaster']);
+        Route::get('spq', [deliveryMethodToPSIController::class, 'SPQIndex']);
+        Route::post('spq', [deliveryMethodToPSIController::class, 'SPQCreateUpdate']);
+        Route::delete('spq/{id}', [deliveryMethodToPSIController::class, 'SPQDeleteData']);
+
+        Route::post('uploadSPQ', [deliveryMethodToPSIController::class, 'UploadSPQ']);
+    });
 });
 
 Route::post('login', [AuthController::class, 'login']);

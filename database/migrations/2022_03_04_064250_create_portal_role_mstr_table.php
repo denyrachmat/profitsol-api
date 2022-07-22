@@ -15,6 +15,7 @@ class CreatePortalRoleMstrTable extends Migration
     {
         Schema::create('portal_role_mstr', function (Blueprint $table) {
             $table->id();
+            $table->string('u_username');
             $table->string('rm_role_name');
             $table->string('rm_role_desc');
             $table->timestamps();

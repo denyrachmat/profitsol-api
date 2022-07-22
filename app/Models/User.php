@@ -23,6 +23,7 @@ class User extends Authenticatable implements MustVerifyEmail
     protected $fillable = [
         'username',
         'email',
+        'email_verified_at',
         'password',
     ];
 
@@ -43,7 +44,7 @@ class User extends Authenticatable implements MustVerifyEmail
      */
     protected $casts = [
         'email_verified_at' => 'datetime',
-    ];    
+    ];
 
     public function edu()
     {
@@ -58,5 +59,16 @@ class User extends Authenticatable implements MustVerifyEmail
     public function det()
     {
         return $this->hasOne(PortalUserDet::class, 'u_username', 'username');
+    }
+
+    public static function boot() {
+        parent::boot();
+
+        static::deleting(function($user) { // before delete() method call this
+             $user->det()->delete();
+             $user->fam()->delete();
+             $user->edu()->delete();
+             // do the rest of the cleanup...
+        });
     }
 }

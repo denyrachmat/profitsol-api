@@ -15,10 +15,13 @@ class CreatePortalAppMstrTable extends Migration
     {
         Schema::create('portal_app_mstr', function (Blueprint $table) {
             $table->id();
+            $table->string('u_username');
             $table->string('am_app_code');
             $table->string('am_app_name');
             $table->string('am_app_desc')->nullable();
             $table->string('am_app_url')->nullable();
+            $table->string('am_app_icon')->nullable();
+            $table->boolean('am_is_drawer')->default(false);
             $table->timestamps();
         });
     }

@@ -91,6 +91,31 @@ return [
             'prefix_indexes' => true,
         ],
 
+        'sqlsrv_ems2' => [
+            'driver' => 'sqlsrv',
+            'url' => env('DATABASE_URL'),
+            'host' => env('DB_EMS2_HOST', 'localhost'),
+            'port' => env('DB_EMS2_PORT', '1433'),
+            'database' => env('DB_EMS2_DATABASE', 'forge'),
+            'username' => env('DB_EMS2_USERNAME', 'forge'),
+            'password' => env('DB_EMS2_PASSWORD', ''),
+            'charset' => 'utf8',
+            'prefix' => '',
+            'prefix_indexes' => true,
+        ],
+
+        'sqlsrv_mega_tyo' => [
+            'driver' => 'sqlsrv',
+            'url' => env('DATABASE_URL'),
+            'host' => env('DB_MEGA_TYO_HOST', 'localhost'),
+            'port' => env('DB_MEGA_TYO_PORT', '1433'),
+            'database' => env('DB_MEGA_TYO_DATABASE', 'forge'),
+            'username' => env('DB_MEGA_TYO_USERNAME', 'forge'),
+            'password' => env('DB_MEGA_TYO_PASSWORD', ''),
+            'charset' => 'utf8',
+            'prefix' => '',
+            'prefix_indexes' => true,
+        ],
     ],
 
     /*

@@ -136,6 +136,6 @@ class UsersController extends BaseController
      */
     public function destroy($id)
     {
-        //
+        return User::where('username', base64_decode($id))->delete();
     }
 }
