@@ -269,6 +269,7 @@ class deliveryMethodToPSIController extends BaseController
         ));
 
         dispatch($insertJob)->onQueue('sendEmailQueue');
-        return 'Email sent !!';
+        
+        return $this->handleResponse($insertJob, 'Email sent !');
     }
 }
