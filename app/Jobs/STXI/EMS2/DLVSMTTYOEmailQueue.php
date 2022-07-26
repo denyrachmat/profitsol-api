@@ -21,6 +21,14 @@ class DLVSMTTYOEmailQueue implements ShouldQueue
      *
      * @return void
      */
+    protected $user;
+    protected $data;
+    protected $totalDelivery;
+    protected $totalWBarcode;
+    protected $totalWOBarcode;
+    protected $totalSMTDlv;
+    protected $date;
+
     public function __construct(
         $user,
         $data,

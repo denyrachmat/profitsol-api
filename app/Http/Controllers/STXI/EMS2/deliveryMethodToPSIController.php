@@ -84,7 +84,7 @@ class deliveryMethodToPSIController extends BaseController
 
     public function DLVIndex()
     {
-        return $this->handleResponse($this->DLVGetData(), 'Data found !');
+        return $this->handleResponse($this->DLVGetData(null, ['DEL_DATE'], true), 'Data found !');
     }
 
     public function DLVGetData(
@@ -93,7 +93,8 @@ class deliveryMethodToPSIController extends BaseController
             'MITM_MODELCD',
             'MITM_ITMD1',
             'DEL_DATE'
-        ]
+        ],
+        $withDet = false
     ) {
         $data = DB::connection('sqlsrv_ems2')->table('V_DLV_TYO_HIST')->select(
             array_merge($sel, [
@@ -113,9 +114,29 @@ class deliveryMethodToPSIController extends BaseController
             $data->where('DEL_DATE', $date);
         }
 
-        return array_map(function ($value) {
+        $dataHasil = array_map(function ($value) {
             return (array)$value;
         }, $data->get()->toArray());
+
+        if ($withDet) {
+            $dataWithDet = [];
+            foreach ($dataHasil as $key => $value) {
+                $dataWithDet[] = array_merge(
+                    $value,
+                    [
+                        'det' => $this->DLVGetData($value['DEL_DATE'], [
+                            'MITM_MODELCD',
+                            'MITM_ITMD1',
+                            'DEL_DATE'
+                        ], false)
+                    ]
+                );
+            }
+
+            return $dataWithDet;
+        }
+
+        return $dataHasil;
     }
 
     public function DLVWithBarcode(Request $req)
@@ -269,7 +290,7 @@ class deliveryMethodToPSIController extends BaseController
         ));
 
         dispatch($insertJob)->onQueue('sendEmailQueue');
-        
+
         return $this->handleResponse($insertJob, 'Email sent !');
     }
 }
