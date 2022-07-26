@@ -11,6 +11,8 @@ use Illuminate\Support\Facades\DB;
 use App\Models\STXI\EMS2\SPQMaster;
 use App\Models\STXI\EMS2\DLVTYOHist;
 
+use App\Jobs\STXI\EMS2\DLVSMTTYOEmailQueue;
+
 class deliveryMethodToPSIController extends BaseController
 {
     public function UploadSPQ(Request $req)
@@ -158,29 +160,29 @@ class deliveryMethodToPSIController extends BaseController
 
     public function DLVCalSPQRes($qty, $delivery, $model)
     {
-        if ($qty <= 0) {
+        // return [$delivery . ' X ' . 1];
+        $getSPQData = SPQMaster::where('MITM_MODELCD', $model)->first();
+        if ($qty <= 0 || empty($getSPQData)) {
             return [$delivery . ' X ' . 1];
         }
 
-        $getSPQData = SPQMaster::where('MITM_MODELCD', $model)->first();
         $getSPQArray = $this->DLVCalcSPQ($qty, isset($getSPQData->STXI_SPQ) ? (int)$getSPQData->STXI_SPQ : 0);
 
-        return $getSPQArray;
         $hasilSPQ = [];
         $totalBox = 1;
         $data = -1;
 
         foreach ($getSPQArray as $keySPQArr => $valueSPQArr) {
-                if ($keySPQArr > 0 && $valueSPQArr === $getSPQArray[$keySPQArr - 1]) {
-                    $totalBox = $totalBox + 1;
+            if ($keySPQArr > 0 && $valueSPQArr === $getSPQArray[$keySPQArr - 1]) {
+                $totalBox = $totalBox + 1;
 
-                    $hasilSPQ[$data] = $valueSPQArr . ' X ' . $totalBox;
-                } else {
-                    $data++;
-                    $totalBox = 1;
-                    $hasilSPQ[$data] = $valueSPQArr . ' X ' . $totalBox;
-                }
+                $hasilSPQ[$data] = $valueSPQArr . ' X ' . $totalBox;
+            } else {
+                $data++;
+                $totalBox = 1;
+                $hasilSPQ[$data] = $valueSPQArr . ' X ' . $totalBox;
             }
+        }
 
         return $hasilSPQ;
     }
@@ -239,24 +241,34 @@ class deliveryMethodToPSIController extends BaseController
         // return $data;
 
         $hasilData = [];
+        $totalDelivery = 0;
+        $totalWBarcode = 0;
+        $totalWOBarcode = 0;
+        $totalSMTDlv = 0;
         foreach ($data as $key => $value) {
+            $totalDelivery += $value['TOT_INC_DLV'];
+            $totalWBarcode += $value['TOT_OUT_BC_DLV'];
+            $totalWOBarcode += $value['TOT_OUT_WOBC_DLV'];
+            $totalSMTDlv += $value['TOT_SMT_DLV'];
             $hasilData[] = array_merge(
                 $value,
                 [
                     'SPQ' => $this->DLVCalSPQRes($value['TOT_OUT_BC_DLV'], $value['TOT_INC_DLV'], $value['MITM_MODELCD']),
-                    // 'SPQ' => 'TEST DULU'
                 ]
             );
-
-            // return $hasilData;
         }
 
-        // return $hasilData;
+        $insertJob = (new DLVSMTTYOEmailQueue(
+            'PT SMT Indonesia',
+            $hasilData,
+            $totalDelivery,
+            $totalWBarcode,
+            $totalWOBarcode,
+            $totalSMTDlv,
+            $date
+        ));
 
-        return view('STXI/EMS2/dlvMethodFromSMTtoTYO', [
-            'user' => 'PT SMT Indonesia',
-            'data' => $hasilData,
-            'date' => $date
-        ]);
+        dispatch($insertJob)->onQueue('sendEmailQueue');
+        return 'Email sent !!';
     }
 }

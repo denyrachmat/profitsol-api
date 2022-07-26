@@ -16,9 +16,23 @@ class DLVSMTTYOEmail extends Mailable
      *
      * @return void
      */
-    public function __construct()
+    public function __construct(
+        $user,
+        $data,
+        $totalDelivery,
+        $totalWBarcode,
+        $totalWOBarcode,
+        $totalSMTDlv,
+        $date
+    )
     {
-        //
+        $this->user = $user;
+        $this->data = $data;
+        $this->totalDelivery = $totalDelivery;
+        $this->totalWBarcode = $totalWBarcode;
+        $this->totalWOBarcode = $totalWOBarcode;
+        $this->totalSMTDlv = $totalSMTDlv;
+        $this->date = $date;
     }
 
     /**
@@ -28,6 +42,15 @@ class DLVSMTTYOEmail extends Mailable
      */
     public function build()
     {
-        return $this->view('view.name');
+        return $this->view('STXI.EMS2.dlvMethodFromSMTtoTYO', [
+            'user' => 'PT SMT Indonesia',
+            'data' => $this->hasilData,
+            'totalDelivery' => $this->totalDelivery,
+            'totalWBarcode' => $this->totalWBarcode,
+            'totalWOBarcode' => $this->totalWOBarcode,
+            'totalSMTDlv' => $this->totalSMTDlv,
+            'date' => $this->date
+        ])
+            ->subject('STX-I Server Notification - Delivery to SMT - TYO Method');
     }
 }
