@@ -14,7 +14,7 @@ class BaseController extends Controller
             'data'    => $result,
             'message' => $msg,
         ];
-        return response()->json($res, 200);
+        return response()->make($res, 200);
     }
 
     public function handleError($error, $errorMsg = [], $code = 422)
