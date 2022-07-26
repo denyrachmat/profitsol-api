@@ -44,7 +44,7 @@ class DLVSMTTYOEmail extends Mailable
     {
         return $this->view('STXI.EMS2.dlvMethodFromSMTtoTYO', [
             'user' => 'PT SMT Indonesia',
-            'data' => $this->hasilData,
+            'data' => $this->data,
             'totalDelivery' => $this->totalDelivery,
             'totalWBarcode' => $this->totalWBarcode,
             'totalWOBarcode' => $this->totalWOBarcode,
