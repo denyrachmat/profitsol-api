@@ -4,10 +4,14 @@ namespace App\Http\Controllers\API\PORTAL;
 
 use App\Http\Controllers\API\PORTAL\BaseController;
 use Illuminate\Http\Request;
-use App\Models\PORTAL\PortalApp;
-use App\Http\Requests\PORTAL\AppsRequest;
 
-class AppController extends BaseController
+use App\Http\Requests\PORTAL\RoleRequest;
+
+use App\Models\PORTAL\PortalRole;
+use App\Models\PORTAL\PortalRoleAppMap;
+use App\Models\PORTAL\PortalRoleUserMap;
+
+class RoleController extends BaseController
 {
     /**
      * Display a listing of the resource.
@@ -16,12 +20,7 @@ class AppController extends BaseController
      */
     public function index()
     {
-        return $this->handleResponse(PortalApp::with('childApps')->get(), 'Data Found !');
-    }
-
-    public function indexParentOnly()
-    {
-        return $this->handleResponse(PortalApp::with('childApps')->whereNull('am_app_parent')->get(), 'Data Found !');
+        return $this->handleResponse(PortalRole::with('users_map')->with('app_map.apps.childApps')->get(), 'Data found !');
     }
 
     /**
@@ -40,9 +39,17 @@ class AppController extends BaseController
      * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\Response
      */
-    public function store(AppsRequest $request)
+    public function store(RoleRequest $request)
     {
-        $stored = PortalApp::create($request->all());
+        $stored = PortalRole::create($request->all());
+
+        if (count($request->app_map) > 0) {
+            PortalRoleAppMap::create($request->app_map);
+        }
+
+        if (count($request->users_map) > 0) {
+            PortalRoleUserMap::create($request->users_map);
+        }
 
         return $this->handleResponse($stored, 'Store Successfull !');
     }
@@ -76,17 +83,27 @@ class AppController extends BaseController
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function update(AppsRequest $req, $id)
+    public function update(RoleRequest $req, $id)
     {
-        $update = PortalApp::where('am_app_code', $id)->update([
+        $update = PortalRole::where('id', $id)->update([
             'u_username' => $req->u_username,
-            'am_app_code' => $req->am_app_code,
-            'am_app_name' => $req->am_app_name,
-            'am_app_icon' => $req->am_app_icon,
-            'am_app_desc' => $req->am_app_desc,
-            'am_app_url' => $req->am_app_url,
-            'am_app_parent' => $req->am_app_parent,
+            'rm_role_name' => $req->rm_role_name,
+            'rm_role_desc' => $req->rm_role_desc,
         ]);
+
+        if (count($req->app_map) > 0) {
+            PortalRoleAppMap::updateOrCreate([
+                'rm_role_id' => $id,
+                'u_username' => $req->u_username,
+            ], $req->app_map);
+        }
+
+        if (count($req->users_map) > 0) {
+            PortalRoleUserMap::updateOrCreate([
+                'rm_role_id' => $id,
+                'u_username' => $req->u_username,
+            ], $req->users_map);
+        }
 
         return $this->handleResponse($update, 'Update Successfull !');
     }

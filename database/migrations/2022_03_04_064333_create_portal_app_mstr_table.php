@@ -21,6 +21,7 @@ class CreatePortalAppMstrTable extends Migration
             $table->string('am_app_desc')->nullable();
             $table->string('am_app_url')->nullable();
             $table->string('am_app_icon')->nullable();
+            $table->string('am_app_parent')->nullable();
             $table->boolean('am_is_drawer')->default(false);
             $table->timestamps();
         });

@@ -5,7 +5,7 @@ namespace App\Http\Requests\PORTAL;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
-class AppsRequest extends FormRequest
+class RoleRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
@@ -28,16 +28,14 @@ class AppsRequest extends FormRequest
             $username = $this->route()->parameter('username');
 
             return [
-                'am_app_code' => 'required',
-                'am_app_name' => 'required',
-                'am_app_url' => 'required',
+                'rm_role_name' => 'required',
+                'rm_role_desc' => 'required',
                 Rule::unique('users')->ignore($username)
             ];
         } else {
             return [
-                'am_app_code' => 'required|unique:portal_app_mstr',
-                'am_app_name' => 'required',
-                'am_app_url' => 'required'
+                'rm_role_name' => 'required|unique:portal_role_mstr',
+                'rm_role_desc' => 'required',
             ];
         }
     }

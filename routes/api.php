@@ -6,6 +6,8 @@ use App\Http\Controllers\API\PORTAL\AuthController;
 use App\Http\Controllers\API\PORTAL\ProfileController;
 use App\Http\Controllers\API\PORTAL\ProfilesController;
 use App\Http\Controllers\API\PORTAL\UsersController;
+use App\Http\Controllers\API\PORTAL\AppController;
+use App\Http\Controllers\API\PORTAL\RoleController;
 use App\Http\Controllers\STXI\EMS2\deliveryMethodToPSIController;
 
 /*
@@ -31,8 +33,13 @@ Route::group(['prefix' => 'portal', 'middleware' => 'auth:sanctum', 'verify' => 
 
     // Settings Menu
     Route::resource('users', UsersController::class);
+
     Route::resource('profiles', ProfilesController::class);
+
     Route::resource('apps', AppController::class);
+    Route::get('appsParent', [AppController::class, 'indexParentOnly']);
+
+    Route::resource('roles', RoleController::class);
 
     // Dashboard
     Route::post('profile', [ProfileController::class, 'store'])->middleware('verified');
