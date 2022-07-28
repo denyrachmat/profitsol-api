@@ -151,8 +151,9 @@ class deliveryMethodToPSIController extends BaseController
                 $query
             )))[0];
 
-            $getSPQDataPersheet = $this->SPQIndex($value)->MITM_SPQ;
+            $getSPQDataPersheet = $this->SPQIndex($value)->original['data']['MITM_SPQ'];
 
+            // return $getSPQDataPersheet;
             $hasilWithBarcode = $dataCPO->BAL_CPO_STXI_ITEC > 0
                 ? (
                     $req->delivery[$key] > $dataCPO->BAL_CPO_STXI_ITEC
