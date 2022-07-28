@@ -172,7 +172,7 @@ class deliveryMethodToPSIController extends BaseController
                 'model' => $value,
                 'delivery' => $req->delivery[$key],
                 'cpo' => (int)$dataCPO->BAL_CPO_STXI_ITEC,
-                'withBarcode' => $hasilWithBarcode > 0 ? $hasilWithBarcode : $req->delivery[$key],
+                'withBarcode' => $hasilWithBarcode,
                 'spq' => $getSPQArray
             ];
         }
