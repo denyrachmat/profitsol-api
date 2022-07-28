@@ -165,7 +165,7 @@ class deliveryMethodToPSIController extends BaseController
                     : $req->delivery[$key]
                 )
                 : 0 ;
-            $getSPQArray = $this->DLVCalSPQRes($hasilWithBarcode, $req->delivery[$key], $value);
+            $getSPQArray = $hasilWithBarcode > 0 ? $this->DLVCalSPQRes($hasilWithBarcode, $req->delivery[$key], $value) : 0;
 
             $hasil[] = [
                 // 'query' => $query,
