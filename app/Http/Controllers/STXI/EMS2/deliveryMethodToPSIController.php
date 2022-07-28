@@ -29,7 +29,7 @@ class deliveryMethodToPSIController extends BaseController
         return $this->handleResponse([], 'Upload Sukses ' . $nama_file);
     }
 
-    public function SPQIndex()
+    public function SPQIndex($whereModel = null)
     {
         $data = SPQMaster::select(
             'id',
@@ -43,11 +43,14 @@ class deliveryMethodToPSIController extends BaseController
                 'MITM_ITMCD',
                 'MITM_MODELCD'
             )
-            // ->where('MITM_MODEL', 1)
-            ->get();
+            ->where('MITM_MODEL', 1);
+
+        if (!empty($whereModel)) {
+            $data->where('MITM_MODELCD', $whereModel);
+        }
 
 
-        return $this->handleResponse($data, 'Data found !');
+        return $this->handleResponse(!empty($whereModel) ? $data->first() : $data->get(), 'Data found !');
     }
 
     public function searchItemMaster($filter)
@@ -148,7 +151,19 @@ class deliveryMethodToPSIController extends BaseController
                 $query
             )))[0];
 
-            $hasilWithBarcode = $req->delivery[$key] > $dataCPO->BAL_CPO_STXI_ITEC ? (int)$dataCPO->BAL_CPO_STXI_ITEC : $req->delivery[$key];
+            $getSPQDataPersheet = $this->SPQIndex($value)->MITM_SPQ;
+
+            $hasilWithBarcode = $dataCPO->BAL_CPO_STXI_ITEC > 0
+                ? (
+                    $req->delivery[$key] > $dataCPO->BAL_CPO_STXI_ITEC
+                    ? (
+                        (int)$dataCPO->BAL_CPO_STXI_ITEC < $getSPQDataPersheet
+                        ? 0
+                        : (int)$dataCPO->BAL_CPO_STXI_ITEC
+                    )
+                    : $req->delivery[$key]
+                )
+                : 0 ;
             $getSPQArray = $this->DLVCalSPQRes($hasilWithBarcode, $req->delivery[$key], $value);
 
             $hasil[] = [
@@ -181,7 +196,6 @@ class deliveryMethodToPSIController extends BaseController
 
     public function DLVCalSPQRes($qty, $delivery, $model)
     {
-        // return [$delivery . ' X ' . 1];
         $getSPQData = SPQMaster::where('MITM_MODELCD', $model)->first();
         if ($qty <= 0 || empty($getSPQData)) {
             return [$delivery . ' X ' . 1];
