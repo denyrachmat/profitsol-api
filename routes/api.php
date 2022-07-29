@@ -52,11 +52,13 @@ Route::group(['prefix' => 'div'], function () {
         Route::get('spq', [deliveryMethodToPSIController::class, 'SPQIndex']);
         Route::post('spq', [deliveryMethodToPSIController::class, 'SPQCreateUpdate']);
         Route::delete('spq/{id}', [deliveryMethodToPSIController::class, 'SPQDeleteData']);
+        Route::get('spqChecker/{qty}/{qtyDel}/{model}', [deliveryMethodToPSIController::class, 'DLVCalSPQRes']);
 
         Route::get('dlv', [deliveryMethodToPSIController::class, 'DLVIndex']);
         Route::get('dlvEmail/{date}', [deliveryMethodToPSIController::class, 'DLVSendEmail']);
         Route::post('dlv', [deliveryMethodToPSIController::class, 'DLVWithBarcode']);
         Route::post('dlvStore', [deliveryMethodToPSIController::class, 'DLVStore']);
+        Route::get('dlvExport', [deliveryMethodToPSIController::class, 'DLVExport']);
 
         Route::post('uploadSPQ', [deliveryMethodToPSIController::class, 'UploadSPQ']);
     });

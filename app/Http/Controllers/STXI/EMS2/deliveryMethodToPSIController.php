@@ -12,6 +12,7 @@ use App\Models\STXI\EMS2\SPQMaster;
 use App\Models\STXI\EMS2\DLVTYOHist;
 
 use App\Jobs\STXI\EMS2\DLVSMTTYOEmailQueue;
+use App\Exports\STXT\exportDeliveryHist;
 
 class deliveryMethodToPSIController extends BaseController
 {
@@ -144,6 +145,7 @@ class deliveryMethodToPSIController extends BaseController
 
     public function DLVWithBarcode(Request $req)
     {
+        ini_set('max_execution_time', '300');
         $hasil = [];
         foreach ($req->model as $key => $value) {
             $query = "SET NOCOUNT ON;EXEC Z_STXI_GET_CPO_DLV_STXI_ITEC @model = '" . $value . "', @date_start = '" . date('Y-m-01', strtotime($req->date)) . "', @date_to = '" . date('Y-m-d', strtotime($req->date . "-1 days")) . "'";
@@ -307,5 +309,20 @@ class deliveryMethodToPSIController extends BaseController
         dispatch($insertJob)->onQueue('sendEmailQueue');
 
         return $this->handleResponse($insertJob, 'Email sent !');
+    }
+
+    public function DLVExport()
+    {
+        $data = $this->DLVGetData(null, [
+            'MITM_MODELCD',
+            'MITM_ITMD1',
+            'DEL_DATE',
+            'FTRN'
+        ]);
+
+        // return $data;
+        Excel::store(new exportDeliveryHist($data), 'export_delivery.xlsx', 'public');
+
+        return 'storage/app/public/export_delivery.xlsx';
     }
 }
