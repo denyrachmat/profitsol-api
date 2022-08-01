@@ -36,13 +36,14 @@ class exportDeliveryHist implements FromCollection, WithHeadings, WithStartRow
     */
     public function collection()
     {
+        // return collect($this->data);
         $hasil = [];
         foreach ($this->data as $key => $value) {
             $hasil[] = [
                 $key + 1,
                 $value['MITM_MODELCD'],
                 $value['TOT_INC_DLV'],
-                (int)$value['FTRN'] > 0 ? 0 : (int)$value['TOT_OUT_BC_DLV'],
+                (int)$value['FTRN'] > 0 ? "0" : $value['TOT_OUT_BC_DLV'],
                 $value['DEL_DATE']
             ];
         }
