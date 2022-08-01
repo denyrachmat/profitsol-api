@@ -19,4 +19,9 @@ class PortalRoleUserMap extends Model
     {
         return $this->hasOne('App\Models\user', 'u_username', 'username');
     }
+
+    public function role()
+    {
+        return $this->belongsTo('App\Models\PORTAL\PortalRole', 'rm_role_id', 'id');
+    }
 }

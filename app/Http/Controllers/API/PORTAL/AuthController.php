@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\DB;
 
 use App\Models\PORTAL\PortalEduDet;
 use App\Models\User;
+use App\Models\PORTAL\PortalApp;
 
 class AuthController extends BaseController
 {
@@ -59,11 +60,17 @@ class AuthController extends BaseController
             )->where('u_username', $auth->username)
             ->get()->toArray();
 
+            $dataUsers = User::where('username', $auth->username)->first();
+
             $success['token'] =  $auth->createToken('LaravelSanctumAuth')->plainTextToken;
             $success['username'] =  $auth->username;
-            $success['user_det'] = User::where('username', $auth->username)->first()->det;
+            $success['user_det'] = $dataUsers->det;
             $success['edu'] = $edu;
-            $success['fam'] = User::where('username', $auth->username)->first()->fam;
+            $success['fam'] = $dataUsers->fam;
+            $success['rolesGroup'] = User::where('username', $auth->username)->with(['roles.role.role_app_map' => function ($r) {
+                $r->with(['childRoles.apps', 'apps'])->whereNull('am_app_parent');
+            }])->first();
+            $success['menus'] = PortalApp::where('am_app_parent', null)->with('childApps')->get();
 
             return $this->handleResponse($success, 'User logged-in!');
         }

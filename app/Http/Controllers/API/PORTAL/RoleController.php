@@ -85,6 +85,7 @@ class RoleController extends BaseController
      */
     public function update(RoleRequest $req, $id)
     {
+        // return $req->all()['app_map'];
         $update = PortalRole::where('id', $id)->update([
             'u_username' => $req->u_username,
             'rm_role_name' => $req->rm_role_name,
@@ -92,10 +93,8 @@ class RoleController extends BaseController
         ]);
 
         if (count($req->app_map) > 0) {
-            PortalRoleAppMap::updateOrCreate([
-                'rm_role_id' => $id,
-                'u_username' => $req->u_username,
-            ], $req->app_map);
+            PortalRoleAppMap::where('rm_role_id', $id)->where('u_username', $req->u_username)->delete();
+            PortalRoleAppMap::insert($req->app_map);
         }
 
         if (count($req->users_map) > 0) {

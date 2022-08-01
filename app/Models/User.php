@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Models\PORTAL\PortalEduDet;
 use App\Models\PORTAL\PortalFamDet;
+use App\Models\PORTAL\PortalRoleUserMap;
 use App\Models\PORTAL\PortalUserDet;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -59,6 +60,11 @@ class User extends Authenticatable implements MustVerifyEmail
     public function det()
     {
         return $this->hasOne(PortalUserDet::class, 'u_username', 'username');
+    }
+
+    public function roles()
+    {
+        return $this->hasMany(PortalRoleUserMap::class, 'u_username', 'username');
     }
 
     public static function boot() {

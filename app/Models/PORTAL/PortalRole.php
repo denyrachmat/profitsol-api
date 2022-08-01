@@ -26,7 +26,7 @@ class PortalRole extends Model
         return $this->hasMany('App\Models\PORTAL\PortalRoleUserMap', 'rm_role_id', 'id');
     }
 
-    public function app_map()
+    public function role_app_map()
     {
         return $this->hasMany('App\Models\PORTAL\PortalRoleAppMap', 'rm_role_id', 'id');
     }
