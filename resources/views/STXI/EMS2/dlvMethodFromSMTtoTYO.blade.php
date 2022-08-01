@@ -33,9 +33,13 @@
                     <td style="background-color:#fff;border-color:inherit;border-style:solid;border-width:1px;color:#333;font-family:Arial, sans-serif;font-size:14px;overflow:hidden;padding:10px 5px;text-align:right;vertical-align:top;word-break:normal">{{$value['TOT_INC_DLV']}}</td>
                     <td style="background-color:#fff;border-color:inherit;border-style:solid;border-width:1px;color:#333;font-family:Arial, sans-serif;font-size:14px;overflow:hidden;padding:10px 5px;text-align:right;vertical-align:top;word-break:normal">{{$value['TOT_OUT_BC_DLV']}}</td>
                     <td style="background-color:#fff;border-color:inherit;border-style:solid;border-width:1px;color:#333;font-family:Arial, sans-serif;font-size:14px;overflow:hidden;padding:10px 5px;text-align:left;vertical-align:top;word-break:normal">
+                        @if(count($value['SPQ']) > 0)
                         @foreach($value['SPQ'] as $keySPQ => $valSPQ)
                             {{$valSPQ}} <br>
                         @endforeach
+                        @else
+                            {{$value['SPQ']}}
+                        @endif
                     </td>
                     <td style="background-color:#fff;border-color:inherit;border-style:solid;border-width:1px;color:#333;font-family:Arial, sans-serif;font-size:14px;overflow:hidden;padding:10px 5px;text-align:right;vertical-align:top;word-break:normal">{{$value['TOT_OUT_WOBC_DLV']}}</td>
                     <td style="background-color:#fff;border-color:inherit;border-style:solid;border-width:1px;color:#333;font-family:Arial, sans-serif;font-size:14px;overflow:hidden;padding:10px 5px;text-align:right;vertical-align:top;word-break:normal">{{$value['TOT_SMT_DLV']}}</td>
