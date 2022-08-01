@@ -42,7 +42,7 @@ class exportDeliveryHist implements FromCollection, WithHeadings, WithStartRow
                 $key + 1,
                 $value['MITM_MODELCD'],
                 $value['TOT_INC_DLV'],
-                $value['FTRN'] > 0 ? 0 : (int)$value['TOT_OUT_BC_DLV'],
+                (int)$value['FTRN'] > 0 ? 0 : (int)$value['TOT_OUT_BC_DLV'],
                 $value['DEL_DATE']
             ];
         }

@@ -105,7 +105,9 @@ class deliveryMethodToPSIController extends BaseController
                 DB::raw('SUM(I_QTY) AS TOT_INC_DLV'),
                 DB::raw('SUM(O_QTY) AS TOT_OUT_BC_DLV'),
                 DB::raw('SUM(OWB_QTY) AS TOT_OUT_WOBC_DLV'),
-                DB::raw('SUM(TOT_QTY) AS TOT_SMT_DLV')
+                DB::raw('SUM(TOT_QTY) AS TOT_SMT_DLV'),
+                DB::raw('MAX(IPP_REMARK) AS IPP_REMARK'),
+                DB::raw('MAX(RANK_REMARK) AS RANK_REMARK')
             ])
         )->join(
             DB::raw('[MGSVR].[VMI_TYO].[dbo].[MITM_TBL]'),
@@ -153,14 +155,14 @@ class deliveryMethodToPSIController extends BaseController
                 $query
             )))[0];
 
-            $getSPQDataPersheet = $this->SPQIndex($value)->original['data']['MITM_SPQ'];
+            $getSPQDataPersheet = $this->SPQIndex($value)->original['data'] ? $this->SPQIndex($value)->original['data']['MITM_SPQ'] : false;
 
             // return $getSPQDataPersheet;
             $hasilWithBarcode = $dataCPO->BAL_CPO_STXI_ITEC > 0
                 ? (
                     $req->delivery[$key] > $dataCPO->BAL_CPO_STXI_ITEC
                     ? (
-                        (int)$dataCPO->BAL_CPO_STXI_ITEC < $getSPQDataPersheet
+                        !$getSPQDataPersheet || (int)$dataCPO->BAL_CPO_STXI_ITEC < $getSPQDataPersheet
                         ? 0
                         : (int)$dataCPO->BAL_CPO_STXI_ITEC
                     )
@@ -201,7 +203,7 @@ class deliveryMethodToPSIController extends BaseController
     {
         $getSPQData = SPQMaster::where('MITM_MODELCD', $model)->first();
         if ($qty <= 0 || empty($getSPQData)) {
-            return [$delivery . ' X ' . 1];
+            return "0";
         }
 
         $getSPQArray = $this->DLVCalcSPQ($qty, isset($getSPQData->STXI_SPQ) ? (int)$getSPQData->STXI_SPQ : 0);
@@ -228,6 +230,8 @@ class deliveryMethodToPSIController extends BaseController
     public function DLVStore(Request $req)
     {
         $hasil = [];
+        DLVTYOHist::where('DEL_DATE', $req->date)->delete();
+
         foreach ($req->data as $key => $value) {
             if (!empty($value['delivery'])) {
                 $hasil[] = DLVTYOHist::create([
