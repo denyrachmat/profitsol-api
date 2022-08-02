@@ -20,7 +20,7 @@ class RoleController extends BaseController
      */
     public function index()
     {
-        return $this->handleResponse(PortalRole::with('users_map')->with('app_map.apps.childApps')->get(), 'Data found !');
+        return $this->handleResponse(PortalRole::with('users_map')->with('role_app_map.apps.childApps')->get(), 'Data found !');
     }
 
     /**
@@ -43,8 +43,8 @@ class RoleController extends BaseController
     {
         $stored = PortalRole::create($request->all());
 
-        if (count($request->app_map) > 0) {
-            PortalRoleAppMap::create($request->app_map);
+        if (count($request->role_app_map) > 0) {
+            PortalRoleAppMap::create($request->role_app_map);
         }
 
         if (count($request->users_map) > 0) {
@@ -85,16 +85,16 @@ class RoleController extends BaseController
      */
     public function update(RoleRequest $req, $id)
     {
-        // return $req->all()['app_map'];
+        // return $req->all()['role_app_map'];
         $update = PortalRole::where('id', $id)->update([
             'u_username' => $req->u_username,
             'rm_role_name' => $req->rm_role_name,
             'rm_role_desc' => $req->rm_role_desc,
         ]);
 
-        if (count($req->app_map) > 0) {
+        if (count($req->role_app_map) > 0) {
             PortalRoleAppMap::where('rm_role_id', $id)->where('u_username', $req->u_username)->delete();
-            PortalRoleAppMap::insert($req->app_map);
+            PortalRoleAppMap::insert($req->role_app_map);
         }
 
         if (count($req->users_map) > 0) {

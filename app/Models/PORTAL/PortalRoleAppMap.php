@@ -34,6 +34,6 @@ class PortalRoleAppMap extends Model
 
     public function childRoles()
     {
-        return $this->child()->with('childRoles');
+        return $this->child()->with('childRoles')->with('apps')->orderBy('am_app_id');
     }
 }
