@@ -61,6 +61,7 @@ Route::group(['prefix' => 'div'], function () {
         Route::get('dlvExport', [deliveryMethodToPSIController::class, 'DLVExport']);
 
         Route::post('uploadSPQ', [deliveryMethodToPSIController::class, 'UploadSPQ']);
+        Route::get('syncBOMToPSI', [deliveryMethodToPSIController::class, 'syncBOMToPSI']);
     });
 });
 

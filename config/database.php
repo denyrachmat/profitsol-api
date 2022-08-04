@@ -129,6 +129,33 @@ return [
             'prefix' => '',
             'prefix_indexes' => true,
         ],
+
+
+        'sqlsrv_mega_sme' => [
+            'driver' => 'sqlsrv',
+            'url' => env('DATABASE_URL'),
+            'host' => env('DB_MEGA_SME_HOST', 'localhost'),
+            'port' => env('DB_MEGA_SME_PORT', '1433'),
+            'database' => env('DB_MEGA_SME_DATABASE', 'forge'),
+            'username' => env('DB_MEGA_SME_USERNAME', 'forge'),
+            'password' => env('DB_MEGA_SME_PASSWORD', ''),
+            'charset' => 'utf8',
+            'prefix' => '',
+            'prefix_indexes' => true,
+        ],
+
+        'sqlsrv_psi_eng' => [
+            'driver' => 'sqlsrv',
+            'url' => env('DATABASE_URL'),
+            'host' => env('DB_PSI_ENG_HOST', 'localhost'),
+            'port' => env('DB_PSI_ENG_PORT', '1433'),
+            'database' => env('DB_PSI_ENG_DATABASE', 'forge'),
+            'username' => env('DB_PSI_ENG_USERNAME', 'forge'),
+            'password' => env('DB_PSI_ENG_PASSWORD', ''),
+            'charset' => 'utf8',
+            'prefix' => '',
+            'prefix_indexes' => true,
+        ],
     ],
 
     /*
