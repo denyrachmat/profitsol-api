@@ -56,11 +56,11 @@ class DLVSMTTYOEmailQueue implements ShouldQueue
     public function handle()
     {
         $to = [
-            'deny-rachmat@sumitronics.co.jp'
+            'nidya-sianty@sumitronics.co.jp'
         ];
 
         $cc = [
-            'denyrachmat22@gmail.com'
+            'deny-rachmat@sumitronics.co.jp',
         ];
 
         Mail::to($to)
