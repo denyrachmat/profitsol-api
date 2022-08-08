@@ -114,7 +114,6 @@ class deliveryMethodToPSIController extends BaseController
             'MITM_ITMCD',
             'MITM_MODELCD'
         )
-        ->whereNull('deleted_at')
             ->groupBy($sel);
 
         if (!empty($date)) {
