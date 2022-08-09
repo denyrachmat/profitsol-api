@@ -37,7 +37,7 @@ return [
 
         'data_folder' => [
             'driver' => 'local',
-            'root'   => 'D:/data',
+            'root'   => 'D:/data/Uploaded Docs',
         ],
 
         'public' => [
