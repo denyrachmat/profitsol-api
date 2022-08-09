@@ -9,7 +9,7 @@ use App\Http\Controllers\API\PORTAL\UsersController;
 use App\Http\Controllers\API\PORTAL\AppController;
 use App\Http\Controllers\API\PORTAL\RoleController;
 use App\Http\Controllers\STXI\EMS2\deliveryMethodToPSIController;
-
+use App\Http\Controllers\STXI\EMS2\poSummaryController;
 /*
 |--------------------------------------------------------------------------
 | API Routes
@@ -62,6 +62,10 @@ Route::group(['prefix' => 'div'], function () {
 
         Route::post('uploadSPQ', [deliveryMethodToPSIController::class, 'UploadSPQ']);
         Route::get('syncBOMToPSI', [deliveryMethodToPSIController::class, 'syncBOMToPSI']);
+
+        Route::post('uploadRawPO', [poSummaryController::class, 'uploadPO']);
+        Route::get('POGetData/{date}', [poSummaryController::class, 'POGetData']);
+        Route::get('POExportData/{date}', [poSummaryController::class, 'exportPO']);
     });
 });
 

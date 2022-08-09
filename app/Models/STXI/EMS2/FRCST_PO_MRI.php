@@ -9,7 +9,7 @@ class FRCST_PO_MRI extends Model
 {
     use HasFactory;
 
-    protected $connection = 'sqlsrv_mega_exim';
+    protected $connection = 'sqlsrv_ems2';
     protected $table = 'FRCST_PO_MRI';
     protected $fillable = [
         'FPM_ITMCD',
