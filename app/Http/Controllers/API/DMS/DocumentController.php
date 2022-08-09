@@ -15,7 +15,7 @@ class DocumentController extends Controller
      */
     public function index()
     {
-        $files = Storage::disk('data_folder')->allFiles('/');
+        $files = Storage::disk('data_folder')->allFiles();
 
         return $files;
     }
