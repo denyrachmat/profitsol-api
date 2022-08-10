@@ -40,6 +40,11 @@ return [
             'root'   => 'D:/data/Uploaded Docs',
         ],
 
+        'data_folder_local' => [
+            'driver' => 'local',
+            'root'   => 'U:/Uploaded Docs',
+        ],
+
         'public' => [
             'driver' => 'local',
             'root' => storage_path('app/public'),

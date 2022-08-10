@@ -37,7 +37,12 @@ class deliveryMethodToPSIController extends BaseController
             'MITM_MODELCD',
             'MITM_PCBCD',
             DB::raw('CAST(MITM_SPQ AS INT) MITM_SPQ'),
-            'STXI_SPQ'
+            DB::raw('CASE WHEN SPQ_BOX_PROT_FLAG = 1 
+                THEN STXI_SPQ
+                ELSE CAST(MITM_SPQ AS INT) 
+            END AS MITM_SPQ_CHECK'),
+            'STXI_SPQ',
+            'SPQ_BOX_PROT_FLAG'
         )
             ->join(
                 DB::raw('[MGSVR].[VMI_TYO].[dbo].[MITM_TBL]'),
@@ -74,6 +79,7 @@ class deliveryMethodToPSIController extends BaseController
             'MITM_MODELCD' => $req->MITM_MODELCD,
             'MITM_PCBCD' => $req->MITM_PCBCD,
             'STXI_SPQ' => $req->STXI_SPQ,
+            'SPQ_BOX_PROT_FLAG' => $req->SPQ_BOX_PROT_FLAG,
         ]);
 
         return $this->handleResponse($data, 'Data Updated !');
@@ -155,7 +161,7 @@ class deliveryMethodToPSIController extends BaseController
                 $query
             )))[0];
 
-            $getSPQDataPersheet = $this->SPQIndex($value)->original['data'] ? $this->SPQIndex($value)->original['data']['MITM_SPQ'] : false;
+            $getSPQDataPersheet = $this->SPQIndex($value)->original['data'] ? $this->SPQIndex($value)->original['data']['MITM_SPQ_CHECK'] : false;
 
             // return $getSPQDataPersheet;
             $hasilWithBarcode = $dataCPO->BAL_CPO_STXI_ITEC > 0
@@ -330,290 +336,11 @@ class deliveryMethodToPSIController extends BaseController
         return 'storage/app/public/export_delivery.xlsx';
     }
 
-    public function syncBOMToPSI()
+    public function DLVStockDelivery($date)
     {
-        ini_set('max_execution_time', 7200);
-        // return Storage::download('Result.xlsx');
-
-        // return 'test';
-        $searchData = DB::connection('sqlsrv_mega_sme')->select("SET NOCOUNT ON;EXEC Z_STXI_BOM_SYNC_PSI @procedure = 'NEED_DELETED'");
-
-        // return $searchData;
-        $hasil = [
-            'INSERTED' => [],
-            'UPDATED' => [],
-            'DELETED' => []
-        ];
-
-        $hasilByItem = [];
-        $hasilTen = [];
-        $insertKey = $updateKey = $deleteKey = $mdlKey = 0;
-        foreach ($searchData as $key => $value) {
-            if ($value->STAT_BOM === 'INSERTED') {
-                DB::connection('sqlsrv_psi_eng')->table('BOMSTX_TBL')->insert([
-                    'MODEL_CODE' => $value->MODEL_CODE,
-                    'MODEL_DESC' => $value->MODEL_DESC,
-                    'REVISION' => $value->REVISION,
-                    'MAIN_PART_CODE' => $value->MAIN_PART_CODE,
-                    'MAIN_SPTNO' => $value->MAIN_SPTNO,
-                    'MAIN_MAKERNM' => $value->MAIN_MAKERNM,
-                    'MS_NO' => $value->MS_NO,
-                    'MODEL_QTY' => $value->MODEL_QTY,
-                    'PART_QTY' => $value->PART_QTY,
-                    'MAIN_PA_PERCENT' => $value->MAIN_PA_PERCENT,
-                    'PO_FAILURE' => $value->PO_FAILURE,
-                    'KO_FAILURE' => $value->KO_FAILURE,
-                    'DETAIL_REMARK' => $value->DETAIL_REMARK,
-                    'CONSIDER_PO_MRP' => $value->CONSIDER_PO_MRP,
-                    'CONSIDER_KO_MRP' => $value->CONSIDER_KO_MRP,
-                    'PROCESS_CODE' => $value->PROCESS_CODE,
-                    'EPSON_ORG_PART' => $value->EPSON_ORG_PART,
-                    'EPSON_SPTNO' => $value->EPSON_SPTNO,
-                    'EPSON_MAKERNM' => $value->EPSON_MAKERNM,
-                    'BOM_REMARK' => $value->BOM_REMARK,
-                    'SUB' => $value->SUB,
-                    'SUB_SPTNO' => $value->SUB_SPTNO,
-                    'SUB_MAKERNM' => $value->SUB_MAKERNM,
-                    'SUB_PA_PERCENT' => $value->SUB_PA_PERCENT,
-                    'SUB1' => $value->SUB1,
-                    'SUB1_SPTNO' => $value->SUB1_SPTNO,
-                    'SUB1_SPTNO2' => $value->SUB1_SPTNO2,
-                    'SUB2' => $value->SUB2,
-                    'SUB2_SPTNO' => $value->SUB2_SPTNO,
-                    'SUB2_SPTNO2' => $value->SUB2_SPTNO2,
-                    'IEI_TEN_NO' => trim($value->IEI_TEN_NO) == '' ? 'N/A' : trim($value->IEI_TEN_NO),
-                    'SEC_TEN_NO' => $value->SEC_TEN_NO,
-                    'TEN_RECEIVE_DATE' => $value->TEN_RECEIVE_DATE,
-                    'CHANGE_OVERVIEW' => $value->CHANGE_OVERVIEW,
-                    'TEN_UPDATE_DATE' => $value->TEN_UPDATE_DATE,
-                    'STOCK_SGL' => $value->STOCK_SGL,
-                    'STOCK_CPO' => $value->STOCK_CPO,
-                    'APPROVED' => 0,
-                    'UPDDT' => date('Y-m-d H:i:s'),
-                ]);
-
-                $hasil['INSERTED'][$insertKey] = [
-                    'NO' => $insertKey + 1,
-                    'MODEL_CODE' => $value->MODEL_CODE,
-                    'MODEL_DESC' => $value->MODEL_DESC,
-                    'REVISION' => $value->REVISION,
-                    'MAIN_PART_CODE' => $value->MAIN_PART_CODE,
-                    'MAIN_SPTNO' => $value->MAIN_SPTNO,
-                    'MAIN_MAKERNM' => $value->MAIN_MAKERNM,
-                    'MS_NO' => $value->MS_NO,
-                    'MODEL_QTY' => $value->MODEL_QTY,
-                    'PART_QTY' => $value->PART_QTY,
-                    'MAIN_PA_PERCENT' => $value->MAIN_PA_PERCENT,
-                    'PO_FAILURE' => $value->PO_FAILURE,
-                    'KO_FAILURE' => $value->KO_FAILURE,
-                    'DETAIL_REMARK' => $value->DETAIL_REMARK,
-                    'CONSIDER_PO_MRP' => $value->CONSIDER_PO_MRP,
-                    'CONSIDER_KO_MRP' => $value->CONSIDER_KO_MRP,
-                    'PROCESS_CODE' => $value->PROCESS_CODE,
-                    'EPSON_ORG_PART' => $value->EPSON_ORG_PART,
-                    'EPSON_SPTNO' => $value->EPSON_SPTNO,
-                    'EPSON_MAKERNM' => $value->EPSON_MAKERNM,
-                    'BOM_REMARK' => $value->BOM_REMARK,
-                    'SUB' => $value->SUB,
-                    'SUB_SPTNO' => $value->SUB_SPTNO,
-                    'SUB_MAKERNM' => $value->SUB_MAKERNM,
-                    'SUB_PA_PERCENT' => $value->SUB_PA_PERCENT,
-                    'SUB1' => $value->SUB1,
-                    'SUB1_SPTNO' => $value->SUB1_SPTNO,
-                    'SUB1_SPTNO2' => $value->SUB1_SPTNO2,
-                    'SUB2' => $value->SUB2,
-                    'SUB2_SPTNO' => $value->SUB2_SPTNO,
-                    'SUB2_SPTNO2' => $value->SUB2_SPTNO2,
-                    'IEI_TEN_NO' => trim($value->IEI_TEN_NO) == '' ? 'N/A' : trim($value->IEI_TEN_NO),
-                    'SEC_TEN_NO' => $value->SEC_TEN_NO,
-                    'TEN_RECEIVE_DATE' => $value->TEN_RECEIVE_DATE,
-                    'CHANGE_OVERVIEW' => $value->CHANGE_OVERVIEW,
-                    'STOCK_SGL' => $value->STOCK_SGL,
-                    'STOCK_CPO' => $value->STOCK_CPO,
-                ];
-
-                if ($key === 0 || $searchData[$key - 1]->MODEL_CODE !== $value->MODEL_CODE) {
-                    $insertKey++;
-                }
-            } elseif ($value->STAT_BOM === 'NEED_UPDATED') {
-                DB::connection('sqlsrv_psi_eng')->table('BOMSTX_TBL')
-                ->where('MODEL_CODE', $value->MODEL_CODE)
-                ->where('REVISION', $value->REVISION)
-                ->where('MAIN_PART_CODE', $value->MAIN_PART_CODE)
-                ->update([
-                    'MODEL_CODE' => $value->MODEL_CODE,
-                    'MODEL_DESC' => $value->MODEL_DESC,
-                    'REVISION' => $value->REVISION,
-                    'MAIN_PART_CODE' => $value->MAIN_PART_CODE,
-                    'MAIN_SPTNO' => $value->MAIN_SPTNO,
-                    'MAIN_MAKERNM' => $value->MAIN_MAKERNM,
-                    'MS_NO' => $value->MS_NO,
-                    'MODEL_QTY' => $value->MODEL_QTY,
-                    'PART_QTY' => $value->PART_QTY,
-                    'MAIN_PA_PERCENT' => $value->MAIN_PA_PERCENT,
-                    'PO_FAILURE' => $value->PO_FAILURE,
-                    'KO_FAILURE' => $value->KO_FAILURE,
-                    'DETAIL_REMARK' => $value->DETAIL_REMARK,
-                    'CONSIDER_PO_MRP' => $value->CONSIDER_PO_MRP,
-                    'CONSIDER_KO_MRP' => $value->CONSIDER_KO_MRP,
-                    'PROCESS_CODE' => $value->PROCESS_CODE,
-                    'EPSON_ORG_PART' => $value->EPSON_ORG_PART,
-                    'EPSON_SPTNO' => $value->EPSON_SPTNO,
-                    'EPSON_MAKERNM' => $value->EPSON_MAKERNM,
-                    'BOM_REMARK' => $value->BOM_REMARK,
-                    'SUB' => $value->SUB,
-                    'SUB_SPTNO' => $value->SUB_SPTNO,
-                    'SUB_MAKERNM' => $value->SUB_MAKERNM,
-                    'SUB_PA_PERCENT' => $value->SUB_PA_PERCENT,
-                    'SUB1' => $value->SUB1,
-                    'SUB1_SPTNO' => $value->SUB1_SPTNO,
-                    'SUB1_SPTNO2' => $value->SUB1_SPTNO2,
-                    'SUB2' => $value->SUB2,
-                    'SUB2_SPTNO' => $value->SUB2_SPTNO,
-                    'SUB2_SPTNO2' => $value->SUB2_SPTNO2,
-                    'IEI_TEN_NO' => trim($value->IEI_TEN_NO) == '' ? 'N/A' : trim($value->IEI_TEN_NO),
-                    'SEC_TEN_NO' => $value->SEC_TEN_NO,
-                    'TEN_RECEIVE_DATE' => $value->TEN_RECEIVE_DATE,
-                    'CHANGE_OVERVIEW' => $value->CHANGE_OVERVIEW,
-                    'TEN_UPDATE_DATE' => $value->TEN_UPDATE_DATE,
-                    'APPROVED' => 0,
-                    'UPDDT' => date('Y-m-d H:i:s'),
-                    'STOCK_SGL' => $value->STOCK_SGL,
-                    'STOCK_CPO' => $value->STOCK_CPO,
-                ]);
-
-                $hasil['UPDATED'][$updateKey] = [
-                    'NO' => $updateKey + 1,
-                    'MODEL_CODE' => $value->MODEL_CODE,
-                    'MODEL_DESC' => $value->MODEL_DESC,
-                    'REVISION' => $value->REVISION,
-                    'MAIN_PART_CODE' => $value->MAIN_PART_CODE,
-                    'MAIN_SPTNO' => $value->MAIN_SPTNO,
-                    'MAIN_MAKERNM' => $value->MAIN_MAKERNM,
-                    'MS_NO' => $value->MS_NO,
-                    'MODEL_QTY' => $value->MODEL_QTY,
-                    'PART_QTY' => $value->PART_QTY,
-                    'MAIN_PA_PERCENT' => $value->MAIN_PA_PERCENT,
-                    'PO_FAILURE' => $value->PO_FAILURE,
-                    'KO_FAILURE' => $value->KO_FAILURE,
-                    'DETAIL_REMARK' => $value->DETAIL_REMARK,
-                    'CONSIDER_PO_MRP' => $value->CONSIDER_PO_MRP,
-                    'CONSIDER_KO_MRP' => $value->CONSIDER_KO_MRP,
-                    'PROCESS_CODE' => $value->PROCESS_CODE,
-                    'EPSON_ORG_PART' => $value->EPSON_ORG_PART,
-                    'EPSON_SPTNO' => $value->EPSON_SPTNO,
-                    'EPSON_MAKERNM' => $value->EPSON_MAKERNM,
-                    'BOM_REMARK' => $value->BOM_REMARK,
-                    'SUB' => $value->SUB,
-                    'SUB_SPTNO' => $value->SUB_SPTNO,
-                    'SUB_MAKERNM' => $value->SUB_MAKERNM,
-                    'SUB_PA_PERCENT' => $value->SUB_PA_PERCENT,
-                    'SUB1' => $value->SUB1,
-                    'SUB1_SPTNO' => $value->SUB1_SPTNO,
-                    'SUB1_SPTNO2' => $value->SUB1_SPTNO2,
-                    'SUB2' => $value->SUB2,
-                    'SUB2_SPTNO' => $value->SUB2_SPTNO,
-                    'SUB2_SPTNO2' => $value->SUB2_SPTNO2,
-                    'IEI_TEN_NO' => trim($value->IEI_TEN_NO) == '' ? 'N/A' : trim($value->IEI_TEN_NO),
-                    'SEC_TEN_NO' => $value->SEC_TEN_NO,
-                    'TEN_RECEIVE_DATE' => $value->TEN_RECEIVE_DATE,
-                    'CHANGE_OVERVIEW' => $value->CHANGE_OVERVIEW,
-                    'STOCK_SGL' => $value->STOCK_SGL,
-                    'STOCK_CPO' => $value->STOCK_CPO,
-                ];
-
-                if ($key === 0 || $searchData[$key - 1]->MODEL_CODE !== $value->MODEL_CODE) {
-                    $updateKey++;
-                }
-            } elseif ($value->STAT_BOM === 'NEED_DELETED') {
-                DB::connection('sqlsrv_psi_eng')->table('BOMSTX_TBL')
-                ->where('MODEL_CODE', $value->MODEL_CODE)
-                ->where('REVISION', $value->REVISION)
-                ->where('MAIN_PART_CODE', $value->MAIN_PART_CODE)
-                ->delete();
-
-                $hasil['DELETED'][$deleteKey] = [
-                    'NO' => $deleteKey + 1,
-                    'MODEL_CODE' => $value->MODEL_CODE,
-                    'MODEL_DESC' => $value->MODEL_DESC,
-                    'REVISION' => $value->REVISION,
-                    'MAIN_PART_CODE' => $value->MAIN_PART_CODE,
-                    'MAIN_SPTNO' => $value->MAIN_SPTNO,
-                    'MAIN_MAKERNM' => $value->MAIN_MAKERNM,
-                    'MS_NO' => $value->MS_NO,
-                    'MODEL_QTY' => $value->MODEL_QTY,
-                    'PART_QTY' => $value->PART_QTY,
-                    'MAIN_PA_PERCENT' => $value->MAIN_PA_PERCENT,
-                    'PO_FAILURE' => $value->PO_FAILURE,
-                    'KO_FAILURE' => $value->KO_FAILURE,
-                    'DETAIL_REMARK' => $value->DETAIL_REMARK,
-                    'CONSIDER_PO_MRP' => $value->CONSIDER_PO_MRP,
-                    'CONSIDER_KO_MRP' => $value->CONSIDER_KO_MRP,
-                    'PROCESS_CODE' => $value->PROCESS_CODE,
-                    'EPSON_ORG_PART' => $value->EPSON_ORG_PART,
-                    'EPSON_SPTNO' => $value->EPSON_SPTNO,
-                    'EPSON_MAKERNM' => $value->EPSON_MAKERNM,
-                    'BOM_REMARK' => $value->BOM_REMARK,
-                    'SUB' => $value->SUB,
-                    'SUB_SPTNO' => $value->SUB_SPTNO,
-                    'SUB_MAKERNM' => $value->SUB_MAKERNM,
-                    'SUB_PA_PERCENT' => $value->SUB_PA_PERCENT,
-                    'SUB1' => $value->SUB1,
-                    'SUB1_SPTNO' => $value->SUB1_SPTNO,
-                    'SUB1_SPTNO2' => $value->SUB1_SPTNO2,
-                    'SUB2' => $value->SUB2,
-                    'SUB2_SPTNO' => $value->SUB2_SPTNO,
-                    'SUB2_SPTNO2' => $value->SUB2_SPTNO2,
-                    'IEI_TEN_NO' => trim($value->IEI_TEN_NO) == '' ? 'N/A' : trim($value->IEI_TEN_NO),
-                    'SEC_TEN_NO' => $value->SEC_TEN_NO,
-                    'TEN_RECEIVE_DATE' => $value->TEN_RECEIVE_DATE,
-                    'CHANGE_OVERVIEW' => $value->CHANGE_OVERVIEW,
-                    'STOCK_SGL' => $value->STOCK_SGL,
-                    'STOCK_CPO' => $value->STOCK_CPO,
-                ];
-
-                if ($key === 0 || $searchData[$key - 1]->MODEL_CODE !== $value->MODEL_CODE) {
-                    $deleteKey++;
-                }
-            }
-
-            if ($key === 0 || $value->MODEL_CODE !== $searchData[$key - 1]->MODEL_CODE) {
-                $hasilByItem[$value->MODEL_CODE] = [
-                    'MODEL_CODE' => $value->MODEL_CODE,
-                    'MODEL_DESC' => $value->MODEL_DESC,
-                    'REVISION' => $value->REVISION,
-                    'INSERTED'  => $insertKey,
-                    'UPDATED'  => $updateKey,
-                    'DELETED'  => $deleteKey,
-                    'TEN_DETAILS' => []
-                ];
-
-                if ($key === 0 || $value->IEI_TEN_NO !== $searchData[$key - 1]->IEI_TEN_NO) {
-                    $hasilByItem[$value->MODEL_CODE]['TEN_DETAILS'][$key] = [
-                        'IEI_TEN_NO' => $value->IEI_TEN_NO,
-                        'CHANGE_OVERVIEW' => $value->CHANGE_OVERVIEW,
-                        'INSERTED'  => $insertKey,
-                        'UPDATED'  => $updateKey,
-                        'DELETED'  => $deleteKey,
-                    ];
-                }
-            }
-
-            // $hasilTen[$value->IEI_TEN_NO][$key] = $value->CHANGE_OVERVIEW;
-        }
-
-        return $hasilByItem;
-
-        // return view('SCHEDULLER.bomsync', ['user' => 'PT SMT Indonesia', 'data' => $hasilByItem]);
-
-        $stored = (new STXItoPSIBOMResult($hasil))->store('Result_sync_'.date('Ymd').'.xlsx', 'public');
-        // $downloadStored = (new STXItoPSIBOMResult($hasil))->download('Result_sync_'.date('Ymd').'.xlsx');
-
-        if ($stored) {
-            $insertJob = (new STXIPSIBOMSyncEmailJobs('PT SMT Indonesia', $hasilByItem, 'Result_sync_'.date('Ymd').'.xlsx'));
-
-            dispatch($insertJob);
-            return 'Email sent !!';
-        }
+        $query = "SET NOCOUNT ON;EXEC Z_STXI_GET_CPO_DLV_STXI_ITEC @date_start = '" . date('Y-m-01', strtotime($date)) . "', @date_to = '" . date('Y-m-d', strtotime($date . "-1 days")) . "'";
+        $dataCPO = collect(DB::connection('sqlsrv_mega_tyo')->select(DB::raw(
+            $query
+        )))[0];
     }
 }

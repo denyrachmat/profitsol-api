@@ -15,9 +15,7 @@ class DocumentController extends Controller
      */
     public function index()
     {
-        $files = Storage::disk('data_folder')->allFiles();
 
-        return $files;
     }
 
     /**
@@ -49,7 +47,9 @@ class DocumentController extends Controller
      */
     public function show($id)
     {
-        //
+        $files = Storage::disk('data_folder_local')->directories('DMS/'.$id);
+
+        return $files;
     }
 
     /**

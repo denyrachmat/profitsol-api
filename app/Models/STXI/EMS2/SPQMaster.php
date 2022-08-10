@@ -14,5 +14,6 @@ class SPQMaster extends Model
         'MITM_MODELCD',
         'MITM_PCBCD',
         'STXI_SPQ',
+        'SPQ_BOX_PROT_FLAG'
     ];
 }
