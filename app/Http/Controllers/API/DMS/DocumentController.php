@@ -5,9 +5,13 @@ namespace App\Http\Controllers\API\DMS;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use App\Http\Controllers\API\PORTAL\BaseController;
 
-class DocumentController extends Controller
+use App\Traits\DMS\FolderDocumentTraits;
+
+class DocumentController extends BaseController
 {
+    use FolderDocumentTraits;
     /**
      * Display a listing of the resource.
      *
@@ -15,7 +19,6 @@ class DocumentController extends Controller
      */
     public function index()
     {
-
     }
 
     /**
@@ -47,9 +50,9 @@ class DocumentController extends Controller
      */
     public function show($id)
     {
-        $files = Storage::disk('data_folder_local')->directories('DMS/'.$id);
+        $files = $this->getFolder($id);
 
-        return $files;
+        return $this->handleResponse($files, 'Data Found !!');
     }
 
     /**

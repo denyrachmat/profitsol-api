@@ -38,8 +38,8 @@ class deliveryMethodToPSIController extends BaseController
             'MITM_PCBCD',
             DB::raw('CAST(MITM_SPQ AS INT) MITM_SPQ'),
             DB::raw('CASE WHEN SPQ_BOX_PROT_FLAG = 1
-                THEN CAST(MITM_SPQ AS INT)
-                ELSE STXI_SPQ
+                THEN STXI_SPQ
+                ELSE CAST(MITM_SPQ AS INT)
             END AS MITM_SPQ_CHECK'),
             'STXI_SPQ',
             'SPQ_BOX_PROT_FLAG'
@@ -123,11 +123,7 @@ class deliveryMethodToPSIController extends BaseController
         )
             ->groupBy($sel);
 
-        if ($withDet || !$isDLVStock) {
-            $data->whereIn('IO_REMARK', ['FROM_SMT', 'TO_ITEC']);
-        } else {
-            $data->whereIn('IO_REMARK', ['TO_ITEC_STOCKDLV']);
-        }
+            // $data->whereIn('IO_REMARK', ['FROM_SMT', 'TO_ITEC', 'TO_ITEC_STOCKDLV']);
 
         if (!empty($date)) {
             $data->where('DEL_DATE', $date);
@@ -140,34 +136,16 @@ class deliveryMethodToPSIController extends BaseController
         if ($withDet) {
             $dataWithDet = [];
             foreach ($dataHasil as $key => $value) {
-                if ($isDLVStock) {
-                    $dataWithDet[] = array_merge(
-                        $value,
-                        [
-                            'det' => $this->DLVGetData($value['DEL_DATE'], [
-                                'MITM_MODELCD',
-                                'MITM_ITMD1',
-                                'DEL_DATE'
-                            ], false, $isDLVStock),
-                            'det_dlv' => $this->DLVGetData($value['DEL_DATE'], [
-                                'MITM_MODELCD',
-                                'MITM_ITMD1',
-                                'DEL_DATE'
-                            ], true, $isDLVStock)
-                        ]
-                    );
-                } else {
-                    $dataWithDet[] = array_merge(
-                        $value,
-                        [
-                            'det' => $this->DLVGetData($value['DEL_DATE'], [
-                                'MITM_MODELCD',
-                                'MITM_ITMD1',
-                                'DEL_DATE'
-                            ], false, $isDLVStock)
-                        ]
-                    );
-                }
+                $dataWithDet[] = array_merge(
+                    $value,
+                    [
+                        'det' => $this->DLVGetData($value['DEL_DATE'], [
+                            'MITM_MODELCD',
+                            'MITM_ITMD1',
+                            'DEL_DATE'
+                        ], false, $isDLVStock)
+                    ]
+                );
             }
 
             return $dataWithDet;
@@ -188,10 +166,18 @@ class deliveryMethodToPSIController extends BaseController
 
             $getSPQDataPersheet = $this->SPQIndex($value)->original['data'] ? $this->SPQIndex($value)->original['data']['MITM_SPQ_CHECK'] : false;
 
+            // if ($value === 'F63654-12') {
+            //     return [
+            //         !$getSPQDataPersheet,
+            //         (int)$req->delivery[$key] < (int)$getSPQDataPersheet,
+            //         ((int)($req->delivery[$key]/ (int)$getSPQDataPersheet) !== ($req->delivery[$key]/ (int)$getSPQDataPersheet)),
+            //         ($req->delivery[$key]/ (int)$getSPQDataPersheet)
+            //     ];
+            // }
             $hasilWithBarcode = (int)$dataCPO->BAL_CPO_STXI_ITEC > 0
-                ? (!$getSPQDataPersheet || $req->delivery[$key] < (int)$getSPQDataPersheet || ((int)($req->delivery[$key]/ (int)$getSPQDataPersheet) !== ($req->delivery[$key]/ (int)$getSPQDataPersheet))
+                ? (!$getSPQDataPersheet || (int)$req->delivery[$key] < (int)$getSPQDataPersheet || ((int)($req->delivery[$key]/ (int)$getSPQDataPersheet) !== ($req->delivery[$key]/ (int)$getSPQDataPersheet))
                     ? 0
-                    : ($req->delivery[$key] > (int)$dataCPO->BAL_CPO_STXI_ITEC
+                    : ($req->delivery[$key] > (int)$dataCPO->BAL_CPO_STXI_ITEC && $req->delivery[$key] > (int)$getSPQDataPersheet
                         ? (int)$dataCPO->BAL_CPO_STXI_ITEC
                         : $req->delivery[$key]
                     )
