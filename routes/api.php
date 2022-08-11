@@ -67,6 +67,7 @@ Route::group(['prefix' => 'div'], function () {
 
         Route::post('uploadSPQ', [deliveryMethodToPSIController::class, 'UploadSPQ']);
         Route::get('syncBOMToPSI', [deliveryMethodToPSIController::class, 'syncBOMToPSI']);
+        Route::get('DLVStockDelivery/{date}/{item?}', [deliveryMethodToPSIController::class, 'DLVStockDelivery']);
 
         Route::post('uploadRawPO', [poSummaryController::class, 'uploadPO']);
         Route::get('POGetData/{date}', [poSummaryController::class, 'POGetData']);

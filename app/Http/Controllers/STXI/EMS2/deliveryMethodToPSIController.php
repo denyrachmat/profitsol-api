@@ -37,9 +37,9 @@ class deliveryMethodToPSIController extends BaseController
             'MITM_MODELCD',
             'MITM_PCBCD',
             DB::raw('CAST(MITM_SPQ AS INT) MITM_SPQ'),
-            DB::raw('CASE WHEN SPQ_BOX_PROT_FLAG = 1 
-                THEN STXI_SPQ
-                ELSE CAST(MITM_SPQ AS INT) 
+            DB::raw('CASE WHEN SPQ_BOX_PROT_FLAG = 1
+                THEN CAST(MITM_SPQ AS INT)
+                ELSE STXI_SPQ
             END AS MITM_SPQ_CHECK'),
             'STXI_SPQ',
             'SPQ_BOX_PROT_FLAG'
@@ -94,7 +94,7 @@ class deliveryMethodToPSIController extends BaseController
 
     public function DLVIndex()
     {
-        return $this->handleResponse($this->DLVGetData(null, ['DEL_DATE'], true), 'Data found !');
+        return $this->handleResponse($this->DLVGetData(null, ['DEL_DATE'], true, true), 'Data found !');
     }
 
     public function DLVGetData(
@@ -104,7 +104,8 @@ class deliveryMethodToPSIController extends BaseController
             'MITM_ITMD1',
             'DEL_DATE'
         ],
-        $withDet = false
+        $withDet = false,
+        $isDLVStock = false
     ) {
         $data = DB::connection('sqlsrv_ems2')->table('V_DLV_TYO_HIST')->select(
             array_merge($sel, [
@@ -122,6 +123,12 @@ class deliveryMethodToPSIController extends BaseController
         )
             ->groupBy($sel);
 
+        if ($withDet || !$isDLVStock) {
+            $data->whereIn('IO_REMARK', ['FROM_SMT', 'TO_ITEC']);
+        } else {
+            $data->whereIn('IO_REMARK', ['TO_ITEC_STOCKDLV']);
+        }
+
         if (!empty($date)) {
             $data->where('DEL_DATE', $date);
         }
@@ -133,16 +140,34 @@ class deliveryMethodToPSIController extends BaseController
         if ($withDet) {
             $dataWithDet = [];
             foreach ($dataHasil as $key => $value) {
-                $dataWithDet[] = array_merge(
-                    $value,
-                    [
-                        'det' => $this->DLVGetData($value['DEL_DATE'], [
-                            'MITM_MODELCD',
-                            'MITM_ITMD1',
-                            'DEL_DATE'
-                        ], false)
-                    ]
-                );
+                if ($isDLVStock) {
+                    $dataWithDet[] = array_merge(
+                        $value,
+                        [
+                            'det' => $this->DLVGetData($value['DEL_DATE'], [
+                                'MITM_MODELCD',
+                                'MITM_ITMD1',
+                                'DEL_DATE'
+                            ], false, $isDLVStock),
+                            'det_dlv' => $this->DLVGetData($value['DEL_DATE'], [
+                                'MITM_MODELCD',
+                                'MITM_ITMD1',
+                                'DEL_DATE'
+                            ], true, $isDLVStock)
+                        ]
+                    );
+                } else {
+                    $dataWithDet[] = array_merge(
+                        $value,
+                        [
+                            'det' => $this->DLVGetData($value['DEL_DATE'], [
+                                'MITM_MODELCD',
+                                'MITM_ITMD1',
+                                'DEL_DATE'
+                            ], false, $isDLVStock)
+                        ]
+                    );
+                }
             }
 
             return $dataWithDet;
@@ -163,18 +188,16 @@ class deliveryMethodToPSIController extends BaseController
 
             $getSPQDataPersheet = $this->SPQIndex($value)->original['data'] ? $this->SPQIndex($value)->original['data']['MITM_SPQ_CHECK'] : false;
 
-            // return $getSPQDataPersheet;
-            $hasilWithBarcode = $dataCPO->BAL_CPO_STXI_ITEC > 0
-                ? (
-                    $req->delivery[$key] > $dataCPO->BAL_CPO_STXI_ITEC
-                    ? (
-                        !$getSPQDataPersheet || (int)$dataCPO->BAL_CPO_STXI_ITEC < $getSPQDataPersheet
-                        ? 0
-                        : (int)$dataCPO->BAL_CPO_STXI_ITEC
+            $hasilWithBarcode = (int)$dataCPO->BAL_CPO_STXI_ITEC > 0
+                ? (!$getSPQDataPersheet || $req->delivery[$key] < (int)$getSPQDataPersheet || ((int)($req->delivery[$key]/ (int)$getSPQDataPersheet) !== ($req->delivery[$key]/ (int)$getSPQDataPersheet))
+                    ? 0
+                    : ($req->delivery[$key] > (int)$dataCPO->BAL_CPO_STXI_ITEC
+                        ? (int)$dataCPO->BAL_CPO_STXI_ITEC
+                        : $req->delivery[$key]
                     )
-                    : $req->delivery[$key]
                 )
-                : 0 ;
+                : 0;
+
             $getSPQArray = $hasilWithBarcode > 0 ? $this->DLVCalSPQRes($hasilWithBarcode, $req->delivery[$key], $value) : 0;
 
             $hasil[] = [
@@ -236,40 +259,44 @@ class deliveryMethodToPSIController extends BaseController
     public function DLVStore(Request $req)
     {
         $hasil = [];
-        DLVTYOHist::where('DEL_DATE', $req->date)->delete();
 
         foreach ($req->data as $key => $value) {
-            if (!empty($value['delivery'])) {
-                $hasil[] = DLVTYOHist::create([
-                    'MITM_MODELCD' => $value['model'],
-                    'IO_QTY' => $value['delivery'],
-                    'IO_REMARK' => 'FROM_SMT',
-                    'IPP_REMARK' => $value['ipp'],
-                    'RANK_REMARK' => $value['rank'],
-                    'DEL_DATE' => $req->date,
-                ]);
-            }
-
             if (!empty($value['withBarcode'])) {
+                DLVTYOHist::where('DEL_DATE', $req->date)->where('MITM_MODELCD', $value['model'])->where('IO_REMARK', $req->dlvStoc ? 'TO_ITEC_STOCKDLV': 'TO_ITEC')->delete();
                 $hasil[] = DLVTYOHist::create([
                     'MITM_MODELCD' => $value['model'],
                     'IO_QTY' => $value['withBarcode'] * -1,
-                    'IO_REMARK' => 'TO_ITEC',
+                    'IO_REMARK' => $req->dlvStoc ? 'TO_ITEC_STOCKDLV': 'TO_ITEC',
                     'IPP_REMARK' => $value['ipp'],
                     'RANK_REMARK' => $value['rank'],
                     'DEL_DATE' => $req->date,
                 ]);
             }
 
-            if (!empty($value['withoutBarcode'])) {
-                $hasil[] = DLVTYOHist::create([
-                    'MITM_MODELCD' => $value['model'],
-                    'IO_QTY' => $value['withoutBarcode'] * -1,
-                    'IO_REMARK' => 'TO_ITEC_WB',
-                    'IPP_REMARK' => $value['ipp'],
-                    'RANK_REMARK' => $value['rank'],
-                    'DEL_DATE' => $req->date,
-                ]);
+            if (!$req->dlvStoc) {
+                if (!empty($value['delivery'])) {
+                    DLVTYOHist::where('DEL_DATE', $req->date)->where('MITM_MODELCD', $value['model'])->where('IO_REMARK', 'FROM_SMT')->delete();
+                    $hasil[] = DLVTYOHist::create([
+                        'MITM_MODELCD' => $value['model'],
+                        'IO_QTY' => $value['delivery'],
+                        'IO_REMARK' => 'FROM_SMT',
+                        'IPP_REMARK' => $value['ipp'],
+                        'RANK_REMARK' => $value['rank'],
+                        'DEL_DATE' => $req->date,
+                    ]);
+                }
+
+                if (!empty($value['withoutBarcode'])) {
+                    DLVTYOHist::where('DEL_DATE', $req->date)->where('MITM_MODELCD', $value['model'])->where('IO_REMARK', 'TO_ITEC_WB')->delete();
+                    $hasil[] = DLVTYOHist::create([
+                        'MITM_MODELCD' => $value['model'],
+                        'IO_QTY' => $value['withoutBarcode'] * -1,
+                        'IO_REMARK' => 'TO_ITEC_WB',
+                        'IPP_REMARK' => $value['ipp'],
+                        'RANK_REMARK' => $value['rank'],
+                        'DEL_DATE' => $req->date,
+                    ]);
+                }
             }
         }
 
@@ -336,11 +363,27 @@ class deliveryMethodToPSIController extends BaseController
         return 'storage/app/public/export_delivery.xlsx';
     }
 
-    public function DLVStockDelivery($date)
+    public function DLVStockDelivery($date, $item = '')
     {
-        $query = "SET NOCOUNT ON;EXEC Z_STXI_GET_CPO_DLV_STXI_ITEC @date_start = '" . date('Y-m-01', strtotime($date)) . "', @date_to = '" . date('Y-m-d', strtotime($date . "-1 days")) . "'";
+        if (!empty($item)) {
+            $query = "SET NOCOUNT ON;EXEC Z_STXI_GET_CPO_DLV_STXI_ITEC @date_start = '" . date('Y-m-01', strtotime($date)) . "', @date_to = '" . date('Y-m-d', strtotime($date . ' -1 days')) . "', @model = '" . $item . "'";
+        } else {
+            $query = "SET NOCOUNT ON;EXEC Z_STXI_GET_CPO_DLV_STXI_ITEC @date_start = '" . date('Y-m-01', strtotime($date)) . "', @date_to = '" . date('Y-m-d', strtotime($date . ' -1 days')) . "'";
+        }
+
         $dataCPO = collect(DB::connection('sqlsrv_mega_tyo')->select(DB::raw(
             $query
-        )))[0];
+        )));
+
+        $getCPO = $dataCPO->where('BAL_STOCK', '>', 0)->where('BAL_CPO_STXI_ITEC', '>', 0)->map(function ($t) {
+            return collect($t)->only([
+                'MITM_ITMCD',
+                'MITM_ITMD1',
+                'BAL_CPO_STXI_ITEC',
+                'BAL_STOCK'
+            ]);
+        })->toArray();
+
+        return array_values($getCPO);
     }
 }
