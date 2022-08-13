@@ -48,6 +48,6 @@ trait FolderDocumentTraits
 
     public function createNewFolder($author, $path)
     {
-        return Storage::disk('public')->makeDirectory($this->getAliasFolderbyAuthor($author).'/'.$path);
+        return Storage::disk('data_folder')->makeDirectory($this->getAliasFolderbyAuthor($author).'/'.$path);
     }
 }
