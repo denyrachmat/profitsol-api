@@ -99,15 +99,15 @@ class FolderController extends BaseController
     public function destroy($id)
     {
         $splitID = explode(",", base64_decode($id));
-        $data = DMSFolderMstr::whereIn('id', $splitID)->get();
+        $data = DMSFolderMstr::whereIn('id', $splitID)->get()->toArray();
 
         // return $data;
         $deleteRealFolder = [];
         foreach ($data as $key => $value) {
-            $delete = $this->deleteFolder($this->getAliasFolderbyAuthor($data->p_u_username), $this->pathCreator($data));
+            $delete = $this->deleteFolder($this->getAliasFolderbyAuthor($value['p_u_username']), $this->pathCreator($value));
 
             if ($delete) {
-                DMSFolderMstr::where('id', $value->id)->delete();
+                DMSFolderMstr::where('id', $value['id'])->delete();
             }
 
             $deleteRealFolder[] = $value;
