@@ -50,4 +50,9 @@ trait FolderDocumentTraits
     {
         return Storage::disk('data_folder')->makeDirectory('DMS/'.$this->getAliasFolderbyAuthor($author).'/'.$path);
     }
+
+    public function deleteFolder($author, $path)
+    {
+        return Storage::disk('data_folder')->deleteDirectory('DMS/'.$this->getAliasFolderbyAuthor($author).'/'.$path);
+    }
 }
