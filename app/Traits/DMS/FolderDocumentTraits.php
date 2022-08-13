@@ -5,6 +5,7 @@ namespace App\Traits\DMS;
 use App\Models\DMS\DMSFolderMstr;
 use App\Models\DMS\DMSDocMstr;
 use App\Models\DMS\DMSFolderRootMstr;
+use Illuminate\Support\Facades\Storage;
 
 trait FolderDocumentTraits
 {
@@ -33,5 +34,20 @@ trait FolderDocumentTraits
         $users = empty($checkRootAlias) ? $author : $checkRootAlias->dudrm_path;
 
         return $users;
+    }
+
+    public function pathCreator($data, $hasil = '')
+    {
+        $hasil = $data['dfm_folder_name'];
+        if (!empty($data['parent_folders'])) {
+            return $this->pathCreator($data['parent_folders'], $data['dfm_folder_name']). '/'. $hasil;
+        }
+
+        return $hasil;
+    }
+
+    public function createNewFolder($author, $path)
+    {
+        return Storage::disk('public')->makeDirectory($this->getAliasFolderbyAuthor($author).'/'.$path);
     }
 }

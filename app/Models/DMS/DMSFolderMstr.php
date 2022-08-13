@@ -31,4 +31,14 @@ class DMSFolderMstr extends Model
     {
         return $this->child()->with('childFolders')->with('doc');
     }
+
+    public function parent()
+    {
+        return $this->belongsTo('App\Models\DMS\DMSFolderMstr','dfm_parent_id','id');
+    }
+
+    public function parentFolders()
+    {
+        return $this->parent()->with('parentFolders')->with('doc');
+    }
 }

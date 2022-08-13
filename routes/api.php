@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\API\DMS\DocumentController;
+use App\Http\Controllers\API\DMS\FolderController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\API\PORTAL\AuthController;
@@ -49,6 +50,7 @@ Route::group(['prefix' => 'portal', 'middleware' => 'auth:sanctum', 'verify' => 
 
 Route::group(['prefix' => 'dms'], function () {
     Route::resource('documents', DocumentController::class);
+    Route::resource('folders', FolderController::class);
 });
 
 Route::group(['prefix' => 'div'], function () {
