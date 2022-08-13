@@ -98,8 +98,8 @@ class FolderController extends BaseController
      */
     public function destroy($id)
     {
-        return json_decode(base64_decode($id));
-        $data = DMSFolderMstr::whereIn('id', json_decode(base64_decode($id)))->get();
+        $splitID = explode(",", base64_decode($id));
+        $data = DMSFolderMstr::whereIn('id', $splitID)->get();
 
         // return $data;
         $deleteRealFolder = [];
