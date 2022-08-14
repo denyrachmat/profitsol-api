@@ -48,11 +48,36 @@ trait FolderDocumentTraits
 
     public function createNewFolder($author, $path)
     {
-        return Storage::disk('data_folder')->makeDirectory('DMS/'.$this->getAliasFolderbyAuthor($author).'/'.$path);
+        return Storage::disk('data_folder_local')->makeDirectory('DMS/'.$this->getAliasFolderbyAuthor($author).'/'.$path);
     }
 
     public function deleteFolder($author, $path)
     {
-        return Storage::disk('data_folder')->deleteDirectory('DMS/'.$this->getAliasFolderbyAuthor($author).'/'.$path);
+        return Storage::disk('data_folder_local')->deleteDirectory('DMS/'.$this->getAliasFolderbyAuthor($author).'/'.$path);
+    }
+
+    public function deleteFiles($author, $path, $file)
+    {
+        return Storage::disk('data_folder_local')->delete('DMS/'.$this->getAliasFolderbyAuthor($author).'/'.$path.'/'.$file);
+    }
+
+    public function openFiles($author, $path, $file)
+    {
+        $files = Storage::disk('data_folder_local')->get('DMS/'.$this->getAliasFolderbyAuthor($author).'/'.$path .'/'. $file);
+        $mime = Storage::disk('data_folder_local')->mimeType('DMS/'.$this->getAliasFolderbyAuthor($author).'/'.$path .'/'. $file);
+        return [
+            'file' => $files,
+            'mime' =>$mime
+        ];
+    }
+
+    public function uploadFiles($author, $path, $file, $contents)
+    {
+        return storage::disk('data_folder_local')->put('DMS/'.$this->getAliasFolderbyAuthor($author).'/'.$path.'/'.$file, $contents);
+    }
+
+    public function getSizeFiles($author, $path, $file)
+    {
+        return Storage::disk('data_folder_local')->size('DMS/'.$this->getAliasFolderbyAuthor($author).'/'.$path.'/'.$file);
     }
 }

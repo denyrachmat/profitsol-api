@@ -20,4 +20,9 @@ class DMSDocMstr extends Model
         'ddm_doc_size',
         'ddm_doc_flag',
     ];
+
+    public function folder()
+    {
+        return $this->hasOne('App\Models\DMS\DMSFolderMstr','id','dfm_id');
+    }
 }

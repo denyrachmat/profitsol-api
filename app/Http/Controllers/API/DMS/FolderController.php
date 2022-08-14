@@ -62,9 +62,9 @@ class FolderController extends BaseController
      */
     public function show($id)
     {
-        $data = DMSFolderMstr::where('id', $id)->with('parentFolders')->first()->toArray();
-        // return $data;
-        return $this->pathCreator($data);
+        $files = $this->getFolder($id);
+
+        return $this->handleResponse($files, 'Data Found !!');
     }
 
     /**
@@ -99,7 +99,7 @@ class FolderController extends BaseController
     public function destroy($id)
     {
         $splitID = explode(",", base64_decode($id));
-        $data = DMSFolderMstr::whereIn('id', $splitID)->get()->toArray();
+        $data = DMSFolderMstr::whereIn('id', $splitID)->with('parentFolders')->get()->toArray();
 
         // return $data;
         $deleteRealFolder = [];
@@ -110,7 +110,7 @@ class FolderController extends BaseController
                 DMSFolderMstr::where('id', $value['id'])->delete();
             }
 
-            $deleteRealFolder[] = $value;
+            $deleteRealFolder[] = $this->pathCreator($value);
         }
         return $this->handleResponse([
             'deleted' => $data,
