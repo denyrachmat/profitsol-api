@@ -47,7 +47,7 @@ return [
 
         'data_iso' => [
             'driver' => 'local',
-            'root'   => '\\\\192.168.100.7\Document ISO 9001 2015',
+            'root'   => 'T:',
         ],
 
         'data_iso_2' => [
