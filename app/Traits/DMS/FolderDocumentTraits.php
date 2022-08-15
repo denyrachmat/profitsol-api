@@ -111,9 +111,10 @@ trait FolderDocumentTraits
 
     public function convertFolderPathToArray($author, $path = '', $parentKey = 0, $hasil = [])
     {
+        // return [$this->getAliasFolderbyAuthor($author, 'root'), $path === '' ? $this->getAliasFolderbyAuthor($author) : $path];
         $data = Storage::disk($this->getAliasFolderbyAuthor($author, 'root'))->directories($path === '' ? $this->getAliasFolderbyAuthor($author) : $path);
-
         // return $path === '' ? $this->getAliasFolderbyAuthor($author) : $path;
+
         $kunci = 1;
         foreach ($data as $key => $value) {
             $path = !empty($path) ? $path . '/' . $value : $value;
@@ -285,7 +286,9 @@ trait FolderDocumentTraits
 
     public function checkPath($author, $path = '')
     {
-        $files = $this->convertFolderPathToArray($author, !empty($path) ? base64_decode($path) : '');
+        // return $path;
+        return Storage::disk($this->getAliasFolderbyAuthor($author, 'root'))->directories($path === '' ? $this->getAliasFolderbyAuthor($author) : $path);
+        $files = $this->convertFolderPathToArray($author, $path);
 
         return $files;
     }
