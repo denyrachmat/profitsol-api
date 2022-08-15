@@ -139,7 +139,7 @@ trait FolderDocumentTraits
         return $hasil;
     }
 
-    public function migrateFolderToDB($author, $data = [], $isRoot = true)
+    public function migrateFolderToDB($author, $path = '', $data = [], $isRoot = true)
     {
         if (count($data) === 0) {
             if ($isRoot === true) {
@@ -147,7 +147,7 @@ trait FolderDocumentTraits
                 DMSDocMstr::where('p_u_username', $author)->delete();
             }
 
-            $data = $this->convertFolderPathToArray($author);
+            $data = $this->convertFolderPathToArray($author).'/'.$path;
         }
 
         $hasil = [];
@@ -169,7 +169,7 @@ trait FolderDocumentTraits
                     $insert->toArray(),
                     [
                         'status' => 'Inserted successfully !',
-                        'children' => count( $value['children']) > 0 ? $this->migrateFolderToDB($author, $value['children'], false) : []
+                        'children' => count( $value['children']) > 0 ? $this->migrateFolderToDB($author, '', $value['children'], false) : []
                     ]
                 );
             } else {
@@ -194,7 +194,7 @@ trait FolderDocumentTraits
                     [
                         'status' => 'Alredy exists !',
                         'update' => $update,
-                        'children' =>  count( $value['children']) > 0 ? $this->migrateFolderToDB($author, $value['children'], false) : []
+                        'children' =>  count( $value['children']) > 0 ? $this->migrateFolderToDB($author, '', $value['children'], false) : []
                     ]
                 );
             }
@@ -273,9 +273,9 @@ trait FolderDocumentTraits
 
     }
 
-    public function migrateRealFileToDB($author)
+    public function migrateRealFileToDB($author, $path = '')
     {
-        $files = $this->migrateFolderToDB($author);
+        $files = $this->migrateFolderToDB($author, $path);
         // $files = $this->convertFolderPathToArray($author);
 
         return $files;
