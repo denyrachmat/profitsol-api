@@ -115,7 +115,7 @@ trait FolderDocumentTraits
         $data = Storage::disk($this->getAliasFolderbyAuthor($author, 'root'))->directories($path === '' ? $this->getAliasFolderbyAuthor($author) : $path);
         // return $path === '' ? $this->getAliasFolderbyAuthor($author) : $path;
 
-        return $data;
+        // return $data;
         $kunci = 1;
         foreach ($data as $key => $value) {
             $path = !empty($path) ? $path . '/' . $value : $value;
