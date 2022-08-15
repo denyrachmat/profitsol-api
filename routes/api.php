@@ -50,7 +50,9 @@ Route::group(['prefix' => 'portal', 'middleware' => 'auth:sanctum', 'verify' => 
 
 Route::group(['prefix' => 'dms'], function () {
     Route::resource('documents', DocumentController::class);
+
     Route::resource('folders', FolderController::class);
+    Route::get('migrateToDB/{users}', [FolderController::class, 'migrateRealFileToDB']);
 });
 
 Route::group(['prefix' => 'div'], function () {

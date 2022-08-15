@@ -11,6 +11,8 @@
         "darkaonline/l5-swagger": "^8.3",
         "fruitcake/laravel-cors": "^3.0",
         "guzzlehttp/guzzle": "^7.0.1",
+        "haruncpi/laravel-log-reader": "^1.0",
+        "jeremykenedy/laravel-logger": "^6.0",
         "laravel/framework": "^8.75",
         "laravel/sanctum": "^2.11",
         "laravel/tinker": "^2.5",

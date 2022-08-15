@@ -47,7 +47,7 @@ return [
 
         'data_iso' => [
             'driver' => 'local',
-            'root'   => "\\192.168.100.7/",
+            'root'   => 'T:/',
         ],
 
         'public' => [
