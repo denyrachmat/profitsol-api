@@ -47,9 +47,21 @@ trait FolderDocumentTraits
                 ? $author
                 : $checkRootAlias->dudrm_path
             );
-        $root = empty($checkRootAlias) ? 'data_folder' : $checkRootAlias->dudrm_source;
+        $root = empty($checkRootAlias)
+            ? 'data_folder'
+            : $checkRootAlias->dudrm_source;
 
-        return $data === 'path' || $data === 'user' ? $users : $root;
+        $isUseRealNameFile = empty($checkRootAlias)
+        ? 0
+        : $checkRootAlias->dudrm_use_real_nm;
+
+        return $data === 'path' || $data === 'user' || $data === 'source'
+        ? (
+            $data === 'source'
+            ? $isUseRealNameFile
+            : $users
+        )
+        : $root;
     }
 
     public function pathCreator($data, $hasil = '')

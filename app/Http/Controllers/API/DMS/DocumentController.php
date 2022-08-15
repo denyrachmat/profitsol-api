@@ -93,7 +93,13 @@ class DocumentController extends BaseController
         $getData = DMSDocMstr::where('id', $id)->with('folder.parentFolders')->first()->toArray();
 
         // return $getData;
-        $files = $this->openFiles($getData['p_u_username'], $this->pathCreator($getData['folder']), $getData['ddm_doc_name']);
+        $files = $this->openFiles(
+            $getData['p_u_username'],
+            $this->pathCreator($getData['folder']),
+            $this->getAliasFolderbyAuthor($getData['p_u_username'], 'source') === 1
+            ? $getData['ddm_doc_name']
+            : $getData['ddm_doc_real_name']
+        );
 
         return $this->handleResponse( 'data:'.$files['mime'].';base64,'.base64_encode($files['file']), 'Data Found !!');
     }
