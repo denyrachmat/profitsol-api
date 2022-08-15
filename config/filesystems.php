@@ -50,6 +50,11 @@ return [
             'root'   => 'T://',
         ],
 
+        'data_iso_2' => [
+            'driver' => 'local',
+            'root'   => 'DOC_ISO',
+        ],
+
         'public' => [
             'driver' => 'local',
             'root' => storage_path('app/public'),
