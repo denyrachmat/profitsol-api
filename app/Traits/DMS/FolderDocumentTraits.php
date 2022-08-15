@@ -192,7 +192,7 @@ trait FolderDocumentTraits
                 $getRealName = $expFile[count($expFile) - 1];
                 $docName = 'DMS_'.Str::random(50).'.'.explode(".", $getRealName)[count(explode(".", $getRealName)) - 1];
                 if (empty($dataDBFile)) {
-                    $dataFolder = DMSFolderMstr::where('id', $idFolder)->with('parentFolders')->first()->toArray();
+                    // $dataFolder = DMSFolderMstr::where('id', $idFolder)->with('parentFolders')->first()->toArray();
 
                     // logger(json_encode($dataFolder));
                     // logger($this->getAliasFolderbyAuthor($author) . '/' . $this->pathCreator($dataFolder) . '/' . $getRealName);
@@ -238,6 +238,24 @@ trait FolderDocumentTraits
         }
 
         return $hasil;
+    }
+
+    public function dbSyncToRealDoc($author)
+    {
+        $data = DMSFolderMstr::with('parentFolders')->with('doc')->where('p_u_username', $author)->whereNull('dfm_parent_id')->first()->toArray();
+
+        $hasil = [];
+        foreach ($data as $key => $value) {
+            $getFolder = Storage::disk($this->getAliasFolderbyAuthor($author, 'root'))->directories($this->pathCreator($value));
+
+            if (!$getFolder) {
+                $hasil[] = $value;
+            }
+            // $createRealFolder = $this->openFiles($this->getAliasFolderbyAuthor($author), $this->pathCreator($value));
+        }
+
+        return $hasil;
+
     }
 
     public function migrateRealFileToDB($author)
