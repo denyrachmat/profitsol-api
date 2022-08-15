@@ -247,4 +247,9 @@ trait FolderDocumentTraits
 
         return $files;
     }
+
+    public function checkPerm($author)
+    {
+        return Storage::disk($this->getAliasFolderbyAuthor($author, 'root'))->allDirectories();
+    }
 }

@@ -53,6 +53,8 @@ Route::group(['prefix' => 'dms'], function () {
 
     Route::resource('folders', FolderController::class);
     Route::get('migrateToDB/{users}', [FolderController::class, 'migrateRealFileToDB']);
+    Route::get('checkFolders/{users}', [FolderController::class, 'checkPerm']);
+
 });
 
 Route::group(['prefix' => 'div'], function () {
