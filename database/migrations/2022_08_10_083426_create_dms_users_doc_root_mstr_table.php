@@ -17,6 +17,7 @@ class CreateDmsUsersDocRootMstrTable extends Migration
             $table->id();
             $table->string('p_u_username');
             $table->string('dudrm_path');
+            $table->string('dudrm_source');
             $table->timestamps();
         });
     }

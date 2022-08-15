@@ -45,6 +45,11 @@ return [
             'root'   => 'U:/Uploaded Docs',
         ],
 
+        'data_iso' => [
+            'driver' => 'local',
+            'root'   => "\\192.168.100.7/",
+        ],
+
         'public' => [
             'driver' => 'local',
             'root' => storage_path('app/public'),

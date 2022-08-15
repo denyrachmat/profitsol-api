@@ -14,6 +14,7 @@ class DMSFolderRootMstr extends Model
 
     protected $fillable = [
         'p_u_username',
-        'dudrm_path'
+        'dudrm_path',
+        'dudrm_source'
     ];
 }
