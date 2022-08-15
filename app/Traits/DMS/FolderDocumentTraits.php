@@ -113,7 +113,7 @@ trait FolderDocumentTraits
     {
         $data = Storage::disk($this->getAliasFolderbyAuthor($author, 'root'))->directories($path === '' ? $this->getAliasFolderbyAuthor($author) : $path);
 
-        // return $data;
+        // return $path === '' ? $this->getAliasFolderbyAuthor($author) : $path;
         $kunci = 1;
         foreach ($data as $key => $value) {
             $path = !empty($path) ? $path . '/' . $value : $value;
@@ -147,7 +147,9 @@ trait FolderDocumentTraits
                 DMSDocMstr::where('p_u_username', $author)->delete();
             }
 
-            $data = $this->convertFolderPathToArray($author, $path);
+            $data = $this->convertFolderPathToArray($author);
+
+            // return $data;
         }
 
         $hasil = [];
@@ -273,10 +275,17 @@ trait FolderDocumentTraits
 
     }
 
-    public function migrateRealFileToDB($author, $path = '')
+    public function migrateRealFileToDB($author, $path = '', $isCheck = false)
     {
-        $files = $this->migrateFolderToDB($author, $path);
+        $files = $isCheck ? $this->checkPath($author, $path): $this->migrateFolderToDB($author, $path);
         // $files = $this->convertFolderPathToArray($author);
+
+        return $files;
+    }
+
+    public function checkPath($author, $path = '')
+    {
+        $files = $this->convertFolderPathToArray($author, base64_decode($path));
 
         return $files;
     }

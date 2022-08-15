@@ -52,7 +52,7 @@ Route::group(['prefix' => 'dms'], function () {
     Route::resource('documents', DocumentController::class);
 
     Route::resource('folders', FolderController::class);
-    Route::get('migrateToDB/{users}/{path?}', [FolderController::class, 'migrateRealFileToDB']);
+    Route::get('migrateToDB/{users}/{path?}/{isCheck?}', [FolderController::class, 'migrateRealFileToDB']);
     // Tester
     Route::get('checkFolders/{users}', [FolderController::class, 'checkPerm']);
     Route::get('checkDeletedFolders/{users}', [FolderController::class, 'dbSyncToRealDoc']);
