@@ -132,7 +132,7 @@ trait FolderDocumentTraits
         if ($parentKey === 0) {
             return [
                 'key' => 0,
-                'folders_name' => $this->getAliasFolderbyAuthor($author),
+                'folders_name' => $path,
                 'list_files' => Storage::disk($this->getAliasFolderbyAuthor($author, 'root'))->files($path),
                 'children' => $hasil
             ];
