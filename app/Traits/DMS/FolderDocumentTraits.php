@@ -158,8 +158,9 @@ trait FolderDocumentTraits
         foreach ($data as $key => $value) {
             $expFolder = explode('/', $value['folders_name']);
             $dataDBFolder = DMSFolderMstr::where('dfm_folder_name', $expFolder[count($expFolder) - 1])->first();
+            $cekParent = DMSFolderMstr::where('dfm_folder_name', $expFolder[count($expFolder) - 2])->first();
             $checkParent = count($expFolder) > 1
-                ? DMSFolderMstr::where('dfm_folder_name', $expFolder[count($expFolder) - 2])->first()->id
+                ? $cekParent->id
                 : NULL;
 
             if (empty($dataDBFolder)) {
