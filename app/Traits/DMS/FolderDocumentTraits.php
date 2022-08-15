@@ -117,8 +117,9 @@ trait FolderDocumentTraits
 
         // return $data;
         $kunci = 1;
+        $pathDet = $path;
         foreach ($data as $key => $value) {
-            $pathDet = !empty($path) ? $path . '/' . $value : $value;
+            $pathDet = !empty($path) ? $pathDet . '/' . $value : $value;
             $hasil[] = [
                 'key' => $parentKey + $kunci,
                 'folders_name' => $value,
