@@ -174,11 +174,21 @@ trait FolderDocumentTraits
                 );
             } else {
                 $idFolder = $dataDBFolder->id;
-                $update = DMSFolderMstr::where('id', $idFolder)->update([
-                    'p_u_username' => $author,
-                    'dfm_folder_name' => $expFolder[count($expFolder) - 1],
-                    'dfm_parent_id' => $checkParent
-                ]);
+                $checkParent2 = DMSFolderMstr::where('id', $idFolder)->where('dfm_parent_id', $checkParent)->first();
+
+                if (empty($checkParent2)) {
+                    $update = DMSFolderMstr::insert([
+                        'p_u_username' => $author,
+                        'dfm_folder_name' => $expFolder[count($expFolder) - 1],
+                        'dfm_parent_id' => $checkParent
+                    ]);
+                } else {
+                    $update = DMSFolderMstr::where('id', $idFolder)->update([
+                        'p_u_username' => $author,
+                        'dfm_folder_name' => $expFolder[count($expFolder) - 1],
+                        'dfm_parent_id' => $checkParent
+                    ]);
+                }
                 $hasilTemp = array_merge(
                     $dataDBFolder->toArray(),
                     [
