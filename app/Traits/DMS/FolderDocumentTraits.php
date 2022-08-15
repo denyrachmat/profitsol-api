@@ -139,11 +139,14 @@ trait FolderDocumentTraits
         return $hasil;
     }
 
-    public function migrateFolderToDB($author, $data = [])
+    public function migrateFolderToDB($author, $data = [], $isRoot = true)
     {
         if (count($data) === 0) {
-            DMSFolderMstr::where('p_u_username', $author)->delete();
-            DMSDocMstr::where('p_u_username', $author)->delete();
+            if ($isRoot === true) {
+                DMSFolderMstr::where('p_u_username', $author)->delete();
+                DMSDocMstr::where('p_u_username', $author)->delete();
+            }
+
             $data = $this->convertFolderPathToArray($author);
         }
 
@@ -166,7 +169,7 @@ trait FolderDocumentTraits
                     $insert->toArray(),
                     [
                         'status' => 'Inserted successfully !',
-                        'children' => count( $value['children']) > 0 ? $this->migrateFolderToDB($author, $value['children']) : []
+                        'children' => count( $value['children']) > 0 ? $this->migrateFolderToDB($author, $value['children'], false) : []
                     ]
                 );
             } else {
@@ -181,7 +184,7 @@ trait FolderDocumentTraits
                     [
                         'status' => 'Alredy exists !',
                         'update' => $update,
-                        'children' =>  count( $value['children']) > 0 ? $this->migrateFolderToDB($author, $value['children']) : []
+                        'children' =>  count( $value['children']) > 0 ? $this->migrateFolderToDB($author, $value['children'], false) : []
                     ]
                 );
             }
