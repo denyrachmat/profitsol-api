@@ -52,7 +52,17 @@ return [
 
         'data_iso_2' => [
             'driver' => 'local',
-            'root'   => 'C:/Users/administrator.STX-I/AppData/Roaming/Microsoft/Windows/Network Shortcuts/DOC_ISO',
+            'root'   => 'z:',
+        ],
+
+        'data_iso_3' => [
+            'driver' => 'local',
+            'root'   => 'Z:/',
+        ],
+
+        'data_iso_4' => [
+            'driver' => 'local',
+            'root'   => 'z:/',
         ],
 
         'public' => [
