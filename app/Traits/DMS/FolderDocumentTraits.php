@@ -242,7 +242,7 @@ trait FolderDocumentTraits
 
     public function dbSyncToRealDoc($author)
     {
-        $data = DMSFolderMstr::with('parentFolders')->with('doc')->where('p_u_username', $author)->whereNull('dfm_parent_id')->get()->toArray();
+        $data = DMSFolderMstr::with('parentFolders')->with('doc')->where('p_u_username', $author)->where('dfm_parent_id', '<>', NULL)->get()->toArray();
 
         $hasil = [];
         foreach ($data as $key => $value) {
