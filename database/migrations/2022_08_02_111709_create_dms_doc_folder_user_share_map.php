@@ -19,6 +19,8 @@ class CreateDmsDocFolderUserShareMap extends Migration
             $table->integer('ddm_id')->nullable();
             $table->integer('dfm_id')->nullable();
             $table->string('ddfus_p_u_username');
+            $table->boolean('ddfus_read')->default(0);
+            $table->boolean('ddfus_write')->default(0);
             $table->timestamps();
         });
     }
