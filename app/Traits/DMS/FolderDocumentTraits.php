@@ -285,7 +285,7 @@ trait FolderDocumentTraits
 
     public function checkPath($author, $path = '')
     {
-        $files = $this->convertFolderPathToArray($author, base64_decode($path));
+        $files = $this->convertFolderPathToArray($author, !empty($path) ? base64_decode($path) : '');
 
         return $files;
     }

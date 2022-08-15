@@ -55,7 +55,7 @@ Route::group(['prefix' => 'dms'], function () {
     Route::get('migrateToDB/{users}/{path?}/{isCheck?}', [FolderController::class, 'migrateRealFileToDB']);
     // Tester
     Route::get('checkFolders/{users}', [FolderController::class, 'checkPerm']);
-    Route::get('checkPath/{users}/{path}', [FolderController::class, 'checkPath']);
+    Route::get('checkPath/{users}/{path?}', [FolderController::class, 'checkPath']);
     Route::get('checkDeletedFolders/{users}', [FolderController::class, 'dbSyncToRealDoc']);
 });
 
