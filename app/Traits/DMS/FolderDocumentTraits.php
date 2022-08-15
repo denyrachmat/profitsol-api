@@ -129,7 +129,7 @@ trait FolderDocumentTraits
             $kunci++;
         }
 
-        if ($path === '') {
+        if ($parentKey === 0) {
             return [
                 'key' => 0,
                 'folders_name' => $this->getAliasFolderbyAuthor($author),
