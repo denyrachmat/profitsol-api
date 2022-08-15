@@ -15,7 +15,9 @@ trait FolderDocumentTraits
         $users = $this->getAliasFolderbyAuthor($author, 'user');
 
         // return $users;
-        $dataFolder = DMSFolderMstr::with('childFolders')->with('doc')->where('p_u_username', $users)->whereNull('dfm_parent_id');
+        $dataFolder = DMSFolderMstr::with(['childFolders'=> function($q) {
+            $q->orderBy('dfm_folder_name');
+        }])->with('doc')->where('p_u_username', $users)->whereNull('dfm_parent_id')->orderBy('dfm_folder_name');
         $dataFiles = DMSDocMstr::where('p_u_username', $users);
 
         return !empty($id)
