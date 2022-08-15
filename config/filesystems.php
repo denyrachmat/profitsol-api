@@ -47,7 +47,7 @@ return [
 
         'data_iso' => [
             'driver' => 'local',
-            'root'   => 'T:/Test',
+            'root'   => '\\\\192.168.100.7',
         ],
 
         'data_iso_2' => [
