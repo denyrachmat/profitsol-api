@@ -174,7 +174,7 @@ trait FolderDocumentTraits
                 );
             } else {
                 $idFolder = $dataDBFolder->id;
-                $update = DMSFolderMstr::where('id', $idFolder)->create([
+                $update = DMSFolderMstr::where('id', $idFolder)->update([
                     'p_u_username' => $author,
                     'dfm_folder_name' => $expFolder[count($expFolder) - 1],
                     'dfm_parent_id' => $checkParent
