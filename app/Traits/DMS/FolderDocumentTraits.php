@@ -153,7 +153,7 @@ trait FolderDocumentTraits
                 ? $this->convertFolderPathToArray($author, $path)
                 : [$this->convertFolderPathToArray($author, $path)];
 
-            return $data;
+            // return $data;
         }
 
         $hasil = [];
