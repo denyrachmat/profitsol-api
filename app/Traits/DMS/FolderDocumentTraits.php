@@ -149,9 +149,11 @@ trait FolderDocumentTraits
                 DMSDocMstr::where('p_u_username', $author)->delete();
             }
 
-            $data = $this->convertFolderPathToArray($author, $path);
+            $data = $path === ''
+                ? $this->convertFolderPathToArray($author, $path)
+                : [$this->convertFolderPathToArray($author, $path)];
 
-            return $data;
+            // return $data;
         }
 
         $hasil = [];
