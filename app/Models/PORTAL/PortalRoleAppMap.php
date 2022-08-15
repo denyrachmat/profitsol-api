@@ -24,7 +24,7 @@ class PortalRoleAppMap extends Model
 
     public function role()
     {
-        return $this->belongsTo('App\Models\PORTAL\PortalRole', 'rm_role_id', 'id');
+        return $this->hasOne('App\Models\PORTAL\PortalRole', 'id', 'rm_role_id');
     }
 
     public function child()

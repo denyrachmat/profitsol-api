@@ -62,14 +62,22 @@ class AuthController extends BaseController
 
             $dataUsers = User::where('username', $auth->username)->first();
 
+            $username = $auth->username;
+            $getRolesGroup = User::where('username', $auth->username)->with(['roles.role.role_app_map' => function ($r) use ($username) {
+                $r->with(['childRoles' => function ($q) use($username) {
+                    $q->with('apps');
+                    $q->whereHas('role.users_map', function ($h) use($username){
+                        $h->where('u_username', $username);
+                    });
+                }, 'apps'])->whereNull('am_app_parent');
+            }])->first();
+
             $success['token'] =  $auth->createToken('LaravelSanctumAuth')->plainTextToken;
             $success['username'] =  $auth->username;
             $success['user_det'] = $dataUsers->det;
             $success['edu'] = $edu;
             $success['fam'] = $dataUsers->fam;
-            $success['rolesGroup'] = User::where('username', $auth->username)->with(['roles.role.role_app_map' => function ($r) {
-                $r->with(['childRoles.apps', 'apps'])->whereNull('am_app_parent');
-            }])->first();
+            $success['rolesGroup'] = $getRolesGroup;
             $success['menus'] = PortalApp::where('am_app_parent', null)->with('childApps')->get();
 
             return $this->handleResponse($success, 'User logged-in!');

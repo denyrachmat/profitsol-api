@@ -30,4 +30,16 @@ class PortalRole extends Model
     {
         return $this->hasMany('App\Models\PORTAL\PortalRoleAppMap', 'rm_role_id', 'id');
     }
+
+    public function role_app_map_trough()
+    {
+        return $this->hasManyThrough(
+            'App\Models\PORTAL\PortalRoleAppMap',
+            'App\Models\PORTAL\PortalRoleAppMap',
+            'rm_role_id',
+            'am_app_parent',
+            'id',
+            'am_app_id'
+        );
+    }
 }
