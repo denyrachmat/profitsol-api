@@ -47,7 +47,7 @@ return [
 
         'data_iso' => [
             'driver' => 'local',
-            'root'   => 'T:/DMS',
+            'root'   => 'T:/',
         ],
 
         'data_iso_2' => [
