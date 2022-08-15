@@ -142,6 +142,8 @@ trait FolderDocumentTraits
     public function migrateFolderToDB($author, $data = [])
     {
         if (count($data) === 0) {
+            DMSFolderMstr::where('p_u_username', $author)->delete();
+            DMSDocMstr::where('p_u_username', $author)->delete();
             $data = $this->convertFolderPathToArray($author);
         }
 
