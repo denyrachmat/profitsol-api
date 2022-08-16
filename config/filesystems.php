@@ -42,7 +42,7 @@ return [
 
         'data_folder_local' => [
             'driver' => 'local',
-            'root'   => 'U:/Uploaded Docs',
+            'root'   => 'U:/Uploaded Docs/DMS/ISO',
         ],
 
         'data_iso' => [

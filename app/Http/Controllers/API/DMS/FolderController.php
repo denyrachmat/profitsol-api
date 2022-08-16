@@ -5,9 +5,9 @@ namespace App\Http\Controllers\API\DMS;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\DMS\DMSFolderMstr;
+use App\Models\DMS\DMSDocMstr;
 use App\Traits\DMS\FolderDocumentTraits;
 use App\Http\Controllers\API\PORTAL\BaseController;
-
 class FolderController extends BaseController
 {
     use FolderDocumentTraits;
@@ -39,7 +39,7 @@ class FolderController extends BaseController
     public function store(Request $request)
     {
         $stored = DMSFolderMstr::create([
-            'p_u_username' => $this->getAliasFolderbyAuthor($request->p_u_username),
+            'p_u_username' => $this->getAliasFolderbyAuthor($request->p_u_username, 'user'),
             'dfm_folder_name' => $request->dfm_folder_name,
             'dfm_parent_id' => $request->dfm_parent_id,
         ]);
@@ -104,10 +104,11 @@ class FolderController extends BaseController
         // return $data;
         $deleteRealFolder = [];
         foreach ($data as $key => $value) {
-            $delete = $this->deleteFolder($this->getAliasFolderbyAuthor($value['p_u_username']), $this->pathCreator($value));
+            $delete = $this->deleteFolder($this->getAliasFolderbyAuthor($value['p_u_username'], 'user'), $this->pathCreator($value));
 
             if ($delete) {
                 DMSFolderMstr::where('id', $value['id'])->delete();
+                DMSDocMstr::where('dfm_id', $value['id'])->delete();
             }
 
             $deleteRealFolder[] = $this->pathCreator($value);

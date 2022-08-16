@@ -44,14 +44,16 @@ class DocumentController extends BaseController
     {
         $result = [];
         foreach ($req->fileName as $key => $value) {
-            $dataFolder = DMSFolderMstr::where('id', $req->dfm_id)->with('parentFolders')->first()->toArray();
+            $dataFolder = DMSFolderMstr::where('id', $req->dfm_id)->with('parentFolders')->first();
             // return $req->files[$key];
-            $fileNameFormat = 'DMS_'.Str::random(50).'.'.explode(".", $value)[1];
-            $file = base64_decode(explode(",",$req->file_all[$key])[1]);
+            $fileNameFormat = 'DMS_' . Str::random(50) . '.' . explode(".", $value)[1];
+            $file = base64_decode(explode(",", $req->file_all[$key])[1]);
             $storeRealFile = $this->uploadFiles(
                 $req->p_u_username,
-                $this->pathCreator($dataFolder),
-                $fileNameFormat,
+                !empty($dataFolder) ? $this->pathCreator($dataFolder->toArray()) : '',
+                $this->getAliasFolderbyAuthor($req->p_u_username, 'source') == 1
+                    ? $value
+                    : $fileNameFormat,
                 $file,
             );
 
@@ -65,8 +67,10 @@ class DocumentController extends BaseController
                     'ddm_doc_real_name' => $value,
                     'ddm_doc_size' => $this->getSizeFiles(
                         $req->p_u_username,
-                        $this->pathCreator($dataFolder),
-                        $fileNameFormat
+                        !empty($dataFolder) ? $this->pathCreator($dataFolder->toArray()) : '',
+                        $this->getAliasFolderbyAuthor($req->p_u_username, 'source') == 1
+                            ? $value
+                            : $fileNameFormat,
                     ),
                     'ddm_doc_flag' => $req->ddm_doc_flag,
                 ]);
@@ -96,13 +100,13 @@ class DocumentController extends BaseController
         $files = $this->openFiles(
             $getData['p_u_username'],
             !empty($getData['folder']) ? $this->pathCreator($getData['folder']) : '',
-            $this->getAliasFolderbyAuthor($getData['p_u_username'], 'source') === 1
-            ? $getData['ddm_doc_name']
-            : $getData['ddm_doc_real_name']
+            $this->getAliasFolderbyAuthor($getData['p_u_username'], 'source') == 1
+                ? $getData['ddm_doc_real_name']
+                : $getData['ddm_doc_name']
         );
         // return $files;
 
-        return $this->handleResponse( 'data:'.$files['mime'].';base64,'.base64_encode($files['file']), 'Data Found !!');
+        return $this->handleResponse('data:' . $files['mime'] . ';base64,' . base64_encode($files['file']), 'Data Found !!');
     }
 
     /**
@@ -141,17 +145,23 @@ class DocumentController extends BaseController
 
         $deleteRealFiles = [];
         foreach ($data as $key => $value) {
-            $delete = $this->deleteFiles($this->getAliasFolderbyAuthor($value['p_u_username']), $this->pathCreator($value['folder']), $value['ddm_doc_name']);
+            $delete = $this->deleteFiles(
+                $this->getAliasFolderbyAuthor($value['p_u_username'], 'user'),
+                !empty($value['folder']) ? $this->pathCreator($value['folder']) : '',
+                $this->getAliasFolderbyAuthor($value['p_u_username'], 'source') == 1
+                ? $value['ddm_doc_real_name']
+                : $value['ddm_doc_name']
+            );
 
             if ($delete) {
                 DMSDocMstr::where('id', $value['id'])->delete();
             }
 
-            $deleteRealFiles[] = $this->pathCreator($value['folder']);
+            $deleteRealFiles[] = $delete;
         }
         return $this->handleResponse([
             'deleted' => $data,
             'delete_real_folder' => $deleteRealFiles
-        ], 'Folder deleted successfully !');
+        ], 'Files deleted successfully !');
     }
 }
