@@ -39,8 +39,10 @@ trait FolderDocumentTraits
     public function getAliasFolderbyAuthor($author, $data = 'path')
     {
         $checkRootAliasTest = DMSFolderRootMstr::where('p_u_username', $author)->first();
-        if (!empty($checkRootAliasTest)) {
-            $checkRootAlias = DMSFolderRootMstr::where('p_u_username', $author)->first();
+        if (!empty($checkRootAliasTest->dudrm_alias_username)) {
+            $checkRootAlias = DMSFolderRootMstr::where('p_u_username', $checkRootAliasTest->dudrm_alias_username)->first();
+        } else {
+            $checkRootAlias = $checkRootAliasTest;
         }
         $users = empty($checkRootAlias)
             ? 'DMS/' . $author
@@ -82,6 +84,7 @@ trait FolderDocumentTraits
 
     public function createNewFolder($author, $path)
     {
+        logger($path);
         return Storage::disk($this->getAliasFolderbyAuthor($author, 'root'))->makeDirectory($this->getAliasFolderbyAuthor($author) . '/' . $path);
     }
 
@@ -97,6 +100,7 @@ trait FolderDocumentTraits
 
     public function openFiles($author, $path, $file)
     {
+        logger($path);
         // return $this->getAliasFolderbyAuthor($author, 'path') . '/' . $path . '/' . $file;
         $files = Storage::disk($this->getAliasFolderbyAuthor($author, 'root'))->get($this->getAliasFolderbyAuthor($author) . '/' . $path . '/' . $file);
         $mime = Storage::disk($this->getAliasFolderbyAuthor($author, 'root'))->mimeType($this->getAliasFolderbyAuthor($author) . '/' . $path . '/' . $file);
