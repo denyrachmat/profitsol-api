@@ -46,8 +46,11 @@ class FolderController extends BaseController
 
         $data = DMSFolderMstr::where('id', $stored->id)->with('parentFolders')->first()->toArray();
 
-        $createRealFolder = $this->createNewFolder($this->getAliasFolderbyAuthor($request->p_u_username), $this->pathCreator($data));
+        $createRealFolder = $this->createNewFolder($this->getAliasFolderbyAuthor($request->p_u_username, 'user'), $this->pathCreator($data));
 
+        if (!$createRealFolder) {
+            DMSFolderMstr::where('id', $stored->id)->delete();
+        }
         return $this->handleResponse([
             'stored' => $stored,
             'store_real_folder' => $createRealFolder

@@ -15,7 +15,7 @@ trait FolderDocumentTraits
         $users = $this->getAliasFolderbyAuthor($author, 'user');
 
         // return $users;
-        $dataFolder = DMSFolderMstr::with(['childFolders'=> function($q) {
+        $dataFolder = DMSFolderMstr::with(['childFolders' => function ($q) {
             $q->orderBy('dfm_folder_name');
         }])->with('doc')->where('p_u_username', $users)->whereNull('dfm_parent_id')->orderBy('dfm_folder_name');
         $dataFiles = DMSDocMstr::where('p_u_username', $users);
@@ -39,35 +39,39 @@ trait FolderDocumentTraits
     public function getAliasFolderbyAuthor($author, $data = 'path')
     {
         $checkRootAliasTest = DMSFolderRootMstr::where('p_u_username', $author)->first();
+        $checkRootAlias = $checkRootAliasTest;
+
         if (!empty($checkRootAliasTest->dudrm_alias_username)) {
             $checkRootAlias = DMSFolderRootMstr::where('p_u_username', $checkRootAliasTest->dudrm_alias_username)->first();
-        } else {
-            $checkRootAlias = $checkRootAliasTest;
         }
 
         logger($checkRootAlias);
         $users = empty($checkRootAlias)
             ? 'DMS/' . $author
-            : (
-                $data === 'user'
+            : ($data === 'user'
                 ? $checkRootAlias->p_u_username
                 : ($checkRootAlias->dudrm_path)
             );
-        $root = empty($checkRootAlias)
+        
+        logger('check root di alias');
+        logger($checkRootAlias);
+        $root = empty($checkRootAlias->dudrm_source)
             ? 'data_folder'
             : $checkRootAlias->dudrm_source;
 
+        
+            logger('check root');
+        logger($root);
         $isUseRealNameFile = empty($checkRootAlias)
-        ? 0
-        : $checkRootAlias->dudrm_use_real_nm;
+            ? 0
+            : $checkRootAlias->dudrm_use_real_nm;
 
         return $data === 'path' || $data === 'user' || $data === 'source'
-        ? (
-            $data === 'source'
-            ? $isUseRealNameFile
-            : $users
-        )
-        : $root;
+            ? ($data === 'source'
+                ? $isUseRealNameFile
+                : $users
+            )
+            : $root;
     }
 
     public function pathCreator($data, $hasil = '')
@@ -82,7 +86,6 @@ trait FolderDocumentTraits
 
     public function createNewFolder($author, $path)
     {
-        logger($path);
         return Storage::disk($this->getAliasFolderbyAuthor($author, 'root'))->makeDirectory($this->getAliasFolderbyAuthor($author) . '/' . $path);
     }
 
@@ -98,7 +101,7 @@ trait FolderDocumentTraits
 
     public function openFiles($author, $path, $file)
     {
-        logger($path);
+        logger($this->getAliasFolderbyAuthor($author) . '/' . $path . '/' . $file);
         // return $this->getAliasFolderbyAuthor($author, 'path') . '/' . $path . '/' . $file;
         $files = Storage::disk($this->getAliasFolderbyAuthor($author, 'root'))->get($this->getAliasFolderbyAuthor($author) . '/' . $path . '/' . $file);
         $mime = Storage::disk($this->getAliasFolderbyAuthor($author, 'root'))->mimeType($this->getAliasFolderbyAuthor($author) . '/' . $path . '/' . $file);
@@ -191,7 +194,7 @@ trait FolderDocumentTraits
                     $insert->toArray(),
                     [
                         'status' => 'Inserted successfully !',
-                        'children' => count( $value['children']) > 0 ? $this->migrateFolderToDB($author, '', $value['children'], false) : []
+                        'children' => count($value['children']) > 0 ? $this->migrateFolderToDB($author, '', $value['children'], false) : []
                     ]
                 );
             } else {
@@ -223,7 +226,7 @@ trait FolderDocumentTraits
                     [
                         'status' => 'Alredy exists !',
                         'update' => $update,
-                        'children' =>  count( $value['children']) > 0 ? $this->migrateFolderToDB($author, '', $value['children'], false) : []
+                        'children' =>  count($value['children']) > 0 ? $this->migrateFolderToDB($author, '', $value['children'], false) : []
                     ]
                 );
             }
@@ -234,7 +237,7 @@ trait FolderDocumentTraits
                 $dataDBFile = DMSDocMstr::where('ddm_doc_real_name', $expFile[count($expFile) - 1])->first();
 
                 $getRealName = $expFile[count($expFile) - 1];
-                $docName = 'DMS_'.Str::random(50).'.'.explode(".", $getRealName)[count(explode(".", $getRealName)) - 1];
+                $docName = 'DMS_' . Str::random(50) . '.' . explode(".", $getRealName)[count(explode(".", $getRealName)) - 1];
                 if (empty($dataDBFile)) {
                     // $dataFolder = DMSFolderMstr::where('id', $idFolder)->with('parentFolders')->first()->toArray();
 
@@ -299,13 +302,12 @@ trait FolderDocumentTraits
         }
 
         return $hasil;
-
     }
 
     public function migrateRealFileToDB($author, $path = '', $isCheck = false)
     {
         // return $this->checkPath($author, $path);
-        $files = $isCheck ? $this->checkPath($author, $path): $this->migrateFolderToDB($author, $path);
+        $files = $isCheck ? $this->checkPath($author, $path) : $this->migrateFolderToDB($author, $path);
         // $files = $this->convertFolderPathToArray($author);
 
         return $files;
@@ -330,7 +332,7 @@ trait FolderDocumentTraits
         $data = Storage::disk($this->getAliasFolderbyAuthor($author, 'root'))->files();
         $hasil = [];
         foreach ($data as $key => $value) {
-            $docName = 'DMS_'.Str::random(50).'.'.explode(".", $value)[count(explode(".", $value)) - 1];
+            $docName = 'DMS_' . Str::random(50) . '.' . explode(".", $value)[count(explode(".", $value)) - 1];
             $hasil[] = DMSDocMstr::create([
                 'p_u_username' => $author,
                 'dfm_id' => NULL,
