@@ -12,7 +12,7 @@ trait FolderDocumentTraits
 {
     public function getFolder($author, $id = null)
     {
-        $users = $this->getAliasFolderbyAuthor($author, 'user');
+        $users = $this->getAliasFolderbyAuthor($author);
 
         // return $users;
         $dataFolder = DMSFolderMstr::with(['childFolders'=> function($q) {
