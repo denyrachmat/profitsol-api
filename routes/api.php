@@ -57,6 +57,7 @@ Route::group(['prefix' => 'dms'], function () {
     Route::get('checkFolders/{users}', [FolderController::class, 'checkPerm']);
     Route::get('checkPath/{users}/{path?}', [FolderController::class, 'checkPath']);
     Route::get('checkDeletedFolders/{users}', [FolderController::class, 'dbSyncToRealDoc']);
+    Route::get('syncRootFiles/{users}', [FolderController::class, 'syncRootFiles']);
 });
 
 Route::group(['prefix' => 'div'], function () {

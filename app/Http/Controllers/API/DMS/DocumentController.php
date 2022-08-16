@@ -95,11 +95,12 @@ class DocumentController extends BaseController
         // return $getData;
         $files = $this->openFiles(
             $getData['p_u_username'],
-            $this->pathCreator($getData['folder']),
+            !empty($getData['folder']) ? $this->pathCreator($getData['folder']) : '',
             $this->getAliasFolderbyAuthor($getData['p_u_username'], 'source') === 1
             ? $getData['ddm_doc_name']
             : $getData['ddm_doc_real_name']
         );
+        // return $files;
 
         return $this->handleResponse( 'data:'.$files['mime'].';base64,'.base64_encode($files['file']), 'Data Found !!');
     }
