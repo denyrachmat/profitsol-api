@@ -39,20 +39,18 @@ trait FolderDocumentTraits
     public function getAliasFolderbyAuthor($author, $data = 'path')
     {
         $checkRootAliasTest = DMSFolderRootMstr::where('p_u_username', $author)->first();
-        if (empty($checkRootAliasTest->dudrm_alias_username)) {
+        if (!empty($checkRootAliasTest->dudrm_alias_username)) {
             $checkRootAlias = DMSFolderRootMstr::where('p_u_username', $checkRootAliasTest->dudrm_alias_username)->first();
         } else {
             $checkRootAlias = $checkRootAliasTest;
         }
+
+        logger($checkRootAlias);
         $users = empty($checkRootAlias)
             ? 'DMS/' . $author
             : (
                 $data === 'user'
-                ? (
-                    empty($checkRootAlias->dudrm_alias_username)
-                    ? $author
-                    : $checkRootAlias->dudrm_alias_username
-                )
+                ? $checkRootAlias->p_u_username
                 : ($checkRootAlias->dudrm_path)
             );
         $root = empty($checkRootAlias)
