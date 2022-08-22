@@ -351,6 +351,7 @@ class deliveryMethodToPSIController extends BaseController
 
     public function DLVStockDelivery($date, $item = '')
     {
+        ini_set('max_execution_time', '300');
         if (!empty($item)) {
             $query = "SET NOCOUNT ON;EXEC Z_STXI_GET_CPO_DLV_STXI_ITEC @date_start = '" . date('Y-m-01', strtotime($date)) . "', @date_to = '" . date('Y-m-d', strtotime($date . ' -1 days')) . "', @model = '" . $item . "'";
         } else {
