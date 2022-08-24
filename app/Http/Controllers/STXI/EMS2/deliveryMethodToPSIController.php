@@ -87,7 +87,7 @@ class deliveryMethodToPSIController extends BaseController
 
     public function SPQDeleteData($id)
     {
-        $data = SPQMaster::where('id', $id)->delete();
+        $data = SPQMaster::where('id', $id);
 
         return $this->handleResponse($data, 'Data deleted !');
     }
@@ -110,9 +110,12 @@ class deliveryMethodToPSIController extends BaseController
         $data = DB::connection('sqlsrv_ems2')->table('V_DLV_TYO_HIST')->select(
             array_merge($sel, [
                 DB::raw('SUM(I_QTY) AS TOT_INC_DLV'),
+                DB::raw('SUM(IS_QTY) AS TOT_INC_STOCK_DLV'),
                 DB::raw('SUM(O_QTY) AS TOT_OUT_BC_DLV'),
                 DB::raw('SUM(OWB_QTY) AS TOT_OUT_WOBC_DLV'),
                 DB::raw('SUM(TOT_QTY) AS TOT_SMT_DLV'),
+                DB::raw('SUM(OQS_QTY) AS TOT_OUT_STOCK_DLV'),
+                DB::raw('(SUM(O_QTY) + SUM(OWB_QTY)) + SUM(OQS_QTY) AS TOT_OUT'),
                 DB::raw('MAX(IPP_REMARK) AS IPP_REMARK'),
                 DB::raw('MAX(RANK_REMARK) AS RANK_REMARK')
             ])
@@ -199,6 +202,19 @@ class deliveryMethodToPSIController extends BaseController
         return $this->handleResponse($hasil, 'Data found !');
     }
 
+    public function deleteDelivery($date, $loc = 'smt')
+    {
+        $hasil = DLVTYOHist::where('DEL_DATE', $date);
+
+        if ($loc === 'smt') {
+            $hasil->whereIn('IO_REMARK', ['TO_ITEC', 'FROM_SMT'])->delete();
+        } else {
+            $hasil->whereIn('IO_REMARK', ['TO_ITEC_STOCKDLV', 'FROM_STOCK'])->delete();
+        }
+
+        return $this->handleResponse($hasil, 'Data delivery on '.$date.' deleted !');
+    }
+
     public function DLVCalcSPQ($qty, $spq, $hasil = [])
     {
         if ($qty > $spq) {
@@ -259,30 +275,32 @@ class deliveryMethodToPSIController extends BaseController
                 ]);
             }
 
-            if (!$req->dlvStoc) {
-                if (!empty($value['delivery'])) {
-                    DLVTYOHist::where('DEL_DATE', $req->date)->where('MITM_MODELCD', $value['model'])->where('IO_REMARK', 'FROM_SMT')->delete();
-                    $hasil[] = DLVTYOHist::create([
-                        'MITM_MODELCD' => $value['model'],
-                        'IO_QTY' => $value['delivery'],
-                        'IO_REMARK' => 'FROM_SMT',
-                        'IPP_REMARK' => $value['ipp'],
-                        'RANK_REMARK' => $value['rank'],
-                        'DEL_DATE' => $req->date,
-                    ]);
-                }
+            if (!empty($value['delivery'])) {
+                DLVTYOHist::where('DEL_DATE', $req->date)->where('MITM_MODELCD', $value['model'])->where('IO_REMARK', $req->dlvStoc ? 'FROM_STOCK' : 'FROM_SMT')->delete();
+                $hasil[] = DLVTYOHist::create([
+                    'MITM_MODELCD' => $value['model'],
+                    'IO_QTY' => $value['delivery'],
+                    'IO_REMARK' => $req->dlvStoc ? 'FROM_STOCK' : 'FROM_SMT',
+                    'IPP_REMARK' => $value['ipp'],
+                    'RANK_REMARK' => $value['rank'],
+                    'DEL_DATE' => $req->date,
+                ]);
+            }
 
-                if (!empty($value['withoutBarcode'])) {
-                    DLVTYOHist::where('DEL_DATE', $req->date)->where('MITM_MODELCD', $value['model'])->where('IO_REMARK', 'TO_ITEC_WB')->delete();
-                    $hasil[] = DLVTYOHist::create([
-                        'MITM_MODELCD' => $value['model'],
-                        'IO_QTY' => $value['withoutBarcode'] * -1,
-                        'IO_REMARK' => 'TO_ITEC_WB',
-                        'IPP_REMARK' => $value['ipp'],
-                        'RANK_REMARK' => $value['rank'],
-                        'DEL_DATE' => $req->date,
-                    ]);
-                }
+            if (!empty($value['withoutBarcode'])) {
+                DLVTYOHist::where('DEL_DATE', $req->date)->where('MITM_MODELCD', $value['model'])->where('IO_REMARK', 'TO_ITEC_WB')->delete();
+                $hasil[] = DLVTYOHist::create([
+                    'MITM_MODELCD' => $value['model'],
+                    'IO_QTY' => $value['withoutBarcode'] * -1,
+                    'IO_REMARK' => 'TO_ITEC_WB',
+                    'IPP_REMARK' => $value['ipp'],
+                    'RANK_REMARK' => $value['rank'],
+                    'DEL_DATE' => $req->date,
+                ]);
+            }
+
+            if (!$req->dlvStoc) {
+
             }
         }
 
