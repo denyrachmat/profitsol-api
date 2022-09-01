@@ -62,6 +62,7 @@ Route::group(['prefix' => 'dms'], function () {
 
 Route::group(['prefix' => 'div'], function () {
     Route::group(['prefix' => 'ems2'], function () {
+        // Start DLV Method SMT
         Route::get('itemSearch/{filter}', [deliveryMethodToPSIController::class, 'searchItemMaster']);
         Route::get('spq', [deliveryMethodToPSIController::class, 'SPQIndex']);
         Route::post('spq', [deliveryMethodToPSIController::class, 'SPQCreateUpdate']);
@@ -78,10 +79,13 @@ Route::group(['prefix' => 'div'], function () {
         Route::post('uploadSPQ', [deliveryMethodToPSIController::class, 'UploadSPQ']);
         Route::get('syncBOMToPSI', [deliveryMethodToPSIController::class, 'syncBOMToPSI']);
         Route::get('DLVStockDelivery/{date}/{item?}', [deliveryMethodToPSIController::class, 'DLVStockDelivery']);
+        // End DLV Method SMT
 
+        // Start PO Summary
         Route::post('uploadRawPO', [poSummaryController::class, 'uploadPO']);
         Route::get('POGetData/{date}', [poSummaryController::class, 'POGetData']);
         Route::get('POExportData/{date}', [poSummaryController::class, 'exportPO']);
+        // End PO Summary
     });
 });
 

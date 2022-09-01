@@ -162,7 +162,7 @@ class deliveryMethodToPSIController extends BaseController
         ini_set('max_execution_time', '300');
         $hasil = [];
         foreach ($req->model as $key => $value) {
-            $query = "SET NOCOUNT ON;EXEC Z_STXI_GET_CPO_DLV_STXI_ITEC @model = '" . $value . "', @date_start = '" . date('Y-m-01', strtotime($req->date)) . "', @date_to = '" . date('Y-m-d', strtotime($req->date . "-1 days")) . "'";
+            $query = "SET NOCOUNT ON;EXEC Z_STXI_GET_CPO_DLV_STXI_ITEC @model = '" . $value . "', @date_start = '" . date('Y-m-01', strtotime($req->date)) . "', @date_to = '" . date('d', strtotime($req->date)) == 1 ? date('Y-m-d') : date('Y-m-d', strtotime($req->date . "-1 days")) . "'";
             $dataCPO = collect(DB::connection('sqlsrv_mega_tyo')->select(DB::raw(
                 $query
             )))[0];
@@ -371,9 +371,9 @@ class deliveryMethodToPSIController extends BaseController
     {
         ini_set('max_execution_time', '300');
         if (!empty($item)) {
-            $query = "SET NOCOUNT ON;EXEC Z_STXI_GET_CPO_DLV_STXI_ITEC @date_start = '" . date('Y-m-01', strtotime($date)) . "', @date_to = '" . date('Y-m-d', strtotime($date . ' -1 days')) . "', @model = '" . $item . "'";
+            $query = "SET NOCOUNT ON;EXEC Z_STXI_GET_CPO_DLV_STXI_ITEC @date_start = '" . date('Y-m-01', strtotime($date)) . "', @date_to = '" . date('d', strtotime($date)) == 1 ? date('Y-m-d') : date('Y-m-d', strtotime($date . ' -1 days')) . "', @model = '" . $item . "'";
         } else {
-            $query = "SET NOCOUNT ON;EXEC Z_STXI_GET_CPO_DLV_STXI_ITEC @date_start = '" . date('Y-m-01', strtotime($date)) . "', @date_to = '" . date('Y-m-d', strtotime($date . ' -1 days')) . "'";
+            $query = "SET NOCOUNT ON;EXEC Z_STXI_GET_CPO_DLV_STXI_ITEC @date_start = '" . date('Y-m-01', strtotime($date)) . "', @date_to = '" . date('d', strtotime($date)) == 1 ? date('Y-m-d') : date('Y-m-d', strtotime($date . ' -1 days')) . "'";
         }
 
         $dataCPO = collect(DB::connection('sqlsrv_mega_tyo')->select(DB::raw(
