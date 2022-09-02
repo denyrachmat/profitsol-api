@@ -124,7 +124,8 @@ class deliveryMethodToPSIController extends BaseController
             'MITM_ITMCD',
             'MITM_MODELCD'
         )
-            ->groupBy($sel);
+            ->groupBy($sel)
+            ->orderBy('DEL_DATE');
 
             // $data->whereIn('IO_REMARK', ['FROM_SMT', 'TO_ITEC', 'TO_ITEC_STOCKDLV']);
 
