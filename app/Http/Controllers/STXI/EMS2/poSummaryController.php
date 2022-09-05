@@ -39,7 +39,7 @@ class poSummaryController extends BaseController
                 $totalm3 += $value->qty;
             } elseif ((int)$value->period_iter === 7 || $value->period_iter === 8) {
                 $totalm4 += $value->qty;
-            }  
+            }
 
             $hasil[$count] = [
                 'no' => $count + 1,
@@ -58,6 +58,20 @@ class poSummaryController extends BaseController
         }
 
         return $this->handleResponse($hasil, 'Data ditemukan !');
+    }
+
+    public function POGetDataDet($date)
+    {
+        $data = FRCST_PO_MRI::whereBetween('FPM_UPLDT', [$date, date("Y-m-t", strtotime($date))])->get()->toArray();
+
+        $hasil = [];
+        foreach ($data as $key => $value) {
+            $hasil[] = [
+
+            ];
+        }
+
+        return $data;
     }
 
     public function uploadPO(Request $req)

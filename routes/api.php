@@ -84,6 +84,7 @@ Route::group(['prefix' => 'div'], function () {
         // Start PO Summary
         Route::post('uploadRawPO', [poSummaryController::class, 'uploadPO']);
         Route::get('POGetData/{date}', [poSummaryController::class, 'POGetData']);
+        Route::get('POGetDataDet/{date}', [poSummaryController::class, 'POGetDataDet']);
         Route::get('POExportData/{date}', [poSummaryController::class, 'exportPO']);
         // End PO Summary
     });
