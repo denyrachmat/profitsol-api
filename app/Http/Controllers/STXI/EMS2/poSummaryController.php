@@ -10,12 +10,13 @@ use App\Models\STXI\EMS2\FRCST_PO_MRI;
 use Illuminate\Support\Facades\DB;
 
 use App\Exports\STXI\ExportPOSummary;
+use App\Exports\STXI\ExportPODetSummary;
 
 class poSummaryController extends BaseController
 {
     public function POGetData($date)
     {
-        $data = DB::connection('sqlsrv_ems2')->select("SELECT * FROM f_frcst_po_mri('" . $date . "', '" . date('Y-m-t', strtotime($date . ' + 3 months')) . "', 0) order by item_code, period_iter");
+        $data = DB::connection('sqlsrv_ems2')->select("SELECT * FROM f_frcst_po_mri('" . $date . "', '" . date('Y-m-t', strtotime($date . ' + 3 months')) . "', 0, 0) order by item_code, period_iter");
 
         // return $data;
         $hasil = [];
@@ -62,16 +63,69 @@ class poSummaryController extends BaseController
 
     public function POGetDataDet($date)
     {
-        $data = FRCST_PO_MRI::whereBetween('FPM_UPLDT', [$date, date("Y-m-t", strtotime($date))])->get()->toArray();
+        $data = FRCST_PO_MRI::select(
+            'FPM_ITMCD',
+            'MITM_ITMD1',
+            'MITM_MAKERNM',
+            'MITM_SPTNO',
+            'MSUP_SUPNM',
+            'FPM_UPLDT',
+            DB::raw('SUM(FPM_QTY) AS FPM_QTY')
+        )
+            ->join(DB::raw('MGSVR.VMI_EXIM.dbo.MITM_TBL'), 'MITM_ITMCD', 'FPM_ITMCD')
+            ->join(DB::raw('MGSVR.VMI_EXIM.dbo.MSUP_TBL'), 'MITM_SUPCD', 'MSUP_SUPCD')
+            ->whereBetween('FPM_UPLDT', [$date, date("Y-m-t", strtotime($date))])
+            ->groupBy(
+                'FPM_ITMCD',
+                'MITM_ITMD1',
+                'MITM_MAKERNM',
+                'MITM_SPTNO',
+                'MSUP_SUPNM',
+                'FPM_UPLDT'
+            )
+            ->get()
+            ->toArray();
 
-        $hasil = [];
-        foreach ($data as $key => $value) {
-            $hasil[] = [
+        $aDates = array();
+        $oStart = new \DateTime($date);
+        $oEnd = clone $oStart;
+        $oEnd->add(new \DateInterval("P1M"));
 
-            ];
+        while ($oStart->getTimestamp() < $oEnd->getTimestamp()) {
+            $aDates[] = $oStart->format('Y-m-d');
+            $oStart->add(new \DateInterval("P1D"));
         }
 
-        return $data;
+        $dataDate = [];
+        foreach ($aDates as $key => $valueTest) {
+            $dataDate[$valueTest] = 0;
+        }
+
+        $hasilTemp = [];
+        foreach ($data as $key => $value) {
+            $hasilTemp[$value['FPM_ITMCD']]['item_code'] = $value['FPM_ITMCD'];
+            $hasilTemp[$value['FPM_ITMCD']]['item_desc'] = $value['MITM_ITMD1'];
+            $hasilTemp[$value['FPM_ITMCD']]['item_maker'] = $value['MITM_MAKERNM'];
+            $hasilTemp[$value['FPM_ITMCD']]['item_spt'] = $value['MITM_SPTNO'];
+            $hasilTemp[$value['FPM_ITMCD']]['sup_name'] = $value['MSUP_SUPNM'];
+            $hasilTemp[$value['FPM_ITMCD']][$value['FPM_UPLDT']] = $value['FPM_QTY'];
+        }
+
+        $hasil = [];
+
+        $keys = 0;
+        foreach ($hasilTemp as $keyTot => $valueTot) {
+            $cols = [];
+            foreach ($aDates as $keyDateDet => $valueDateDet) {
+                $cols[$valueDateDet] = isset($valueTot[$valueDateDet]) ? $valueTot[$valueDateDet] : 0;
+            }
+
+            $hasil[$keys] = array_merge(['no' => $keys + 1], $valueTot, $cols);
+
+            $keys++;
+        }
+
+        return $this->handleResponse($hasil, 'Data ditemukan !');
     }
 
     public function uploadPO(Request $req)
@@ -96,5 +150,16 @@ class poSummaryController extends BaseController
         Excel::store(new ExportPOSummary($data, $date), 'export_po_summary.xlsx', 'public');
 
         return 'storage/app/public/export_po_summary.xlsx';
+    }
+
+    public function exportPODet($date)
+    {
+        $data = $this->POGetDataDet($date)->original['data'];
+
+        // return json_encode($data);
+
+        Excel::store(new ExportPODetSummary($data, $date), 'export_po_summary_det.xlsx', 'public');
+
+        return 'storage/app/public/export_po_summary_det.xlsx';
     }
 }

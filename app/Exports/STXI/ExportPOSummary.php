@@ -9,6 +9,7 @@ use Maatwebsite\Excel\Concerns\RegistersEventListeners;
 use Maatwebsite\Excel\Events\AfterSheet;
 use Maatwebsite\Excel\Concerns\Exportable;
 use Maatwebsite\Excel\Concerns\WithEvents;
+use Illuminate\Support\Facades\DB;
 
 class ExportPOSummary implements FromCollection, WithEvents, WithHeadings
 {
@@ -28,7 +29,7 @@ class ExportPOSummary implements FromCollection, WithEvents, WithHeadings
             [
                 '1st Bucket '.date('M Y', strtotime($this->date)),
             ],
-            [  
+            [
                 'Recd: '
             ],
             [],
@@ -56,11 +57,11 @@ class ExportPOSummary implements FromCollection, WithEvents, WithHeadings
                 '',
                 '',
                 '',
+                $this->getDateParse($this->date, 'first_bucket', 'first_date'). ' - '.$this->getDateParse($this->date, 'first_bucket', 'last_date'),
+                $this->getDateParse($this->date, 'second_bucket', 'first_date'). ' - '.$this->getDateParse($this->date, 'second_bucket', 'last_date'),
                 date('M Y', strtotime($this->date)),
-                date('M Y', strtotime($this->date)),
-                date('M Y', strtotime($this->date)),
-                date('M Y', strtotime($this->date . '+ 1 months')),
-                date('M Y', strtotime($this->date . '+ 1 months')),
+                $this->getDateParse(date('M Y', strtotime($this->date . '+ 1 months')), 'first_bucket', 'first_date'). ' - ' .$this->getDateParse(date('M Y', strtotime($this->date . '+ 1 months')), 'first_bucket', 'last_date'),
+                $this->getDateParse(date('M Y', strtotime($this->date . '+ 1 months')), 'second_bucket', 'first_date'). ' - ' .$this->getDateParse(date('M Y', strtotime($this->date . '+ 1 months')), 'second_bucket', 'last_date'),
                 date('M Y', strtotime($this->date . '+ 1 months')),
                 '',
                 '',
@@ -157,5 +158,25 @@ class ExportPOSummary implements FromCollection, WithEvents, WithHeadings
                 $event->sheet->getStyle('G6:O'.$highestRow)->getAlignment()->setHorizontal('right');
             }
         ];
+    }
+
+    public function getDateParse($date, $remarks, $stat)
+    {
+        $days = $this->getSetDate((int)date('m', strtotime($date)), $remarks)->{$stat};
+        $month = date('m', strtotime($date));
+        $year = date('y', strtotime($date));
+
+        return date('d M Y', strtotime($year.'-'.$month.'-'.$days));
+    }
+
+    public function getSetDate($month, $remarks)
+    {
+        $data = DB::connection('sqlsrv_ems2')->table('FRCST_PO_DATE_SET')->where('month', $month)->where('remarks', $remarks)->first();
+
+        // $data = array_map(function ($value) {
+        //     return (array)$value;
+        // }, $data);
+
+        return $data;
     }
 }
