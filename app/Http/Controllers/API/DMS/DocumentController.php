@@ -109,6 +109,11 @@ class DocumentController extends BaseController
         return $this->handleResponse('data:' . $files['mime'] . ';base64,' . base64_encode($files['file']), 'Data Found !!');
     }
 
+    public function sourceOnly($id)
+    {
+        return $this->show($id)['data'];
+    }
+
     /**
      * Show the form for editing the specified resource.
      *
