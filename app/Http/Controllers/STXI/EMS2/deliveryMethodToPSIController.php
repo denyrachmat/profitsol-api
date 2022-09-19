@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\DB;
 
 use App\Models\STXI\EMS2\SPQMaster;
 use App\Models\STXI\EMS2\DLVTYOHist;
+use App\Models\STXI\EMS2\DLVTYODet;
 
 use App\Jobs\STXI\EMS2\DLVSMTTYOEmailQueue;
 use App\Exports\STXT\exportDeliveryHist;
@@ -105,7 +106,9 @@ class deliveryMethodToPSIController extends BaseController
             'DEL_DATE'
         ],
         $withDet = false,
-        $isDLVStock = false
+        $isDLVStock = false,
+        $fromDate = false,
+        $item = ''
     ) {
         $data = DB::connection('sqlsrv_ems2')->table('V_DLV_TYO_HIST')->select(
             array_merge($sel, [
@@ -127,10 +130,18 @@ class deliveryMethodToPSIController extends BaseController
             ->groupBy($sel)
             ->orderBy('DEL_DATE');
 
-            // $data->whereIn('IO_REMARK', ['FROM_SMT', 'TO_ITEC', 'TO_ITEC_STOCKDLV']);
+        // $data->whereIn('IO_REMARK', ['FROM_SMT', 'TO_ITEC', 'TO_ITEC_STOCKDLV']);
 
         if (!empty($date)) {
-            $data->where('DEL_DATE', $date);
+            if ($fromDate) {
+                $data->where('DEL_DATE', '>=', $date);
+            } else {
+                $data->where('DEL_DATE', $date);
+            }
+        }
+
+        if (!empty($item)) {
+            $data->where('MITM_ITMCD', $item);
         }
 
         $dataHasil = array_map(function ($value) {
@@ -147,7 +158,7 @@ class deliveryMethodToPSIController extends BaseController
                             'MITM_MODELCD',
                             'MITM_ITMD1',
                             'DEL_DATE'
-                        ], false, $isDLVStock)
+                        ], false, $isDLVStock, false)
                     ]
                 );
             }
@@ -181,7 +192,7 @@ class deliveryMethodToPSIController extends BaseController
             //     ];
             // }
             $hasilWithBarcode = (int)$dataCPO->BAL_CPO_STXI_ITEC > 0
-                ? (!$getSPQDataPersheet || (int)$req->delivery[$key] < (int)$getSPQDataPersheet || ((int)($req->delivery[$key]/ (int)$getSPQDataPersheet) !== ($req->delivery[$key]/ (int)$getSPQDataPersheet))
+                ? (!$getSPQDataPersheet || (int)$req->delivery[$key] < (int)$getSPQDataPersheet || ((int)($req->delivery[$key] / (int)$getSPQDataPersheet) !== ($req->delivery[$key] / (int)$getSPQDataPersheet))
                     ? 0
                     : ($req->delivery[$key] > (int)$dataCPO->BAL_CPO_STXI_ITEC && $req->delivery[$key] > (int)$getSPQDataPersheet
                         ? (int)$dataCPO->BAL_CPO_STXI_ITEC
@@ -215,7 +226,7 @@ class deliveryMethodToPSIController extends BaseController
             $hasil->whereIn('IO_REMARK', ['TO_ITEC_STOCKDLV', 'FROM_STOCK'])->delete();
         }
 
-        return $this->handleResponse($hasil, 'Data delivery on '.$date.' deleted !');
+        return $this->handleResponse($hasil, 'Data delivery on ' . $date . ' deleted !');
     }
 
     public function DLVCalcSPQ($qty, $spq, $hasil = [])
@@ -267,11 +278,11 @@ class deliveryMethodToPSIController extends BaseController
 
         foreach ($req->data as $key => $value) {
             if (!empty($value['withBarcode'])) {
-                DLVTYOHist::where('DEL_DATE', $req->date)->where('MITM_MODELCD', $value['model'])->where('IO_REMARK', $req->dlvStoc ? 'TO_ITEC_STOCKDLV': 'TO_ITEC')->delete();
+                DLVTYOHist::where('DEL_DATE', $req->date)->where('MITM_MODELCD', $value['model'])->where('IO_REMARK', $req->dlvStoc ? 'TO_ITEC_STOCKDLV' : 'TO_ITEC')->delete();
                 $hasil[] = DLVTYOHist::create([
                     'MITM_MODELCD' => $value['model'],
                     'IO_QTY' => $value['withBarcode'] * -1,
-                    'IO_REMARK' => $req->dlvStoc ? 'TO_ITEC_STOCKDLV': 'TO_ITEC',
+                    'IO_REMARK' => $req->dlvStoc ? 'TO_ITEC_STOCKDLV' : 'TO_ITEC',
                     'IPP_REMARK' => $value['ipp'],
                     'RANK_REMARK' => $value['rank'],
                     'DEL_DATE' => $req->date,
@@ -303,7 +314,6 @@ class deliveryMethodToPSIController extends BaseController
             }
 
             if (!$req->dlvStoc) {
-
             }
         }
 
@@ -395,5 +405,86 @@ class deliveryMethodToPSIController extends BaseController
         })->toArray();
 
         return array_values($getCPO);
+    }
+
+    public function fifoUpdateDLV($date = null, $item = '', $isSave = false)
+    {
+        $data = $this->DLVGetData($date, [
+            'MITM_MODELCD',
+            'MITM_ITMD1',
+            'DEL_DATE'
+        ], false, true, $isSave, $item);
+
+        // return $data;
+
+        $hasil = [];
+        foreach ($data as $key => $value) {
+            if ($value['TOT_SMT_DLV'] > 0 || $value['TOT_OUT_STOCK_DLV'] > 0) {
+                $ttlDlv = $value['TOT_OUT_BC_DLV'] + $value['TOT_OUT_STOCK_DLV'];
+                $getID = DLVTYOHist::select('id', 'IO_REMARK')
+                    ->where('MITM_MODELCD', $value['MITM_MODELCD'])
+                    ->where('DEL_DATE', $value['DEL_DATE'])
+                    ->whereIn('IO_REMARK', ['TO_ITEC', 'TO_ITEC_STOCKDLV'])
+                    ->get()
+                    ->toArray();
+
+                $hasil[$value['MITM_MODELCD']]['MODELCD'] = $value['MITM_MODELCD'];
+                $hasil[$value['MITM_MODELCD']]['MODELDESC'] = $value['MITM_ITMD1'];
+
+                foreach ($getID as $keyID => $valueID) {
+                    if ($valueID['IO_REMARK'] == 'TO_ITEC') {
+                        $valFifo = "'" . $value['MITM_MODELCD'] . "', " . $value['TOT_OUT_BC_DLV'] . ", '" . date('Y-m-01', strtotime($date)) . "'";
+                        $hasil[$value['MITM_MODELCD']][$value['DEL_DATE']][$keyID]['DLVQT'] = $value['TOT_OUT_BC_DLV'];
+                    } else {
+                        $valFifo = "'" . $value['MITM_MODELCD'] . "', " . $value['TOT_OUT_STOCK_DLV'] . ", '" . date('Y-m-01', strtotime($date)) . "'";
+                        $hasil[$value['MITM_MODELCD']][$value['DEL_DATE']][$keyID]['DLVQT'] = $value['TOT_OUT_STOCK_DLV'];
+                    }
+
+                    if ($isSave) {
+                        $dataFIfo = DB::connection('sqlsrv_mega_tyo')
+                            ->table("Z_STXI_FIFO_OS_SO(" . $valFifo . ")")
+                            ->get()
+                            ->toArray();
+
+                        DLVTYODet::where('DRST_ID', $valueID['id'])->delete();
+
+                        $statInsert = [];
+                        foreach ($dataFIfo as $keyInsert => $valueInsert) {
+                            $statInsert[] = DLVTYODet::create([
+                                'DRST_ID' => (int)$valueID['id'],
+                                'DRD_DELNO' => (string)$valueInsert->SSO2_DELNO,
+                                'DRD_PRICE' => round($valueInsert->SSO2_SLPRC, 2),
+                                'DRD_QTY' => (int)$valueInsert->FIFO_QT,
+                            ]);
+                        }
+                    } else {
+                        $statInsert = DLVTYODet::where('DRST_ID', $valueID['id'])->get()->toArray();
+                    }
+
+                    $hasil[$value['MITM_MODELCD']][$value['DEL_DATE']][$keyID]['ID_HIST'] = $valueID['id'];
+                    $hasil[$value['MITM_MODELCD']][$value['DEL_DATE']][$keyID]['FIFO_DATA'] = $statInsert;
+                }
+            }
+        }
+
+        return $hasil;
+    }
+
+    public function calculateFIFO($data, $qty, $hasil = [])
+    {
+        $nowData = current($data);
+        // return $nowData;
+        if (isset($nowData['FIFO_QT'])) {
+            $total = $nowData['FIFO_QT'] - $qty;
+
+            if ($total > 0) {
+                $hasil[] = $nowData;
+            } else {
+                next($data);
+                $hasil[] = $this->calculateFIFO($data, $total);
+            }
+        }
+
+        return $hasil;
     }
 }

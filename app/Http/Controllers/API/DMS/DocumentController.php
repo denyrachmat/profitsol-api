@@ -104,9 +104,15 @@ class DocumentController extends BaseController
                 ? $getData['ddm_doc_real_name']
                 : $getData['ddm_doc_name']
         );
+
+        $hasil = [
+            'base64Files' => 'data:' . $files['mime'] . ';base64,' . base64_encode($files['file']),
+            'mime' => $files['mime'],
+            'ext' => $files['ext'],
+        ];
         // return $files;
 
-        return $this->handleResponse('data:' . $files['mime'] . ';base64,' . base64_encode($files['file']), 'Data Found !!');
+        return $this->handleResponse($hasil, 'Data Found !!');
     }
 
     public function sourceOnly($id)

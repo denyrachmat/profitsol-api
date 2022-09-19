@@ -80,6 +80,9 @@ Route::group(['prefix' => 'div'], function () {
         Route::post('uploadSPQ', [deliveryMethodToPSIController::class, 'UploadSPQ']);
         Route::get('syncBOMToPSI', [deliveryMethodToPSIController::class, 'syncBOMToPSI']);
         Route::get('DLVStockDelivery/{date}/{item?}', [deliveryMethodToPSIController::class, 'DLVStockDelivery']);
+
+        Route::get('fifoData/{date?}/{item?}/{saved?}', [deliveryMethodToPSIController::class, 'fifoUpdateDLV']);
+        Route::get('getFifoData/{date?}/{item?}', [deliveryMethodToPSIController::class, 'showFifoDLV']);
         // End DLV Method SMT
 
         // Start PO Summary

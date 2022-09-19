@@ -101,13 +101,15 @@ trait FolderDocumentTraits
 
     public function openFiles($author, $path, $file)
     {
-        logger($this->getAliasFolderbyAuthor($author) . '/' . $path . '/' . $file);
+        // logger($this->getAliasFolderbyAuthor($author) . '/' . $path . '/' . $file);
         // return $this->getAliasFolderbyAuthor($author, 'path') . '/' . $path . '/' . $file;
         $files = Storage::disk($this->getAliasFolderbyAuthor($author, 'root'))->get($this->getAliasFolderbyAuthor($author) . '/' . $path . '/' . $file);
         $mime = Storage::disk($this->getAliasFolderbyAuthor($author, 'root'))->mimeType($this->getAliasFolderbyAuthor($author) . '/' . $path . '/' . $file);
+        $ext = explode('.', $file)[1];
         return [
             'file' => $files,
             'mime' => $mime,
+            'ext' => $ext,
             'test' => $this->getAliasFolderbyAuthor($author, 'path') . '/' . $path . '/' . $file
         ];
     }
