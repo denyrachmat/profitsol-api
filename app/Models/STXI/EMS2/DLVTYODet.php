@@ -19,5 +19,6 @@ class DLVTYODet extends Model
         'DRD_DELNO',
         'DRD_PRICE',
         'DRD_QTY',
+        'DRD_DELDT',
     ];
 }

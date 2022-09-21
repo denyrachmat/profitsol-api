@@ -93,9 +93,15 @@ class deliveryMethodToPSIController extends BaseController
         return $this->handleResponse($data, 'Data deleted !');
     }
 
-    public function DLVIndex()
+    public function DLVIndex($date = '')
     {
-        return $this->handleResponse($this->DLVGetData(null, ['DEL_DATE'], true, true), 'Data found !');
+        $data = $this->DLVGetData($date, !empty($date) ? [
+            'MITM_MODELCD',
+            'MITM_ITMD1',
+            'DEL_DATE'
+        ] : ['DEL_DATE'], !empty($date), true, false, '', true);
+
+        return $this->handleResponse($data, 'Data found !');
     }
 
     public function DLVGetData(
@@ -108,7 +114,8 @@ class deliveryMethodToPSIController extends BaseController
         $withDet = false,
         $isDLVStock = false,
         $fromDate = false,
-        $item = ''
+        $item = '',
+        $withFifo = false
     ) {
         $data = DB::connection('sqlsrv_ems2')->table('V_DLV_TYO_HIST')->select(
             array_merge($sel, [
@@ -144,6 +151,10 @@ class deliveryMethodToPSIController extends BaseController
             $data->where('MITM_ITMCD', $item);
         }
 
+        // if ($withFifo) {
+        //     $data->leftJoin('DLV_REQ_DET', 'DLV_REQ_SMT_TYO.id', 'DRST_ID');
+        // }
+
         $dataHasil = array_map(function ($value) {
             return (array)$value;
         }, $data->get()->toArray());
@@ -151,22 +162,64 @@ class deliveryMethodToPSIController extends BaseController
         if ($withDet) {
             $dataWithDet = [];
             foreach ($dataHasil as $key => $value) {
-                $dataWithDet[] = array_merge(
-                    $value,
-                    [
-                        'det' => $this->DLVGetData($value['DEL_DATE'], [
-                            'MITM_MODELCD',
-                            'MITM_ITMD1',
-                            'DEL_DATE'
-                        ], false, $isDLVStock, false)
-                    ]
-                );
+                $dataDet = $this->DLVGetData($value['DEL_DATE'], [
+                    'MITM_MODELCD',
+                    'MITM_ITMD1',
+                    'DEL_DATE'
+                ], false, $isDLVStock, false);
+
+                // $dataFifo = [];
+                // foreach ($dataDet as $keyDet => $valueDet) {
+                //     $dataFifo[] = array_merge(
+                //         $valueDet
+                //     );
+                // }
+
+                if ($withFifo) {
+                    $hasilFIFO = 0;
+                    $dataFIFO = $this->fifoUpdateDLV($value['DEL_DATE'], $value['MITM_MODELCD'], false, true);
+                    foreach ($dataFIFO as $keyFIFO => $valueFIFO) {
+                        $hasilFIFO += $valueFIFO['DRD_QTY'];
+                    }
+
+                    $dataWithDet[] = array_merge(
+                        ['no' => $key + 1],
+                        $value,
+                        [
+                            'TOTAL_FIFO' => $hasilFIFO
+                        ]
+                    );
+                } else {
+                    $dataWithDet[] = array_merge(
+                        ['no' => $key + 1],
+                        $value
+                    );
+                }
             }
 
             return $dataWithDet;
         }
 
-        return $dataHasil;
+        $dataWithDet = [];
+        foreach ($dataHasil as $key => $value) {
+            $hasilFIFO = 0;
+            if ($withFifo) {
+                $dataFIFO = $this->fifoUpdateDLV($value['DEL_DATE'], '', false, true);
+                foreach ($dataFIFO as $keyFIFO => $valueFIFO) {
+                    $hasilFIFO += $valueFIFO['DRD_QTY'];
+                }
+            }
+            
+            $dataWithDet[] = array_merge(
+                ['no' => $key + 1],
+                $value,
+                [
+                    'TOTAL_FIFO' => $hasilFIFO
+                ]
+            );
+        }
+
+        return $dataWithDet;
     }
 
     public function DLVWithBarcode(Request $req)
@@ -407,7 +460,7 @@ class deliveryMethodToPSIController extends BaseController
         return array_values($getCPO);
     }
 
-    public function fifoUpdateDLV($date = null, $item = '', $isSave = false)
+    public function fifoUpdateDLV($date = null, $item = '', $isSave = false, $byItemOnly = false)
     {
         $data = $this->DLVGetData($date, [
             'MITM_MODELCD',
@@ -419,8 +472,8 @@ class deliveryMethodToPSIController extends BaseController
 
         $hasil = [];
         foreach ($data as $key => $value) {
-            if ($value['TOT_SMT_DLV'] > 0 || $value['TOT_OUT_STOCK_DLV'] > 0) {
-                $ttlDlv = $value['TOT_OUT_BC_DLV'] + $value['TOT_OUT_STOCK_DLV'];
+            if ($value['TOT_OUT_BC_DLV'] > 0 || $value['TOT_OUT_STOCK_DLV'] > 0) {
+                // $ttlDlv = $value['TOT_OUT_BC_DLV'] + $value['TOT_OUT_STOCK_DLV'];
                 $getID = DLVTYOHist::select('id', 'IO_REMARK')
                     ->where('MITM_MODELCD', $value['MITM_MODELCD'])
                     ->where('DEL_DATE', $value['DEL_DATE'])
@@ -428,19 +481,26 @@ class deliveryMethodToPSIController extends BaseController
                     ->get()
                     ->toArray();
 
-                $hasil[$value['MITM_MODELCD']]['MODELCD'] = $value['MITM_MODELCD'];
-                $hasil[$value['MITM_MODELCD']]['MODELDESC'] = $value['MITM_ITMD1'];
+                // return $getID;
 
+                // if ($value['MITM_MODELCD'] == 'F65929-09V') {
+                //     return $getID;
+                // }
+
+                if (!$byItemOnly) {
+                    $hasil[$value['MITM_MODELCD']]['MODELCD'] = $value['MITM_MODELCD'];
+                    $hasil[$value['MITM_MODELCD']]['MODELDESC'] = $value['MITM_ITMD1'];
+                }
                 foreach ($getID as $keyID => $valueID) {
-                    if ($valueID['IO_REMARK'] == 'TO_ITEC') {
-                        $valFifo = "'" . $value['MITM_MODELCD'] . "', " . $value['TOT_OUT_BC_DLV'] . ", '" . date('Y-m-01', strtotime($date)) . "'";
-                        $hasil[$value['MITM_MODELCD']][$value['DEL_DATE']][$keyID]['DLVQT'] = $value['TOT_OUT_BC_DLV'];
-                    } else {
-                        $valFifo = "'" . $value['MITM_MODELCD'] . "', " . $value['TOT_OUT_STOCK_DLV'] . ", '" . date('Y-m-01', strtotime($date)) . "'";
-                        $hasil[$value['MITM_MODELCD']][$value['DEL_DATE']][$keyID]['DLVQT'] = $value['TOT_OUT_STOCK_DLV'];
-                    }
-
                     if ($isSave) {
+                        if ($valueID['IO_REMARK'] == 'TO_ITEC') {
+                            $valFifo = "'" . $value['MITM_MODELCD'] . "', " . $value['TOT_OUT_BC_DLV'] . ", '" . date('Y-m-01', strtotime($date)) . "'";
+                            $hasil[$value['MITM_MODELCD']]['DATA_DATE'][$value['DEL_DATE']][$keyID]['DLVQT'] = $value['TOT_OUT_BC_DLV'];
+                        } else {
+                            $valFifo = "'" . $value['MITM_MODELCD'] . "', " . $value['TOT_OUT_STOCK_DLV'] . ", '" . date('Y-m-01', strtotime($date)) . "'";
+                            $hasil[$value['MITM_MODELCD']]['DATA_DATE'][$value['DEL_DATE']][$keyID]['DLVQT'] = $value['TOT_OUT_STOCK_DLV'];
+                        }
+
                         $dataFIfo = DB::connection('sqlsrv_mega_tyo')
                             ->table("Z_STXI_FIFO_OS_SO(" . $valFifo . ")")
                             ->get()
@@ -454,20 +514,50 @@ class deliveryMethodToPSIController extends BaseController
                                 'DRST_ID' => (int)$valueID['id'],
                                 'DRD_DELNO' => (string)$valueInsert->SSO2_DELNO,
                                 'DRD_PRICE' => round($valueInsert->SSO2_SLPRC, 2),
-                                'DRD_QTY' => (int)$valueInsert->FIFO_QT,
+                                'DRD_QTY' => (int)$valueInsert->USED_QT,
+                                'DRD_DELDT' => $valueInsert->SSO2_DELDT,
                             ]);
                         }
-                    } else {
-                        $statInsert = DLVTYODet::where('DRST_ID', $valueID['id'])->get()->toArray();
-                    }
 
-                    $hasil[$value['MITM_MODELCD']][$value['DEL_DATE']][$keyID]['ID_HIST'] = $valueID['id'];
-                    $hasil[$value['MITM_MODELCD']][$value['DEL_DATE']][$keyID]['FIFO_DATA'] = $statInsert;
+                        $hasil[$value['MITM_MODELCD']]['DATA_DATE'][$value['DEL_DATE']][$keyID]['ID_HIST'] = $valueID['id'];
+                        $hasil[$value['MITM_MODELCD']]['DATA_DATE'][$value['DEL_DATE']][$keyID]['FIFO_DATA'] = $statInsert;
+                        // $hasil[$value['MITM_MODELCD']]['DATA_DATE'][$value['DEL_DATE']][$keyID]['FIFO_DATA_TEST'] = $dataFIfo;
+                    } else {
+                        if ($byItemOnly) {
+                            $statInsert = DLVTYODet::select(
+                                'MITM_MODELCD',
+                                'IO_REMARK',
+                                'DRD_DELNO',
+                                'DRD_PRICE',
+                                'DRD_QTY',
+                                'DRD_DELDT'
+                            )->where('DRST_ID', $valueID['id'])
+                            ->join('DLV_REQ_SMT_TYO', 'DLV_REQ_SMT_TYO.id', 'DRST_ID')
+                            ->get()
+                            ->toArray();
+                            $hasil = array_merge($hasil, $statInsert);
+                            // array_push($hasil, $statInsert);
+                        } else {
+                            if ($valueID['IO_REMARK'] == 'TO_ITEC') {
+                                $hasil[$value['MITM_MODELCD']]['BC_DLV']['TOTAL'] = $value['TOT_OUT_BC_DLV'];
+                                $statInsert = DLVTYODet::where('DRST_ID', $valueID['id'])->get()->toArray();
+
+                                $hasil[$value['MITM_MODELCD']]['BC_DLV']['ID_HIST'] = $valueID['id'];
+                                $hasil[$value['MITM_MODELCD']]['BC_DLV']['FIFO_DATA'] = $statInsert;
+                            } else {
+                                $hasil[$value['MITM_MODELCD']]['STOCK_DLV']['TOTAL'] = $value['TOT_OUT_STOCK_DLV'];
+                                $statInsert = DLVTYODet::where('DRST_ID', $valueID['id'])->get()->toArray();
+
+                                $hasil[$value['MITM_MODELCD']]['STOCK_DLV']['ID_HIST'] = $valueID['id'];
+                                $hasil[$value['MITM_MODELCD']]['STOCK_DLV']['FIFO_DATA'] = $statInsert;
+                            }
+                        }
+                    }
                 }
             }
         }
 
-        return $hasil;
+        return array_values($hasil);
     }
 
     public function calculateFIFO($data, $qty, $hasil = [])

@@ -70,7 +70,7 @@ Route::group(['prefix' => 'div'], function () {
         Route::delete('spq/{id}', [deliveryMethodToPSIController::class, 'SPQDeleteData']);
         Route::get('spqChecker/{qty}/{qtyDel}/{model}', [deliveryMethodToPSIController::class, 'DLVCalSPQRes']);
 
-        Route::get('dlv', [deliveryMethodToPSIController::class, 'DLVIndex']);
+        Route::get('dlv/{date?}', [deliveryMethodToPSIController::class, 'DLVIndex']);
         Route::get('dlvEmail/{date}', [deliveryMethodToPSIController::class, 'DLVSendEmail']);
         Route::post('dlv', [deliveryMethodToPSIController::class, 'DLVWithBarcode']);
         Route::post('dlvStore', [deliveryMethodToPSIController::class, 'DLVStore']);
@@ -81,7 +81,7 @@ Route::group(['prefix' => 'div'], function () {
         Route::get('syncBOMToPSI', [deliveryMethodToPSIController::class, 'syncBOMToPSI']);
         Route::get('DLVStockDelivery/{date}/{item?}', [deliveryMethodToPSIController::class, 'DLVStockDelivery']);
 
-        Route::get('fifoData/{date?}/{item?}/{saved?}', [deliveryMethodToPSIController::class, 'fifoUpdateDLV']);
+        Route::get('fifoData/{date?}/{item?}/{saved?}/{byItemOnly?}', [deliveryMethodToPSIController::class, 'fifoUpdateDLV']);
         Route::get('getFifoData/{date?}/{item?}', [deliveryMethodToPSIController::class, 'showFifoDLV']);
         // End DLV Method SMT
 
