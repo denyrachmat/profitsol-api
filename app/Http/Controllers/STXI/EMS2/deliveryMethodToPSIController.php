@@ -14,6 +14,7 @@ use App\Models\STXI\EMS2\DLVTYODet;
 
 use App\Jobs\STXI\EMS2\DLVSMTTYOEmailQueue;
 use App\Exports\STXT\exportDeliveryHist;
+use App\Exports\STXI\ExportDOFifo;
 
 class deliveryMethodToPSIController extends BaseController
 {
@@ -297,7 +298,7 @@ class deliveryMethodToPSIController extends BaseController
         }
     }
 
-    public function DLVCalSPQRes($qty, $delivery, $model)
+    public function DLVCalSPQRes($qty, $delivery, $model, $qtyArray = false)
     {
         $getSPQData = SPQMaster::where('MITM_MODELCD', $model)->first();
         if ($qty <= 0 || empty($getSPQData)) {
@@ -311,14 +312,20 @@ class deliveryMethodToPSIController extends BaseController
         $data = -1;
 
         foreach ($getSPQArray as $keySPQArr => $valueSPQArr) {
-            if ($keySPQArr > 0 && $valueSPQArr === $getSPQArray[$keySPQArr - 1]) {
-                $totalBox = $totalBox + 1;
-
-                $hasilSPQ[$data] = $valueSPQArr . ' X ' . $totalBox;
+            if (!$qtyArray) {
+                if ($keySPQArr > 0 && $valueSPQArr === $getSPQArray[$keySPQArr - 1]) {
+                    $totalBox = $totalBox + 1;
+    
+                    $hasilSPQ[$data] = $valueSPQArr . ' X ' . $totalBox;
+                } else {
+                    $data++;
+                    $totalBox = 1;
+                    $hasilSPQ[$data] = $valueSPQArr . ' X ' . $totalBox;
+                }
             } else {
                 $data++;
                 $totalBox = 1;
-                $hasilSPQ[$data] = $valueSPQArr . ' X ' . $totalBox;
+                $hasilSPQ[$data] = $valueSPQArr;
             }
         }
 
@@ -340,6 +347,8 @@ class deliveryMethodToPSIController extends BaseController
                     'RANK_REMARK' => $value['rank'],
                     'DEL_DATE' => $req->date,
                 ]);
+
+                $this->fifoUpdateDLV($req->date, $value['model'], true, false);
             }
 
             if (!empty($value['delivery'])) {
@@ -364,9 +373,6 @@ class deliveryMethodToPSIController extends BaseController
                     'RANK_REMARK' => $value['rank'],
                     'DEL_DATE' => $req->date,
                 ]);
-            }
-
-            if (!$req->dlvStoc) {
             }
         }
 
@@ -460,7 +466,7 @@ class deliveryMethodToPSIController extends BaseController
         return array_values($getCPO);
     }
 
-    public function fifoUpdateDLV($date = null, $item = '', $isSave = false, $byItemOnly = false)
+    public function fifoUpdateDLV($date = null, $item = '', $isSave = false, $byItemOnly = false, $dateFifo = null)
     {
         $data = $this->DLVGetData($date, [
             'MITM_MODELCD',
@@ -494,10 +500,10 @@ class deliveryMethodToPSIController extends BaseController
                 foreach ($getID as $keyID => $valueID) {
                     if ($isSave) {
                         if ($valueID['IO_REMARK'] == 'TO_ITEC') {
-                            $valFifo = "'" . $value['MITM_MODELCD'] . "', " . $value['TOT_OUT_BC_DLV'] . ", '" . date('Y-m-01', strtotime($date)) . "'";
+                            $valFifo = "'" . $value['MITM_MODELCD'] . "', " . $value['TOT_OUT_BC_DLV'] . ", NULL, '" . date('Y-m-01', strtotime($date)) . "'";
                             $hasil[$value['MITM_MODELCD']]['DATA_DATE'][$value['DEL_DATE']][$keyID]['DLVQT'] = $value['TOT_OUT_BC_DLV'];
                         } else {
-                            $valFifo = "'" . $value['MITM_MODELCD'] . "', " . $value['TOT_OUT_STOCK_DLV'] . ", '" . date('Y-m-01', strtotime($date)) . "'";
+                            $valFifo = "'" . $value['MITM_MODELCD'] . "', " . $value['TOT_OUT_STOCK_DLV'] . ", NULL, '" . date('Y-m-01', strtotime($date)) . "'";
                             $hasil[$value['MITM_MODELCD']]['DATA_DATE'][$value['DEL_DATE']][$keyID]['DLVQT'] = $value['TOT_OUT_STOCK_DLV'];
                         }
 
@@ -576,5 +582,122 @@ class deliveryMethodToPSIController extends BaseController
         }
 
         return $hasil;
+    }
+
+    public function exportDOExcel($date)
+    {
+        ini_set('memory_limit', '2G');
+        $data = $this->DLVGetData($date, [
+            'MITM_MODELCD',
+            'MITM_ITMD1',
+            'DEL_DATE',
+            'IPP_REMARK',
+            'RANK_REMARK'
+        ], !empty($date), true, false, '', true);
+
+        // return $data;
+
+        $hasilData = [];
+        $totalDelivery = 0;
+        $totalWBarcode = 0;
+        $totalWOBarcode = 0;
+        $totalSMTDlv = 0;
+
+        $countMax = 0;
+        foreach ($data as $key => $value) {
+            $fifoUpdate = [];
+            foreach ($this->fifoUpdateDLV($date, $value['MITM_MODELCD'], false, true) as $keyFIFO => $valueFIFO) {
+                $fifoUpdate [] = array_merge(
+                    $valueFIFO,
+                    // [
+                    //     'SPQ' => $this->DLVCalSPQRes($valueFIFO['DRD_QTY'], 0,$value['MITM_MODELCD'], true)
+                    // ]
+                );
+            }
+            $getDataSPQ = SPQMaster::where('MITM_MODELCD', $value['MITM_MODELCD'])->first();
+            $getSPQFet = $this->FIFOSPQ($fifoUpdate, $this->SPQIndex($value['MITM_MODELCD'])->original['data']['MITM_SPQ_CHECK'], $this->SPQIndex($value['MITM_MODELCD'])->original['data']['MITM_SPQ_CHECK'], $value['TOT_OUT_BC_DLV'] + $value['TOT_OUT_STOCK_DLV']);
+            $countMax = count($getSPQFet) > $countMax ? count($getSPQFet) : $countMax;
+
+            $totalDelivery += $value['TOT_INC_DLV'];
+            $totalWBarcode += $value['TOT_OUT_BC_DLV'];
+            $totalWOBarcode += $value['TOT_OUT_WOBC_DLV'];
+            $totalSMTDlv += $value['TOT_SMT_DLV'];
+            $hasilData[] = array_merge(
+                $value,
+                [
+                    'FIFO_DET' => $fifoUpdate,
+                    'SPQ_TOT' => $getDataSPQ,
+                    'SPQ_FET' => $getSPQFet,
+                    // 'SPQ_DATA' => $this->SPQIndex($value['MITM_MODELCD'])->original['data']
+                ]
+            );
+        }
+
+        return $hasilData;
+
+        Excel::store(new ExportDOFifo($hasilData, $date), 'export_fifo_delivery.xlsx', 'public');
+
+        return 'storage/app/public/export_fifo_delivery.xlsx';
+    }
+
+    public function FIFOSPQ($data, $spq, $realSPQ, $sisaQty, $sisaFIFOQty = 0, $barcode = 0, $hasil = [])
+    {
+        $nowData = current($data);
+        // logger($hasil);
+        if ($nowData) {
+            $total = $sisaQty - ($sisaFIFOQty === 0 ? $nowData['DRD_QTY'] : $sisaFIFOQty);
+            // return $total;
+            if ($total > 0) { // Jika total delivery masih ada maka cek SPQ 
+                $totalSPQ = $spq - ($sisaFIFOQty === 0 ? $nowData['DRD_QTY'] : $sisaFIFOQty);
+
+                logger(json_encode(array_merge(
+                    $nowData,
+                    ['DRD_QTY' => $realSPQ],
+                    ['DRD_QTY_REAL' => $nowData['DRD_QTY']],
+                    ['REAL_DRD_QTY' => $realSPQ],
+                    ['COUNT_DRD_QTY' => $totalSPQ],
+                    ['barcode_iter' => $barcode],
+                    ['total' => $total],
+                )));
+                if ($totalSPQ > 0) { // Jika SPQ masih ada stock maka kurangi stock SPQ sampai habis
+                    $hasil['BARCODE-'.($barcode + 1)][] = array_merge(
+                        $nowData,
+                        ['DRD_QTY' => $nowData['DRD_QTY']],
+                        ['DRD_QTY_REAL' => $nowData['DRD_QTY']],
+                        ['REAL_DRD_QTY' => $realSPQ],
+                        ['COUNT_DRD_QTY' => $nowData['DRD_QTY'] - $spq],
+                        ['barcode_iter' => $barcode],
+                    );
+                    next($data);
+                    return $this->FIFOSPQ($data, $totalSPQ, $realSPQ, 0, $total, $barcode, $hasil);
+                } elseif($totalSPQ < 0) {
+                    $hasil['BARCODE-'.($barcode + 1)][] = array_merge(
+                        $nowData,
+                        ['DRD_QTY' => $realSPQ],
+                        ['DRD_QTY_REAL' => $nowData['DRD_QTY']],
+                        ['REAL_DRD_QTY' => $realSPQ],
+                        ['COUNT_DRD_QTY' => $totalSPQ],
+                        ['barcode_iter' => $barcode],
+                    );
+                    // next($data);
+                    return $this->FIFOSPQ($data, $realSPQ, $realSPQ, $totalSPQ * -1, $total, $barcode, $hasil);
+                } else { // JIka stock fifo sudah 0
+                    $hasil['BARCODE-'.($barcode + 1)][] = array_merge(
+                        $nowData,
+                        ['DRD_QTY' => $spq],
+                        ['DRD_QTY_REAL' => $nowData['DRD_QTY']],
+                        ['REAL_DRD_QTY' => $realSPQ],
+                        ['COUNT_DRD_QTY' => $nowData['DRD_QTY'] - $spq],
+                        ['barcode_iter' => $barcode],
+                    );;
+                    next($data);
+                    return $this->FIFOSPQ($data, $realSPQ, $realSPQ, $total, 0, $barcode + 1, $hasil);
+                }
+            } else {
+                return $hasil;
+            }
+        } else {
+            return $hasil;
+        }
     }
 }
