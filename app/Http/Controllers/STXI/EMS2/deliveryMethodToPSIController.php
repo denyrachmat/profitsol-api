@@ -210,7 +210,7 @@ class deliveryMethodToPSIController extends BaseController
                     $hasilFIFO += $valueFIFO['DRD_QTY'];
                 }
             }
-            
+
             $dataWithDet[] = array_merge(
                 ['no' => $key + 1],
                 $value,
@@ -315,7 +315,7 @@ class deliveryMethodToPSIController extends BaseController
             if (!$qtyArray) {
                 if ($keySPQArr > 0 && $valueSPQArr === $getSPQArray[$keySPQArr - 1]) {
                     $totalBox = $totalBox + 1;
-    
+
                     $hasilSPQ[$data] = $valueSPQArr . ' X ' . $totalBox;
                 } else {
                     $data++;
@@ -538,9 +538,9 @@ class deliveryMethodToPSIController extends BaseController
                                 'DRD_QTY',
                                 'DRD_DELDT'
                             )->where('DRST_ID', $valueID['id'])
-                            ->join('DLV_REQ_SMT_TYO', 'DLV_REQ_SMT_TYO.id', 'DRST_ID')
-                            ->get()
-                            ->toArray();
+                                ->join('DLV_REQ_SMT_TYO', 'DLV_REQ_SMT_TYO.id', 'DRST_ID')
+                                ->get()
+                                ->toArray();
                             $hasil = array_merge($hasil, $statInsert);
                             // array_push($hasil, $statInsert);
                         } else {
@@ -607,7 +607,7 @@ class deliveryMethodToPSIController extends BaseController
         foreach ($data as $key => $value) {
             $fifoUpdate = [];
             foreach ($this->fifoUpdateDLV($date, $value['MITM_MODELCD'], false, true) as $keyFIFO => $valueFIFO) {
-                $fifoUpdate [] = array_merge(
+                $fifoUpdate[] = array_merge(
                     $valueFIFO,
                     // [
                     //     'SPQ' => $this->DLVCalSPQRes($valueFIFO['DRD_QTY'], 0,$value['MITM_MODELCD'], true)
@@ -633,65 +633,136 @@ class deliveryMethodToPSIController extends BaseController
             );
         }
 
-        return $hasilData;
+        // return $hasilData;
 
         Excel::store(new ExportDOFifo($hasilData, $date), 'export_fifo_delivery.xlsx', 'public');
 
         return 'storage/app/public/export_fifo_delivery.xlsx';
     }
 
-    public function FIFOSPQ($data, $spq, $realSPQ, $sisaQty, $sisaFIFOQty = 0, $barcode = 0, $hasil = [])
+    public function FIFOSPQ($data, $spq, $realSPQ, $sisaQty, $sisaFIFOQty = 0, $barcode = 0, $hasil = [], $boxCount = 0, $totalQty = 0, $beforeData = [])
     {
         $nowData = current($data);
         // logger($hasil);
         if ($nowData) {
-            $total = $sisaQty - ($sisaFIFOQty === 0 ? $nowData['DRD_QTY'] : $sisaFIFOQty);
+            $total = $sisaQty - $realSPQ;
             // return $total;
-            if ($total > 0) { // Jika total delivery masih ada maka cek SPQ 
-                $totalSPQ = $spq - ($sisaFIFOQty === 0 ? $nowData['DRD_QTY'] : $sisaFIFOQty);
+            if ($total >= 0) { // Jika total delivery masih ada maka cek SPQ
+                $totalSPQ = $spq - ($sisaFIFOQty > 0 ? $sisaFIFOQty : $nowData['DRD_QTY']);
 
-                logger(json_encode(array_merge(
-                    $nowData,
-                    ['DRD_QTY' => $realSPQ],
-                    ['DRD_QTY_REAL' => $nowData['DRD_QTY']],
-                    ['REAL_DRD_QTY' => $realSPQ],
-                    ['COUNT_DRD_QTY' => $totalSPQ],
-                    ['barcode_iter' => $barcode],
-                    ['total' => $total],
-                )));
                 if ($totalSPQ > 0) { // Jika SPQ masih ada stock maka kurangi stock SPQ sampai habis
-                    $hasil['BARCODE-'.($barcode + 1)][] = array_merge(
+                    if (!isset($beforeData['BARCODE_ID']) || count($beforeData) === 0 || $beforeData['BARCODE_ID'] != 'BARCODE-' . ($barcode + 1) || $beforeData['DRD_DELNO'] != $nowData['DRD_DELNO'] && $beforeData['DRD_QTY'] != $nowData['DRD_QTY']) {
+                        $boxCount = 1;
+                    } else {
+                        $boxCount++;
+                    }
+
+                    logger(json_encode(array_merge(
                         $nowData,
-                        ['DRD_QTY' => $nowData['DRD_QTY']],
-                        ['DRD_QTY_REAL' => $nowData['DRD_QTY']],
-                        ['REAL_DRD_QTY' => $realSPQ],
-                        ['COUNT_DRD_QTY' => $nowData['DRD_QTY'] - $spq],
-                        ['barcode_iter' => $barcode],
-                    );
-                    next($data);
-                    return $this->FIFOSPQ($data, $totalSPQ, $realSPQ, 0, $total, $barcode, $hasil);
-                } elseif($totalSPQ < 0) {
-                    $hasil['BARCODE-'.($barcode + 1)][] = array_merge(
-                        $nowData,
+                        // ['DATA' => $data],
+                        ['BARCODE_ID' => 'BARCODE-' . ($barcode + 1)],
                         ['DRD_QTY' => $realSPQ],
                         ['DRD_QTY_REAL' => $nowData['DRD_QTY']],
                         ['REAL_DRD_QTY' => $realSPQ],
                         ['COUNT_DRD_QTY' => $totalSPQ],
                         ['barcode_iter' => $barcode],
-                    );
-                    // next($data);
-                    return $this->FIFOSPQ($data, $realSPQ, $realSPQ, $totalSPQ * -1, $total, $barcode, $hasil);
-                } else { // JIka stock fifo sudah 0
-                    $hasil['BARCODE-'.($barcode + 1)][] = array_merge(
+                        ['COUNT_BOX' => $boxCount],
+                        ['TOTAL' => $realSPQ * $boxCount],
+                        ['KET' => 'SPQ > DO Num QTY'],
+                        ['NOW_PARAM' => [$spq, $realSPQ, $sisaQty, $sisaFIFOQty, $barcode, $boxCount, $totalQty]],
+                        ['NEXT_PARAM' => [$spq, $realSPQ, $sisaQty, $sisaFIFOQty, $barcode, $boxCount, $totalQty]]
+                    )));
+
+                    $convHasil = array_merge(
                         $nowData,
-                        ['DRD_QTY' => $spq],
+                        ['BARCODE_ID' => 'BARCODE-' . ($barcode + 1)],
+                        ['DRD_QTY' => ($sisaFIFOQty > 0 ? $sisaFIFOQty : $nowData['DRD_QTY'])],
                         ['DRD_QTY_REAL' => $nowData['DRD_QTY']],
                         ['REAL_DRD_QTY' => $realSPQ],
                         ['COUNT_DRD_QTY' => $nowData['DRD_QTY'] - $spq],
                         ['barcode_iter' => $barcode],
-                    );;
+                        ['COUNT_BOX' => $boxCount],
+                        ['TOTAL' => $nowData['DRD_QTY'] * $boxCount]
+                    );
+                    $hasil['BARCODE-' . ($barcode + 1)][0] = $convHasil;
+
                     next($data);
-                    return $this->FIFOSPQ($data, $realSPQ, $realSPQ, $total, 0, $barcode + 1, $hasil);
+                    return $this->FIFOSPQ($data, $totalSPQ, $realSPQ, 0, $total, $barcode, $hasil, $boxCount, $totalQty, $convHasil);
+                } elseif ($totalSPQ < 0) {
+                    // $boxCount = 1;
+                    if (!isset($beforeData['BARCODE_ID']) || count($beforeData) === 0 || $beforeData['BARCODE_ID'] != 'BARCODE-' . ($barcode + 1) || $beforeData['DRD_DELNO'] != $nowData['DRD_DELNO'] && (int)$beforeData['DRD_QTY'] != (int)$realSPQ) {
+                        $boxCount = 1;
+                    } else {
+                        $boxCount = $boxCount + 1;
+                    }
+
+                    logger(json_encode(array_merge(
+                        $nowData,
+                        // ['DATA' => $data],
+                        ['BARCODE_ID' => 'BARCODE-' . ($barcode + 1)],
+                        ['DRD_QTY' => $realSPQ],
+                        ['DRD_QTY_REAL' => $nowData['DRD_QTY']],
+                        ['REAL_DRD_QTY' => $realSPQ],
+                        ['COUNT_DRD_QTY' => $totalSPQ],
+                        ['barcode_iter' => $barcode],
+                        ['COUNT_BOX' => $boxCount],
+                        ['TOTAL' => $realSPQ * $boxCount],
+                        ['KET' => 'SPQ < DO Num QTY'],
+                        ['NOW_PARAM' => [$spq, $realSPQ, $sisaQty, $sisaFIFOQty, $barcode, $boxCount, $totalQty]]
+                    )));
+
+                    $convHasil = array_merge(
+                        $nowData,
+                        ['BARCODE_ID' => 'BARCODE-' . ($barcode + 1)],
+                        ['DRD_QTY' => $realSPQ],
+                        ['DRD_QTY_REAL' => $nowData['DRD_QTY']],
+                        ['REAL_DRD_QTY' => $realSPQ],
+                        ['COUNT_DRD_QTY' => $totalSPQ],
+                        ['barcode_iter' => $barcode],
+                        ['COUNT_BOX' => $boxCount],
+                        ['TOTAL' => $realSPQ * $boxCount]
+                    );
+
+                    $hasil['BARCODE-' . ($barcode + 1)][0] = $convHasil;
+                    // next($data);
+                    return $this->FIFOSPQ($data, $realSPQ, $realSPQ, $total, $totalSPQ * -1, $barcode, $hasil, $boxCount, $totalQty, $convHasil);
+                } else { // JIka stock fifo sudah 0
+                    if (!isset($beforeData['BARCODE_ID']) || count($beforeData) === 0 || $beforeData['BARCODE_ID'] != 'BARCODE-' . ($barcode + 1) || $beforeData['DRD_DELNO'] != $nowData['DRD_DELNO'] && $beforeData['DRD_QTY'] != $spq) {
+                        $boxCount = 1;
+                    } else {
+                        $boxCount++;
+                    }
+
+                    logger(json_encode(array_merge(
+                        $nowData,
+                        // ['DATA' => $data],
+                        ['BARCODE_ID' => 'BARCODE-' . ($barcode + 1)],
+                        ['DRD_QTY' => $spq],
+                        ['DRD_QTY_REAL' => $nowData['DRD_QTY']],
+                        ['REAL_DRD_QTY' => $realSPQ],
+                        ['COUNT_DRD_QTY' => $totalSPQ],
+                        ['barcode_iter' => $barcode],
+                        ['COUNT_BOX' => $boxCount],
+                        ['TOTAL' => $realSPQ * $boxCount],
+                        ['KET' => 'SPQ = DO Num QTY'],
+                        ['NOW_PARAM' => [$spq, $realSPQ, $sisaQty, $sisaFIFOQty, $barcode, $boxCount, $totalQty]]
+                    )));
+
+                    $convHasil =  array_merge(
+                        $nowData,
+                        ['BARCODE_ID' => 'BARCODE-' . ($barcode + 1)],
+                        ['DRD_QTY' => $realSPQ],
+                        ['DRD_QTY_REAL' => $nowData['DRD_QTY']],
+                        ['REAL_DRD_QTY' => $realSPQ],
+                        ['COUNT_DRD_QTY' => $nowData['DRD_QTY'] - $spq],
+                        ['barcode_iter' => $barcode],
+                        ['COUNT_BOX' => $boxCount],
+                        ['TOTAL' => $spq * $boxCount]
+                    );
+                    $hasil['BARCODE-' . ($barcode + 1)][0] = $convHasil;
+
+                    next($data);
+                    return $this->FIFOSPQ($data, $realSPQ, $realSPQ, $total, 0, $barcode + 1, $hasil, $boxCount, $totalQty, $convHasil);
                 }
             } else {
                 return $hasil;
