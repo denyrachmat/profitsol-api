@@ -27,10 +27,11 @@ class ExportDOFifo implements FromCollection, WithHeadings
                 'Model',
                 'Description',
                 'Qty Delivery',
-                'Barcode Remarks',
+                // 'Barcode Remarks',
                 'Delivery No',
                 'Qty',
-
+                'Box Count',
+                'Total Qty'
             ]
         ];
     }
@@ -51,9 +52,11 @@ class ExportDOFifo implements FromCollection, WithHeadings
                             'MITM_MODELCD'=> $keySPQ == 0 && $keyDet == 'BARCODE-1' ? $value['MITM_MODELCD'] : '',
                             'MITM_ITMD1'=> $keySPQ == 0 && $keyDet == 'BARCODE-1' ? $value['MITM_ITMD1'] : '',
                             'QTY'=> $keySPQ == 0 && $keyDet == 'BARCODE-1' ? $value['TOT_OUT_BC_DLV'] + $value['TOT_OUT_STOCK_DLV'] : '',
-                            'BARCODE_ITER'=> $keySPQ == 0 ? $keyDet : '',
+                            // 'BARCODE_ITER'=> $keySPQ == 0 ? $keyDet : '',
                             'DRD_DELNO'=> $valueSPQ['DRD_DELNO'],
-                            'DRD_QTY'=> $valueSPQ['DRD_QTY']
+                            'DRD_QTY'=> $valueSPQ['DRD_QTY'],
+                            'COUNT_BOX' => $valueSPQ['COUNT_BOX'],
+                            'TOTAL' => $valueSPQ['TOTAL']
                         ];
                     }
                 }
