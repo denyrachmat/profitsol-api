@@ -27,7 +27,7 @@ class ExportDOFifo implements FromCollection, WithHeadings
                 'Model',
                 'Description',
                 'Qty Delivery',
-                // 'Barcode Remarks',
+                'Barcode Remarks',
                 'Delivery No',
                 'Qty',
                 'Box Count',
@@ -46,19 +46,30 @@ class ExportDOFifo implements FromCollection, WithHeadings
         foreach ($this->data as $key => $value) {
             if (count($value['SPQ_FET']) > 0) {
                 foreach ($value['SPQ_FET'] as $keyDet => $valueDet) {
-                    foreach ($valueDet as $keySPQ => $valueSPQ) {
-                        $hasil[] = [
-                            'no' => $keySPQ == 0 && $keyDet == 'BARCODE-1' ? $key + 1 : '',
-                            'MITM_MODELCD'=> $keySPQ == 0 && $keyDet == 'BARCODE-1' ? $value['MITM_MODELCD'] : '',
-                            'MITM_ITMD1'=> $keySPQ == 0 && $keyDet == 'BARCODE-1' ? $value['MITM_ITMD1'] : '',
-                            'QTY'=> $keySPQ == 0 && $keyDet == 'BARCODE-1' ? $value['TOT_OUT_BC_DLV'] + $value['TOT_OUT_STOCK_DLV'] : '',
-                            // 'BARCODE_ITER'=> $keySPQ == 0 ? $keyDet : '',
-                            'DRD_DELNO'=> $valueSPQ['DRD_DELNO'],
-                            'DRD_QTY'=> $valueSPQ['DRD_QTY'],
-                            'COUNT_BOX' => $valueSPQ['COUNT_BOX'],
-                            'TOTAL' => $valueSPQ['TOTAL']
-                        ];
-                    }
+                    $hasil[] = [
+                        'no' => $keyDet == 0 ? $key + 1 : '',
+                        'MITM_MODELCD'=> $keyDet == 0 ? $value['MITM_MODELCD'] : '',
+                        'MITM_ITMD1'=> $keyDet == 0 ? $value['MITM_ITMD1'] : '',
+                        'QTY'=> $keyDet == 0 ? $value['TOT_OUT_BC_DLV'] + $value['TOT_OUT_STOCK_DLV'] : '',
+                        'BARCODE_ITER'=> $keyDet == 0 || $valueDet['BARCODE_REMARKS'] != $value['SPQ_FET'][$keyDet - 1]['BARCODE_REMARKS'] ? $valueDet['BARCODE_REMARKS'] : '',
+                        'DRD_DELNO'=> $keyDet == 0 || $valueDet['DRD_DELNO'] != $value['SPQ_FET'][$keyDet - 1]['DRD_DELNO'] ? $valueDet['DRD_DELNO'] : '',
+                        'DRD_QTY'=> $valueDet['DRD_QTY'],
+                        'COUNT_BOX' => 1,
+                        'TOTAL' =>1
+                    ];
+                    // foreach ($valueDet as $keySPQ => $valueSPQ) {
+                    //     $hasil[] = [
+                    //         'no' => $keySPQ == 0 ? $key + 1 : '',
+                    //         'MITM_MODELCD'=> $keySPQ == 0 ? $value['MITM_MODELCD'] : '',
+                    //         'MITM_ITMD1'=> $keySPQ == 0 ? $value['MITM_ITMD1'] : '',
+                    //         'QTY'=> $keySPQ == 0 ? $value['TOT_OUT_BC_DLV'] + $value['TOT_OUT_STOCK_DLV'] : '',
+                    //         // 'BARCODE_ITER'=> $keySPQ == 0 ? $keyDet : '',
+                    //         'DRD_DELNO'=> $valueSPQ['DRD_DELNO'],
+                    //         'DRD_QTY'=> $valueSPQ['DRD_QTY'],
+                    //         'COUNT_BOX' => $valueSPQ['COUNT_BOX'],
+                    //         'TOTAL' => $valueSPQ['TOTAL']
+                    //     ];
+                    // }
                 }
             }
         }
