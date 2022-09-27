@@ -621,6 +621,7 @@ class deliveryMethodToPSIController extends BaseController
                 $this->SPQIndex($value['MITM_MODELCD'])->original['data']['MITM_SPQ_CHECK'],
                 $value['TOT_OUT_BC_DLV'] + $value['TOT_OUT_STOCK_DLV']
             );
+
             $countMax = count($getSPQFet) > $countMax ? count($getSPQFet) : $countMax;
 
             $totalDelivery += $value['TOT_INC_DLV'];
@@ -801,8 +802,6 @@ class deliveryMethodToPSIController extends BaseController
                 }
             }
 
-            $substrDlv = ($qtyDlv - ($cekDataHasilAll + $spq));
-
             // Jika pengurangan qty DLV masih ada sisa
             
             $totalDN =  $cekDNTot - ($cekDataHasil + $spq);
@@ -819,23 +818,37 @@ class deliveryMethodToPSIController extends BaseController
             } else {
                 $barcodeNextInt = $barcodeInt;
             }
+
+            $substrDlv = ($drdQty > $spq 
+            ? (int)$spq 
+            : (
+                $drdQty < $spq 
+                ? $cekDNTot
+                : $drdQty
+            ) - ($cekDataHasilAll + $spq));
             
+            $finalQty = $drdQty > $spq 
+            ? (int)$spq 
+            : (
+                $drdQty < $spq 
+                ? $cekDNTot
+                : $drdQty
+            );
             $dataBefore = array_merge(
                 $nowData,
                 [
                     'BARCODE_REMARKS' => 'BARCODE-'.$barcodeNextInt,
-                    'DRD_QTY' => $drdQty > $spq ? (int)$spq : $drdQty,
+                    'DRD_QTY' => $finalQty,
                     'SPQ' => $spq,
                     'SISA_DN_QT' => $totalDN,
                     'SISA_DLV_TOT' => $substrDlv,
                     'HASIL_TOT' => $cekDataHasil + ($totalDN < 0 ?  $cekDNTot - ($cekDataHasil) : (int)$spq),
                     'REAL_DN' =>  $cekDNTot,
-                    'IO_REMARK' => $nowData['IO_REMARK'],
-                    // 'TEST' => $cekDNTot
+                    'IO_REMARK' => $nowData['IO_REMARK']
                 ]
             );
 
-            if ($drdQty > 0) {
+            if ($finalQty > 0) {
                 $hasil[] = $dataBefore;
             }
 
