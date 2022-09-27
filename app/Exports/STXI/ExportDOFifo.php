@@ -54,8 +54,8 @@ class ExportDOFifo implements FromCollection, WithHeadings
                         'BARCODE_ITER'=> $keyDet == 0 || $valueDet['BARCODE_REMARKS'] != $value['SPQ_FET'][$keyDet - 1]['BARCODE_REMARKS'] ? $valueDet['BARCODE_REMARKS'] : '',
                         'DRD_DELNO'=> $keyDet == 0 || $valueDet['DRD_DELNO'] != $value['SPQ_FET'][$keyDet - 1]['DRD_DELNO'] ? $valueDet['DRD_DELNO'] : '',
                         'DRD_QTY'=> $valueDet['DRD_QTY'],
-                        'COUNT_BOX' => 1,
-                        'TOTAL' =>1
+                        'COUNT_BOX' => $valueDet['BOX_COUNT'],
+                        'TOTAL' => $valueDet['DRD_QTY'] * $valueDet['BOX_COUNT']
                     ];
                     // foreach ($valueDet as $keySPQ => $valueSPQ) {
                     //     $hasil[] = [
