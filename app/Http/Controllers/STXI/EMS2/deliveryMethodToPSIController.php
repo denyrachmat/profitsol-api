@@ -822,7 +822,7 @@ class deliveryMethodToPSIController extends BaseController
             $substrDlv = ($drdQty > $spq 
             ? (int)$spq 
             : (
-                $drdQty < $spq 
+                $cekDNTot < $spq 
                 ? $cekDNTot
                 : $drdQty
             ) - ($cekDataHasilAll + $spq));
@@ -830,7 +830,7 @@ class deliveryMethodToPSIController extends BaseController
             $finalQty = $drdQty > $spq 
             ? (int)$spq 
             : (
-                $drdQty < $spq 
+                $cekDNTot < $spq 
                 ? $cekDNTot
                 : $drdQty
             );
