@@ -780,7 +780,7 @@ class deliveryMethodToPSIController extends BaseController
         }
     }
 
-    public function newFIFOSPQ($data, $spq, $qtyDlv, $barcodeInt = 1, $hasil = [], $dataBefore = null)
+    public function newFIFOSPQ($data, $spq, $qtyDlv, $barcodeInt = 0, $hasil = [], $dataBefore = null)
     {
         $nowData = current($data);
 
@@ -794,45 +794,56 @@ class deliveryMethodToPSIController extends BaseController
                 $cekDataHasilAll += $value['DRD_QTY'];
             }
 
+            $cekDNTot = 0;
+            foreach ($data as $keyDNTot => $valueDNTot) {
+                if ($valueDNTot['DRD_DELNO'] === $nowData['DRD_DELNO']) {
+                    $cekDNTot += $valueDNTot['DRD_QTY'];
+                }
+            }
+
             $substrDlv = ($qtyDlv - ($cekDataHasilAll + $spq));
 
             // Jika pengurangan qty DLV masih ada sisa
-            if ($substrDlv >= 0) {
-                $totalDN = $nowData['DRD_QTY'] - ($cekDataHasil + $spq);
-                $drdQty = empty($dataBefore) || ((int)$dataBefore['DRD_QTY'] == (int)$spq || $dataBefore['DRD_DELNO'] == $nowData['DRD_DELNO'])
-                ? ($totalDN < 0 ? $nowData['DRD_QTY'] - ($cekDataHasil) : $spq) 
+            
+            $totalDN =  $cekDNTot - ($cekDataHasil + $spq);
+            $drdQty = empty($dataBefore) || ((int)$dataBefore['DRD_QTY'] == (int)$spq || $dataBefore['DRD_DELNO'] ==  $nowData['DRD_DELNO'])
+                ? (
+                    $totalDN < 0 
+                    ?  $cekDNTot - ($cekDataHasil)
+                    : (int)$spq
+                )
                 : $spq - (int)$dataBefore['DRD_QTY'];
 
-                $dataBefore = array_merge(
-                    $nowData,
-                    [
-                        'BARCODE_REMARKS' => 'BARCODE-'.$barcodeInt,
-                        'DRD_QTY' => $drdQty,
-                        'SISA_DN_QT' => $totalDN,
-                        'SISA_DLV_TOT' => $substrDlv,
-                        'HASIL_TOT' => $cekDataHasil + ($totalDN < 0 ? $nowData['DRD_QTY'] - ($cekDataHasil) : (int)$spq),
-                        'REAL_DN' => $nowData['DRD_QTY'],
-                        // 'TEST' => array_filter($hasil, function($f) { return $f['DRD_QTY']; })
-                    ]
-                );
-
-                $hasil[] = $dataBefore;
-
-                if ($drdQty == $spq) {
-                    $barcodeNextInt = $barcodeInt + 1;
-                } else {
-                    $barcodeNextInt = $barcodeInt;
-                }
-
-                if ($totalDN <= 0) {
-                    next($data);
-                }
-
-                return $this->newFIFOSPQ($data, $spq, $qtyDlv, $barcodeNextInt, $hasil, $dataBefore);
+            if ($drdQty == $spq || (isset($dataBefore['DRD_QTY']) && (int)$dataBefore['DRD_QTY'] == (int)$spq)) {
+                $barcodeNextInt = $barcodeInt + 1;
             } else {
-                // return $substrDlv;
-                return $hasil;
+                $barcodeNextInt = $barcodeInt;
             }
+            
+            $dataBefore = array_merge(
+                $nowData,
+                [
+                    'BARCODE_REMARKS' => 'BARCODE-'.$barcodeNextInt,
+                    'DRD_QTY' => $drdQty > $spq ? (int)$spq : $drdQty,
+                    'SPQ' => $spq,
+                    'SISA_DN_QT' => $totalDN,
+                    'SISA_DLV_TOT' => $substrDlv,
+                    'HASIL_TOT' => $cekDataHasil + ($totalDN < 0 ?  $cekDNTot - ($cekDataHasil) : (int)$spq),
+                    'REAL_DN' =>  $cekDNTot,
+                    'IO_REMARK' => $nowData['IO_REMARK'],
+                    // 'TEST' => $cekDNTot
+                ]
+            );
+
+            if ($drdQty > 0) {
+                $hasil[] = $dataBefore;
+            }
+
+            if ($totalDN <= 0) {
+                next($data);
+            }
+
+            return $this->newFIFOSPQ($data, $spq, $qtyDlv, $barcodeNextInt, $hasil, $dataBefore);
         } else {
             return $hasil;
         }
