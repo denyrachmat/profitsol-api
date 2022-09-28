@@ -584,16 +584,16 @@ class deliveryMethodToPSIController extends BaseController
         return $hasil;
     }
 
-    public function exportDOExcel($date)
+    public function exportDOExcel($date, $item = '')
     {
-        ini_set('memory_limit', '2G');
+        ini_set('memory_limit', '5G');
         $data = $this->DLVGetData($date, [
             'MITM_MODELCD',
             'MITM_ITMD1',
             'DEL_DATE',
             'IPP_REMARK',
             'RANK_REMARK'
-        ], !empty($date), true, false, '', true);
+        ], !empty($date), true, false, $item, true);
 
         // return $data;
 
@@ -621,7 +621,7 @@ class deliveryMethodToPSIController extends BaseController
                 $this->SPQIndex($value['MITM_MODELCD'])->original['data']['MITM_SPQ_CHECK'],
                 $value['TOT_OUT_BC_DLV'] + $value['TOT_OUT_STOCK_DLV']
             );
-
+            
             $getSPQFetTest = $this->newFIFOSPQ2(
                 $fifoUpdate,
                 $this->SPQIndex($value['MITM_MODELCD'])->original['data']['MITM_SPQ_CHECK'],
@@ -629,7 +629,7 @@ class deliveryMethodToPSIController extends BaseController
             );
 
             $hasilSPQ = [];
-            foreach ($getSPQFet as $keySPQ => $valueSPQ) {
+            foreach ($getSPQFetTest as $keySPQ => $valueSPQ) {
                 $hasilSPQ[$valueSPQ['DRD_QTY']][] = $valueSPQ;
             }
 
@@ -648,7 +648,7 @@ class deliveryMethodToPSIController extends BaseController
                 );
             }
 
-            $countMax = count($getSPQFet) > $countMax ? count($getSPQFet) : $countMax;
+            $countMax = count($getSPQFetTest) > $countMax ? count($getSPQFetTest) : $countMax;
 
             $totalDelivery += $value['TOT_INC_DLV'];
             $totalWBarcode += $value['TOT_OUT_BC_DLV'];
@@ -658,7 +658,7 @@ class deliveryMethodToPSIController extends BaseController
                 $value,
                 [
                     'FIFO_DET' => $fifoUpdate,
-                    'SPQ_TOT' => $getSPQFetTest,
+                    'SPQ_FET' => $getSPQFetTest,
                     // 'SPQ_FET' => $hasilFinalSPQ,
                     // 'TEST_SPQ' => $getSPQFet
                     // 'SPQ_DATA' => $this->SPQIndex($value['MITM_MODELCD'])->original['data']
@@ -886,7 +886,7 @@ class deliveryMethodToPSIController extends BaseController
         }
     }
 
-    public function newFIFOSPQ2($data, $spq, $qtyDlv, $barcodeInt = 1, $hasil = [], $dataBefore = null)
+    public function newFIFOSPQ2($data, $spq, $qtyDlv, $barcodeInt = 0, $hasil = [], $dataBefore = null)
     {
         $nowData = current($data);
         // Cek Apakah array sekarang ada / tidak
@@ -899,7 +899,7 @@ class deliveryMethodToPSIController extends BaseController
             foreach ($hasil as $key => $value) {
                 $cekDataHasilAll += $value['DRD_QTY'];
 
-                if ($value['BARCODE_REMARK'] == 'BARCODE-'.$barcodeInt) {
+                if ($value['BARCODE_REMARKS'] == 'BARCODE-' . $barcodeInt) {
                     $sumPerBarcode += $value['DRD_QTY'];
                 }
             }
@@ -909,41 +909,174 @@ class deliveryMethodToPSIController extends BaseController
             // Total DB Qty - SPQ
             $totalDRD = (int)$nowData['DRD_QTY'] - $spq;
 
-            $totalQtyPerSPQ = $totalDRD >= 0 ? $spq : $totalDRD;
+            $totalQtyPerSPQ = $totalDRD >= 0
+                ? $spq
+                : ($totalDRD < 0
+                    ? (int)$nowData['DRD_QTY']
+                    : $spq - (int)$nowData['DRD_QTY']
+                );
 
+            // Jika belum ada data yg masuk FIFO
             if ($cekDataHasilAll === 0) {
                 $barcodeNextInt = $barcodeInt;
-                $sumPerDNQTY = $totalQtyPerSPQ;
+                $sumPerDNQTY = 0;
+                $sumPerSPQ = $spq;
             } else {
-                $sumPerDNQTY = $totalQtyPerSPQ + $dataBefore['SUM_DRD_QTY'];
-                if ($sumPerBarcode == $spq) {
-                    $barcodeNextInt = $barcodeInt + 1;
+                // if ($dataBefore['DRD_DELNO'] === $nowData['DRD_DELNO']) {
+                //     $sumPerDNQTY = $dataBefore['SUM_DRD_QTY'];
+                // } else {
+                //     $sumPerDNQTY = 0;
+                // }
+
+                if ($dataBefore['SUM_SPQ_QTY'] - $dataBefore['DRD_QTY'] === 0) {
+                    $sumPerSPQ = $spq;
                 } else {
-                    $barcodeNextInt = $barcodeInt;
+                    $sumPerSPQ = $dataBefore['SUM_SPQ_QTY'] - $dataBefore['DRD_QTY'];
+                }
+
+                // if ($dataBefore['DRD_DELNO'] === $nowData['DRD_DELNO'] && $dataBefore['IO_REMARK'] === $nowData['IO_REMARK']) {
+                //     $sumPerDNQTY = ($dataBefore['DRD_QTY'] + $dataBefore['SUM_DRD_QTY']);
+                // } else {
+                //     $sumPerDNQTY = 0;
+                // }
+            }
+
+            $subNowDNQTYvsSUMDNQTY = (int)$nowData['DRD_QTY'] - ((int)$sumPerDNQTY);
+
+            // Jika QTY FIFO Sebelumnya belum memenuhi SPQ
+            // if ($sumPerSPQ > 0) {
+            //     $barcodeNextInt = $barcodeInt;
+
+            //     if(isset($dataBefore['DRD_QTY'])) {
+            //         if($sumPerSPQ > $spq) {
+            //             $finalQty = (int)$nowData['DRD_QTY'];
+            //             $barcodeNextInt = $barcodeInt + 1;
+            //         } else {
+            //             if ((int)$nowData['DRD_QTY'] <= $sumPerSPQ) {
+            //                 $finalQty = (int)$nowData['DRD_QTY'];
+            //             } else {
+            //                 $finalQty = $sumPerSPQ;
+            //                 $barcodeNextInt = $barcodeInt + 1;
+            //             }
+            //         }
+            //     } else {
+            //         $finalQty = (int)$nowData['DRD_QTY'];
+            //     }
+
+            //     $sumPerDNQTY = 0;
+            //     if ($finalQty < (int)$nowData['DRD_QTY']) {
+            //         $sumPerDNQTY = (int)$nowData['DRD_QTY'];
+            //     }
+
+            //     next($data);
+            // } else {
+            //     // Jika DN Qty kurang dari SPQ
+            //     $totalDNvsSPQ = (int)$nowData['DRD_QTY'] - $sumPerDNQTY;
+            //     if (($totalDNvsSPQ) <= $spq) {
+            //         $finalQty = $totalDNvsSPQ == 0 ? $spq : $totalDNvsSPQ;
+            //         // next($data);
+            //         // $barcodeNextInt = $barcodeInt + 1;
+
+            //         if (isset($dataBefore['DRD_QTY']) && $finalQty + $dataBefore['DRD_QTY'] >= $spq) {
+            //             next($data);
+            //             $barcodeNextInt = $barcodeInt + 1;
+            //         } else {
+            //             next($data);
+            //             $barcodeNextInt = $barcodeInt;
+            //         }
+            //     } else {
+            //         $barcodeNextInt = $barcodeInt + 1;
+            //         $finalQty = $spq;
+            //         // next($data);
+            //     }
+            // }
+
+            $barcodeNextInt = $barcodeInt;
+            $sumPerDNQTY = (int)$nowData['DRD_QTY'] <= $spq ? 0 : (int)$nowData['DRD_QTY'];
+
+            if ($sumPerSPQ == $spq) {
+                $barcodeNextInt = $barcodeInt + 1;
+            }
+
+            if ($sumPerSPQ > $spq) {
+                $finalQty = (int)$nowData['DRD_QTY'];
+                // $barcodeNextInt = $barcodeInt + 1;
+
+                next($data);
+            } else {
+                if (isset($dataBefore['DRD_QTY'])) {
+                    if($spq > (int)$nowData['DRD_QTY']) {
+                        $cekDRDQty = (int)$nowData['DRD_QTY'] - (int)$dataBefore['SUM_DRD_QTY'];
+                    } else {
+                        $cekDRDQty = (int)$dataBefore['SUM_DRD_QTY'] - $spq;
+                    }
+                } else {
+                    $cekDRDQty = (int)$nowData['DRD_QTY'];
+                }
+
+                $sumPerDNQTY = $cekDRDQty;
+
+                if ($cekDRDQty <= $sumPerSPQ) {
+                    $finalQty = $cekDRDQty;
+                    next($data);
+                } else {
+                    if ($cekDRDQty >= 0) {
+                        $barcodeNextInt = $barcodeInt + 1;
+                        $finalQty = $spq;
+
+                        // if ($barcodeNextInt === 5) {
+                        //     next($data);
+                        // }
+                    } else {
+                        $finalQty = $sumPerSPQ;
+                        next($data);
+                        // $barcodeNextInt = $barcodeInt + 1;
+                    }
+                    // if ($sumPerSPQ < $cekDRDQty) {
+                        
+                    //     // if (isset($dataBefore['DRD_QTY'])) {
+                    //     //     if ($dataBefore['DRD_QTY'] + $sumPerSPQ === $spq) {
+                    //     //         // $barcodeNextInt = $barcodeInt + 1;
+                    //     //         next($data);
+                    //     //     } else {
+                    //     //         $sumPerDNQTY = $dataBefore['SUM_DRD_QTY'] + $sumPerSPQ;
+                    //     //         // $barcodeNextInt = $barcodeInt + 1;
+                    //     //     }
+                    //     // } else {
+                    //     //     // $barcodeNextInt = $barcodeInt + 1;
+                    //     //     // next($data);
+                    //     //     if ($nowData['DRD_QTY'] - $sumPerSPQ > 0) {
+                    //     //         // $barcodeNextInt = $barcodeInt + 1;
+                    //     //         // next($data);
+                    //     //     } else {
+                    //     //         next($data);
+                    //     //         // $barcodeNextInt = $barcodeInt + 1;
+                    //     //     }
+                    //     // }
+                    // } else {
+                    //     next($data);
+                    // }
                 }
             }
 
-            if ((int)$nowData['DRD_QTY'] - $sumPerDNQTY > (int)$spq) {
-                $finalQty = $spq;
-                // next($data);
-            } else {
-                $finalQty = $sumPerDNQTY - (int)$nowData['DRD_QTY'];
-                next($data);
-            }
-
+            // $cekSumSPQ = (int)$sumPerSPQ + $finalQty < $spq ? (int)$sumPerSPQ : 0;
             $insertData = array_merge(
                 $nowData,
                 [
                     'DRD_QTY' => $finalQty,
                     'REAL_DRD_QTY' => (int)$nowData['DRD_QTY'],
                     'SUM_DRD_QTY' => (int)$sumPerDNQTY,
-                    'BARCODE_REMARK' => 'BARCODE-'.$barcodeNextInt,
+                    'SUM_SPQ_QTY' => (int)$sumPerSPQ,
+                    'BARCODE_REMARKS' => 'BARCODE-' . $barcodeNextInt,
                     'SPQ' => $spq,
-                    'CEK_SAMEDN' => (int)$nowData['DRD_QTY'] - $sumPerDNQTY
+                    'CEK_SAMEDN' => (int)$nowData['DRD_QTY'] - $sumPerDNQTY,
+                    'BOX_COUNT' => 1,
+                    'CEK' => $totalQtyPerSPQ
                 ]
             );
 
             $hasil[] = $insertData;
+            
             return $this->newFIFOSPQ2($data, $spq, $qtyDlv, $barcodeNextInt, $hasil, $insertData);
         } else {
             return $hasil;
