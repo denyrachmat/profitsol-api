@@ -14,7 +14,7 @@ use App\Models\STXI\EMS2\DLVTYODet;
 
 use App\Jobs\STXI\EMS2\DLVSMTTYOEmailQueue;
 use App\Exports\STXT\exportDeliveryHist;
-use App\Exports\STXI\ExportDOFifo;
+use App\Exports\STXI\ExportDODelivery;
 
 class deliveryMethodToPSIController extends BaseController
 {
@@ -668,7 +668,7 @@ class deliveryMethodToPSIController extends BaseController
 
         // return $hasilData;
 
-        Excel::store(new ExportDOFifo($hasilData, $date), 'export_fifo_delivery.xlsx', 'public');
+        Excel::store(new ExportDODelivery($hasilData, $date), 'export_fifo_delivery.xlsx', 'public');
 
         return 'storage/app/public/export_fifo_delivery.xlsx';
     }
