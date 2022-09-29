@@ -4,9 +4,14 @@ namespace App\Exports\STXI;
 
 use Maatwebsite\Excel\Concerns\FromCollection;
 use Maatwebsite\Excel\Concerns\WithHeadings;
+use Maatwebsite\Excel\Events\AfterSheet;
+use Maatwebsite\Excel\Concerns\RegistersEventListeners;
+use Maatwebsite\Excel\Concerns\Exportable;
+use Maatwebsite\Excel\Concerns\WithEvents;
 
-class ExportDOFifo implements FromCollection, WithHeadings
+class ExportDOFifo implements FromCollection, WithHeadings, WithEvents
 {
+    use RegistersEventListeners, Exportable;
 
     private $data;
 
@@ -27,7 +32,7 @@ class ExportDOFifo implements FromCollection, WithHeadings
                 'Model',
                 'Description',
                 'Qty Delivery',
-                'Barcode Remarks',
+                // 'Barcode Remarks',
                 'Delivery No',
                 'Qty',
                 'Box Count',
@@ -51,29 +56,77 @@ class ExportDOFifo implements FromCollection, WithHeadings
                         'MITM_MODELCD'=> $keyDet == 0 ? $value['MITM_MODELCD'] : '',
                         'MITM_ITMD1'=> $keyDet == 0 ? $value['MITM_ITMD1'] : '',
                         'QTY'=> $keyDet == 0 ? $value['TOT_OUT_BC_DLV'] + $value['TOT_OUT_STOCK_DLV'] : '',
-                        'BARCODE_ITER'=> $keyDet == 0 || $valueDet['BARCODE_REMARKS'] != $value['SPQ_FET'][$keyDet - 1]['BARCODE_REMARKS'] ? $valueDet['BARCODE_REMARKS'] : '',
+                        // 'BARCODE_ITER'=> $keyDet == 0 || $valueDet['BARCODE_REMARKS'] != $value['SPQ_FET'][$keyDet - 1]['BARCODE_REMARKS'] ? $valueDet['BARCODE_REMARKS'] : '',
                         'DRD_DELNO'=> $keyDet == 0 || $valueDet['DRD_DELNO'] != $value['SPQ_FET'][$keyDet - 1]['DRD_DELNO'] ? $valueDet['DRD_DELNO'] : '',
                         'DRD_QTY'=> $valueDet['DRD_QTY'],
                         'COUNT_BOX' => $valueDet['BOX_COUNT'],
                         'TOTAL' => $valueDet['DRD_QTY'] * $valueDet['BOX_COUNT']
                     ];
-                    // foreach ($valueDet as $keySPQ => $valueSPQ) {
-                    //     $hasil[] = [
-                    //         'no' => $keySPQ == 0 ? $key + 1 : '',
-                    //         'MITM_MODELCD'=> $keySPQ == 0 ? $value['MITM_MODELCD'] : '',
-                    //         'MITM_ITMD1'=> $keySPQ == 0 ? $value['MITM_ITMD1'] : '',
-                    //         'QTY'=> $keySPQ == 0 ? $value['TOT_OUT_BC_DLV'] + $value['TOT_OUT_STOCK_DLV'] : '',
-                    //         // 'BARCODE_ITER'=> $keySPQ == 0 ? $keyDet : '',
-                    //         'DRD_DELNO'=> $valueSPQ['DRD_DELNO'],
-                    //         'DRD_QTY'=> $valueSPQ['DRD_QTY'],
-                    //         'COUNT_BOX' => $valueSPQ['COUNT_BOX'],
-                    //         'TOTAL' => $valueSPQ['TOTAL']
-                    //     ];
-                    // }
                 }
             }
         }
 
         return collect($hasil);
+    }
+
+    public function registerEvents(): array
+    {
+        return [
+            AfterSheet::class => function (AfterSheet $event) {
+                $highestRow = $event->sheet->getHighestRow();
+                $highestColumn = $event->sheet->getHighestColumn();
+
+                $event->sheet->getDelegate()->getPageSetup()
+                    ->setOrientation(\PhpOffice\PhpSpreadsheet\Worksheet\PageSetup::ORIENTATION_LANDSCAPE)
+                    ->setPaperSize(\PhpOffice\PhpSpreadsheet\Worksheet\PageSetup::PAPERSIZE_A4);
+
+                $event->sheet->getStyle('A1:A1')->applyFromArray([
+                    'font' => [
+                        'size' => '15',
+                        'bold' => true
+                    ]
+                ]);
+
+                $event->sheet->getStyle('A2:'.$highestColumn.'2')->applyFromArray([
+                    'font' => [
+                        'size' => '12',
+                        'bold' => true
+                    ]
+                ]);
+
+                $event->sheet->getStyle('A2:'.$highestColumn.'2')->getAlignment()->setHorizontal('center');
+
+                $event->sheet->styleCells(
+                    'A2:'.$highestColumn.$highestRow,
+                    [
+                        'borders' => [
+                            'allBorders' => [
+                                'borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN,
+                            ],
+                        ]
+                    ]
+                );
+
+                foreach(range('A', $highestColumn) as $columnID) {
+                    $event->sheet->getColumnDimension($columnID)->setAutoSize(true) ;
+                }
+
+                $event->sheet->getDelegate()->mergeCells('A1:'.$highestColumn.'1');
+                // $event->sheet->getDelegate()->mergeCells('A2:B2');
+
+                // $event->sheet->getDelegate()->mergeCells('A4:A5');
+                // $event->sheet->getDelegate()->mergeCells('B4:B5');
+                // $event->sheet->getDelegate()->mergeCells('C4:C5');
+                // $event->sheet->getDelegate()->mergeCells('D4:D5');
+                // $event->sheet->getDelegate()->mergeCells('E4:E5');
+                // $event->sheet->getDelegate()->mergeCells('F4:F5');
+
+                // $event->sheet->getDelegate()->mergeCells('M4:M5');
+                // $event->sheet->getDelegate()->mergeCells('N4:N5');
+                // $event->sheet->getDelegate()->mergeCells('O4:O5');
+
+                $event->sheet->getStyle('G5:'.$highestColumn.$highestRow)->getAlignment()->setHorizontal('right');
+            }
+        ];
     }
 }
