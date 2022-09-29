@@ -630,7 +630,7 @@ class deliveryMethodToPSIController extends BaseController
 
             $hasilSPQ = [];
             foreach ($getSPQFetTest as $keySPQ => $valueSPQ) {
-                $hasilSPQ[$valueSPQ['DRD_QTY']][] = $valueSPQ;
+                $hasilSPQ[$valueSPQ['DRD_DELNO'].'-'.$valueSPQ['DRD_QTY']][] = $valueSPQ;
             }
 
             $hasilFinalSPQ = [];

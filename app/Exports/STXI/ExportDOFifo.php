@@ -112,18 +112,6 @@ class ExportDOFifo implements FromCollection, WithHeadings, WithEvents
                 }
 
                 $event->sheet->getDelegate()->mergeCells('A1:'.$highestColumn.'1');
-                // $event->sheet->getDelegate()->mergeCells('A2:B2');
-
-                // $event->sheet->getDelegate()->mergeCells('A4:A5');
-                // $event->sheet->getDelegate()->mergeCells('B4:B5');
-                // $event->sheet->getDelegate()->mergeCells('C4:C5');
-                // $event->sheet->getDelegate()->mergeCells('D4:D5');
-                // $event->sheet->getDelegate()->mergeCells('E4:E5');
-                // $event->sheet->getDelegate()->mergeCells('F4:F5');
-
-                // $event->sheet->getDelegate()->mergeCells('M4:M5');
-                // $event->sheet->getDelegate()->mergeCells('N4:N5');
-                // $event->sheet->getDelegate()->mergeCells('O4:O5');
 
                 $event->sheet->getStyle('G5:'.$highestColumn.$highestRow)->getAlignment()->setHorizontal('right');
             }
