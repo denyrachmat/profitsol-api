@@ -8,12 +8,21 @@ use Maatwebsite\Excel\Events\AfterSheet;
 use Maatwebsite\Excel\Concerns\RegistersEventListeners;
 use Maatwebsite\Excel\Concerns\Exportable;
 use Maatwebsite\Excel\Concerns\WithEvents;
+use Maatwebsite\Excel\Concerns\WithTitle;
 
-class ExportDOFifo implements FromCollection, WithHeadings, WithEvents
+class ExportDOFifo implements FromCollection, WithHeadings, WithEvents, WithTitle
 {
     use RegistersEventListeners, Exportable;
 
     private $data;
+    
+    /**
+     * @return string
+     */
+    public function title(): string
+    {
+        return 'FIFO List';
+    }
 
     public function __construct($data, $date)
     {

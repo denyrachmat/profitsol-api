@@ -85,6 +85,8 @@ Route::group(['prefix' => 'div'], function () {
         Route::get('getFifoData/{date?}/{item?}', [deliveryMethodToPSIController::class, 'showFifoDLV']);
 
         Route::get('exportDOExcel/{date}/{item?}', [deliveryMethodToPSIController::class, 'exportDOExcel']);
+        Route::get('getNextDN/{date}', [deliveryMethodToPSIController::class, 'deliveryLatestNo']);
+        Route::post('deliveryToTYO', [deliveryMethodToPSIController::class, 'deliveryToTYO']);
         // End DLV Method SMT
 
         // Start PO Summary
