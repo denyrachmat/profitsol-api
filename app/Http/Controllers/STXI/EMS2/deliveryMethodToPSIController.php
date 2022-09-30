@@ -679,9 +679,9 @@ class deliveryMethodToPSIController extends BaseController
 
         // return $hasilData;
 
-        Excel::store(new ExportDODelivery($hasilData, $date), 'export_fifo_delivery.xlsx', 'public');
+        Excel::store(new ExportDODelivery($hasilData, $date), 'export_fifo_delivery_'.$date.'.xlsx', 'public');
 
-        return 'storage/app/public/export_fifo_delivery.xlsx';
+        return 'storage/app/public/export_fifo_delivery_'.$date.'.xlsx';
     }
 
     public function newFIFOSPQ3($data, $spq, $qtyDlv, $barcodeInt = 0, $hasil = [], $dataBefore = null)
