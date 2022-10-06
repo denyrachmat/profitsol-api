@@ -120,19 +120,34 @@ class deliveryMethodToPSIController extends BaseController
         $withFifo = false,
         $withTransID = false
     ) {
+        $selHeader = array_merge($sel);
+
+        if (!empty($date)) {
+            $selHeader = array_merge(
+                $selHeader,
+                [
+                    DB::raw('DLV_REQ_TYO_DET.DRT_TRANID')
+                ]
+            );
+        }
+
         $data = DB::connection('sqlsrv_ems2')->table('V_DLV_TYO_HIST')->select(
-            array_merge($sel, [
-                DB::raw('SUM(I_QTY) AS TOT_INC_DLV'),
-                DB::raw('SUM(IS_QTY) AS TOT_INC_STOCK_DLV'),
-                DB::raw('SUM(O_QTY) AS TOT_OUT_BC_DLV'),
-                DB::raw('SUM(OWB_QTY) AS TOT_OUT_WOBC_DLV'),
-                DB::raw('SUM(TOT_QTY) AS TOT_SMT_DLV'),
-                DB::raw('SUM(OQS_QTY) AS TOT_OUT_STOCK_DLV'),
-                DB::raw('(SUM(O_QTY) + SUM(OWB_QTY)) + SUM(OQS_QTY) AS TOT_OUT'),
-                DB::raw('MAX(IPP_REMARK) AS IPP_REMARK'),
-                DB::raw('MAX(RANK_REMARK) AS RANK_REMARK'),
-                DB::raw('COUNT(DLV_REQ_TYO_DET.id) AS STORED_ITEM_DET')
-            ])
+            array_merge(
+                $selHeader,
+                [
+                    DB::raw('SUM(I_QTY) AS TOT_INC_DLV'),
+                    DB::raw('SUM(IS_QTY) AS TOT_INC_STOCK_DLV'),
+                    DB::raw('SUM(O_QTY) AS TOT_OUT_BC_DLV'),
+                    DB::raw('SUM(OWB_QTY) AS TOT_OUT_WOBC_DLV'),
+                    DB::raw('SUM(TOT_QTY) AS TOT_SMT_DLV'),
+                    DB::raw('SUM(OQS_QTY) AS TOT_OUT_STOCK_DLV'),
+                    DB::raw('(SUM(O_QTY) + SUM(OWB_QTY)) + SUM(OQS_QTY) AS TOT_OUT'),
+                    DB::raw('MAX(IPP_REMARK) AS IPP_REMARK'),
+                    DB::raw('MAX(RANK_REMARK) AS RANK_REMARK'),
+                    DB::raw('COUNT(DLV_REQ_TYO_DET.id) AS STORED_ITEM_DET')
+                ]
+            )
+
         )->join(
             DB::raw('[MGSVR].[VMI_TYO].[dbo].[MITM_TBL]'),
             'MITM_ITMCD',
@@ -141,7 +156,7 @@ class deliveryMethodToPSIController extends BaseController
             $j->on('DRT_ITMCD', 'MITM_MODELCD');
             $j->on('DRT_PSI_DELDT', 'DEL_DATE');
         })
-            ->groupBy($sel)
+            ->groupBy($selHeader)
             ->orderBy('DEL_DATE');
 
         // $data->whereIn('IO_REMARK', ['FROM_SMT', 'TO_ITEC', 'TO_ITEC_STOCKDLV']);
@@ -276,7 +291,7 @@ class deliveryMethodToPSIController extends BaseController
         return $this->handleResponse($hasil, 'Data found !');
     }
 
-    public function deleteDelivery($date, $loc = 'smt')
+    public function deleteDelivery($date, $loc = 'smt', $item = '')
     {
         $hasil = DLVTYOHist::where('DEL_DATE', $date);
 
@@ -286,8 +301,13 @@ class deliveryMethodToPSIController extends BaseController
             $hasil->whereIn('IO_REMARK', ['TO_ITEC_STOCKDLV', 'FROM_STOCK'])->get();
         }
 
+        if (!empty($item)) {
+            $hasil->where('MITM_MODELCD', $item);
+        }
+
         foreach ($hasil as $key => $value) {
             DLVTYODet::where('DRST_ID', $value->id)->delete();
+            DLVTYODlvDet::where('DRT_ITMCD', $value->MITM_MODELCD)->where('DRT_PSI_DELDT', $value->DEL_DATE)->delete();
         }
 
         return $this->handleResponse($hasil, 'Data delivery on ' . $date . ' deleted !');
@@ -476,7 +496,7 @@ class deliveryMethodToPSIController extends BaseController
         return array_values($getCPO);
     }
 
-    public function fifoUpdateDLV($date = null, $item = '', $isSave = false, $byItemOnly = false, $dateFifo = null)
+    public function fifoUpdateDLV($date = null, $item = '', $isSave = false, $byItemOnly = false, $dateFifoStart = null)
     {
         $data = $this->DLVGetData($date, [
             'MITM_MODELCD',
@@ -512,11 +532,13 @@ class deliveryMethodToPSIController extends BaseController
                 foreach ($getID as $keyID => $valueID) {
                     if ($isSave) {
                         if ($valueID['IO_REMARK'] == 'TO_ITEC') {
-                            $valFifo = "'" . $value['MITM_MODELCD'] . "', " . $value['TOT_OUT_BC_DLV'] . ", '" . date('Y-m-01', strtotime('-1 month', strtotime($date))) . "', '" . date('Y-m-01', strtotime($date)) . "'";
+                            $valFifo = "'" . $value['MITM_MODELCD'] . "', " . $value['TOT_OUT_BC_DLV'] . ", '" . date('Y-m-01', empty($dateFifoStart) ? strtotime('-1 month', strtotime($date)) : strtotime($dateFifoStart)) . "', '" . date('Y-m-01', strtotime($date)) . "'";
                             $hasil[$value['MITM_MODELCD']]['DATA_DATE'][$value['DEL_DATE']][$keyID]['DLVQT'] = $value['TOT_OUT_BC_DLV'];
+                            $hasil[$value['MITM_MODELCD']]['DATA_DATE'][$value['DEL_DATE']][$keyID]['CEK'] = $valFifo;
                         } else {
-                            $valFifo = "'" . $value['MITM_MODELCD'] . "', " . $value['TOT_OUT_STOCK_DLV'] . ", '" . date('Y-m-01', strtotime('-1 month', strtotime($date))) . "', '" . date('Y-m-01', strtotime($date)) . "'";
+                            $valFifo = "'" . $value['MITM_MODELCD'] . "', " . $value['TOT_OUT_STOCK_DLV'] . ", '" . date('Y-m-01', empty($dateFifoStart) ? strtotime('-1 month', strtotime($date)) : strtotime($dateFifoStart)) . "', '" . date('Y-m-01', strtotime($date)) . "'";
                             $hasil[$value['MITM_MODELCD']]['DATA_DATE'][$value['DEL_DATE']][$keyID]['DLVQT'] = $value['TOT_OUT_STOCK_DLV'];
+                            $hasil[$value['MITM_MODELCD']]['DATA_DATE'][$value['DEL_DATE']][$keyID]['CEK'] = $valFifo;
                         }
 
                         $dataFIfo = DB::connection('sqlsrv_mega_tyo')

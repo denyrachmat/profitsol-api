@@ -75,13 +75,13 @@ Route::group(['prefix' => 'div'], function () {
         Route::post('dlv', [deliveryMethodToPSIController::class, 'DLVWithBarcode']);
         Route::post('dlvStore', [deliveryMethodToPSIController::class, 'DLVStore']);
         Route::get('dlvExport', [deliveryMethodToPSIController::class, 'DLVExport']);
-        Route::get('dlvDelete/{date}/{loc?}', [deliveryMethodToPSIController::class, 'deleteDelivery']);
+        Route::get('dlvDelete/{date}/{loc?}/{item_num}', [deliveryMethodToPSIController::class, 'deleteDelivery']);
 
         Route::post('uploadSPQ', [deliveryMethodToPSIController::class, 'UploadSPQ']);
         Route::get('syncBOMToPSI', [deliveryMethodToPSIController::class, 'syncBOMToPSI']);
         Route::get('DLVStockDelivery/{date}/{item?}', [deliveryMethodToPSIController::class, 'DLVStockDelivery']);
 
-        Route::get('fifoData/{date?}/{item?}/{saved?}/{byItemOnly?}', [deliveryMethodToPSIController::class, 'fifoUpdateDLV']);
+        Route::get('fifoData/{date?}/{item?}/{saved?}/{byItemOnly?}/{dateFifoStart?}', [deliveryMethodToPSIController::class, 'fifoUpdateDLV']);
         Route::get('getFifoData/{date?}/{item?}', [deliveryMethodToPSIController::class, 'showFifoDLV']);
 
         Route::get('exportDOExcel/{date}/{item?}', [deliveryMethodToPSIController::class, 'exportDOExcel']);
