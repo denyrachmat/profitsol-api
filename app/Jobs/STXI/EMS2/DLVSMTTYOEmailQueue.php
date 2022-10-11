@@ -61,6 +61,7 @@ class DLVSMTTYOEmailQueue implements ShouldQueue
 
         $cc = [
             'deny-rachmat@sumitronics.co.jp',
+            'risna-haryaningrum@sumitronics.co.jp'
         ];
 
         Mail::to($to)
