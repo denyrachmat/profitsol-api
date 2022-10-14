@@ -259,14 +259,6 @@ class deliveryMethodToPSIController extends BaseController
 
             $getSPQDataPersheet = $this->SPQIndex($value)->original['data'] ? $this->SPQIndex($value)->original['data']['MITM_SPQ_CHECK'] : false;
 
-            // if ($value === 'F63654-12') {
-            //     return [
-            //         !$getSPQDataPersheet,
-            //         (int)$req->delivery[$key] < (int)$getSPQDataPersheet,
-            //         ((int)($req->delivery[$key]/ (int)$getSPQDataPersheet) !== ($req->delivery[$key]/ (int)$getSPQDataPersheet)),
-            //         ($req->delivery[$key]/ (int)$getSPQDataPersheet)
-            //     ];
-            // }
             $hasilWithBarcode = (int)$dataCPO->BAL_CPO_STXI_ITEC > 0
                 ? (!$getSPQDataPersheet || (int)$req->delivery[$key] < (int)$getSPQDataPersheet || ((int)($req->delivery[$key] / (int)$getSPQDataPersheet) !== ($req->delivery[$key] / (int)$getSPQDataPersheet))
                     ? 0
@@ -277,8 +269,12 @@ class deliveryMethodToPSIController extends BaseController
                 )
                 : 0;
 
+            // if ($value === 'F41584-06') {
+            //     return $this->DLVCalSPQRes($hasilWithBarcode, $req->delivery[$key], $value);
+            // }
             $getSPQArray = $hasilWithBarcode > 0 ? $this->DLVCalSPQRes($hasilWithBarcode, $req->delivery[$key], $value) : 0;
 
+            // return $getSPQArray;
             $hasil[] = [
                 // 'query' => $query,
                 'model' => $value,
@@ -316,11 +312,18 @@ class deliveryMethodToPSIController extends BaseController
 
     public function DLVCalcSPQ($qty, $spq, $hasil = [])
     {
-        if ($qty > $spq) {
-            $total = $qty - $spq;
-            $hasil[] = $spq;
+        if ($spq > 0) {
+            if ($qty > $spq) {
+                $total = $qty - $spq;
+                $hasil[] = $spq;
 
-            return $this->DLVCalcSPQ($total, $spq, $hasil);
+                return $this->DLVCalcSPQ($total, $spq, $hasil);
+            } else {
+                $total = $qty;
+                $hasil[] = $total;
+
+                return $hasil;
+            }
         } else {
             $total = $qty;
             $hasil[] = $total;
@@ -336,7 +339,9 @@ class deliveryMethodToPSIController extends BaseController
             return "0";
         }
 
+        // return [$qty, isset($getSPQData->STXI_SPQ) ? (int)$getSPQData->STXI_SPQ : 0];
         $getSPQArray = $this->DLVCalcSPQ($qty, isset($getSPQData->STXI_SPQ) ? (int)$getSPQData->STXI_SPQ : 0);
+        // return $getSPQArray;
 
         $hasilSPQ = [];
         $totalBox = 1;
@@ -702,9 +707,9 @@ class deliveryMethodToPSIController extends BaseController
 
         // return $hasilData;
 
-        Excel::store(new ExportDODelivery($hasilData, $date), 'export_fifo_delivery_'.$date.'.xlsx', 'public');
+        Excel::store(new ExportDODelivery($hasilData, $date), 'export_fifo_delivery_' . $date . '.xlsx', 'public');
 
-        return 'storage/app/public/export_fifo_delivery_'.$date.'.xlsx';
+        return 'storage/app/public/export_fifo_delivery_' . $date . '.xlsx';
     }
 
     public function newFIFOSPQ3($data, $spq, $qtyDlv, $barcodeInt = 0, $hasil = [], $dataBefore = null)
