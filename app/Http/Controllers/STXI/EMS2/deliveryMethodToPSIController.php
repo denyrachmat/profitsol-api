@@ -546,7 +546,7 @@ class deliveryMethodToPSIController extends BaseController
                             ->get()
                             ->toArray();
 
-                        DLVTYODet::where('DRST_ID', $valueID['id'])->delete();
+                        DLVTYODet::where('DRST_ID', $valueID['id'])->forceDelete();
 
                         $statInsert = [];
                         foreach ($dataFIfo as $keyInsert => $valueInsert) {
