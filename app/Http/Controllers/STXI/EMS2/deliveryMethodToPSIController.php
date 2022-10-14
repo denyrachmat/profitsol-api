@@ -246,6 +246,7 @@ class deliveryMethodToPSIController extends BaseController
 
     public function DLVWithBarcode(Request $req)
     {
+        ini_set('memory_limit', '2G');
         ini_set('max_execution_time', '300');
         $hasil = [];
         foreach ($req->model as $key => $value) {
