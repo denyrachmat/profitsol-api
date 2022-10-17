@@ -81,15 +81,13 @@ class ExportPODetSummary implements FromCollection, WithEvents, WithHeadings
         }
 
         $totalperDate = [];
-        $keysDateperDate = 0;
         foreach ($dataPerDateTot as $keyDate2 => $valueDate2) {
             $hasilTotItem = 0;
             foreach ($valueDate2 as $keyItem => $valueItem) {
                 $hasilTotItem += (int)$valueItem;
             }
 
-            $totalperDate[$keyDate2] = $hasilTotItem;
-            $keysDateperDate++;
+            $totalperDate[$keyDate2] = number_format($hasilTotItem, 0, ".", ",");
         }
 
         $totalRows = array_merge([
