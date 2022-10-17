@@ -93,15 +93,16 @@ class ExportPODetSummary implements FromCollection, WithEvents, WithHeadings
         }
 
         $totalCols = array_merge([
-            'Total per Date',
-            '',
-            '',
-            '',
-            '',
-            ''
+            0 => 'Total per Date',
+            1 => '',
+            2 => '',
+            3 => '',
+            4 => '',
+            5 => '',
+            6 => ''
         ],  $totalperDate);
 
-        $hasil = array_merge($hasil, $totalCols);
+        $hasil = array_push($hasil, $totalCols);
 
         logger(json_encode($hasil));
 
