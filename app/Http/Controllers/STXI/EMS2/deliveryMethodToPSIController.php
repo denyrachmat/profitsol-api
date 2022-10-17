@@ -537,6 +537,7 @@ class deliveryMethodToPSIController extends BaseController
                 }
                 foreach ($getID as $keyID => $valueID) {
                     if ($isSave) {
+                        DLVTYODet::where('DRST_ID', $valueID['id'])->forceDelete();
                         if ($valueID['IO_REMARK'] == 'TO_ITEC') {
                             $valFifo = "'" . $value['MITM_MODELCD'] . "', " . $value['TOT_OUT_BC_DLV'] . ", '" . date('Y-m-01', empty($dateFifoStart) ? strtotime('-1 month', strtotime($date)) : strtotime($dateFifoStart)) . "', '" . date('Y-m-01', strtotime($date)) . "'";
                             $hasil[$value['MITM_MODELCD']]['DATA_DATE'][$value['DEL_DATE']][$keyID]['DLVQT'] = $value['TOT_OUT_BC_DLV'];
@@ -551,8 +552,6 @@ class deliveryMethodToPSIController extends BaseController
                             ->table("Z_STXI_FIFO_OS_SO(" . $valFifo . ")")
                             ->get()
                             ->toArray();
-
-                        DLVTYODet::where('DRST_ID', $valueID['id'])->forceDelete();
 
                         $statInsert = [];
                         foreach ($dataFIfo as $keyInsert => $valueInsert) {
