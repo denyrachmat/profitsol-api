@@ -57,10 +57,10 @@ class ExportPODetSummary implements FromCollection, WithEvents, WithHeadings
     {
         $hasil = [];
 
+        $dataPerDateTot = [];
         foreach ($this->data as $key => $value) {
             $dataDate = [];
             $totalPerItem = 0;
-            $dataPerDateTot = [];
             foreach ($this->getListDate() as $keyDate => $valueDate) {
                 $dataDate[date('d M Y', strtotime($valueDate))] = isset($value[$valueDate]) ? number_format($value[$valueDate], 0, ".", ",") : 0;
                 $totalPerItem += (int)$value[$valueDate];
