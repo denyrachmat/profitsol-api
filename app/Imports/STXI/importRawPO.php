@@ -26,11 +26,11 @@ class importRawPO implements ToModel, WithStartRow
             if ($key > 12 && $key < 75 && $key % 2 === 0) {
                 $checkDate = date('Y-m', strtotime($this->date)).'-'.$countDate;
 
-                if (date('D', strtotime($checkDate)) === 'Sat') {
+                if (date('w', strtotime($checkDate)) === 0) {
                     $countDate = $countDate + 2;
                 }
 
-                if (date('D', strtotime($checkDate)) === 'Sun') {
+                if (date('w', strtotime($checkDate)) === 6) {
                     $countDate = $countDate + 1;
                 }
 
