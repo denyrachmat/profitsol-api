@@ -149,7 +149,8 @@ class ExportPODetSummary implements FromCollection, WithEvents, WithHeadings
                     $event->sheet->getColumnDimension($columnID)->setAutoSize(true) ;
                 }
 
-                // $event->sheet->getDelegate()->mergeCells('A1:B1');
+                $event->sheet->getDelegate()->mergeCells('A'.$highestRow.':F'.$highestRow);
+                $event->sheet->getStyle('A'.$highestRow.':F'.$highestRow)->getAlignment()->setHorizontal('center');
                 // $event->sheet->getDelegate()->mergeCells('A2:B2');
 
                 // $event->sheet->getDelegate()->mergeCells('A4:A5');
