@@ -103,7 +103,7 @@ class ExportPODetSummary implements FromCollection, WithEvents, WithHeadings
 
         $hasil = array_merge($hasil, $totalCols);
 
-        logger($hasil);
+        logger(json_encode($hasil));
 
         return collect($hasil);
     }
