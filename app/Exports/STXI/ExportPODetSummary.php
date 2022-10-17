@@ -76,7 +76,7 @@ class ExportPODetSummary implements FromCollection, WithEvents, WithHeadings
                 trim($value['item_maker']),
                 trim($value['sup_name'])
             ], $dataDate, [
-                $totalPerItem
+                number_format($totalPerItem, 0, ".", ",")
             ]);
         }
 
@@ -85,7 +85,7 @@ class ExportPODetSummary implements FromCollection, WithEvents, WithHeadings
         foreach ($dataPerDateTot as $keyDate2 => $valueDate2) {
             $hasilTotItem = 0;
             foreach ($valueDate2 as $keyItem => $valueItem) {
-                $hasilTotItem += $valueItem;
+                $hasilTotItem += (int)$valueItem;
             }
 
             $totalperDate[$keyDate2] = $hasilTotItem;
@@ -99,12 +99,12 @@ class ExportPODetSummary implements FromCollection, WithEvents, WithHeadings
             3 => '',
             4 => '',
             5 => '',
-            6 => ''
         ],  $totalperDate);
 
         $hasilFinal = array_merge($hasil, [$totalRows]);
 
-        logger(json_encode($hasilFinal));
+        logger(json_encode($dataPerDateTot));
+        // logger(json_encode($hasilFinal));
 
         return collect($hasilFinal);
     }
