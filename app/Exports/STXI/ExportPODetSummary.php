@@ -88,7 +88,7 @@ class ExportPODetSummary implements FromCollection, WithEvents, WithHeadings
                 $hasilTotItem += $valueItem;
             }
 
-            $totalperDate[$keysDateperDate] = $hasilTotItem;
+            $totalperDate[$keyDate2] = $hasilTotItem;
             $keysDateperDate++;
         }
 
