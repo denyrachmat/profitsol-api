@@ -102,7 +102,7 @@ class ExportPODetSummary implements FromCollection, WithEvents, WithHeadings
             6 => ''
         ],  $totalperDate);
 
-        $hasilFinal = array_push($hasil, [$totalRows]);
+        $hasilFinal = array_merge($hasil, [$totalRows]);
 
         logger(json_encode($hasilFinal));
 
