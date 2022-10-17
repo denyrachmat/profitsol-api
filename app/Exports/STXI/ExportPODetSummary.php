@@ -36,6 +36,8 @@ class ExportPODetSummary implements FromCollection, WithEvents, WithHeadings
             $data[] = date('d M Y', strtotime($value));
         }
 
+        $data[] = 'Total per Item';
+
         return [
             [
                 '1st Bucket '.date('M Y', strtotime($this->date)),
@@ -57,8 +59,13 @@ class ExportPODetSummary implements FromCollection, WithEvents, WithHeadings
 
         foreach ($this->data as $key => $value) {
             $dataDate = [];
+            $totalPerItem = 0;
+            $dataPerDateTot = [];
             foreach ($this->getListDate() as $keyDate => $valueDate) {
                 $dataDate[date('d M Y', strtotime($valueDate))] = isset($value[$valueDate]) ? number_format($value[$valueDate], 0, ".", ",") : 0;
+                $totalPerItem += (int)$value[$valueDate];
+
+                $dataPerDateTot[date('d M Y', strtotime($valueDate))][trim($value['item_code'])] = (int)$value[$valueDate];
             }
 
             $hasil[] = array_merge([
@@ -68,8 +75,33 @@ class ExportPODetSummary implements FromCollection, WithEvents, WithHeadings
                 trim($value['item_desc']),
                 trim($value['item_maker']),
                 trim($value['sup_name'])
-            ], $dataDate);
+            ], $dataDate, [
+                $totalPerItem
+            ]);
         }
+
+        $totalperDate = [];
+        $keysDateperDate = 0;
+        foreach ($dataPerDateTot as $keyDate2 => $valueDate2) {
+            $hasilTotItem = 0;
+            foreach ($valueDate2 as $keyItem => $valueItem) {
+                $hasilTotItem += $valueItem;
+            }
+
+            $totalperDate[$keysDateperDate] = $hasilTotItem;
+            $keysDateperDate++;
+        }
+
+        $totalCols = array_merge([
+            'Total per Date',
+            '',
+            '',
+            '',
+            '',
+            ''
+        ],  $totalperDate);
+
+        $hasil = array_merge($hasil, $totalCols);
 
         return collect($hasil);
     }
