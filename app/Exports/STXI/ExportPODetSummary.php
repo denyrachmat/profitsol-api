@@ -92,7 +92,7 @@ class ExportPODetSummary implements FromCollection, WithEvents, WithHeadings
             $keysDateperDate++;
         }
 
-        $totalCols = array_merge([
+        $totalRows = array_merge([
             0 => 'Total per Date',
             1 => '',
             2 => '',
@@ -102,11 +102,11 @@ class ExportPODetSummary implements FromCollection, WithEvents, WithHeadings
             6 => ''
         ],  $totalperDate);
 
-        $hasil = array_push($hasil, $totalCols);
+        $hasilFinal = array_push($hasil, [$totalRows]);
 
-        logger(json_encode($hasil));
+        logger(json_encode($hasilFinal));
 
-        return collect($hasil);
+        return collect($hasilFinal);
     }
 
     public function registerEvents(): array
