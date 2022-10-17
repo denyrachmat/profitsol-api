@@ -24,14 +24,24 @@ class importRawPO implements ToModel, WithStartRow
         $countDate = 1;
         foreach ($row as $key => $value) {
             if ($key > 12 && $key < 75 && $key % 2 === 0) {
+                $date = date('Y-m', strtotime($this->date)).'-'.$countDate;
+
+                if (date('D', strtotime($date)) === 'Sat') {
+                    $countDate = $countDate + 2;
+                }
+
+                if (date('D', strtotime($date)) === 'Sun') {
+                    $countDate = $countDate + 1;
+                }
+
                 if (!empty($value)) {
                     $item = $row[0];
                     FRCST_PO_MRI::updateOrCreate([
                         'FPM_ITMCD' => $this->formatItem($item),
-                        'FPM_UPLDT' => date('Y-m', strtotime($this->date)).'-'.$countDate,
+                        'FPM_UPLDT' => $date,
                     ],[
                         'FPM_ITMCD' => $this->formatItem($item),
-                        'FPM_UPLDT' => date('Y-m', strtotime($this->date)).'-'.$countDate,
+                        'FPM_UPLDT' => $date,
                         'FPM_QTY' => (int)$value,
                     ]);
                 }
