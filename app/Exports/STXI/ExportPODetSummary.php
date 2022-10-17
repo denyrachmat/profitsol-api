@@ -118,6 +118,7 @@ class ExportPODetSummary implements FromCollection, WithEvents, WithHeadings
                     ->setOrientation(\PhpOffice\PhpSpreadsheet\Worksheet\PageSetup::ORIENTATION_LANDSCAPE)
                     ->setPaperSize(\PhpOffice\PhpSpreadsheet\Worksheet\PageSetup::PAPERSIZE_A4);
 
+                $event->sheet->getDelegate()->mergeCells('A1:E1');
                 $event->sheet->getStyle('A1:A2')->applyFromArray([
                     'font' => [
                         'size' => '15',
@@ -151,6 +152,13 @@ class ExportPODetSummary implements FromCollection, WithEvents, WithHeadings
 
                 $event->sheet->getDelegate()->mergeCells('A'.$highestRow.':F'.$highestRow);
                 $event->sheet->getStyle('A'.$highestRow.':F'.$highestRow)->getAlignment()->setHorizontal('center');
+                $event->sheet->getStyle('A'.$highestRow.':F'.$highestRow)->applyFromArray([
+                    'font' => [
+                        'size' => '12',
+                        'bold' => true
+                    ]
+                ]);
+
                 // $event->sheet->getDelegate()->mergeCells('A2:B2');
 
                 // $event->sheet->getDelegate()->mergeCells('A4:A5');
