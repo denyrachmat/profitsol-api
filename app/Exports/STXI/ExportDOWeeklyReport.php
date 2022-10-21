@@ -23,7 +23,20 @@ class ExportDOWeeklyReport implements FromCollection, WithHeadings, WithEvents
     {
         return [
             ['#KONTROL PO MINGGUAN'],
-            [],
+            [
+                '',
+                '',
+                '',
+                '',
+                '',
+                '',
+                '',
+                '',
+                '',
+                '',
+                '',
+                'DI ISI OLEH VENDOR',
+            ],
             [
                 'PIC',
                 'Order to Code',
@@ -41,7 +54,8 @@ class ExportDOWeeklyReport implements FromCollection, WithHeadings, WithEvents
                 'Plan Delivery Qty',
                 'Balance Qty',
                 'Keterangan'
-            ]
+            ],
+            []
         ];
     }
 
@@ -53,10 +67,12 @@ class ExportDOWeeklyReport implements FromCollection, WithHeadings, WithEvents
         $hasil = [];
         foreach ($this->data as $key => $value) {
             if (
-                $key > 0 &&
-                ($value['PART_NO'] !== $this->data[$key - 1]['PART_NO']
-                    && $value['PO_NUM'] !== $this->data[$key - 1]['PO_NUM']
-                    && $value['PLAN_DATE'] !== $this->data[$key - 1]['PLAN_DATE']
+                $key === 0 ||
+                (
+                    $key > 0 && (
+                        $value['PART_NO'] !== $this->data[$key - 1]['PART_NO'] ||
+                        $value['PO_NUM'] !== $this->data[$key - 1]['PO_NUM']
+                    )
                 )
             ) {
                 $hasil[] = [
@@ -118,12 +134,34 @@ class ExportDOWeeklyReport implements FromCollection, WithHeadings, WithEvents
                     ]
                 ]);
 
-                $event->sheet->getStyle('A2:' . $highestColumn . '2')->applyFromArray([
+                $event->sheet->getStyle('A3:' . $highestColumn . '3')->applyFromArray([
                     'font' => [
                         'size' => '12',
                         'bold' => true
+                    ],
+                    'fill' => [
+                        'fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID,
+                        'color' => ['argb' => 'rgb(255,255,0)']
                     ]
                 ]);
+
+                $event->sheet->getStyle('A3:' . $highestColumn . '3')->getFill()->applyFromArray(['fillType' => 'solid','rotation' => 0, 'color' => ['rgb' => 'fdff0f'],]);
+                $event->sheet->getStyle('L2:' . $highestColumn . '2')->getFill()->applyFromArray(['fillType' => 'solid','rotation' => 0, 'color' => ['rgb' => '7968ff'],]);
+
+                $event->sheet->getStyle('A3:'.$highestColumn.'3')->getAlignment()->setHorizontal('center');
+                $event->sheet->getStyle('L2')->getAlignment()->setHorizontal('center');
+                $event->sheet->getDelegate()->mergeCells('L2:P2');
+
+                $event->sheet->styleCells(
+                    'A3:'.$highestColumn.$highestRow,
+                    [
+                        'borders' => [
+                            'allBorders' => [
+                                'borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN,
+                            ],
+                        ]
+                    ]
+                );
             }
         ];
     }
