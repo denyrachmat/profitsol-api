@@ -87,6 +87,10 @@ Route::group(['prefix' => 'div'], function () {
         Route::get('exportDOExcel/{date}/{item?}', [deliveryMethodToPSIController::class, 'exportDOExcel']);
         Route::get('getNextDN/{date}', [deliveryMethodToPSIController::class, 'deliveryLatestNo']);
         Route::post('deliveryToTYO', [deliveryMethodToPSIController::class, 'deliveryToTYO']);
+
+        Route::post('uploadWeeklyPOData', [deliveryMethodToPSIController::class, 'uploadWeeklyPOData']);
+        Route::get('getUploadedWeeklyPO/{date}', [deliveryMethodToPSIController::class, 'getUploadedWeeklyPO']);
+        Route::get('exportWeeklyReport/{date}', [deliveryMethodToPSIController::class, 'ExportWeeklyReport']);
         // End DLV Method SMT
 
         // Start PO Summary
@@ -97,6 +101,10 @@ Route::group(['prefix' => 'div'], function () {
         Route::get('PODetExportData/{date}', [poSummaryController::class, 'exportPODet']);
         // End PO Summary
     });
+});
+
+Route::group((['prefix' => 'scheduller']), function () {
+
 });
 
 Route::post('login', [AuthController::class, 'login']);

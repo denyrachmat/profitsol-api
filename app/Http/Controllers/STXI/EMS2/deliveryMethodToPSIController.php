@@ -7,15 +7,21 @@ use Illuminate\Http\Request;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Imports\STXI\importSPQMaster;
 use Illuminate\Support\Facades\DB;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
+use Illuminate\Http\File;
 
 use App\Models\STXI\EMS2\SPQMaster;
 use App\Models\STXI\EMS2\DLVTYOHist;
 use App\Models\STXI\EMS2\DLVTYODet;
 use App\Models\STXI\EMS2\DLVTYODlvDet;
+use App\Models\STXI\EMS2\DLVTYOWkRpt;
 
 use App\Jobs\STXI\EMS2\DLVSMTTYOEmailQueue;
 use App\Exports\STXT\exportDeliveryHist;
 use App\Exports\STXI\ExportDODelivery;
+use App\Exports\STXI\ExportDOWeeklyReport;
+
+use App\Imports\STXI\importWeeklyReport;
 
 class deliveryMethodToPSIController extends BaseController
 {
@@ -852,5 +858,50 @@ class deliveryMethodToPSIController extends BaseController
         }
 
         return $this->handleResponse($hasil, 'Delivery note created !');
+    }
+
+    public function uploadWeeklyPOData(Request $req)
+    {
+        ini_set('max_execution_time', '300');
+        // $nama_file = $req->file->hashName();
+        $file = new File($req->file);
+        $extNya = $req->file('file')->getClientOriginalExtension();
+
+        $fileHash = str_replace('.' . $file->extension(), '', $file->hashName());
+        $nama_file = $fileHash . '.' . $extNya;
+
+        // return $nama_file;
+
+        $req->file->storeAs('/public/upload_weekly_po_itec/', $nama_file);
+
+        if ($extNya == 'xls') {
+            $spreadsheet = \PhpOffice\PhpSpreadsheet\IOFactory::load($file);
+            $writer = new Xlsx($spreadsheet);
+            $nama_file = $fileHash.'.xlsx';
+            $writer->save('/public/upload_weekly_po_itec/'.$nama_file);
+        }
+
+
+        $importer = new importWeeklyReport();
+
+        Excel::import($importer, public_path('/storage/upload_weekly_po_itec/' . $nama_file));
+
+        return $this->handleResponse([], 'Upload Sukses ' . $nama_file);
+    }
+
+    public function getUploadedWeeklyPO($date)
+    {
+        return $this->handleResponse(DB::connection('sqlsrv_ems2')->table("EMS2.dbo.f_itec_po_weekly_report('".$date."', '', '')")->get(), 'Data Found !!');
+    }
+
+    public function ExportWeeklyReport($date)
+    {
+        $data = DB::connection('sqlsrv_ems2')->table("EMS2.dbo.f_itec_po_weekly_report('".$date."', '', '')")->get()->transform(function($i) {
+            return (array)$i;
+        })->toArray();
+
+        Excel::store(new ExportDOWeeklyReport($data), 'export_weekly_PO_delivery_' . $date . '.xlsx', 'public');
+
+        return 'storage/app/public/export_weekly_PO_delivery_' . $date . '.xlsx';
     }
 }
