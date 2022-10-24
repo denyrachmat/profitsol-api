@@ -150,6 +150,7 @@ class poSummaryController extends BaseController
             $writer->save('/public/upload_raw_po/'.$nama_file);
         }
 
+        FRCST_PO_MRI::where(DB::raw('MONTH(FPM_UPLDT)'), date('M', strtotime($req->date)))->where(DB::raw('YEAR(FPM_UPLDT)'), date('Y', strtotime($req->date)))->delete();
 
         $importer = new importRawPO($req->date);
 
