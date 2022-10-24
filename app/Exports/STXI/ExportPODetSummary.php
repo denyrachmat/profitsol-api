@@ -62,7 +62,8 @@ class ExportPODetSummary implements FromCollection, WithEvents, WithHeadings
             $dataDate = [];
             $totalPerItem = 0;
             foreach ($this->getListDate() as $keyDate => $valueDate) {
-                $dataDate[date('d M Y', strtotime($valueDate))] = isset($value[$valueDate]) ? number_format($value[$valueDate], 0, ".", ",") : 0;
+                // $dataDate[date('d M Y', strtotime($valueDate))] = isset($value[$valueDate]) ? number_format($value[$valueDate], 0, ".", ",") : 0;
+                $dataDate[date('d M Y', strtotime($valueDate))] = isset($value[$valueDate]) ? $value[$valueDate] : 0;
                 $totalPerItem += (int)$value[$valueDate];
 
                 $dataPerDateTot[date('d M Y', strtotime($valueDate))][trim($value['item_code'])] = (int)$value[$valueDate];
@@ -76,7 +77,8 @@ class ExportPODetSummary implements FromCollection, WithEvents, WithHeadings
                 trim($value['item_maker']),
                 trim($value['sup_name'])
             ], $dataDate, [
-                number_format($totalPerItem, 0, ".", ",")
+                // number_format($totalPerItem, 0, ".", ",")
+                $totalPerItem
             ]);
         }
 
@@ -88,6 +90,7 @@ class ExportPODetSummary implements FromCollection, WithEvents, WithHeadings
             }
 
             $totalperDate[$keyDate2] = number_format($hasilTotItem, 0, ".", ",");
+            $totalperDate[$keyDate2] = $hasilTotItem;
         }
 
         $totalRows = array_merge([
@@ -158,6 +161,8 @@ class ExportPODetSummary implements FromCollection, WithEvents, WithHeadings
                         'bold' => true
                     ]
                 ]);
+
+                $event->sheet->
 
                 // $event->sheet->getDelegate()->mergeCells('A2:B2');
 
