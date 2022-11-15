@@ -492,6 +492,8 @@ class deliveryMethodToPSIController extends BaseController
             $query = "SET NOCOUNT ON;EXEC Z_STXI_GET_CPO_DLV_STXI_ITEC @date_start = '" . date('Y-m-01', strtotime($date)) . "', @date_to = '" . $date_to . "'";
         }
 
+        return $query;
+
         $dataCPO = collect(DB::connection('sqlsrv_mega_tyo')->select(DB::raw(
             $query
         )));
