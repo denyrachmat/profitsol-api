@@ -75,7 +75,7 @@ Route::group(['prefix' => 'div'], function () {
         Route::post('dlv', [deliveryMethodToPSIController::class, 'DLVWithBarcode']);
         Route::post('dlvStore', [deliveryMethodToPSIController::class, 'DLVStore']);
         Route::get('dlvExport', [deliveryMethodToPSIController::class, 'DLVExport']);
-        Route::get('dlvDelete/{date}/{loc?}/{item_num}', [deliveryMethodToPSIController::class, 'deleteDelivery']);
+        Route::get('dlvDelete/{date}/{loc?}/{item_num?}', [deliveryMethodToPSIController::class, 'deleteDelivery']);
 
         Route::post('uploadSPQ', [deliveryMethodToPSIController::class, 'UploadSPQ']);
         Route::get('syncBOMToPSI', [deliveryMethodToPSIController::class, 'syncBOMToPSI']);

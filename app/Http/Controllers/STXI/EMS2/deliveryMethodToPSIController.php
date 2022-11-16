@@ -499,7 +499,7 @@ class deliveryMethodToPSIController extends BaseController
         )));
 
         $getCPO = $dataCPO->where('BAL_STOCK', '>', 0)
-            // ->where('BAL_CPO_STXI_ITEC', '>', 0)
+            ->where('BAL_CPO_STXI_ITEC', '>', 0)
             ->map(function ($t) {
             return collect($t)->only([
                 'MITM_ITMCD',
