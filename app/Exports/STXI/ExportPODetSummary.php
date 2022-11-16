@@ -162,7 +162,7 @@ class ExportPODetSummary implements FromCollection, WithEvents, WithHeadings
                     ]
                 ]);
 
-                $event->sheet->
+                // $event->sheet->
 
                 // $event->sheet->getDelegate()->mergeCells('A2:B2');
 
