@@ -487,9 +487,9 @@ class deliveryMethodToPSIController extends BaseController
 
         $date_to = (int)date('d', strtotime($date)) == 1 ? date('Y-m-d', strtotime($date . "-1 days")) : date('Y-m-d');
         if (!empty($item)) {
-            $query = "SET NOCOUNT ON;EXEC Z_STXI_GET_CPO_DLV_STXI_ITEC @date_start = '" . date('Y-m-01', strtotime($date_to)) . "', @date_to = '" . $date_to . "', @model = '" . $item . "'";
+            $query = "SET NOCOUNT ON;EXEC Z_STXI_GET_CPO_DLV_STXI_ITEC @date_start = '" . date('Y-m-01', strtotime($date)) . "', @date_to = '" . $date_to . "', @model = '" . $item . "'";
         } else {
-            $query = "SET NOCOUNT ON;EXEC Z_STXI_GET_CPO_DLV_STXI_ITEC @date_start = '" . date('Y-m-01', strtotime($date_to)) . "', @date_to = '" . $date_to . "'";
+            $query = "SET NOCOUNT ON;EXEC Z_STXI_GET_CPO_DLV_STXI_ITEC @date_start = '" . date('Y-m-01', strtotime($date)) . "', @date_to = '" . $date_to . "'";
         }
 
         // return $query;
