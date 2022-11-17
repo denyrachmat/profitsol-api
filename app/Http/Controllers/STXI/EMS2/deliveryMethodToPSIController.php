@@ -58,7 +58,7 @@ class deliveryMethodToPSIController extends BaseController
                 'MITM_ITMCD',
                 'MITM_MODELCD'
             )
-            ->where('MITM_MODEL', 1);
+            ->whereIn('MITM_MODEL', [0,1]);
 
         if (!empty($whereModel)) {
             $data->where('MITM_MODELCD', $whereModel);
