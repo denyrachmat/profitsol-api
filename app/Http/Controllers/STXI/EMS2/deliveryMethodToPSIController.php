@@ -386,6 +386,7 @@ class deliveryMethodToPSIController extends BaseController
 
     public function DLVStore(Request $req)
     {
+        ini_set('max_execution_time', '300');
         $hasil = [];
 
         foreach ($req->data as $key => $value) {
