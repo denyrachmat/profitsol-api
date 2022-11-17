@@ -266,7 +266,7 @@ class deliveryMethodToPSIController extends BaseController
             $getSPQDataPersheet = $this->SPQIndex($value)->original['data'] ? $this->SPQIndex($value)->original['data']['MITM_SPQ_CHECK'] : false;
 
             $hasilWithBarcode = (int)$dataCPO->BAL_CPO_STXI_ITEC > 0
-                ? (!$getSPQDataPersheet || (int)$req->delivery[$key] < (int)$getSPQDataPersheet || ((int)($req->delivery[$key] / (int)$getSPQDataPersheet) !== ($req->delivery[$key] / (int)$getSPQDataPersheet))
+                ? (!$getSPQDataPersheet || (int)$req->delivery[$key] < (int)$getSPQDataPersheet
                     ? 0
                     : ($req->delivery[$key] > (int)$dataCPO->BAL_CPO_STXI_ITEC && $req->delivery[$key] > (int)$getSPQDataPersheet
                         ? (int)$dataCPO->BAL_CPO_STXI_ITEC
@@ -274,6 +274,16 @@ class deliveryMethodToPSIController extends BaseController
                     )
                 )
                 : 0;
+
+            // $hasilWithBarcode = (int)$dataCPO->BAL_CPO_STXI_ITEC > 0
+            //     ? (!$getSPQDataPersheet || (int)$req->delivery[$key] < (int)$getSPQDataPersheet || ((int)($req->delivery[$key] / (int)$getSPQDataPersheet) !== ($req->delivery[$key] / (int)$getSPQDataPersheet))
+            //         ? 0
+            //         : ($req->delivery[$key] > (int)$dataCPO->BAL_CPO_STXI_ITEC && $req->delivery[$key] > (int)$getSPQDataPersheet
+            //             ? (int)$dataCPO->BAL_CPO_STXI_ITEC
+            //             : $req->delivery[$key]
+            //         )
+            //     )
+            //     : 0;
 
             // if ($value === 'F41584-06') {
             //     return $this->DLVCalSPQRes($hasilWithBarcode, $req->delivery[$key], $value);
