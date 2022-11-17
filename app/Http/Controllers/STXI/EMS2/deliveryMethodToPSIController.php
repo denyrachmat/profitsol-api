@@ -587,6 +587,7 @@ class deliveryMethodToPSIController extends BaseController
 
                         $hasil[$value['MITM_MODELCD']]['DATA_DATE'][$value['DEL_DATE']][$keyID]['ID_HIST'] = $valueID['id'];
                         $hasil[$value['MITM_MODELCD']]['DATA_DATE'][$value['DEL_DATE']][$keyID]['FIFO_DATA'] = $statInsert;
+                        $hasil[$value['MITM_MODELCD']]['DATA_DATE'][$value['DEL_DATE']][$keyID]['FIFO_QUERY'] = "Z_STXI_FIFO_OS_SO(" . $valFifo . ")";
                         // $hasil[$value['MITM_MODELCD']]['DATA_DATE'][$value['DEL_DATE']][$keyID]['FIFO_DATA_TEST'] = $dataFIfo;
                     } else {
                         if ($byItemOnly) {
