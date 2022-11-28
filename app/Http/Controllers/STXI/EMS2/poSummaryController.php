@@ -56,7 +56,7 @@ class poSummaryController extends BaseController
                 'm2b' => $totalm2b,
                 'm3' => $totalm3,
                 'm4' => $totalm4,
-                'test' => [[$key] => $value]
+                'test' => [$key => $value]
             ];
         }
 
