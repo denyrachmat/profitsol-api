@@ -26,10 +26,12 @@ class importRawPO implements ToModel, WithStartRow
             if ($key > 12 && $key < 75 && $key % 2 === 0) {
                 $checkDate = date('Y-m', strtotime($this->date)).'-'.$countDate;
 
+                // Jika hari minggu tambah 1 hari ke hari senin
                 if (date('w', strtotime($checkDate)) == '0') {
                     $countDate = $countDate + 1;
                 }
 
+                // Jika hari sabtu tambah 2 hari ke hari senin
                 if (date('w', strtotime($checkDate)) == 6) {
                     $countDate = $countDate + 2;
                 }
