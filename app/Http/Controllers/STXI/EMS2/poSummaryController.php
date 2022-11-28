@@ -40,7 +40,7 @@ class poSummaryController extends BaseController
                 $totalm2b += $value->qty;
             } elseif ((int)$value->period_iter == 5 || $value->period_iter == 6) {
                 $totalm3 += $value->qty;
-            } elseif ((int)$value->period_iter === 7 || $value->period_iter === 8) {
+            } elseif ((int)$value->period_iter == 7 || $value->period_iter == 8) {
                 $totalm4 += $value->qty;
             }
 
