@@ -259,9 +259,7 @@ class deliveryMethodToPSIController extends BaseController
             $date_to = date('d', strtotime($req->date)) == 1 ? date('Y-m-d') : date('Y-m-d', strtotime($req->date . "-1 days"));
             $query = "SET NOCOUNT ON; EXEC Z_STXI_GET_CPO_DLV_STXI_ITEC @model = '" . $value . "', @date_start = '" . date('Y-m-01', strtotime($req->date)) . "', @date_to = '" . $date_to . "'";
 
-            $dataCPO = collect(DB::connection('sqlsrv_mega_tyo')->update(
-                $query
-            ))[0];
+            $dataCPO = collect(DB::connection('sqlsrv_mega_tyo')->select("SET NOCOUNT ON; EXEC Z_STXI_GET_CPO_DLV_STXI_ITEC @model = '" . $value . "', @date_start = '" . date('Y-m-01', strtotime($req->date)) . "', @date_to = '" . $date_to . "'"))[0];
 
             $getSPQDataPersheet = $this->SPQIndex($value)->original['data'] ? $this->SPQIndex($value)->original['data']['MITM_SPQ_CHECK'] : false;
 
@@ -499,15 +497,17 @@ class deliveryMethodToPSIController extends BaseController
         $date_to = (int)date('d', strtotime($date)) == 1 ? date('Y-m-d', strtotime($date . "-1 days")) : date('Y-m-d');
         if (!empty($item)) {
             $query = "SET NOCOUNT ON; EXEC Z_STXI_GET_CPO_DLV_STXI_ITEC @date_start = '" . date('Y-m-01', strtotime($date)) . "', @date_to = '" . $date . "', @model = '" . $item . "'";
+            $dataCPO = collect(DB::connection('sqlsrv_mega_tyo')->select("SET NOCOUNT ON; EXEC Z_STXI_GET_CPO_DLV_STXI_ITEC @date_start = '" . date('Y-m-01', strtotime($date)) . "', @date_to = '" . $date . "', @model = '" . $item . "'"));
         } else {
             $query = "SET NOCOUNT ON; EXEC Z_STXI_GET_CPO_DLV_STXI_ITEC @date_start = '" . date('Y-m-01', strtotime($date)) . "', @date_to = '" . $date . "'";
+            $dataCPO = collect(DB::connection('sqlsrv_mega_tyo')->select("SET NOCOUNT ON; EXEC Z_STXI_GET_CPO_DLV_STXI_ITEC @date_start = '" . date('Y-m-01', strtotime($date)) . "', @date_to = '" . $date . "'"));
         }
 
         // return $query;
 
-        $dataCPO = collect(DB::connection('sqlsrv_mega_tyo')->update(DB::raw(
-            $query
-        )));
+        // $dataCPO = collect(DB::connection('sqlsrv_mega_tyo')->update(DB::raw(
+        //     $query
+        // )));
 
         $getCPO = $dataCPO->where('BAL_STOCK', '>', 0)
             ->where('BAL_CPO_STXI_ITEC', '>', 0)
