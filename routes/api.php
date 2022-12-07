@@ -11,6 +11,7 @@ use App\Http\Controllers\API\PORTAL\UsersController;
 use App\Http\Controllers\API\PORTAL\AppController;
 use App\Http\Controllers\API\PORTAL\RoleController;
 use App\Http\Controllers\STXI\EMS2\deliveryMethodToPSIController;
+use App\Http\Controllers\STXI\EMS2\INSWDataController;
 use App\Http\Controllers\STXI\EMS2\poSummaryController;
 /*
 |--------------------------------------------------------------------------
@@ -100,6 +101,10 @@ Route::group(['prefix' => 'div'], function () {
         Route::get('POExportData/{date}', [poSummaryController::class, 'exportPO']);
         Route::get('PODetExportData/{date}', [poSummaryController::class, 'exportPODet']);
         // End PO Summary
+    });
+
+    Route::group(['prefix' => 'log'], function () {
+        Route::get('INSWGetData/{filter}', [INSWDataController::class, 'getData']);
     });
 });
 
