@@ -21,6 +21,7 @@ class poSummaryController extends BaseController
 
         // return $data;
         $hasil = [];
+        $cek = [];
         $count = 0;
         $totalm1a = $totalm1b = $totalm2a = $totalm2b = $totalm3 = $totalm4 = 0;
         foreach ($data as $key => $value) {
@@ -37,9 +38,9 @@ class poSummaryController extends BaseController
                 $totalm2a += $value->qty;
             } elseif ((int)$value->period_iter === 4) {
                 $totalm2b += $value->qty;
-            } elseif ((int)$value->period_iter === 5 || $value->period_iter === 6) {
+            } elseif ((int)$value->period_iter == 5 || $value->period_iter == 6) {
                 $totalm3 += $value->qty;
-            } elseif ((int)$value->period_iter === 7 || $value->period_iter === 8) {
+            } elseif ((int)$value->period_iter == 7 || $value->period_iter == 8) {
                 $totalm4 += $value->qty;
             }
 
