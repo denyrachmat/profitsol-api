@@ -11,8 +11,8 @@ use App\Http\Controllers\API\PORTAL\UsersController;
 use App\Http\Controllers\API\PORTAL\AppController;
 use App\Http\Controllers\API\PORTAL\RoleController;
 use App\Http\Controllers\STXI\EMS2\deliveryMethodToPSIController;
-use App\Http\Controllers\STXI\EMS2\INSWDataController;
 use App\Http\Controllers\STXI\EMS2\poSummaryController;
+use App\Http\Controllers\STXI\LOG\INSWDataController;
 /*
 |--------------------------------------------------------------------------
 | API Routes

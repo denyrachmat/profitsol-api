@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\STXI\EMS2;
+namespace App\Http\Controllers\STXI\LOG;
 
 use App\Http\Controllers\API\PORTAL\BaseController;
 use Illuminate\Http\Request;
