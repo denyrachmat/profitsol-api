@@ -163,7 +163,10 @@ class INSWDataController extends BaseController
                     'status' => false,
                     'hsCode' => $getHSCode,
                     'message' => 'Ada error di server !!',
-                    'data' => $th,
+                    'data' => [
+                        $th->getMessage(),
+                        $th->getLine()
+                    ],
                     'storedMaster' => [],
                     'storedPenjelasanDetID' => [],
                     'storedPenjelasanDetEN' => [],
