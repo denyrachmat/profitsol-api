@@ -88,10 +88,10 @@ class INSWDataController extends BaseController
                         foreach ($dataDetailGet['bab_penjelasan'] as $keyJls => $valueJls) {
                             $jlsCreate[] = INSWDataJlsDetail::updateOrCreate([
                                 'ZID_HSCODE' => $getHSCode,
-                                'ZID_TYPE' => 'bab',
+                                'ZIJD_TYPE' => 'bab',
                             ], [
                                 'ZID_HSCODE' => $getHSCode,
-                                'ZID_TYPE' => 'bab',
+                                'ZIJD_TYPE' => 'bab',
                                 'ZIJD_DET_ID' => $valueJls,
                                 'ZIJD_DET_EN' => '',
                             ]);
@@ -100,10 +100,10 @@ class INSWDataController extends BaseController
                         foreach ($dataDetailGet['bab_penjelasan_en'] as $keyJls => $valueJls) {
                             $jlsCreate[] = INSWDataJlsDetail::updateOrCreate([
                                 'ZID_HSCODE' => $getHSCode,
-                                'ZID_TYPE' => 'bab_en',
+                                'ZIJD_TYPE' => 'bab_en',
                             ], [
                                 'ZID_HSCODE' => $getHSCode,
-                                'ZID_TYPE' => 'bab_en',
+                                'ZIJD_TYPE' => 'bab_en',
                                 'ZIJD_DET_ID' => '',
                                 'ZIJD_DET_EN' => $valueJls,
                             ]);
@@ -112,10 +112,10 @@ class INSWDataController extends BaseController
                         foreach ($dataDetailGet['bagian_penjelasan'] as $keyJls => $valueJls) {
                             $jlsCreate[] = INSWDataJlsDetail::updateOrCreate([
                                 'ZID_HSCODE' => $getHSCode,
-                                'ZID_TYPE' => 'bagian',
+                                'ZIJD_TYPE' => 'bagian',
                             ], [
                                 'ZID_HSCODE' => $getHSCode,
-                                'ZID_TYPE' => 'bagian',
+                                'ZIJD_TYPE' => 'bagian',
                                 'ZIJD_DET_ID' => $valueJls,
                                 'ZIJD_DET_EN' => '',
                             ]);
@@ -124,10 +124,10 @@ class INSWDataController extends BaseController
                         foreach ($dataDetailGet['bagian_penjelasan_en'] as $keyJls => $valueJls) {
                             $jlsCreate[] = INSWDataJlsDetail::updateOrCreate([
                                 'ZID_HSCODE' => $getHSCode,
-                                'ZID_TYPE' => 'bagian_en',
+                                'ZIJD_TYPE' => 'bagian_en',
                             ], [
                                 'ZID_HSCODE' => $getHSCode,
-                                'ZID_TYPE' => 'bagian_en',
+                                'ZIJD_TYPE' => 'bagian_en',
                                 'ZIJD_DET_ID' => '',
                                 'ZIJD_DET_EN' => $valueJls,
                             ]);
