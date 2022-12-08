@@ -45,8 +45,13 @@ class INSWDataController extends BaseController
 
     public function getListHSCode($hsCode = '', $maxSize = 200)
     {
-        $data = $this->getListMaster($hsCode, $maxSize);
+        $data = $this->getListMaster($hsCode === 0 || !empty($hsCode) ? '' : $hsCode, $maxSize)['data'][0]['result'];
 
-        return $data;
+        $hasilData = [];
+        foreach ($data as $key => $value) {
+            $hasilData[] = $value['_source']['hs_code_format'];
+        }
+
+        return $hasilData;
     }
 }
