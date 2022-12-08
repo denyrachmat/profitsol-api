@@ -60,8 +60,8 @@ class INSWDataController extends BaseController
                 $dataDetail = $this->getData($getHSCode);
 
                 if (!empty($dataDetail)) {
-                    if (isset($dataDetail[0])) {
-                        $dataDetailGet = $dataDetail[0];
+                    if (isset($dataDetail['data'][0])) {
+                        $dataDetailGet = $dataDetail['data'][0];
                         $dataHSParent = $dataDetailGet['hsParent'][0];
                         $dataHSParentFrmt = $dataDetailGet['hsParent'][1];
                         $dataMFN = $dataDetailGet['mfn'][0];
