@@ -126,6 +126,7 @@ class INSWDataController extends BaseController
 
                         $hasilData[] = [
                             'status' => true,
+                            'hsCode' => $getHSCode,
                             'message' => 'Data berhasil di update',
                             'storedMaster' => $masterCreate,
                             'storedPenjelasanDetID' => $jlsCreate,
@@ -135,6 +136,7 @@ class INSWDataController extends BaseController
                     } else {
                         $hasilData[] = [
                             'status' => false,
+                            'hsCode' => $getHSCode,
                             'message' => 'Data detail sisa tidak ditemukan !!',
                             'data' => $dataDetail,
                             'storedMaster' => [],
@@ -146,6 +148,7 @@ class INSWDataController extends BaseController
                 } else {
                     $hasilData[] = [
                         'status' => false,
+                        'hsCode' => $getHSCode,
                         'message' => 'Data detail tidak ditemukan !!',
                         'storedMaster' => [],
                         'storedPenjelasanDetID' => [],
@@ -156,6 +159,7 @@ class INSWDataController extends BaseController
             } catch (\Throwable $th) {
                 $hasilData[] = [
                     'status' => false,
+                    'hsCode' => $getHSCode,
                     'message' => 'Ada error di server !!',
                     'data' => $th->getMessage(),
                     'storedMaster' => [],
