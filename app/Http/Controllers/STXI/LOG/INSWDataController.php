@@ -12,7 +12,11 @@ class INSWDataController extends BaseController
         $endpoint = 'https://api.insw.go.id/api-prod-ba/cms/hscode?keyword='.$hsCode.'&size=200&from=0';
 
         $content = [];
-        $guzz = new \GuzzleHttp\Client();
+        $guzz = new \GuzzleHttp\Client([
+            'headers' => [
+                'Authorization' => 'Basic aW5zd18yOmJhYzJiYXM2'
+            ]
+        ]);
 
         $res = $guzz->request('GET', $endpoint);
 
