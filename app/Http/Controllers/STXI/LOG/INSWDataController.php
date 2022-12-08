@@ -63,7 +63,6 @@ class INSWDataController extends BaseController
                     if (isset($dataDetail['data'][0])) {
                         $dataDetailGet = $dataDetail['data'][0];
                         $dataHSParent = $dataDetailGet['hsParent'][0];
-                        $dataHSParentFrmt = $dataDetailGet['hsParent'][1];
                         $dataMFN = $dataDetailGet['mfn'][0];
 
                         $masterCreate = INSWDataMaster::updateOrCreate([
@@ -75,9 +74,9 @@ class INSWDataController extends BaseController
                             'ZID_HSPRNT' => $dataHSParent['hs_code_format'],
                             'ZID_HSPRNT_DESC_ID' => $dataHSParent['ur_id'],
                             'ZID_HSPRNT_DESC_EN' => $dataHSParent['ur_en'],
-                            'ZID_HSPRNT_FRMT' => $dataHSParentFrmt['hs_code_format'],
-                            'ZID_HSPRNT_FRMT_DESC_ID' => $dataHSParentFrmt['ur_id'],
-                            'ZID_HSPRNT_FRMT_DESC_END' => $dataHSParentFrmt['ur_en'],
+                            'ZID_HSPRNT_FRMT' =>  isset($dataDetailGet['hsParent'][1]) ? $dataDetailGet['hsParent'][1]['hs_code_format'] : '',
+                            'ZID_HSPRNT_FRMT_DESC_ID' =>  isset($dataDetailGet['hsParent'][1]) ? $dataDetailGet['hsParent'][1]['ur_id'] : '',
+                            'ZID_HSPRNT_FRMT_DESC_END' => isset($dataDetailGet['hsParent'][1]) ? $dataDetailGet['hsParent'][1]['ur_en'] : '',
                             'ZID_MFN_BM' => $dataMFN['bm'][0]['bm'],
                             'ZID_MFN_PPN' => $dataMFN['ppn'][0]['ppn'],
                             'ZID_MFN_PPH' => $dataMFN['pph'][0]['pph'],
@@ -93,52 +92,41 @@ class INSWDataController extends BaseController
                                 'ZID_HSCODE' => $getHSCode,
                                 'ZIJD_TYPE' => 'bab',
                                 'ZIJD_DET_ID' => $valueJls,
-                                'ZIJD_DET_EN' => '',
                             ]);
                         }
 
-                        foreach ($dataDetailGet['bab_penjelasan_en'] as $keyJls => $valueJls) {
+                        foreach ($dataDetailGet['bab_penjelasan_en'] as $keyJls => $valueJls2) {
                             $jlsCreate[] = INSWDataJlsDetail::updateOrCreate([
                                 'ZID_HSCODE' => $getHSCode,
                                 'ZIJD_TYPE' => 'bab_en',
                             ], [
                                 'ZID_HSCODE' => $getHSCode,
                                 'ZIJD_TYPE' => 'bab_en',
-                                'ZIJD_DET_ID' => '',
-                                'ZIJD_DET_EN' => $valueJls,
+                                'ZIJD_DET_ID' => $valueJls2,
                             ]);
                         }
 
-                        foreach ($dataDetailGet['bagian_penjelasan'] as $keyJls => $valueJls) {
+                        foreach ($dataDetailGet['bagian_penjelasan'] as $keyJls => $valueJls3) {
                             $jlsCreate[] = INSWDataJlsDetail::updateOrCreate([
                                 'ZID_HSCODE' => $getHSCode,
                                 'ZIJD_TYPE' => 'bagian',
                             ], [
                                 'ZID_HSCODE' => $getHSCode,
                                 'ZIJD_TYPE' => 'bagian',
-                                'ZIJD_DET_ID' => $valueJls,
-                                'ZIJD_DET_EN' => '',
+                                'ZIJD_DET_ID' => $valueJls3,
                             ]);
                         }
 
-                        foreach ($dataDetailGet['bagian_penjelasan_en'] as $keyJls => $valueJls) {
+                        foreach ($dataDetailGet['bagian_penjelasan_en'] as $keyJls => $valueJls4) {
                             $jlsCreate[] = INSWDataJlsDetail::updateOrCreate([
                                 'ZID_HSCODE' => $getHSCode,
                                 'ZIJD_TYPE' => 'bagian_en',
                             ], [
                                 'ZID_HSCODE' => $getHSCode,
                                 'ZIJD_TYPE' => 'bagian_en',
-                                'ZIJD_DET_ID' => '',
-                                'ZIJD_DET_EN' => $valueJls,
+                                'ZIJD_DET_ID' => $valueJls4,
                             ]);
                         }
-
-                        // $jlsCreateEn = [];
-                        // foreach ($jlsCreate as $keyJls2 => $valueJls2) {
-                        //     $jlsCreateEn[] = INSWDataJlsDetail::where('id', $valueJls2['id'])->update([
-                        //         'ZIJD_DET_EN' => $valueJls2
-                        //     ]);
-                        // }
 
                         $satImp = [];
                         foreach ($dataDetailGet['refSatuan']['impor'] as $keySatImp => $valueSatimp) {
@@ -169,8 +157,7 @@ class INSWDataController extends BaseController
                             'hsCode' => $getHSCode,
                             'message' => 'Data berhasil di update',
                             'storedMaster' => $masterCreate,
-                            'storedPenjelasanDetID' => $jlsCreate,
-                            'storedPenjelasanDetEN' => $jlsCreateEn,
+                            'storedPenjelasanDet' => $jlsCreate,
                             'storedStatusDet' => $satExp
                         ];
                     } else {
@@ -180,8 +167,7 @@ class INSWDataController extends BaseController
                             'message' => 'Data detail sisa tidak ditemukan !!',
                             'data' => $dataDetail,
                             'storedMaster' => [],
-                            'storedPenjelasanDetID' => [],
-                            'storedPenjelasanDetEN' => [],
+                            'storedPenjelasanDet' => [],
                             'storedStatusDet' => []
                         ];
                     }
@@ -191,8 +177,7 @@ class INSWDataController extends BaseController
                         'hsCode' => $getHSCode,
                         'message' => 'Data detail tidak ditemukan !!',
                         'storedMaster' => [],
-                        'storedPenjelasanDetID' => [],
-                        'storedPenjelasanDetEN' => [],
+                        'storedPenjelasanDet' => [],
                         'storedStatusDet' => []
                     ];
                 }
@@ -206,8 +191,7 @@ class INSWDataController extends BaseController
                         $th->getLine()
                     ],
                     'storedMaster' => [],
-                    'storedPenjelasanDetID' => [],
-                    'storedPenjelasanDetEN' => [],
+                    'storedPenjelasanDet' => [],
                     'storedStatusDet' => []
                 ];
             }
