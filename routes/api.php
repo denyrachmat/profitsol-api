@@ -104,6 +104,7 @@ Route::group(['prefix' => 'div'], function () {
     });
 
     Route::group(['prefix' => 'log'], function () {
+        Route::get('INSWGetDataDetail/{filter}', [INSWDataController::class, 'getData']);
         Route::get('INSWGetData/{filter?}/{size?}', [INSWDataController::class, 'getListHSCode']);
     });
 });
