@@ -85,22 +85,60 @@ class INSWDataController extends BaseController
                         ]);
 
                         $jlsCreate = [];
-                        foreach ($dataDetailGet['bagian_penjelasan'] as $keyJls => $valueJls) {
+                        foreach ($dataDetailGet['bab_penjelasan'] as $keyJls => $valueJls) {
                             $jlsCreate[] = INSWDataJlsDetail::updateOrCreate([
                                 'ZID_HSCODE' => $getHSCode,
+                                'ZID_TYPE' => 'bab',
                             ], [
                                 'ZID_HSCODE' => $getHSCode,
+                                'ZID_TYPE' => 'bab',
                                 'ZIJD_DET_ID' => $valueJls,
-                                'ZIJD_DET_EN',
+                                'ZIJD_DET_EN' => '',
                             ]);
                         }
 
-                        $jlsCreateEn = [];
-                        foreach ($jlsCreate as $keyJls2 => $valueJls2) {
-                            $jlsCreateEn[] = INSWDataJlsDetail::where('id', $valueJls2['id'])->update([
-                                'ZIJD_DET_EN' => $valueJls2
+                        foreach ($dataDetailGet['bab_penjelasan_en'] as $keyJls => $valueJls) {
+                            $jlsCreate[] = INSWDataJlsDetail::updateOrCreate([
+                                'ZID_HSCODE' => $getHSCode,
+                                'ZID_TYPE' => 'bab_en',
+                            ], [
+                                'ZID_HSCODE' => $getHSCode,
+                                'ZID_TYPE' => 'bab_en',
+                                'ZIJD_DET_ID' => '',
+                                'ZIJD_DET_EN' => $valueJls,
                             ]);
                         }
+
+                        foreach ($dataDetailGet['bagian_penjelasan'] as $keyJls => $valueJls) {
+                            $jlsCreate[] = INSWDataJlsDetail::updateOrCreate([
+                                'ZID_HSCODE' => $getHSCode,
+                                'ZID_TYPE' => 'bagian',
+                            ], [
+                                'ZID_HSCODE' => $getHSCode,
+                                'ZID_TYPE' => 'bagian',
+                                'ZIJD_DET_ID' => $valueJls,
+                                'ZIJD_DET_EN' => '',
+                            ]);
+                        }
+
+                        foreach ($dataDetailGet['bagian_penjelasan_en'] as $keyJls => $valueJls) {
+                            $jlsCreate[] = INSWDataJlsDetail::updateOrCreate([
+                                'ZID_HSCODE' => $getHSCode,
+                                'ZID_TYPE' => 'bagian_en',
+                            ], [
+                                'ZID_HSCODE' => $getHSCode,
+                                'ZID_TYPE' => 'bagian_en',
+                                'ZIJD_DET_ID' => '',
+                                'ZIJD_DET_EN' => $valueJls,
+                            ]);
+                        }
+
+                        // $jlsCreateEn = [];
+                        // foreach ($jlsCreate as $keyJls2 => $valueJls2) {
+                        //     $jlsCreateEn[] = INSWDataJlsDetail::where('id', $valueJls2['id'])->update([
+                        //         'ZIJD_DET_EN' => $valueJls2
+                        //     ]);
+                        // }
 
                         $satImp = [];
                         foreach ($dataDetailGet['refSatuan']['impor'] as $keySatImp => $valueSatimp) {

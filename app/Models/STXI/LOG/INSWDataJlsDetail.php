@@ -12,6 +12,7 @@ class INSWDataJlsDetail extends Model
     protected $table = 'Z_INTR_JLS_DET';
     protected $fillable = [
         'ZID_HSCODE',
+        'ZIJD_TYPE',
         'ZIJD_DET_ID',
         'ZIJD_DET_EN',
     ];
