@@ -175,6 +175,17 @@ class INSWDataController extends BaseController
             }
         }
 
-        return $hasilData;
+        $dataRetSuccess = array_filter($hasilData, function($f) {
+            return $f['status'] === true;
+        });
+
+        $dataRetFail = array_filter($hasilData, function($f) {
+            return $f['status'] === false;
+        });
+
+        return [
+            'success' => array_values($dataRetSuccess),
+            'failed' => array_values($dataRetFail)
+        ];
     }
 }
