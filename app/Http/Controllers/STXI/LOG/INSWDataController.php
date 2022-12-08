@@ -9,7 +9,7 @@ class INSWDataController extends BaseController
 {
     public function getData($hsCode)
     {
-        $endpoint = 'https://api.insw.go.id/api-prod-ba/cms/hscode?keyword='.$hsCode.'&size=200&from=0';
+        $endpoint = 'https://api.insw.go.id/api-prod-ba/ref/hscode/komoditas?hs_code='.$hsCode;
 
         $content = [];
         $guzz = new \GuzzleHttp\Client([
