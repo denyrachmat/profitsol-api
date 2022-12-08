@@ -9,7 +9,7 @@ class INSWDataSatDetail extends Model
 {
     use HasFactory;
     protected $connection = 'sqlsrv_log';
-    protected $table = 'Z_INTR_JLS_DET';
+    protected $table = 'Z_INTR_SAT_DET';
     protected $fillable = [
         'ZID_HSCODE',
         'ZISD_TYPE',
