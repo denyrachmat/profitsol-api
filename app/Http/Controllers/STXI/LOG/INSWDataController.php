@@ -77,9 +77,9 @@ class INSWDataController extends BaseController
                             'ZID_HSPRNT_FRMT' =>  isset($dataDetailGet['hsParent'][1]) ? $dataDetailGet['hsParent'][1]['hs_code_format'] : '',
                             'ZID_HSPRNT_FRMT_DESC_ID' =>  isset($dataDetailGet['hsParent'][1]) ? $dataDetailGet['hsParent'][1]['ur_id'] : '',
                             'ZID_HSPRNT_FRMT_DESC_END' => isset($dataDetailGet['hsParent'][1]) ? $dataDetailGet['hsParent'][1]['ur_en'] : '',
-                            'ZID_MFN_BM' => $dataMFN['bm'][0]['bm'],
-                            'ZID_MFN_PPN' => $dataMFN['ppn'][0]['ppn'],
-                            'ZID_MFN_PPH' => $dataMFN['pph'][0]['pph'],
+                            'ZID_MFN_BM' => isset($dataMFN['bm'][0]) ? $dataMFN['bm'][0]['bm'] : '',
+                            'ZID_MFN_PPN' => isset($dataMFN['ppn'][0]) ? $dataMFN['ppn'][0]['ppn'] : '',
+                            'ZID_MFN_PPH' => isset($dataMFN['pph'][0]) ? $dataMFN['pph'][0]['pph'] : '',
                             'ZID_KOND' => $dataDetailGet['kondisiTertentu'],
                         ]);
 
