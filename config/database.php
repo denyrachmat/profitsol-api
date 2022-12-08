@@ -130,6 +130,19 @@ return [
             'prefix_indexes' => true,
         ],
 
+        'sqlsrv_log' => [
+            'driver' => 'sqlsrv',
+            'url' => env('DATABASE_URL'),
+            'host' => env('DB_LOG_HOST', 'localhost'),
+            'port' => env('DB_LOG_PORT', '1433'),
+            'database' => env('DB_LOG_DATABASE', 'forge'),
+            'username' => env('DB_LOG_USERNAME', 'forge'),
+            'password' => env('DB_LOG_PASSWORD', ''),
+            'charset' => 'utf8',
+            'prefix' => '',
+            'prefix_indexes' => true,
+        ],
+
         'sqlsrv_mega_tyo' => [
             'driver' => 'sqlsrv',
             'url' => env('DATABASE_URL'),

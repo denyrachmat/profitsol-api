@@ -13,7 +13,7 @@ class CreateZINTRDATA extends Migration
      */
     public function up()
     {
-        Schema::connection('sqlsrv_ems2')->create('Z_INTR_DATA_MSTR', function (Blueprint $table) {
+        Schema::connection('sqlsrv_log')->create('Z_INTR_DATA_MSTR', function (Blueprint $table) {
             $table->id();
             $table->string('ZID_HSCODE');
             $table->string('ZID_BAGIAN');
@@ -39,6 +39,6 @@ class CreateZINTRDATA extends Migration
      */
     public function down()
     {
-        Schema::dropIfExists('Z_INTR_DATA_MSTR');
+        Schema::connection('sqlsrv_log')->dropIfExists('Z_INTR_DATA_MSTR');
     }
 }

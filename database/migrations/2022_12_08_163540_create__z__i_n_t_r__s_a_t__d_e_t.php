@@ -13,8 +13,13 @@ class CreateZINTRSATDET extends Migration
      */
     public function up()
     {
-        Schema::create('_z__i_n_t_r__s_a_t__d_e_t', function (Blueprint $table) {
+        Schema::connection('sqlsrv_log')->create('Z_INTR_SAT_DET', function (Blueprint $table) {
             $table->id();
+            $table->string('ZID_HSCODE');
+            $table->string('ZISD_TYPE');
+            $table->string('ZISD_SERI');
+            $table->string('ZISD_JENIS');
+            $table->string('ZISD_SATUAN');
             $table->timestamps();
         });
     }
@@ -26,6 +31,6 @@ class CreateZINTRSATDET extends Migration
      */
     public function down()
     {
-        Schema::dropIfExists('_z__i_n_t_r__s_a_t__d_e_t');
+        Schema::connection('sqlsrv_log')->dropIfExists('Z_INTR_SAT_DET');
     }
 }
