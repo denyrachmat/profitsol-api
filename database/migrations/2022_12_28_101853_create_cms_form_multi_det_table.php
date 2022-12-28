@@ -4,7 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-class CreateCmsFormAnsDetTable extends Migration
+class CreateCmsFormMultiDetTable extends Migration
 {
     /**
      * Run the migrations.
@@ -13,12 +13,11 @@ class CreateCmsFormAnsDetTable extends Migration
      */
     public function up()
     {
-        Schema::connection('sqlsrv_cms')->create('cms_form_ans_det', function (Blueprint $table) {
+        Schema::connection('sqlsrv_cms')->create('cms_form_multi_det', function (Blueprint $table) {
             $table->id();
-            $table->string('p_u_username');
             $table->integer('cfm_id');
-            $table->integer('cfmd_id')->nullable();
-            $table->string('cfm_val')->nullable();
+            $table->string('cfmd_value');
+            $table->string('cfmd_label');
             $table->timestamps();
         });
     }
@@ -30,6 +29,6 @@ class CreateCmsFormAnsDetTable extends Migration
      */
     public function down()
     {
-        Schema::connection('sqlsrv_cms')->dropIfExists('cms_form_ans_det');
+        Schema::connection('sqlsrv_cms')->dropIfExists('cms_form_multi_det');
     }
 }

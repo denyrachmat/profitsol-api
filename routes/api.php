@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\API\CMS\FormController;
 use App\Http\Controllers\API\DMS\DocumentController;
 use App\Http\Controllers\API\DMS\FolderController;
 use Illuminate\Http\Request;
@@ -60,6 +61,10 @@ Route::group(['prefix' => 'dms'], function () {
     Route::get('checkPath/{users}/{path?}', [FolderController::class, 'checkPath']);
     Route::get('checkDeletedFolders/{users}', [FolderController::class, 'dbSyncToRealDoc']);
     Route::get('syncRootFiles/{users}', [FolderController::class, 'syncRootFiles']);
+});
+
+Route::group(['prefix' => 'cms'], function () {
+    Route::resource('forms', FormController::class);
 });
 
 Route::group(['prefix' => 'div'], function () {
