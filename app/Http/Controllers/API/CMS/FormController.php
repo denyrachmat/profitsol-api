@@ -8,6 +8,7 @@ use App\Models\CMS\FormMaster;
 use App\Models\CMS\FormMultiDet;
 use App\Models\CMS\FormAnswerDet;
 use App\Models\CMS\FormMasterTitle;
+
 class FormController extends Controller
 {
     /**
@@ -40,11 +41,13 @@ class FormController extends Controller
     {
         $data = $request->forms;
 
-        $insertMaster = FormMasterTitle::create([
-            'p_u_username' => $request->header('username'),
-            'cfmt_title' => $request->title,
-            'cfmt_quiz_flag' => $request->isQuiz == true ? 1 : 0,
-        ]);
+        $insertMaster = FormMasterTitle::updateOrCreate([
+            'id' => $request->idRef
+        ], [
+                'p_u_username' => $request->header('username'),
+                'cfmt_title' => $request->title,
+                'cfmt_quiz_flag' => $request->isQuiz == true ? 1 : 0,
+            ]);
 
         $hasil = [];
         foreach ($data as $key => $value) {
@@ -93,8 +96,8 @@ class FormController extends Controller
             }
         } else {
             if (is_array($data['content'])) {
-                $content = json_encode($data['content']['component']);
-            } else {                
+                $content = json_encode($data['content']);
+            } else {
                 $content = $data['content'];
             }
 
@@ -131,7 +134,7 @@ class FormController extends Controller
                                 'p_u_username' => $uname,
                                 'cfm_id' => $insert->id,
                                 'cfmd_id' => $getIDDetail[0]->id,
-                                'cfm_val' => $valueAns,
+                                'cfm_val' => is_array($valueAns) ? json_encode($valueAns) : $valueAns,
                             ]);
                         }
                     }
@@ -170,14 +173,22 @@ class FormController extends Controller
             $data = formMasterTitle::with('formMaster.formDetail.formAnswer')->where('cfmt_quiz_flag', 0)->get();
         }
 
-        return $data;
+        // return $data;
 
-        $hasil = $this->getHeaderAllForms($data->toArray());
+        $hasilHeader = $this->getHeaderAllForms($data->toArray());
+
+        $hasil = [];
+        foreach ($hasilHeader as $key => $value) {
+            $hasil[] = [
+                'label' => $value['title'] . ' (' . count($value['forms']) . ' Rows Content)',
+                'value' => $value
+            ];
+        }
 
         return response([
             'status' => count($hasil) > 0,
             'data' => $hasil
-        ]);        
+        ]);
     }
 
     public function getHeaderAllForms($data)
@@ -186,7 +197,7 @@ class FormController extends Controller
         foreach ($data as $key => $value) {
             $answer = [];
             foreach ($value['form_master'] as $key => $valueAns) {
-                $answer[] = FormAnswerDet::where('cfm_id', $valueAns['id'])->first()['cfm_val'];
+                $answer[] = (string)FormAnswerDet::where('cfm_id', $valueAns['id'])->first()['cfm_val'];
             }
 
             $hasil[] = [
@@ -200,42 +211,34 @@ class FormController extends Controller
         return $hasil;
     }
 
-    public function convertToFE($data) : Array
+    public function convertToFE($data): array
     {
-        try {
-            $hasil = [];
-            foreach ($data as $key => $value) {
-                $hasilDetail = [];
-                foreach ($value['form_detail'] as $keyDet => $valueDet) {
-                    $hasilDetail[] = [
-                        'col_det_id' => 'opt-'. $valueDet['id'],
-                        'col_det_label' => '',
-                        'value' => $valueDet['cfmd_value'],
-                        'label' => $valueDet['cfmd_label'],
-                    ];
-                }
-    
-                $hasil[] = [
-                    'type' => $value['cfm_type'],
-                    'seq_name' => $value['cfm_seq_name'],
-                    'content' => $value['cfm_type'] === 'row' 
-                        ? $this->convertToFE($value['cfm_content']) 
-                        : (
-                            $value['cfm_type'] === 'html' 
-                            ? $value['cfm_content']
-                            : json_decode($value['cfm_content'])
-                        ),
-                    'detail_data' => $hasilDetail
+        $hasil = [];
+        foreach ($data as $key => $value) {
+            $hasilDetail = [];
+            foreach ($value['form_detail'] as $keyDet => $valueDet) {
+                $hasilDetail[] = [
+                    'col_det_id' => 'opt-' . $valueDet['id'],
+                    'col_det_label' => '',
+                    'value' => $valueDet['cfmd_value'],
+                    'label' => $valueDet['cfmd_label'],
                 ];
             }
-    
-            return $hasil;
-        } catch (\Throwable $th) {
-            return [
-                'status' => false,
-                'data' => $data
+
+            $hasil[] = [
+                'type' => $value['cfm_type'],
+                'seq_name' => $value['cfm_seq_name'],
+                'content' => $value['cfm_type'] === 'row'
+                ? $this->convertToFE($value['cfm_content'])
+                : (
+                    $value['cfm_type'] === 'html'
+                    ? $value['cfm_content']
+                    : array_merge(json_decode($value['cfm_content'], true), ['detail_data' => $hasilDetail])
+                ),
             ];
         }
+
+        return $hasil;
     }
 
     /**
