@@ -16,4 +16,9 @@ class FormMultiDet extends Model
         'cfmd_value',
         'cfmd_label',
     ];
+    
+    public function formAnswer()
+    {
+        return $this->hasOne(FormAnswerDet::class, 'cfmd_id', 'id');
+    }
 }

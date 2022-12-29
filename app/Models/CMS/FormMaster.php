@@ -13,11 +13,20 @@ class FormMaster extends Model
 
     protected $fillable = [
         'p_u_username',
+        'cfmt_id',
         'cfm_type',
-        'cfm_title',
         'cfm_seq_name',
         'cfm_content',
         'cfm_parent_id',
-        'cfm_quiz_flag',
     ];
+
+    public function formDetail()
+    {
+        return $this->hasMany(FormMultiDet::class, 'cfm_id', 'id');
+    }
+
+    public function formAnswer()
+    {
+        return $this->hasMany(FormAnswerDet::class, 'cfm_id', 'id');
+    }
 }

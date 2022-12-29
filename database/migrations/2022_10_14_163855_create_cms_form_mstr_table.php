@@ -16,12 +16,11 @@ class CreateCmsFormMstrTable extends Migration
         Schema::connection('sqlsrv_cms')->create('cms_form_mstr', function (Blueprint $table) {
             $table->id();
             $table->string('p_u_username');
+            $table->integer('cfmt_id');
             $table->string('cfm_type');
-            $table->string('cfm_title')->nullable();
             $table->string('cfm_seq_name')->nullable();
             $table->string('cfm_content')->nullable();
             $table->integer('cfm_parent_id')->nullable();
-            $table->integer('cfm_quiz_flag')->default(0);
             $table->timestamps();
         });
     }
@@ -33,6 +32,6 @@ class CreateCmsFormMstrTable extends Migration
      */
     public function down()
     {
-        Schema::dropIfExists('cms_form_mstr');
+        Schema::connection('sqlsrv_cms')->dropIfExists('cms_form_mstr');
     }
 }
