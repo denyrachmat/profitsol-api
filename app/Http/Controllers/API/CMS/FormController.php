@@ -43,11 +43,11 @@ class FormController extends Controller
         $hasil = [];
         foreach ($data as $key => $value) {
             $hasil[] = $this->storingForms(
-                $value, 
-                'test', 
-                isset($request->ans) ? $request->ans : [], 
-                $request->title, 
-                0, 
+                $value,
+                'test',
+                isset($request->ans) ? $request->ans : [],
+                $request->title,
+                0,
                 $request->isQuiz == true ? 1 : 0,
                 $key
             );
@@ -71,11 +71,23 @@ class FormController extends Controller
                 'cfm_quiz_flag' => $isQuiz,
             ]);
 
-            foreach ($data['content'] as $key => $value) {
-                $hasil[] = $this->storingForms($value, $uname, $keyAnswer, '', $insert->id, $isQuiz);
+            if ($insert) {
+                $dataCols = [];
+                foreach ($data['content'] as $key => $value) {
+                    $dataCols[] = $this->storingForms($value, $uname, $keyAnswer, '', $insert->id, $isQuiz);
+                }
+
+                $hasil[] = [
+                    'status' => true,
+                    'data' => $dataCols
+                ];
+            } else {
+                $hasil[] = [
+                    'status' => false,
+                    'data' => []
+                ];
             }
         } else {
-            $titleGet = '';
             $content = json_encode($data['content']['component']);
 
             $insert = FormMaster::create([
@@ -88,40 +100,50 @@ class FormController extends Controller
                 'cfm_quiz_flag' => $isQuiz,
             ]);
 
-            $detail_data = [];
-            if (isset($data['content']['detail_data']) && count($data['content']['detail_data']) > 0) {
-                foreach ($data['content']['detail_data'] as $key => $valueDet) {
-                    $detail_data[] = FormMultiDet::create([
-                        'cfm_id' => $insert->id,
-                        'cfmd_value' => $valueDet['value'],
-                        'cfmd_label' => $valueDet['label'],
-                    ]);
-                }
-            }
-
-            $detail_data_key_ans = [];
-            if (count($keyAnswer) > 0) {
-                foreach ($keyAnswer as $keyAns => $valueAns) {
-                    if ($keyAns === $masterKeys) {
-                        $getIDDetail = array_values(array_filter($detail_data, function ($f) use ($valueAns) {
-                            return $f->cfmd_value == $valueAns;
-                        }));
-
-                        $detail_data_key_ans[] = FormAnswerDet::create([
-                            'p_u_username' => $uname,
+            if ($insert) {
+                $detail_data = [];
+                if (isset($data['content']['detail_data']) && count($data['content']['detail_data']) > 0) {
+                    foreach ($data['content']['detail_data'] as $key => $valueDet) {
+                        $detail_data[] = FormMultiDet::create([
                             'cfm_id' => $insert->id,
-                            'cfmd_id' => $getIDDetail[0]->id,
-                            'cfm_val' => $valueAns,
+                            'cfmd_value' => $valueDet['value'],
+                            'cfmd_label' => $valueDet['label'],
                         ]);
                     }
                 }
-            }
 
-            $hasil[] = [
-                'master' => $insert,
-                'detail_multiple' => $detail_data,
-                'detail_ans' => $detail_data_key_ans
-            ];
+                $detail_data_key_ans = [];
+                if (count($keyAnswer) > 0) {
+                    foreach ($keyAnswer as $keyAns => $valueAns) {
+                        if ($keyAns === $masterKeys) {
+                            $getIDDetail = array_values(array_filter($detail_data, function ($f) use ($valueAns) {
+                                return $f->cfmd_value == $valueAns;
+                            }));
+
+                            $detail_data_key_ans[] = FormAnswerDet::create([
+                                'p_u_username' => $uname,
+                                'cfm_id' => $insert->id,
+                                'cfmd_id' => $getIDDetail[0]->id,
+                                'cfm_val' => $valueAns,
+                            ]);
+                        }
+                    }
+                }
+
+                $hasil[] = [
+                    'status' => true,
+                    'data' => [
+                        'master' => $insert,
+                        'detail_multiple' => $detail_data,
+                        'detail_ans' => $detail_data_key_ans
+                    ]
+                ];
+            } else {
+                $hasil[] = [
+                    'status' => false,
+                    'data' => []
+                ];
+            }
         }
 
         return $hasil;
