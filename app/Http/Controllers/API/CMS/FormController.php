@@ -8,6 +8,7 @@ use App\Models\CMS\FormMaster;
 use App\Models\CMS\FormMultiDet;
 use App\Models\CMS\FormAnswerDet;
 use App\Models\CMS\FormMasterTitle;
+use App\Models\CMS\FormSetupDet;
 
 class FormController extends Controller
 {
@@ -44,10 +45,30 @@ class FormController extends Controller
         $insertMaster = FormMasterTitle::updateOrCreate([
             'id' => $request->idRef
         ], [
-                'p_u_username' => $request->header('username'),
-                'cfmt_title' => $request->title,
-                'cfmt_quiz_flag' => $request->isQuiz == true ? 1 : 0,
+            'p_u_username' => $request->header('username'),
+            'cfmt_title' => $request->title,
+            'cfmt_quiz_flag' => $request->isQuiz == true ? 1 : 0,
+        ]);
+
+        if (isset($request->idRef) && !empty($request->idRef)) {
+            FormMaster::where('cfmt_id', $request->idRef)->delete();
+        }
+
+        if (isset($request->setupTraining)) {
+            FormSetupDet::where('cfmt_id', $request->idRef)->delete();
+            FormSetupDet::create([
+                'cfmt_id' => $request->idRef,
+                'cfsd_res_show' => $request->setupTraining['showResult'],
+                'cfsd_ans_show' => $request->setupTraining['showRightKeysAnswer'],
+                'cfsd_rand_quest' => $request->setupTraining['randomizeQuestion'],
+                'cfsd_ans_loc' => $request->setupTraining['showRightKeysAnswerLocation'],
+                'cfsd_timer' => $request->setupTraining['setUpTimer'],
+                'cfsd_timer_quest' => $request->setupTraining['timerEveryQuestion'],
+                'cfsd_hours' => $request->setupTraining['hourTimer'],
+                'cfsd_min' => $request->setupTraining['minTimer'],
+                'cfsd_sec' => $request->setupTraining['secTimer'],
             ]);
+        }
 
         $hasil = [];
         foreach ($data as $key => $value) {
@@ -61,7 +82,7 @@ class FormController extends Controller
             );
         }
 
-        return $hasil;
+        return response($hasil);
     }
 
     public function storingForms($data, $uname, $keyAnswer = [], $idTitle = '', $parent = 0, $masterKeys = 0, $hasil = [])
@@ -108,6 +129,7 @@ class FormController extends Controller
                 'cfm_seq_name' => isset($data['seq_name']) ? $data['seq_name'] : '',
                 'cfm_content' => $content,
                 'cfm_parent_id' => $parent,
+                'cfm_required' => $data['type'] === 'form' ? $data['required'] : 0,
             ]);
 
             if ($insert) {
@@ -168,15 +190,24 @@ class FormController extends Controller
     public function show($id)
     {
         if ($id === 'quiz') {
-            $data = formMasterTitle::with('formMaster.formDetail.formAnswer')->where('cfmt_quiz_flag', 1)->get();
+            $data = formMasterTitle::with(['formMaster' => function ($f){
+                $f->where('cfm_parent_id', 0);
+                $f->with('formDetail.formAnswer');
+                $f->with('allChildrenContent');
+            }])->with('quizSetup')->where('cfmt_quiz_flag', 1)->get();
         } else {
-            $data = formMasterTitle::with('formMaster.formDetail.formAnswer')->where('cfmt_quiz_flag', 0)->get();
+            $data = formMasterTitle::with(['formMaster' => function ($f){
+                $f->where('cfm_parent_id', 0);
+                $f->with('formDetail.formAnswer');
+                $f->with('allChildrenContent');
+            }])->with('quizSetup')->where('cfmt_quiz_flag', 0)->get();
         }
 
         // return $data;
 
         $hasilHeader = $this->getHeaderAllForms($data->toArray());
 
+        // return $hasilHeader;
         $hasil = [];
         foreach ($hasilHeader as $key => $value) {
             $hasil[] = [
@@ -197,7 +228,10 @@ class FormController extends Controller
         foreach ($data as $key => $value) {
             $answer = [];
             foreach ($value['form_master'] as $key => $valueAns) {
-                $answer[] = (string)FormAnswerDet::where('cfm_id', $valueAns['id'])->first()['cfm_val'];
+                $cekAnswer = FormAnswerDet::where('cfm_id', $valueAns['id'])->first();
+                if (isset($cekAnswer)) {
+                    $answer[] = $cekAnswer['cfm_val'];
+                }
             }
 
             $hasil[] = [
@@ -205,9 +239,25 @@ class FormController extends Controller
                 'title' => $value['cfmt_title'],
                 'isQuiz' => $value['cfmt_quiz_flag'],
                 'forms' => $this->convertToFE($value['form_master']),
-                'ans' => $answer
+                'ans' => $answer,
+                'setupTraining' => !empty($value['quiz_setup'])
+                    ? [
+                        'defaultNumberOfChoice' => 1,
+                        'defaultTypeChoice' => "multiple-radio",
+                        'hourTimer' => $value['quiz_setup']['cfsd_hours'],
+                        'minTimer' => $value['quiz_setup']['cfsd_min'],
+                        'randomizeQuestion' => $value['quiz_setup']['cfsd_rand_quest'],
+                        'secTimer' => $value['quiz_setup']['cfsd_sec'],
+                        'setUpTimer' => $value['quiz_setup']['cfsd_timer'],
+                        'showResult' => $value['quiz_setup']['cfsd_res_show'],
+                        'showRightKeysAnswer' => $value['quiz_setup']['cfsd_ans_show'],
+                        'showRightKeysAnswerLocation' => $value['quiz_setup']['cfsd_ans_loc'],
+                        'timerEveryQuestion' => $value['quiz_setup']['cfsd_timer_quest'],
+                    ]
+                    : null
             ];
         }
+
         return $hasil;
     }
 
@@ -216,20 +266,23 @@ class FormController extends Controller
         $hasil = [];
         foreach ($data as $key => $value) {
             $hasilDetail = [];
-            foreach ($value['form_detail'] as $keyDet => $valueDet) {
-                $hasilDetail[] = [
-                    'col_det_id' => 'opt-' . $valueDet['id'],
-                    'col_det_label' => '',
-                    'value' => $valueDet['cfmd_value'],
-                    'label' => $valueDet['cfmd_label'],
-                ];
+            if (isset($value['form_detail'])) {
+                foreach ($value['form_detail'] as $keyDet => $valueDet) {
+                    $hasilDetail[] = [
+                        'col_det_id' => 'opt-' . $valueDet['id'],
+                        'col_det_label' => '',
+                        'value' => $valueDet['cfmd_value'],
+                        'label' => $valueDet['cfmd_label'],
+                    ];
+                }
             }
 
             $hasil[] = [
                 'type' => $value['cfm_type'],
+                'required' => $value['cfm_type'] === 'form' ? ($value['cfm_required'] == 1) : false,
                 'seq_name' => $value['cfm_seq_name'],
                 'content' => $value['cfm_type'] === 'row'
-                ? $this->convertToFE($value['cfm_content'])
+                ? $this->convertToFE($value['all_children_content'])
                 : (
                     $value['cfm_type'] === 'html'
                     ? $value['cfm_content']

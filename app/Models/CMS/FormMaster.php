@@ -18,7 +18,19 @@ class FormMaster extends Model
         'cfm_seq_name',
         'cfm_content',
         'cfm_parent_id',
+        'cfm_required',
     ];
+
+    public static function boot() {
+        parent::boot();
+
+        static::deleting(function($f) { // before delete() method call this
+             $f->formDetail()->delete();
+             $f->formAnswer()->delete();
+             $f->allChildrenContent()->delete();
+             // do the rest of the cleanup...
+        });
+    }
 
     public function formDetail()
     {
@@ -28,5 +40,15 @@ class FormMaster extends Model
     public function formAnswer()
     {
         return $this->hasMany(FormAnswerDet::class, 'cfm_id', 'id');
+    }
+
+    public function childrenContent()
+    {
+        return $this->hasMany(FormMaster::class, 'cfm_parent_id', 'id');
+    }
+
+    public function allChildrenContent()
+    {
+        return $this->childrenContent()->with('allChildrenContent');
     }
 }

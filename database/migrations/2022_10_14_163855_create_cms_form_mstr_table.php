@@ -18,6 +18,7 @@ class CreateCmsFormMstrTable extends Migration
             $table->string('p_u_username');
             $table->integer('cfmt_id');
             $table->string('cfm_type');
+            $table->integer('cfm_required')->default(0);
             $table->string('cfm_seq_name')->nullable();
             $table->string('cfm_content')->nullable();
             $table->integer('cfm_parent_id')->nullable();
