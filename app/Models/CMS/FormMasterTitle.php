@@ -31,6 +31,6 @@ class FormMasterTitle extends Model
 
     public function quizSetup()
     {
-        return $this->hasMany(FormSetupDet::class, 'cfmt_id', 'id');
+        return $this->hasOne(FormSetupDet::class, 'cfmt_id', 'id');
     }
 }
