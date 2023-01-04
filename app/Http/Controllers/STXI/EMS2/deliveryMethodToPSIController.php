@@ -494,7 +494,7 @@ class deliveryMethodToPSIController extends BaseController
 
     public function DLVStockDelivery($date, $item = '')
     {
-        ini_set('max_execution_time', '300');
+        ini_set('max_execution_time', '600');
 
         $date_to = (int)date('d', strtotime($date)) == 1 ? date('Y-m-d', strtotime($date . "-1 days")) : date('Y-m-d');
         if (!empty($item)) {
