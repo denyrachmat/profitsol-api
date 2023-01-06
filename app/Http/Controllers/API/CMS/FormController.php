@@ -78,6 +78,7 @@ class FormController extends Controller
                 $value,
                 'test',
                 isset($request->ans) ? $request->ans : [],
+                isset($request->exp) ? $request->exp : [],
                 $insertMaster->id,
                 0,
                 $key

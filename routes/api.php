@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\API\CMS\FormController;
+use App\Http\Controllers\API\CMS\QuizController;
 use App\Http\Controllers\API\DMS\DocumentController;
 use App\Http\Controllers\API\DMS\FolderController;
 use Illuminate\Http\Request;
@@ -65,6 +66,7 @@ Route::group(['prefix' => 'dms'], function () {
 
 Route::group(['prefix' => 'cms'], function () {
     Route::resource('forms', FormController::class);
+    Route::resource('quiz', QuizController::class);
 });
 
 Route::group(['prefix' => 'div'], function () {
@@ -87,7 +89,7 @@ Route::group(['prefix' => 'div'], function () {
         Route::get('syncBOMToPSI', [deliveryMethodToPSIController::class, 'syncBOMToPSI']);
         Route::get('DLVStockDelivery/{date}/{item?}', [deliveryMethodToPSIController::class, 'DLVStockDelivery']);
 
-        Route::get('fifoData/{date?}/{item?}/{saved?}/{byItemOnly?}/{dateFifoStart?}', [deliveryMethodToPSIController::class, 'fifoUpdateDLV']);
+        Route::get('fifoData/{date?}/{item?}/{saved?}/{byItemOnly?}/{dateFifoStart?}/{do?}', [deliveryMethodToPSIController::class, 'fifoUpdateDLV']);
         Route::get('getFifoData/{date?}/{item?}', [deliveryMethodToPSIController::class, 'showFifoDLV']);
 
         Route::get('exportDOExcel/{date}/{item?}', [deliveryMethodToPSIController::class, 'exportDOExcel']);

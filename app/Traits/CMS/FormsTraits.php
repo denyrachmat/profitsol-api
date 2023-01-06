@@ -14,10 +14,12 @@ trait FormsTraits
         $hasil = [];
         foreach ($data as $key => $value) {
             $answer = [];
+            $exp = [];
             foreach ($value['form_master'] as $key => $valueAns) {
                 $cekAnswer = FormAnswerDet::where('cfm_id', $valueAns['id'])->first();
                 if (isset($cekAnswer)) {
-                    $answer[] = $cekAnswer['cfm_val'];
+                    $answer[] = is_array(json_decode($cekAnswer['cfm_val'])) ? json_decode($cekAnswer['cfm_val']) : $cekAnswer['cfm_val'];
+                    $exp[] = $cekAnswer['cfm_exp'];
                 }
             }
 
@@ -27,6 +29,7 @@ trait FormsTraits
                 'isQuiz' => $value['cfmt_quiz_flag'],
                 'forms' => $this->convertToFE($value['form_master']),
                 'ans' => $answer,
+                'exp' => $exp,
                 'setupTraining' => !empty($value['quiz_setup'])
                 ? [
                     'defaultNumberOfChoice' => 1,
@@ -81,7 +84,7 @@ trait FormsTraits
         return $hasil;
     }
 
-    public function storingForms($data, $uname, $keyAnswer = [], $idTitle = '', $parent = 0, $masterKeys = 0, $hasil = [])
+    public function storingForms($data, $uname, $keyAnswer = [], $keyExp = [], $idTitle = '', $parent = 0, $masterKeys = 0, $hasil = [])
     {
         if ($data['type'] === 'row') {
             $content = '';
@@ -98,7 +101,7 @@ trait FormsTraits
             if ($insert) {
                 $dataCols = [];
                 foreach ($data['content'] as $key => $value) {
-                    $dataCols[] = $this->storingForms($value, $uname, $keyAnswer, $idTitle, $insert->id);
+                    $dataCols[] = $this->storingForms($value, $uname, $keyAnswer, $keyExp, $idTitle, $insert->id);
                 }
 
                 $hasil[] = [
@@ -145,14 +148,27 @@ trait FormsTraits
                     foreach ($keyAnswer as $keyAns => $valueAns) {
                         if ($keyAns === $masterKeys) {
                             $getIDDetail = array_values(array_filter($detail_data, function ($f) use ($valueAns) {
-                                return $f->cfmd_value == $valueAns;
+                                $comp = is_array($f->cfmd_value) ? json_encode($f->cfmd_value) : $f->cfmd_value;
+                                if($comp == is_array($valueAns) ? json_encode($valueAns) : $valueAns){
+                                    return $f;
+                                }
                             }));
 
+                            if (is_array($valueAns)) {
+                                $valnya = [];
+                                foreach ($valueAns as $keyAnsArr => $valueAnsArr) {
+                                    $valnya[] = (string)$valueAnsArr;
+                                }
+                            } else {
+                                $valnya = $valueAns;
+                            }
+                            
                             $detail_data_key_ans[] = FormAnswerDet::create([
                                 'p_u_username' => $uname,
                                 'cfm_id' => $insert->id,
                                 'cfmd_id' => $getIDDetail[0]->id,
-                                'cfm_val' => is_array($valueAns) ? json_encode($valueAns) : $valueAns,
+                                'cfm_val' =>  $valnya,
+                                'cfm_exp' => $keyExp[$keyAns],
                             ]);
                         }
                     }

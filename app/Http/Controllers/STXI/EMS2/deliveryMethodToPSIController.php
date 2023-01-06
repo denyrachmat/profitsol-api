@@ -58,7 +58,7 @@ class deliveryMethodToPSIController extends BaseController
                 'MITM_ITMCD',
                 'MITM_MODELCD'
             )
-            ->whereIn('MITM_MODEL', [0,1]);
+            ->whereIn('MITM_MODEL', [0, 1]);
 
         if (!empty($whereModel)) {
             $data->where('MITM_MODELCD', $whereModel);
@@ -85,11 +85,11 @@ class deliveryMethodToPSIController extends BaseController
             'MITM_MODELCD' => $req->MITM_MODELCD,
             'MITM_PCBCD' => $req->MITM_PCBCD
         ], [
-            'MITM_MODELCD' => $req->MITM_MODELCD,
-            'MITM_PCBCD' => $req->MITM_PCBCD,
-            'STXI_SPQ' => $req->STXI_SPQ,
-            'SPQ_BOX_PROT_FLAG' => $req->SPQ_BOX_PROT_FLAG,
-        ]);
+                'MITM_MODELCD' => $req->MITM_MODELCD,
+                'MITM_PCBCD' => $req->MITM_PCBCD,
+                'STXI_SPQ' => $req->STXI_SPQ,
+                'SPQ_BOX_PROT_FLAG' => $req->SPQ_BOX_PROT_FLAG,
+            ]);
 
         return $this->handleResponse($data, 'Data Updated !');
     }
@@ -125,7 +125,8 @@ class deliveryMethodToPSIController extends BaseController
         $item = '',
         $withFifo = false,
         $withTransID = false
-    ) {
+    )
+    {
         $selHeader = array_merge($sel);
 
         if (!empty($date)) {
@@ -155,13 +156,13 @@ class deliveryMethodToPSIController extends BaseController
             )
 
         )->join(
-            DB::raw('[MGSVR].[VMI_TYO].[dbo].[MITM_TBL]'),
-            'MITM_ITMCD',
-            'MITM_MODELCD'
-        )->leftjoin('DLV_REQ_TYO_DET', function ($j) {
-            $j->on('DRT_ITMCD', 'MITM_MODELCD');
-            $j->on('DRT_PSI_DELDT', 'DEL_DATE');
-        })
+                DB::raw('[MGSVR].[VMI_TYO].[dbo].[MITM_TBL]'),
+                'MITM_ITMCD',
+                'MITM_MODELCD'
+            )->leftjoin('DLV_REQ_TYO_DET', function ($j) {
+                $j->on('DRT_ITMCD', 'MITM_MODELCD');
+                $j->on('DRT_PSI_DELDT', 'DEL_DATE');
+            })
             ->groupBy($selHeader)
             ->orderBy('DEL_DATE');
 
@@ -184,7 +185,7 @@ class deliveryMethodToPSIController extends BaseController
         // }
 
         $dataHasil = array_map(function ($value) {
-            return (array)$value;
+            return (array) $value;
         }, $data->get()->toArray());
 
         if ($withDet) {
@@ -261,15 +262,16 @@ class deliveryMethodToPSIController extends BaseController
 
             $dataCPO = collect(DB::connection('sqlsrv_mega_tyo')->select(DB::raw(
                 $query
-            )))[0];
+            )
+            ))[0];
 
             $getSPQDataPersheet = $this->SPQIndex($value)->original['data'] ? $this->SPQIndex($value)->original['data']['MITM_SPQ_CHECK'] : false;
 
-            $hasilWithBarcode = (int)$dataCPO->BAL_CPO_STXI_ITEC > 0
-                ? (!$getSPQDataPersheet || (int)$req->delivery[$key] < (int)$getSPQDataPersheet
+            $hasilWithBarcode = (int) $dataCPO->BAL_CPO_STXI_ITEC > 0
+                ? (!$getSPQDataPersheet || (int) $req->delivery[$key] < (int) $getSPQDataPersheet
                     ? 0
-                    : ($req->delivery[$key] > (int)$dataCPO->BAL_CPO_STXI_ITEC && $req->delivery[$key] > (int)$getSPQDataPersheet
-                        ? (int)$dataCPO->BAL_CPO_STXI_ITEC
+                    : ($req->delivery[$key] > (int) $dataCPO->BAL_CPO_STXI_ITEC && $req->delivery[$key] > (int) $getSPQDataPersheet
+                        ? (int) $dataCPO->BAL_CPO_STXI_ITEC
                         : $req->delivery[$key]
                     )
                 )
@@ -295,7 +297,7 @@ class deliveryMethodToPSIController extends BaseController
                 // 'query' => $query,
                 'model' => $value,
                 'delivery' => $req->delivery[$key],
-                'cpo' => (int)$dataCPO->BAL_CPO_STXI_ITEC,
+                'cpo' => (int) $dataCPO->BAL_CPO_STXI_ITEC,
                 'withBarcode' => $hasilWithBarcode,
                 'spq' => $getSPQArray
             ];
@@ -356,7 +358,7 @@ class deliveryMethodToPSIController extends BaseController
         }
 
         // return [$qty, isset($getSPQData->STXI_SPQ) ? (int)$getSPQData->STXI_SPQ : 0];
-        $getSPQArray = $this->DLVCalcSPQ($qty, isset($getSPQData->STXI_SPQ) ? (int)$getSPQData->STXI_SPQ : 0);
+        $getSPQArray = $this->DLVCalcSPQ($qty, isset($getSPQData->STXI_SPQ) ? (int) $getSPQData->STXI_SPQ : 0);
         // return $getSPQArray;
 
         $hasilSPQ = [];
@@ -462,15 +464,17 @@ class deliveryMethodToPSIController extends BaseController
             );
         }
 
-        $insertJob = (new DLVSMTTYOEmailQueue(
-            'PT SMT Indonesia',
-            $hasilData,
-            $totalDelivery,
-            $totalWBarcode,
-            $totalWOBarcode,
-            $totalSMTDlv,
-            $date
-        ));
+        $insertJob = (
+            new DLVSMTTYOEmailQueue(
+                'PT SMT Indonesia',
+                $hasilData,
+                $totalDelivery,
+                $totalWBarcode,
+                $totalWOBarcode,
+                $totalSMTDlv,
+                $date
+            )
+        );
 
         dispatch($insertJob)->onQueue('sendEmailQueue');
 
@@ -496,7 +500,7 @@ class deliveryMethodToPSIController extends BaseController
     {
         ini_set('max_execution_time', '600');
 
-        $date_to = (int)date('d', strtotime($date)) == 1 ? date('Y-m-d', strtotime($date . "-1 days")) : date('Y-m-d');
+        $date_to = (int) date('d', strtotime($date)) == 1 ? date('Y-m-d', strtotime($date . "-1 days")) : date('Y-m-d');
         if (!empty($item)) {
             $query = "SET NOCOUNT ON;EXEC Z_STXI_GET_CPO_DLV_STXI_ITEC @date_start = '" . date('Y-m-01', strtotime($date)) . "', @date_to = '" . $date . "', @model = '" . $item . "'";
         } else {
@@ -507,23 +511,24 @@ class deliveryMethodToPSIController extends BaseController
 
         $dataCPO = collect(DB::connection('sqlsrv_mega_tyo')->select(DB::raw(
             $query
-        )));
+        )
+        ));
 
         $getCPO = $dataCPO->where('BAL_STOCK', '>', 0)
             ->where('BAL_CPO_STXI_ITEC', '>', 0)
             ->map(function ($t) {
-            return collect($t)->only([
-                'MITM_ITMCD',
-                'MITM_ITMD1',
-                'BAL_CPO_STXI_ITEC',
-                'BAL_STOCK'
-            ]);
-        })->toArray();
+                return collect($t)->only([
+                    'MITM_ITMCD',
+                    'MITM_ITMD1',
+                    'BAL_CPO_STXI_ITEC',
+                    'BAL_STOCK'
+                ]);
+            })->toArray();
 
         return array_values($getCPO);
     }
 
-    public function fifoUpdateDLV($date = null, $item = '', $isSave = false, $byItemOnly = false, $dateFifoStart = null)
+    public function fifoUpdateDLV($date = null, $item = '', $isSave = false, $byItemOnly = false, $dateFifoStart = 0, $do = 0)
     {
         $data = $this->DLVGetData($date, [
             'MITM_MODELCD',
@@ -560,14 +565,16 @@ class deliveryMethodToPSIController extends BaseController
                     if ($isSave) {
                         DLVTYODet::where('DRST_ID', $valueID['id'])->forceDelete();
                         if ($valueID['IO_REMARK'] == 'TO_ITEC') {
-                            $valFifo = "'" . $value['MITM_MODELCD'] . "', " . $value['TOT_OUT_BC_DLV'] . ", '" . date(empty($dateFifoStart) ? 'Y-m-01' : 'Y-m-d', empty($dateFifoStart) ? strtotime('-1 month', strtotime($date)) : strtotime($dateFifoStart)) . "', '" . date('Y-m-01', strtotime($date)) . "'";
+                            $valFifo = "'" . $value['MITM_MODELCD'] . "', " . $value['TOT_OUT_BC_DLV'] . ", '" . date($dateFifoStart === 0 ? 'Y-m-01' : 'Y-m-d', $dateFifoStart === 0 ? strtotime('-1 month', strtotime($date)) : strtotime($dateFifoStart)) . "', '" . date('Y-m-01', strtotime($date)) . "', '" . ($do == 0 ? '' : $do) . "'";
                             $hasil[$value['MITM_MODELCD']]['DATA_DATE'][$value['DEL_DATE']][$keyID]['DLVQT'] = $value['TOT_OUT_BC_DLV'];
                             $hasil[$value['MITM_MODELCD']]['DATA_DATE'][$value['DEL_DATE']][$keyID]['CEK'] = $valFifo;
                         } else {
-                            $valFifo = "'" . $value['MITM_MODELCD'] . "', " . $value['TOT_OUT_STOCK_DLV'] . ", '" . date(empty($dateFifoStart) ? 'Y-m-01' : 'Y-m-d', empty($dateFifoStart) ? strtotime('-1 month', strtotime($date)) : strtotime($dateFifoStart)) . "', '" . date('Y-m-01', strtotime($date)) . "'";
+                            $valFifo = "'" . $value['MITM_MODELCD'] . "', " . $value['TOT_OUT_STOCK_DLV'] . ", '" . date($dateFifoStart === 0 ? 'Y-m-01' : 'Y-m-d', $dateFifoStart === 0 ? strtotime('-1 month', strtotime($date)) : strtotime($dateFifoStart)) . "', '" . date('Y-m-01', strtotime($date)) . "', '" . ($do === 0 ? '' : $do) . "'";
                             $hasil[$value['MITM_MODELCD']]['DATA_DATE'][$value['DEL_DATE']][$keyID]['DLVQT'] = $value['TOT_OUT_STOCK_DLV'];
                             $hasil[$value['MITM_MODELCD']]['DATA_DATE'][$value['DEL_DATE']][$keyID]['CEK'] = $valFifo;
                         }
+
+                        // return $valFifo;
 
                         $dataFIfo = DB::connection('sqlsrv_mega_tyo')
                             ->table("Z_STXI_FIFO_OS_SO(" . $valFifo . ")")
@@ -577,10 +584,10 @@ class deliveryMethodToPSIController extends BaseController
                         $statInsert = [];
                         foreach ($dataFIfo as $keyInsert => $valueInsert) {
                             $statInsert[] = DLVTYODet::create([
-                                'DRST_ID' => (int)$valueID['id'],
-                                'DRD_DELNO' => (string)$valueInsert->SSO2_DELNO,
+                                'DRST_ID' => (int) $valueID['id'],
+                                'DRD_DELNO' => (string) $valueInsert->SSO2_DELNO,
                                 'DRD_PRICE' => round($valueInsert->SSO2_SLPRC, 2),
-                                'DRD_QTY' => (int)$valueInsert->USED_QT,
+                                'DRD_QTY' => (int) $valueInsert->USED_QT,
                                 'DRD_DELDT' => $valueInsert->SSO2_DELDT,
                             ]);
                         }
@@ -611,11 +618,18 @@ class deliveryMethodToPSIController extends BaseController
                             $hasil = array_merge($hasil, $statInsert);
                             // array_push($hasil, $statInsert);
                         } else {
+                            $valFifo3 = "'" . $value['MITM_MODELCD'] . "', " . ($value['TOT_OUT_BC_DLV'] + $value['TOT_OUT_STOCK_DLV']) . ", '" . date($dateFifoStart === 0 ? 'Y-m-01' : 'Y-m-d', $dateFifoStart === 0 ? strtotime('-1 month', strtotime($date)) : strtotime($dateFifoStart)) . "', '" . date('Y-m-01', strtotime($date)) . "', '" . ($do == 0 ? '' : $do) . "'";
+                            $checkFIFO = DB::connection('sqlsrv_mega_tyo')
+                                ->table("Z_STXI_FIFO_OS_SO(" . $valFifo3 . ")")
+                                ->get()
+                                ->toArray();
+
                             if ($valueID['IO_REMARK'] == 'TO_ITEC') {
                                 $hasil[$value['MITM_MODELCD']]['BC_DLV']['TOTAL'] = $value['TOT_OUT_BC_DLV'];
                                 $statInsert = DLVTYODet::where('DRST_ID', $valueID['id'])->get()->toArray();
 
                                 $hasil[$value['MITM_MODELCD']]['BC_DLV']['ID_HIST'] = $valueID['id'];
+
                                 $hasil[$value['MITM_MODELCD']]['BC_DLV']['FIFO_DATA'] = $statInsert;
                             } else {
                                 $hasil[$value['MITM_MODELCD']]['STOCK_DLV']['TOTAL'] = $value['TOT_OUT_STOCK_DLV'];
@@ -624,6 +638,9 @@ class deliveryMethodToPSIController extends BaseController
                                 $hasil[$value['MITM_MODELCD']]['STOCK_DLV']['ID_HIST'] = $valueID['id'];
                                 $hasil[$value['MITM_MODELCD']]['STOCK_DLV']['FIFO_DATA'] = $statInsert;
                             }
+
+                            $hasil[$value['MITM_MODELCD']]['FIFO_LIST'] = $checkFIFO;
+                            $hasil[$value['MITM_MODELCD']]['FIFO_QUERY'] = "Z_STXI_FIFO_OS_SO(" . $valFifo3 . ")";
                         }
                     }
                 }
@@ -752,19 +769,19 @@ class deliveryMethodToPSIController extends BaseController
 
                 $totalAll = $tempQty;
             } else {
-                $cekSisaSPQ = $spq - (int)$dataBefore['SUM_SPQ_QTY'];
-                $cekSisaDRD = (int)$nowData['DRD_QTY'] - (int)$dataBefore['SUM_DRD_QTY'];
+                $cekSisaSPQ = $spq - (int) $dataBefore['SUM_SPQ_QTY'];
+                $cekSisaDRD = (int) $nowData['DRD_QTY'] - (int) $dataBefore['SUM_DRD_QTY'];
 
                 // 1800 > 360
                 if ($cekSisaSPQ > $cekSisaDRD) {
-                    $cekSisaDRDSubstrWithNow = $cekSisaDRD - (int)$nowData['DRD_QTY'];
+                    $cekSisaDRDSubstrWithNow = $cekSisaDRD - (int) $nowData['DRD_QTY'];
                     // 1080 - 1080
                     if ($cekSisaDRDSubstrWithNow >= 0) {
-                        if ($cekSisaSPQ > (int)$nowData['DRD_QTY']) {
-                            $totalSPQ = (int)$dataBefore['SUM_SPQ_QTY'] + (int)$nowData['DRD_QTY'];
-                            $tempQty = (int)$nowData['DRD_QTY'];
+                        if ($cekSisaSPQ > (int) $nowData['DRD_QTY']) {
+                            $totalSPQ = (int) $dataBefore['SUM_SPQ_QTY'] + (int) $nowData['DRD_QTY'];
+                            $tempQty = (int) $nowData['DRD_QTY'];
                         } else {
-                            $tempQty = (int)$nowData['DRD_QTY'];
+                            $tempQty = (int) $nowData['DRD_QTY'];
                         }
                         $totalDRD = $cekSisaDRDSubstrWithNow;
                     } else {
@@ -782,10 +799,10 @@ class deliveryMethodToPSIController extends BaseController
                     if ($cekSisaDRDSubstrWithNowSPQ > 0) {
                         if ($cekSisaSPQ - $spq < 0) {
                             $tempQty = $cekSisaSPQ;
-                            $totalDRD = (int)$tempQty;
+                            $totalDRD = (int) $tempQty;
                         } else {
                             $tempQty = $spq;
-                            $totalDRD = (int)$dataBefore['SUM_DRD_QTY'] + $spq;
+                            $totalDRD = (int) $dataBefore['SUM_DRD_QTY'] + $spq;
                         }
                     } elseif ($cekSisaDRDSubstrWithNowSPQ === 0) {
                         if ($cekSisaSPQ < $spq) {
@@ -825,12 +842,12 @@ class deliveryMethodToPSIController extends BaseController
                 $nowData,
                 [
                     'DRD_QTY' => $finalQty,
-                    'SUM_DRD_QTY' => (int)$totalDRD,
-                    'SUM_SPQ_QTY' => (int)$totalSPQ,
-                    'TOTAL' => (int)$totalAll,
+                    'SUM_DRD_QTY' => (int) $totalDRD,
+                    'SUM_SPQ_QTY' => (int) $totalSPQ,
+                    'TOTAL' => (int) $totalAll,
                     'BARCODE_REMARKS' => 'BARCODE-' . $barcodeInt,
                     'REAL_SPQ_QTY' => $spq,
-                    'REAL_DRD_QTY' => (int)$nowData['DRD_QTY'],
+                    'REAL_DRD_QTY' => (int) $nowData['DRD_QTY'],
                     // 'BOX_COUNT' => 1,
                     'CEK_DRD' => $cekSisaDRD,
                     'CEK_SPQ' => $cekSisaSPQ
@@ -857,7 +874,7 @@ class deliveryMethodToPSIController extends BaseController
         if (empty($cekData)) {
             return 'POT-' . date('ym', strtotime($date)) . '001';
         } else {
-            return 'POT-' . date('ym', strtotime($date)) . sprintf('%03d', ((int)substr($cekData->DRT_TRANID, -3) + 1));
+            return 'POT-' . date('ym', strtotime($date)) . sprintf('%03d', ((int) substr($cekData->DRT_TRANID, -3) + 1));
         }
     }
 
@@ -893,8 +910,8 @@ class deliveryMethodToPSIController extends BaseController
         if ($extNya == 'xls') {
             $spreadsheet = \PhpOffice\PhpSpreadsheet\IOFactory::load($file);
             $writer = new Xlsx($spreadsheet);
-            $nama_file = $fileHash.'.xlsx';
-            $writer->save('/public/upload_weekly_po_itec/'.$nama_file);
+            $nama_file = $fileHash . '.xlsx';
+            $writer->save('/public/upload_weekly_po_itec/' . $nama_file);
         }
 
 
@@ -907,13 +924,13 @@ class deliveryMethodToPSIController extends BaseController
 
     public function getUploadedWeeklyPO($date)
     {
-        return $this->handleResponse(DB::connection('sqlsrv_ems2')->table("EMS2.dbo.f_itec_po_weekly_report('".$date."', '', '')")->get(), 'Data Found !!');
+        return $this->handleResponse(DB::connection('sqlsrv_ems2')->table("EMS2.dbo.f_itec_po_weekly_report('" . $date . "', '', '')")->get(), 'Data Found !!');
     }
 
     public function ExportWeeklyReport($date)
     {
-        $data = DB::connection('sqlsrv_ems2')->table("EMS2.dbo.f_itec_po_weekly_report('".$date."', '', '')")->get()->transform(function($i) {
-            return (array)$i;
+        $data = DB::connection('sqlsrv_ems2')->table("EMS2.dbo.f_itec_po_weekly_report('" . $date . "', '', '')")->get()->transform(function ($i) {
+            return (array) $i;
         })->toArray();
 
         Excel::store(new ExportDOWeeklyReport($data), 'export_weekly_PO_delivery_' . $date . '.xlsx', 'public');

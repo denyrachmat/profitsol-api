@@ -16,5 +16,6 @@ class FormAnswerDet extends Model
         'cfm_id',
         'cfmd_id',
         'cfm_val',
+        'cfm_exp',
     ];
 }
