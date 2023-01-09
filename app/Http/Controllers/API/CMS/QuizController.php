@@ -3,9 +3,11 @@
 namespace App\Http\Controllers\API\CMS;
 
 use App\Http\Controllers\Controller;
+use App\Models\CMS\FormAnswerDet;
 use Illuminate\Http\Request;
 use App\Traits\CMS\FormsTraits;
 use App\Models\CMS\FormAnswerUserDet;
+use App\Models\CMS\FormMasterTitle;
 
 class QuizController extends Controller
 {
@@ -46,7 +48,7 @@ class QuizController extends Controller
                 'p_u_username' => $request->header('username'),
                 'cfm_id' => $request->id,
                 'cfmd_id' => '',
-                'cfm_val' => $value,
+                'cfm_val' => is_array($value) ? json_encode($value) : $value,
             ]);
         }
 
@@ -66,10 +68,19 @@ class QuizController extends Controller
     public function show(Request $request, $id)
     {
         $data = FormAnswerUserDet::where('p_u_username', $request->header('username'))->where('cfm_id', $id)->get();
+        $dataAnswers = FormAnswerDet::where('cfm_id', $id)->get();
+        // return $dataAnswers;
 
         $hasil = [];
-        foreach ($data as $key => $value) {
-            $hasil[] = $value['cfm_val'];
+        foreach ($dataAnswers as $key => $value) {
+            $answers = is_array(json_decode($value['cfm_val'])) ? json_decode($value['cfm_val']) : $value['cfm_val'];
+            $answersUser = is_array(json_decode($data[$key]['cfm_val'])) ? json_decode($data[$key]['cfm_val']) : $data[$key]['cfm_val'];
+            $hasil[$key] = [
+                'status' => $answers === $answersUser,
+                'users' => $answersUser,
+                'ans' => $answers,
+                'exp' => $value['cfm_exp']
+            ];
         }
 
         return response(['status' => true, 'data' => $hasil]);

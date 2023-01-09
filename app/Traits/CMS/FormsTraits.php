@@ -16,7 +16,7 @@ trait FormsTraits
             $answer = [];
             $exp = [];
             foreach ($value['form_master'] as $key => $valueAns) {
-                $cekAnswer = FormAnswerDet::where('cfm_id', $valueAns['id'])->first();
+                $cekAnswer = FormAnswerDet::where('cfmd_id', $valueAns['id'])->first();
                 if (isset($cekAnswer)) {
                     $answer[] = is_array(json_decode($cekAnswer['cfm_val'])) ? json_decode($cekAnswer['cfm_val']) : $cekAnswer['cfm_val'];
                     $exp[] = $cekAnswer['cfm_exp'];
@@ -162,11 +162,11 @@ trait FormsTraits
                             } else {
                                 $valnya = $valueAns;
                             }
-                            
+
                             $detail_data_key_ans[] = FormAnswerDet::create([
                                 'p_u_username' => $uname,
-                                'cfm_id' => $insert->id,
-                                'cfmd_id' => $getIDDetail[0]->id,
+                                'cfm_id' => $idTitle,
+                                'cfmd_id' => $insert->id,
                                 'cfm_val' =>  $valnya,
                                 'cfm_exp' => $keyExp[$keyAns],
                             ]);
