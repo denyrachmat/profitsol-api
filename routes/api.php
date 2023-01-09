@@ -89,7 +89,7 @@ Route::group(['prefix' => 'div'], function () {
         Route::get('syncBOMToPSI', [deliveryMethodToPSIController::class, 'syncBOMToPSI']);
         Route::get('DLVStockDelivery/{date}/{item?}', [deliveryMethodToPSIController::class, 'DLVStockDelivery']);
 
-        Route::get('fifoData/{date?}/{item?}/{saved?}/{byItemOnly?}/{dateFifoStart?}/{do?}', [deliveryMethodToPSIController::class, 'fifoUpdateDLV']);
+        Route::get('fifoData/{date?}/{item?}/{saved?}/{byItemOnly?}/{dateFifoStart?}/{do?}/{qty?}', [deliveryMethodToPSIController::class, 'fifoUpdateDLV']);
         Route::get('getFifoData/{date?}/{item?}', [deliveryMethodToPSIController::class, 'showFifoDLV']);
 
         Route::get('exportDOExcel/{date}/{item?}', [deliveryMethodToPSIController::class, 'exportDOExcel']);
@@ -99,6 +99,9 @@ Route::group(['prefix' => 'div'], function () {
         Route::post('uploadWeeklyPOData', [deliveryMethodToPSIController::class, 'uploadWeeklyPOData']);
         Route::get('getUploadedWeeklyPO/{date}', [deliveryMethodToPSIController::class, 'getUploadedWeeklyPO']);
         Route::get('exportWeeklyReport/{date}', [deliveryMethodToPSIController::class, 'ExportWeeklyReport']);
+        Route::post('updateFIFO', [deliveryMethodToPSIController::class, 'replaceFIFODO']);
+        Route::get('deleteFIFO/{id}', [deliveryMethodToPSIController::class, 'deleteFIFO']);
+
         // End DLV Method SMT
 
         // Start PO Summary

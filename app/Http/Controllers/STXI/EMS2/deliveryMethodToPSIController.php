@@ -260,10 +260,12 @@ class deliveryMethodToPSIController extends BaseController
             $date_to = date('d', strtotime($req->date)) == 1 ? date('Y-m-d') : date('Y-m-d', strtotime($req->date . "-1 days"));
             $query = "SET NOCOUNT ON;EXEC Z_STXI_GET_CPO_DLV_STXI_ITEC @model = '" . $value . "', @date_start = '" . date('Y-m-01', strtotime($req->date)) . "', @date_to = '" . $date_to . "'";
 
-            $dataCPO = collect(DB::connection('sqlsrv_mega_tyo')->select(DB::raw(
-                $query
+            $dataCPO = collect(DB::connection('sqlsrv_mega_tyo')->select(
+                DB::raw(
+                    $query
+                )
             )
-            ))[0];
+            )[0];
 
             $getSPQDataPersheet = $this->SPQIndex($value)->original['data'] ? $this->SPQIndex($value)->original['data']['MITM_SPQ_CHECK'] : false;
 
@@ -509,10 +511,12 @@ class deliveryMethodToPSIController extends BaseController
 
         // return $query;
 
-        $dataCPO = collect(DB::connection('sqlsrv_mega_tyo')->select(DB::raw(
-            $query
+        $dataCPO = collect(DB::connection('sqlsrv_mega_tyo')->select(
+            DB::raw(
+                $query
+            )
         )
-        ));
+        );
 
         $getCPO = $dataCPO->where('BAL_STOCK', '>', 0)
             ->where('BAL_CPO_STXI_ITEC', '>', 0)
@@ -528,7 +532,7 @@ class deliveryMethodToPSIController extends BaseController
         return array_values($getCPO);
     }
 
-    public function fifoUpdateDLV($date = null, $item = '', $isSave = false, $byItemOnly = false, $dateFifoStart = 0, $do = 0)
+    public function fifoUpdateDLV($date = null, $item = '', $isSave = false, $byItemOnly = false, $dateFifoStart = 0, $do = 0, $qty = 0)
     {
         $data = $this->DLVGetData($date, [
             'MITM_MODELCD',
@@ -574,8 +578,6 @@ class deliveryMethodToPSIController extends BaseController
                             $hasil[$value['MITM_MODELCD']]['DATA_DATE'][$value['DEL_DATE']][$keyID]['CEK'] = $valFifo;
                         }
 
-                        // return $valFifo;
-
                         $dataFIfo = DB::connection('sqlsrv_mega_tyo')
                             ->table("Z_STXI_FIFO_OS_SO(" . $valFifo . ")")
                             ->get()
@@ -599,6 +601,7 @@ class deliveryMethodToPSIController extends BaseController
                     } else {
                         if ($byItemOnly) {
                             $statInsert = DLVTYODet::select(
+                                'DLV_REQ_DET.id',
                                 'MITM_MODELCD',
                                 'IO_REMARK',
                                 'DRD_DELNO',
@@ -618,7 +621,7 @@ class deliveryMethodToPSIController extends BaseController
                             $hasil = array_merge($hasil, $statInsert);
                             // array_push($hasil, $statInsert);
                         } else {
-                            $valFifo3 = "'" . $value['MITM_MODELCD'] . "', " . ($value['TOT_OUT_BC_DLV'] + $value['TOT_OUT_STOCK_DLV']) . ", '" . date($dateFifoStart === 0 ? 'Y-m-01' : 'Y-m-d', $dateFifoStart === 0 ? strtotime('-1 month', strtotime($date)) : strtotime($dateFifoStart)) . "', '" . date('Y-m-01', strtotime($date)) . "', '" . ($do == 0 ? '' : $do) . "'";
+                            $valFifo3 = "'" . $value['MITM_MODELCD'] . "', " . ($qty === 0 ? ($value['TOT_OUT_BC_DLV'] + $value['TOT_OUT_STOCK_DLV']) : $qty) . ", '" . date($dateFifoStart === 0 ? 'Y-m-01' : 'Y-m-d', $dateFifoStart === 0 ? strtotime('-1 month', strtotime($date)) : strtotime($dateFifoStart)) . "', '" . date('Y-m-01', strtotime($date)) . "', '" . ($do == 0 ? '' : $do) . "'";
                             $checkFIFO = DB::connection('sqlsrv_mega_tyo')
                                 ->table("Z_STXI_FIFO_OS_SO(" . $valFifo3 . ")")
                                 ->get()
@@ -936,5 +939,37 @@ class deliveryMethodToPSIController extends BaseController
         Excel::store(new ExportDOWeeklyReport($data), 'export_weekly_PO_delivery_' . $date . '.xlsx', 'public');
 
         return 'storage/app/public/export_weekly_PO_delivery_' . $date . '.xlsx';
+    }
+
+    public function replaceFIFODO(Request $request)
+    {
+        $getID = DLVTYOHist::select('id', 'IO_REMARK')
+            ->where('MITM_MODELCD', $request->item)
+            ->where('DEL_DATE', $request->dlv_date)
+            ->whereIn('IO_REMARK', $request->remark)
+            ->get()
+            ->toArray();
+
+        $statInsert = [];
+        foreach ($getID as $key => $value) {
+            $delete = DLVTYODet::where('id', $value['id'])->delete();
+            foreach ($request->data as $keyData => $valueData) {
+                $statInsert[] = DLVTYODet::create([
+                    'DRST_ID' => (int) $value['id'],
+                    'DRD_DELNO' => (string) $valueData['SSO2_DELNO'],
+                    'DRD_PRICE' => round($valueData['SSO2_SLPRC'], 2),
+                    'DRD_QTY' => (int) $valueData['USED_QT'],
+                    'DRD_DELDT' => $valueData['SSO2_DELDT'],
+                ]);
+            }
+        }
+
+        return $this->handleResponse($statInsert, 'Update FIFO Sukses !');
+    }
+
+    public function deleteFIFO($id)
+    {
+        $hasil = DLVTYODet::where('id', $id)->delete();
+        return $this->handleResponse($hasil, 'Delete FIFO Sukses !');
     }
 }
