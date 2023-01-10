@@ -164,7 +164,7 @@ class deliveryMethodToPSIController extends BaseController
                 $j->on('DRT_PSI_DELDT', 'DEL_DATE');
             })
             ->groupBy($selHeader)
-            ->orderBy('DEL_DATE');
+            ->orderBy('DEL_DATE', 'DESC');
 
         // $data->whereIn('IO_REMARK', ['FROM_SMT', 'TO_ITEC', 'TO_ITEC_STOCKDLV']);
 

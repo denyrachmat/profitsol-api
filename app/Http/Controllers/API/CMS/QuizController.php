@@ -4,6 +4,7 @@ namespace App\Http\Controllers\API\CMS;
 
 use App\Http\Controllers\Controller;
 use App\Models\CMS\FormAnswerDet;
+use App\Models\CMS\FormMultiDet;
 use Illuminate\Http\Request;
 use App\Traits\CMS\FormsTraits;
 use App\Models\CMS\FormAnswerUserDet;
@@ -47,7 +48,7 @@ class QuizController extends Controller
             $created[] = FormAnswerUserDet::create([
                 'p_u_username' => $request->header('username'),
                 'cfm_id' => $request->id,
-                'cfmd_id' => '',
+                'cfmd_id' => $request->questId,
                 'cfm_val' => is_array($value) ? json_encode($value) : $value,
             ]);
         }
@@ -75,10 +76,17 @@ class QuizController extends Controller
         foreach ($dataAnswers as $key => $value) {
             $answers = is_array(json_decode($value['cfm_val'])) ? json_decode($value['cfm_val']) : $value['cfm_val'];
             $answersUser = is_array(json_decode($data[$key]['cfm_val'])) ? json_decode($data[$key]['cfm_val']) : $data[$key]['cfm_val'];
+
+            $getLabel = FormMultiDet::select('cfmd_label')
+                ->where('cfm_id', $value->cfmd_id)
+                ->whereIn('cfmd_value', is_array(json_decode($value['cfm_val'])) ? json_decode($value['cfm_val']) : [$value['cfm_val']])
+                ->pluck('cfmd_label');
+
             $hasil[$key] = [
                 'status' => $answers === $answersUser,
                 'users' => $answersUser,
                 'ans' => $answers,
+                'ans_value' => $getLabel,
                 'exp' => $value['cfm_exp']
             ];
         }

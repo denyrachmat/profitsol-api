@@ -15,11 +15,13 @@ trait FormsTraits
         foreach ($data as $key => $value) {
             $answer = [];
             $exp = [];
+            $answerID = [];
             foreach ($value['form_master'] as $key => $valueAns) {
                 $cekAnswer = FormAnswerDet::where('cfmd_id', $valueAns['id'])->first();
-                if (isset($cekAnswer)) {
+                if (isset($cekAnswer['cfm_exp']) && !empty($cekAnswer['cfm_exp'])) {
                     $answer[] = is_array(json_decode($cekAnswer['cfm_val'])) ? json_decode($cekAnswer['cfm_val']) : $cekAnswer['cfm_val'];
                     $exp[] = $cekAnswer['cfm_exp'];
+                    $answerID[] = $valueAns['id'];
                 }
             }
 
@@ -30,6 +32,7 @@ trait FormsTraits
                 'forms' => $this->convertToFE($value['form_master']),
                 'ans' => $answer,
                 'exp' => $exp,
+                'ans_id' => $answerID,
                 'setupTraining' => !empty($value['quiz_setup'])
                 ? [
                     'defaultNumberOfChoice' => 1,
