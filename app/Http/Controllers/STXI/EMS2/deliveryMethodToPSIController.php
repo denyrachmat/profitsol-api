@@ -627,6 +627,16 @@ class deliveryMethodToPSIController extends BaseController
                                 ->get()
                                 ->toArray();
 
+                            $hasilFifo = [];
+                            foreach ($checkFIFO as $key => $valueFif) {
+                                $hasilFifo[] = array_merge(
+                                        (array)$valueFif,
+                                        [
+                                            'ID_CUST' => trim($valueFif->SSO2_DELNO). '-' . date('y-m-d', strtotime($valueFif->SSO2_ISUDT))
+                                        ]
+                                    );
+                            }
+
                             if ($valueID['IO_REMARK'] == 'TO_ITEC') {
                                 $hasil[$value['MITM_MODELCD']]['BC_DLV']['TOTAL'] = $value['TOT_OUT_BC_DLV'];
                                 $statInsert = DLVTYODet::where('DRST_ID', $valueID['id'])->get()->toArray();
@@ -642,7 +652,7 @@ class deliveryMethodToPSIController extends BaseController
                                 $hasil[$value['MITM_MODELCD']]['STOCK_DLV']['FIFO_DATA'] = $statInsert;
                             }
 
-                            $hasil[$value['MITM_MODELCD']]['FIFO_LIST'] = $checkFIFO;
+                            $hasil[$value['MITM_MODELCD']]['FIFO_LIST'] = $hasilFifo;
                             $hasil[$value['MITM_MODELCD']]['FIFO_QUERY'] = "Z_STXI_FIFO_OS_SO(" . $valFifo3 . ")";
                         }
                     }
