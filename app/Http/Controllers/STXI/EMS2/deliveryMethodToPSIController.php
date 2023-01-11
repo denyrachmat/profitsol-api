@@ -632,7 +632,7 @@ class deliveryMethodToPSIController extends BaseController
                                 $hasilFifo[] = array_merge(
                                         (array)$valueFif,
                                         [
-                                            'ID_CUST' => trim($valueFif->SSO2_DELNO). '-' . date('y-m-d', strtotime($valueFif->SSO2_ISUDT))
+                                            'ID_CUST' => trim($valueFif->SSO2_DELNO). '-' . date('y-m-d', strtotime($valueFif->SSO2_ISUDT)). '-' .$valueFif->SSO2_SLPRC
                                         ]
                                     );
                             }

@@ -25,6 +25,7 @@ class CreateCmsFormSetupDetTable extends Migration
             $table->decimal('cfsd_hours')->default(0);
             $table->decimal('cfsd_min')->default(0);
             $table->decimal('cfsd_sec')->default(0);
+            $table->decimal('cfsd_min_pass')->default(100);
             $table->timestamps();
         });
     }

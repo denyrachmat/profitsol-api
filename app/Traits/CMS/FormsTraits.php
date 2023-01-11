@@ -7,6 +7,7 @@ use App\Models\CMS\FormMultiDet;
 use App\Models\CMS\FormAnswerDet;
 use App\Models\CMS\FormMasterTitle;
 use App\Models\CMS\FormSetupDet;
+
 trait FormsTraits
 {
     public function getHeaderAllForms($data)
@@ -37,15 +38,16 @@ trait FormsTraits
                 ? [
                     'defaultNumberOfChoice' => 1,
                     'defaultTypeChoice' => "multiple-radio",
-                    'hourTimer' => (int)$value['quiz_setup']['cfsd_hours'],
-                    'minTimer' => (int)$value['quiz_setup']['cfsd_min'],
-                    'randomizeQuestion' => (boolean)$value['quiz_setup']['cfsd_rand_quest'],
-                    'secTimer' => (int)$value['quiz_setup']['cfsd_sec'],
-                    'setUpTimer' => (boolean)$value['quiz_setup']['cfsd_timer'],
-                    'showResult' => (boolean)$value['quiz_setup']['cfsd_res_show'],
-                    'showRightKeysAnswer' => (boolean)$value['quiz_setup']['cfsd_ans_show'],
+                    'hourTimer' => (int) $value['quiz_setup']['cfsd_hours'],
+                    'minTimer' => (int) $value['quiz_setup']['cfsd_min'],
+                    'randomizeQuestion' => (boolean) $value['quiz_setup']['cfsd_rand_quest'],
+                    'secTimer' => (int) $value['quiz_setup']['cfsd_sec'],
+                    'setUpTimer' => (boolean) $value['quiz_setup']['cfsd_timer'],
+                    'showResult' => (boolean) $value['quiz_setup']['cfsd_res_show'],
+                    'showRightKeysAnswer' => (boolean) $value['quiz_setup']['cfsd_ans_show'],
                     'showRightKeysAnswerLocation' => $value['quiz_setup']['cfsd_ans_loc'],
-                    'timerEveryQuestion' => (boolean)$value['quiz_setup']['cfsd_timer_quest'],
+                    'timerEveryQuestion' => (boolean) $value['quiz_setup']['cfsd_timer_quest'],
+                    'minPass' => $value['quiz_setup']['cfsd_min_pass'],
                 ]
                 : null
             ];
@@ -152,7 +154,7 @@ trait FormsTraits
                         if ($keyAns === $masterKeys) {
                             $getIDDetail = array_values(array_filter($detail_data, function ($f) use ($valueAns) {
                                 $comp = is_array($f->cfmd_value) ? json_encode($f->cfmd_value) : $f->cfmd_value;
-                                if($comp == is_array($valueAns) ? json_encode($valueAns) : $valueAns){
+                                if ($comp == is_array($valueAns) ? json_encode($valueAns) : $valueAns) {
                                     return $f;
                                 }
                             }));
@@ -160,7 +162,7 @@ trait FormsTraits
                             if (is_array($valueAns)) {
                                 $valnya = [];
                                 foreach ($valueAns as $keyAnsArr => $valueAnsArr) {
-                                    $valnya[] = (string)$valueAnsArr;
+                                    $valnya[] = (string) $valueAnsArr;
                                 }
                             } else {
                                 $valnya = $valueAns;
@@ -170,7 +172,7 @@ trait FormsTraits
                                 'p_u_username' => $uname,
                                 'cfm_id' => $idTitle,
                                 'cfmd_id' => $insert->id,
-                                'cfm_val' =>  $valnya,
+                                'cfm_val' => is_array($valueAns) ? json_encode($valueAns) : $valueAns,
                                 'cfm_exp' => $keyExp[$keyAns],
                             ]);
                         }

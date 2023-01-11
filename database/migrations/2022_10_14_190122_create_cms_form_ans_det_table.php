@@ -15,6 +15,7 @@ class CreateCmsFormAnsDetTable extends Migration
     {
         Schema::connection('sqlsrv_cms')->create('cms_form_ans_det', function (Blueprint $table) {
             $table->id();
+            $table->integer('cfaud_batch');
             $table->string('p_u_username');
             $table->integer('cfm_id');
             $table->integer('cfmd_id')->nullable();

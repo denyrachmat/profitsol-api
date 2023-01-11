@@ -9,6 +9,7 @@ use Illuminate\Http\Request;
 use App\Traits\CMS\FormsTraits;
 use App\Models\CMS\FormAnswerUserDet;
 use App\Models\CMS\FormMasterTitle;
+use App\Models\CMS\FormSetupDet;
 
 class QuizController extends Controller
 {
@@ -41,14 +42,31 @@ class QuizController extends Controller
      */
     public function store(Request $request)
     {
-        FormAnswerUserDet::where('cfm_id', $request->id)->delete();
 
+        // return $request;
+        FormAnswerUserDet::where('cfm_id', $request->id)
+            ->where('p_u_username', $request->header('username'))
+            ->delete();
         $created = [];
         foreach ($request->ans as $key => $value) {
+            $getID = FormAnswerUserDet::where('cfm_id', $request->id)
+                ->where('p_u_username', $request->header('username'))
+                ->orderBy('created_at', 'desc')
+                ->first();
+            if (empty($getID)) {
+                $getDeletedID = FormAnswerUserDet::withTrashed()->where('cfm_id', $request->id)
+                    ->orderBy('created_at', 'desc')
+                    ->first();
+                $nextID = empty($getDeletedID) ? 1 : $getDeletedID['cfaud_batch'] + 1;
+            } else {
+                $nextID = $getID['cfaud_batch'];
+            }
+
             $created[] = FormAnswerUserDet::create([
                 'p_u_username' => $request->header('username'),
+                'cfaud_batch' => $nextID,
                 'cfm_id' => $request->id,
-                'cfmd_id' => $request->questId,
+                'cfmd_id' => $request->questId[$key],
                 'cfm_val' => is_array($value) ? json_encode($value) : $value,
             ]);
         }
@@ -66,21 +84,28 @@ class QuizController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function show(Request $request, $id)
+    public function show(Request $request, $id, $idDet = '')
     {
-        $data = FormAnswerUserDet::where('p_u_username', $request->header('username'))->where('cfm_id', $id)->get();
+        $data = FormAnswerUserDet::where('p_u_username', $request->header('username'))->where('cfm_id', $id)->get()->toArray();
         $dataAnswers = FormAnswerDet::where('cfm_id', $id)->get();
         // return $dataAnswers;
 
         $hasil = [];
         foreach ($dataAnswers as $key => $value) {
             $answers = is_array(json_decode($value['cfm_val'])) ? json_decode($value['cfm_val']) : $value['cfm_val'];
-            $answersUser = is_array(json_decode($data[$key]['cfm_val'])) ? json_decode($data[$key]['cfm_val']) : $data[$key]['cfm_val'];
+            $answersUser = isset($data[$key])
+                ? (is_array(json_decode($data[$key]['cfm_val'])) ? json_decode($data[$key]['cfm_val']) : $data[$key]['cfm_val'])
+                : (is_array(json_decode($value['cfm_val'])) ? [] : "" );
 
-            $getLabel = FormMultiDet::select('cfmd_label')
+            $getLabelCek = FormMultiDet::select('cfmd_label')
                 ->where('cfm_id', $value->cfmd_id)
-                ->whereIn('cfmd_value', is_array(json_decode($value['cfm_val'])) ? json_decode($value['cfm_val']) : [$value['cfm_val']])
-                ->pluck('cfmd_label');
+                ->whereIn('cfmd_value', is_array(json_decode($value['cfm_val'])) ? json_decode($value['cfm_val']) : [$value['cfm_val']]);
+
+            if (!empty($idDet)) {
+                $getLabelCek->where('cfmd_id', $idDet);
+            }
+
+            $getLabel = $getLabelCek->pluck('cfmd_label');
 
             $hasil[$key] = [
                 'status' => $answers === $answersUser,
@@ -90,8 +115,15 @@ class QuizController extends Controller
                 'exp' => $value['cfm_exp']
             ];
         }
+        
+        $getGrade = array_filter($hasil, function($f) {
+            return $f['status'];
+        });
+        
+        $totalGrade = round((count($getGrade) / count($dataAnswers)) * 100, 2);
+        $cekStatGrade = FormSetupDet::where('cfmt_id', $id)->first();
 
-        return response(['status' => true, 'data' => $hasil]);
+        return response(['status' => true, 'data' => $hasil, 'grade' => $totalGrade, 'is_pass' => $totalGrade >= $cekStatGrade['cfsd_min_pass']]);
     }
 
     /**

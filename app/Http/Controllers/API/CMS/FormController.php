@@ -69,14 +69,18 @@ class FormController extends Controller
                 'cfsd_hours' => $request->setupTraining['hourTimer'],
                 'cfsd_min' => $request->setupTraining['minTimer'],
                 'cfsd_sec' => $request->setupTraining['secTimer'],
+                'cfsd_min_pass' => $request->setupTraining['minPass'],
             ]);
         }
+
+        FormAnswerDet::where('cfm_id', $insertMaster->id)
+        ->delete();
 
         $hasil = [];
         foreach ($data as $key => $value) {
             $hasil[] = $this->storingForms(
                 $value,
-                'test',
+                $request->header('username'),
                 isset($request->ans) ? $request->ans : [],
                 isset($request->exp) ? $request->exp : [],
                 $insertMaster->id,

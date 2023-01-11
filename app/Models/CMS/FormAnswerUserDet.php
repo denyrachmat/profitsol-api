@@ -14,6 +14,7 @@ class FormAnswerUserDet extends Model
 
     protected $fillable = [
         'p_u_username',
+        'cfaud_batch',
         'cfm_id',
         'cfmd_id',
         'cfm_val',
