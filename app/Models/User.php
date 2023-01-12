@@ -67,6 +67,11 @@ class User extends Authenticatable implements MustVerifyEmail
         return $this->hasMany(PortalRoleUserMap::class, 'u_username', 'username');
     }
 
+    public function notif()
+    {
+        return $this->hasMany(PortalNotif::class, 'pnm_to_users', 'username');
+    }
+
     public static function boot() {
         parent::boot();
 

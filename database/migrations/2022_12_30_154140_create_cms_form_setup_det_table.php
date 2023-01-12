@@ -26,6 +26,8 @@ class CreateCmsFormSetupDetTable extends Migration
             $table->decimal('cfsd_min')->default(0);
             $table->decimal('cfsd_sec')->default(0);
             $table->decimal('cfsd_min_pass')->default(100);
+            $table->dateTime('cfsd_start_quiz')->nullable();
+            $table->dateTime('cfsd_end_quiz')->nullable();
             $table->timestamps();
         });
     }

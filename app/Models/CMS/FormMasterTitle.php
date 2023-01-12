@@ -33,4 +33,9 @@ class FormMasterTitle extends Model
     {
         return $this->hasOne(FormSetupDet::class, 'cfmt_id', 'id');
     }
+
+    public function shared()
+    {
+        return $this->hasMany(FormShareDet::class, 'cfmt_id', 'id');
+    }
 }

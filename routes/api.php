@@ -4,6 +4,7 @@ use App\Http\Controllers\API\CMS\FormController;
 use App\Http\Controllers\API\CMS\QuizController;
 use App\Http\Controllers\API\DMS\DocumentController;
 use App\Http\Controllers\API\DMS\FolderController;
+use App\Http\Controllers\API\PORTAL\NotifController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\API\PORTAL\AuthController;
@@ -49,6 +50,7 @@ Route::group(['prefix' => 'portal', 'middleware' => 'auth:sanctum', 'verify' => 
     // Dashboard
     Route::post('profile', [ProfileController::class, 'store'])->middleware('verified');
     Route::get('countryList', [ProfileController::class, 'getCountryList']);
+    Route::resource('notif', NotifController::class);
 });
 
 Route::group(['prefix' => 'dms'], function () {

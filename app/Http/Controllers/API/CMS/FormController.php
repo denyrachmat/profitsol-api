@@ -4,11 +4,16 @@ namespace App\Http\Controllers\API\CMS;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
+
 use App\Models\CMS\FormMaster;
 use App\Models\CMS\FormMultiDet;
 use App\Models\CMS\FormAnswerDet;
 use App\Models\CMS\FormMasterTitle;
 use App\Models\CMS\FormSetupDet;
+use App\Models\CMS\FormShareDet;
+use App\Models\PORTAL\PortalNotif;
+
 use App\Traits\CMS\FormsTraits;
 class FormController extends Controller
 {
@@ -70,7 +75,38 @@ class FormController extends Controller
                 'cfsd_min' => $request->setupTraining['minTimer'],
                 'cfsd_sec' => $request->setupTraining['secTimer'],
                 'cfsd_min_pass' => $request->setupTraining['minPass'],
+                'cfsd_start_quiz' => $request->setupTraining['startQuiz'],
+                'cfsd_end_quiz' => $request->setupTraining['endQuiz'],
             ]);
+
+
+        }
+
+        if (isset($request->shareForms)) {
+            $randomString = Str::random(30);
+            foreach ($request->shareForms as $keyShare => $valueShare) {
+                FormShareDet::updateOrCreate([
+                    'cfmt_id' => $request->idRef,
+                    'cfsd_to' => $valueShare,
+                ], [
+                    'cfmt_id' => $request->idRef,
+                    'p_u_username' => $request->header('username'),
+                    'cfsd_to' => $valueShare,
+                    'cfsd_gen_link' => $randomString,
+                ]);
+
+                PortalNotif::create([
+                    'p_u_username' => $request->header('username'),
+                    'pnm_to_users' => $valueShare,
+                    'pnm_title' => $request->isQuiz == true ? 'Training / Quiz' : 'Important Notice',
+                    'pnm_content' => $request->isQuiz == true 
+                        ? 'You have a new Training / Quiz : <b>'.$request->title.'</b>, please do it before expired !'
+                        : 'You have new information about <b>'.$request->title.'</b>',
+                    'pnm_action_url' => 'tos/forms/'.$randomString,
+                    'pnm_start_date' => $request->setupTraining['startQuiz'],
+                    'pnm_end_date' => $request->setupTraining['endQuiz']
+                ]);
+            }
         }
 
         FormAnswerDet::where('cfm_id', $insertMaster->id)
@@ -105,13 +141,13 @@ class FormController extends Controller
                 $f->where('cfm_parent_id', 0);
                 $f->with('formDetail.formAnswer');
                 $f->with('allChildrenContent');
-            }])->with('quizSetup')->where('cfmt_quiz_flag', 1)->get();
+            }])->with(['quizSetup', 'shared'])->where('cfmt_quiz_flag', 1)->get();
         } else {
             $data = formMasterTitle::with(['formMaster' => function ($f){
                 $f->where('cfm_parent_id', 0);
                 $f->with('formDetail.formAnswer');
                 $f->with('allChildrenContent');
-            }])->with('quizSetup')->where('cfmt_quiz_flag', 0)->get();
+            }])->with(['quizSetup', 'shared'])->where('cfmt_quiz_flag', 0)->get();
         }
 
         // return $data;

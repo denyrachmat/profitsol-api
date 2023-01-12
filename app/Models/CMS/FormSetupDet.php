@@ -22,6 +22,8 @@ class FormSetupDet extends Model
         'cfsd_hours',
         'cfsd_min',
         'cfsd_sec',
-        'cfsd_min_pass'
+        'cfsd_min_pass',
+        'cfsd_start_quiz',
+        'cfsd_end_quiz',
     ];
 }

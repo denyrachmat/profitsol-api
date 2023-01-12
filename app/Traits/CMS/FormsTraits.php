@@ -7,6 +7,7 @@ use App\Models\CMS\FormMultiDet;
 use App\Models\CMS\FormAnswerDet;
 use App\Models\CMS\FormMasterTitle;
 use App\Models\CMS\FormSetupDet;
+use App\Models\CMS\FormShareDet;
 
 trait FormsTraits
 {
@@ -26,6 +27,8 @@ trait FormsTraits
                 }
             }
 
+            $shared = FormShareDet::where('cfmt_id', $value['id'])->get()->pluck('cfsd_to');
+
             $hasil[] = [
                 'id' => $value['id'],
                 'title' => $value['cfmt_title'],
@@ -34,6 +37,7 @@ trait FormsTraits
                 'ans' => $answer,
                 'exp' => $exp,
                 'ans_id' => $answerID,
+                'share' => $shared,
                 'setupTraining' => !empty($value['quiz_setup'])
                 ? [
                     'defaultNumberOfChoice' => 1,
@@ -48,6 +52,8 @@ trait FormsTraits
                     'showRightKeysAnswerLocation' => $value['quiz_setup']['cfsd_ans_loc'],
                     'timerEveryQuestion' => (boolean) $value['quiz_setup']['cfsd_timer_quest'],
                     'minPass' => $value['quiz_setup']['cfsd_min_pass'],
+                    'startQuiz' => $value['quiz_setup']['cfsd_start_quiz'],
+                    'endQuiz' => $value['quiz_setup']['cfsd_end_quiz'],
                 ]
                 : null
             ];
