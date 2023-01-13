@@ -2,6 +2,7 @@
 
 namespace App\Models\PORTAL;
 
+use App\Models\CMS\FormShareDet;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -16,8 +17,14 @@ class PortalNotif extends Model
         'pnm_title',
         'pnm_content',
         'pnm_action_url',
+        'pnm_hash_id_location',
         'pnm_start_date',
         'pnm_end_date',
         'pnm_is_read',
     ];
+
+    public function shared()
+    {
+        return $this->hasOne(FormShareDet::class, 'cfsd_gen_link', 'pnm_hash_id_location');
+    }
 }

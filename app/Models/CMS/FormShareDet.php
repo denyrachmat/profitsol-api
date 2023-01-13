@@ -17,4 +17,9 @@ class FormShareDet extends Model
         'cfsd_to',
         'cfsd_gen_link',
     ];
+
+    public function forms()
+    {
+        return $this->hasOne(FormMasterTitle::class, 'id', 'cfmt_id');
+    }
 }

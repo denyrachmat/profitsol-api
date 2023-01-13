@@ -5,6 +5,7 @@ use App\Http\Controllers\API\CMS\QuizController;
 use App\Http\Controllers\API\DMS\DocumentController;
 use App\Http\Controllers\API\DMS\FolderController;
 use App\Http\Controllers\API\PORTAL\NotifController;
+use App\Http\Controllers\API\TOS\QuizViewController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\API\PORTAL\AuthController;
@@ -69,6 +70,10 @@ Route::group(['prefix' => 'dms'], function () {
 Route::group(['prefix' => 'cms'], function () {
     Route::resource('forms', FormController::class);
     Route::resource('quiz', QuizController::class);
+});
+
+Route::group(['prefix' => 'tos'], function () {
+    Route::resource('quizView', QuizViewController::class);
 });
 
 Route::group(['prefix' => 'div'], function () {

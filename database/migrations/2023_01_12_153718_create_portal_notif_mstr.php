@@ -20,6 +20,7 @@ class CreatePortalNotifMstr extends Migration
             $table->string('pnm_title');
             $table->text('pnm_content');
             $table->string('pnm_action_url');
+            $table->string('pnm_hash_id_location')->nullable();
             $table->datetime('pnm_start_date')->nullable();
             $table->datetime('pnm_end_date')->nullable();
             $table->boolean('pnm_is_read')->default(0);

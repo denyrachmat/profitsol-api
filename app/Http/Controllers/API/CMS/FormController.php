@@ -102,7 +102,10 @@ class FormController extends Controller
                     'pnm_content' => $request->isQuiz == true 
                         ? 'You have a new Training / Quiz : <b>'.$request->title.'</b>, please do it before expired !'
                         : 'You have new information about <b>'.$request->title.'</b>',
-                    'pnm_action_url' => 'tos/forms/'.$randomString,
+                    'pnm_action_url' => $request->isQuiz == true
+                        ? 'TOS/Quiz/showLiveForms'
+                        : '',
+                    'pnm_hash_id_location' => $randomString,
                     'pnm_start_date' => $request->setupTraining['startQuiz'],
                     'pnm_end_date' => $request->setupTraining['endQuiz']
                 ]);
