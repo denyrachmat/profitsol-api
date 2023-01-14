@@ -15,6 +15,7 @@ use App\Models\STXI\EMS2\DLVTYOHist;
 use App\Models\STXI\EMS2\DLVTYODet;
 use App\Models\STXI\EMS2\DLVTYODlvDet;
 use App\Models\STXI\EMS2\DLVTYOWkRpt;
+use App\Models\STXI\EMS2\TYO_PO_MSTR;
 
 use App\Jobs\STXI\EMS2\DLVSMTTYOEmailQueue;
 use App\Exports\STXT\exportDeliveryHist;
@@ -22,6 +23,7 @@ use App\Exports\STXI\ExportDODelivery;
 use App\Exports\STXI\ExportDOWeeklyReport;
 
 use App\Imports\STXI\importWeeklyReport;
+use App\Imports\STXI\EMS2\ImportPOWebEDITYO;
 
 class deliveryMethodToPSIController extends BaseController
 {
@@ -981,5 +983,80 @@ class deliveryMethodToPSIController extends BaseController
     {
         $hasil = DLVTYODet::where('id', $id)->delete();
         return $this->handleResponse($hasil, 'Delete FIFO Sukses !');
+    }
+
+    public function uploadPO(Request $req)
+    {
+        ini_set('max_execution_time', '300');
+        // $nama_file = $req->file->hashName();
+        $file = new File($req->file);
+        $extNya = $req->file('file')->getClientOriginalExtension();
+
+        $fileHash = str_replace('.' . $file->extension(), '', $file->hashName());
+        $nama_file = $fileHash . '.' . $extNya;
+
+        // return $nama_file;
+
+        $req->file->storeAs('/public/upload_raw_po_tyo/', $nama_file);
+
+        if ($extNya == 'xls') {
+            $spreadsheet = \PhpOffice\PhpSpreadsheet\IOFactory::load($file);
+            $writer = new Xlsx($spreadsheet);
+            $nama_file = $fileHash.'.xlsx';
+            $writer->save('/public/upload_raw_po_tyo/'.$nama_file);
+        }
+
+        $importer = new ImportPOWebEDITYO();
+
+        Excel::import($importer, public_path('/storage/upload_raw_po_tyo/' . $nama_file));
+
+        return $this->handleResponse([], 'Upload Sukses ' . $nama_file);
+    }
+
+    public function getDataPOTYO(Request $req)
+    {
+        $data = TYO_PO_MSTR::join(
+            DB::raw('[MGSVR].[VMI_TYO].[dbo].[MITM_TBL]'),
+            'MITM_ITMCD',
+            'TPM_ITMCD'
+        )
+        ->where('TPM_STATUS', 'New')
+        ->whereNull('TPM_STOREID')
+        ->orderBy('created_at');
+
+        if ($req->has('cols')) {
+            foreach ($req->cols as $key => $value) {
+                if (!empty($value['filter'])) {
+                    if ($value['eq'] === 'between') {
+                        $data->whereBetween($value['name'], $value['filter']);
+                    } else {
+                        $data->where($value['name'], $value['eq'] , $value['eq'] === 'like' ? '%'.$value['filter'].'%': $value['filter']);
+                    }
+                    
+                }
+            }
+        }
+
+        return $this->handleResponse($data->get(), 'Data Found !');
+    }
+
+    public function storeDraftPOTYO(Request $req)
+    {
+        $hasil = [];
+
+        $cek = TYO_PO_MSTR::orderBy('id', 'desc')->where('TPM_STOREID', '<>', '')->first();
+        $idStore = date('y/m/d') . '/' . (empty($cek) ? '0001' : sprintf('%04d', (int) substr($cek->TPM_STOREID, -3) + 1));
+        foreach ($req->selected as $key => $value) {
+            $hasil[] = TYO_PO_MSTR::where('id', $value['id'])->update([
+                'TPM_STOREID' => $idStore,
+                'TPM_ISSDT' => $req->dateIss
+            ]);
+        }
+
+        if (count($hasil) > 0) {
+            return $this->handleResponse($hasil, count($req->data).' Data Submited !');
+        } else {
+            return $this->handleError('Data Failed submit !');
+        }
     }
 }

@@ -78,7 +78,7 @@ Route::group(['prefix' => 'tos'], function () {
 
 Route::group(['prefix' => 'div'], function () {
     Route::group(['prefix' => 'ems2'], function () {
-        // Start DLV Method SMT
+        // Start DLV TYO
         Route::get('itemSearch/{filter}', [deliveryMethodToPSIController::class, 'searchItemMaster']);
         Route::get('spq', [deliveryMethodToPSIController::class, 'SPQIndex']);
         Route::post('spq', [deliveryMethodToPSIController::class, 'SPQCreateUpdate']);
@@ -108,8 +108,10 @@ Route::group(['prefix' => 'div'], function () {
         Route::get('exportWeeklyReport/{date}', [deliveryMethodToPSIController::class, 'ExportWeeklyReport']);
         Route::post('updateFIFO', [deliveryMethodToPSIController::class, 'replaceFIFODO']);
         Route::get('deleteFIFO/{id}', [deliveryMethodToPSIController::class, 'deleteFIFO']);
-
-        // End DLV Method SMT
+        Route::post('uploadPOTYO', [deliveryMethodToPSIController::class, 'uploadPO']);
+        Route::post('getDataPOTYO', [deliveryMethodToPSIController::class, 'getDataPOTYO']);
+        Route::post('storeDraftPOTYO', [deliveryMethodToPSIController::class, 'storeDraftPOTYO']);        
+        // End DLV TYO
 
         // Start PO Summary
         Route::post('uploadRawPO', [poSummaryController::class, 'uploadPO']);
