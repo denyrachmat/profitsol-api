@@ -22,6 +22,8 @@ class TYO_PO_MSTR extends Model
         'TPM_PRC',
         'TPM_RPLY_DEADLNDT',
         'TPM_STOREID',
-        'TPM_ISSDT'
+        'TPM_ISSDT',
+        'TPM_VERSION',
+        'TPM_REMARK',
     ];
 }

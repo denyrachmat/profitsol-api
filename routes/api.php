@@ -110,7 +110,12 @@ Route::group(['prefix' => 'div'], function () {
         Route::get('deleteFIFO/{id}', [deliveryMethodToPSIController::class, 'deleteFIFO']);
         Route::post('uploadPOTYO', [deliveryMethodToPSIController::class, 'uploadPO']);
         Route::post('getDataPOTYO', [deliveryMethodToPSIController::class, 'getDataPOTYO']);
-        Route::post('storeDraftPOTYO', [deliveryMethodToPSIController::class, 'storeDraftPOTYO']);        
+        Route::post('storeDraftPOTYO', [deliveryMethodToPSIController::class, 'storeDraftPOTYO']);
+        Route::get('getPOTYOMegaReady/{date}', [deliveryMethodToPSIController::class, 'getPOTYOMegaReady']);
+        Route::post('UpdatePOTYOCells', [deliveryMethodToPSIController::class, 'UpdatePOTYOCells']);
+        Route::post('deleteToDraft', [deliveryMethodToPSIController::class, 'deleteToDraft']);
+        Route::get('getAllRecordDateOnly', [deliveryMethodToPSIController::class, 'getAllRecordDateOnly']);        
+        Route::get('ExportTYODOMega/{date}', [deliveryMethodToPSIController::class, 'ExportTYODOMega']);                        
         // End DLV TYO
 
         // Start PO Summary

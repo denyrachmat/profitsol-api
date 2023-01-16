@@ -21,6 +21,7 @@ use App\Jobs\STXI\EMS2\DLVSMTTYOEmailQueue;
 use App\Exports\STXT\exportDeliveryHist;
 use App\Exports\STXI\ExportDODelivery;
 use App\Exports\STXI\ExportDOWeeklyReport;
+use App\Exports\STXI\ExportDOMegaUpload;
 
 use App\Imports\STXI\importWeeklyReport;
 use App\Imports\STXI\EMS2\ImportPOWebEDITYO;
@@ -985,6 +986,8 @@ class deliveryMethodToPSIController extends BaseController
         return $this->handleResponse($hasil, 'Delete FIFO Sukses !');
     }
 
+    // PO TYO Mega Upload
+
     public function uploadPO(Request $req)
     {
         ini_set('max_execution_time', '300');
@@ -1049,14 +1052,104 @@ class deliveryMethodToPSIController extends BaseController
         foreach ($req->selected as $key => $value) {
             $hasil[] = TYO_PO_MSTR::where('id', $value['id'])->update([
                 'TPM_STOREID' => $idStore,
-                'TPM_ISSDT' => $req->dateIss
+                'TPM_ISSDT' => $req->issDate
             ]);
         }
 
         if (count($hasil) > 0) {
-            return $this->handleResponse($hasil, count($req->data).' Data Submited !');
+            return $this->handleResponse($hasil, count($req->selected).' Data Submited !');
         } else {
             return $this->handleError('Data Failed submit !');
         }
+    }
+
+    public function getPOTYOMegaReady($date)
+    {
+        $data = TYO_PO_MSTR::select(
+            'TPM_ITMCD',
+            'MITM_ITMD1',
+            'TPM_ISSDT',
+            'TPM_DLVDT',
+            'TPM_ORDERNO',
+            'TPM_ORDERQTY',
+            DB::raw('CASE WHEN SPQ_BOX_PROT_FLAG = 1
+                THEN STXI_SPQ
+                ELSE CAST(MITM_SPQ AS INT)
+            END AS SPQ'),
+            DB::raw('TPM_ORDERQTY / (
+                CASE WHEN SPQ_BOX_PROT_FLAG = 1
+                    THEN STXI_SPQ
+                    ELSE CAST(MITM_SPQ AS INT)
+                END
+            ) AS SHEET'),
+            'MITM_RUNFG',
+            'TPM_VERSION',
+            'TPM_REMARK',
+            DB::raw('
+                DATEDIFF(day, TPM_ISSDT, TPM_DLVDT) as diff_days
+            ')
+        )->join(
+            DB::raw('[MGSVR].[VMI_TYO].[dbo].[MITM_TBL]'),
+            'MITM_ITMCD',
+            'TPM_ITMCD'
+        )->join(
+            'SPQ_MSTR_TBL',
+            'MITM_MODELCD',
+            'TPM_ITMCD'
+        )
+        ->where('TPM_ISSDT', $date);
+
+        return $this->handleResponse($data->get(), 'Data Found !');
+    }
+
+    public function UpdatePOTYOCells(Request $req)
+    {
+        $hasil = [];
+        foreach ($req->selected as $key => $value) {
+            $hasil[] = TYO_PO_MSTR::where('TPM_ORDERNO', $value['TPM_ORDERNO'])
+                ->update([$req->column => $req->value]);
+        }
+
+        return $this->handleResponse($hasil, 'Data Updated !');
+    }
+
+    public function deleteToDraft(Request $req)
+    {
+        $hasil = [];
+        foreach ($req->selected as $key => $value) {
+            $hasil[] = TYO_PO_MSTR::where('TPM_ORDERNO', $value['TPM_ORDERNO'])
+                ->update([
+                    'TPM_STOREID' => NULL,
+                    'TPM_ISSDT' => NULL
+                ]);
+        }
+
+        return $this->handleResponse($hasil, 'Data Deleted !');
+    }
+
+    public function getAllRecordDateOnly()
+    {
+        $data = TYO_PO_MSTR::select('TPM_ISSDT')
+            ->whereNotNull('TPM_STOREID')
+            ->groupBy('TPM_ISSDT')
+            ->get()
+            ->pluck('TPM_ISSDT');
+
+        $hasil = [];
+        foreach ($data as $key => $value) {
+            $hasil[] = date('Y/m/d', strtotime($value));
+        }
+
+        return $this->handleResponse($hasil, 'Data Found !');
+    }
+
+    public function ExportTYODOMega($date)
+    {
+        $data = TYO_PO_MSTR::where('TPM_ISSDT', $date)->get();
+
+        // return $data;
+        Excel::store(new ExportDOMegaUpload($data, $date), 'export_do_tyo_upload_mega.xlsx', 'public');
+
+        return 'storage/app/public/export_do_tyo_upload_mega.xlsx';
     }
 }
