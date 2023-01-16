@@ -115,7 +115,7 @@ Route::group(['prefix' => 'div'], function () {
         Route::post('UpdatePOTYOCells', [deliveryMethodToPSIController::class, 'UpdatePOTYOCells']);
         Route::post('deleteToDraft', [deliveryMethodToPSIController::class, 'deleteToDraft']);
         Route::get('getAllRecordDateOnly', [deliveryMethodToPSIController::class, 'getAllRecordDateOnly']);        
-        Route::get('ExportTYODOMega/{date}', [deliveryMethodToPSIController::class, 'ExportTYODOMega']);                        
+        Route::post('ExportTYODOMega/{date}', [deliveryMethodToPSIController::class, 'ExportTYODOMega']);                        
         // End DLV TYO
 
         // Start PO Summary

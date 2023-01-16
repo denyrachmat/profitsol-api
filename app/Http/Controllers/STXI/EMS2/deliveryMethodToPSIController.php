@@ -1145,13 +1145,16 @@ class deliveryMethodToPSIController extends BaseController
         return $this->handleResponse($hasil, 'Data Found !');
     }
 
-    public function ExportTYODOMega($date)
+    public function ExportTYODOMega(Request $request, $date)
     {
-        TYO_PO_MSTR::where('TPM_ISSDT', $date)->update([
-            'TPM_EXPORT' => 1
-        ]);
-
-        $data = TYO_PO_MSTR::where('TPM_ISSDT', $date)->get();
+        $data = [];
+        foreach ($request->data as $key => $value) {
+            TYO_PO_MSTR::where('id', $value['id'])->update([
+                'TPM_EXPORT' => 1
+            ]);
+            
+            $data[] = TYO_PO_MSTR::where('id', $value['id'])->first();
+        }
 
         // return $data;
         Excel::store(new ExportDOMegaUpload($data, $date), 'export_do_tyo_upload_mega.xlsx', 'public');
