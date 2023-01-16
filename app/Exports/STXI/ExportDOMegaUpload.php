@@ -18,7 +18,7 @@ class ExportDOMegaUpload implements FromCollection, WithHeadings, WithTitle, Wit
     public function __construct($data, $date)
     {
         $this->data = $data;
-        $this->date = $data;
+        $this->date = $date;
     }
 
     /**
