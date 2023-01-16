@@ -25,5 +25,6 @@ class TYO_PO_MSTR extends Model
         'TPM_ISSDT',
         'TPM_VERSION',
         'TPM_REMARK',
+        'TPM_EXPORT',
     ];
 }

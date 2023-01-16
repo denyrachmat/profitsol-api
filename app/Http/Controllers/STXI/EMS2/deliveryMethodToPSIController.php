@@ -1097,7 +1097,8 @@ class deliveryMethodToPSIController extends BaseController
             'MITM_MODELCD',
             'TPM_ITMCD'
         )
-        ->where('TPM_ISSDT', $date);
+        ->where('TPM_ISSDT', $date)
+        ->whereNull('TPM_EXPORT');
 
         return $this->handleResponse($data->get(), 'Data Found !');
     }
@@ -1132,6 +1133,7 @@ class deliveryMethodToPSIController extends BaseController
         $data = TYO_PO_MSTR::select('TPM_ISSDT')
             ->whereNotNull('TPM_STOREID')
             ->groupBy('TPM_ISSDT')
+            ->whereNull('TPM_EXPORT')
             ->get()
             ->pluck('TPM_ISSDT');
 
@@ -1145,6 +1147,10 @@ class deliveryMethodToPSIController extends BaseController
 
     public function ExportTYODOMega($date)
     {
+        TYO_PO_MSTR::where('TPM_ISSDT', $date)->update([
+            'TPM_EXPORT' => 1
+        ]);
+
         $data = TYO_PO_MSTR::where('TPM_ISSDT', $date)->get();
 
         // return $data;
