@@ -1066,6 +1066,7 @@ class deliveryMethodToPSIController extends BaseController
     public function getPOTYOMegaReady($date)
     {
         $data = TYO_PO_MSTR::select(
+            'id',
             'TPM_ITMCD',
             'MITM_ITMD1',
             'TPM_ISSDT',
