@@ -7,6 +7,7 @@ use App\Http\Controllers\API\DMS\FolderController;
 use App\Http\Controllers\API\PORTAL\NotifController;
 use App\Http\Controllers\API\TOS\QuizViewController;
 use App\Http\Controllers\Scheduller\EMS2\WEBEdiTYOExtractor;
+use App\Http\Controllers\STXI\PU\PAApprovalController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\API\PORTAL\AuthController;
@@ -136,7 +137,8 @@ Route::group(['prefix' => 'div'], function () {
     });
 
     Route::group(['prefix' => 'pu'], function () {
-        # code...
+        Route::resource('PAApproval', PAApprovalController::class);
+        Route::get('PAApproval/{id}/{username}/{table}', [PAApprovalController::class, 'show']);
     });
 });
 

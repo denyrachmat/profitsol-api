@@ -6,7 +6,8 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\STXI\PU\PAApproval;
 use App\Models\STXI\PU\PAApprovalMS;
-class PAApprovalController extends Controller
+use App\Http\Controllers\API\PORTAL\BaseController;
+class PAApprovalController extends BaseController
 {
     /**
      * Display a listing of the resource.
@@ -47,7 +48,27 @@ class PAApprovalController extends Controller
      */
     public function show($id, $username = '', $table = '')
     {
-        return response([$id, $username, $table]);
+        if (empty(PAApprovalMS::where('PAINSNO', $id)->first())) {
+            return $this->handleError('Update data gagal, ID tidak di temukan !');
+        }
+
+        if ($table = 'PAINS_PRTCHG_MS') {
+            $hasil = PAApprovalMS::where('PAINSNO', $id)->update([
+                'ACKG_DIR_DT' => date('Y-m-d H:i:s'),
+                'ACKG_DIR' => $username
+            ]);
+        } else {
+            $hasil = PAApproval::where('PAINSNO', $id)->update([
+                'ACKG_DIR_DT' => date('Y-m-d H:i:s'),
+                'ACKG_DIR' => $username
+            ]);
+        }
+
+        if ($hasil) {
+            return $this->handleResponse($hasil, 'Update Sukses !');
+        } else {
+            return $this->handleError('Update data gagal !');
+        }
     }
 
     /**
