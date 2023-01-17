@@ -6,6 +6,7 @@ use App\Http\Controllers\API\DMS\DocumentController;
 use App\Http\Controllers\API\DMS\FolderController;
 use App\Http\Controllers\API\PORTAL\NotifController;
 use App\Http\Controllers\API\TOS\QuizViewController;
+use App\Http\Controllers\Scheduller\EMS2\WEBEdiTYOExtractor;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\API\PORTAL\AuthController;
@@ -111,11 +112,13 @@ Route::group(['prefix' => 'div'], function () {
         Route::post('uploadPOTYO', [deliveryMethodToPSIController::class, 'uploadPO']);
         Route::post('getDataPOTYO', [deliveryMethodToPSIController::class, 'getDataPOTYO']);
         Route::post('storeDraftPOTYO', [deliveryMethodToPSIController::class, 'storeDraftPOTYO']);
+        Route::post('deleteDraftPOTYO', [deliveryMethodToPSIController::class, 'deleteDraftPOTYO']);
         Route::get('getPOTYOMegaReady/{date}', [deliveryMethodToPSIController::class, 'getPOTYOMegaReady']);
         Route::post('UpdatePOTYOCells', [deliveryMethodToPSIController::class, 'UpdatePOTYOCells']);
         Route::post('deleteToDraft', [deliveryMethodToPSIController::class, 'deleteToDraft']);
         Route::get('getAllRecordDateOnly', [deliveryMethodToPSIController::class, 'getAllRecordDateOnly']);        
-        Route::post('ExportTYODOMega/{date}', [deliveryMethodToPSIController::class, 'ExportTYODOMega']);                        
+        Route::post('ExportTYODOMega/{date}', [deliveryMethodToPSIController::class, 'ExportTYODOMega']);
+        Route::get('ExportDOChecker/{date}', [deliveryMethodToPSIController::class, 'ExportDOChecker']);                        
         // End DLV TYO
 
         // Start PO Summary
@@ -131,10 +134,14 @@ Route::group(['prefix' => 'div'], function () {
         Route::get('INSWGetDataDetail/{filter}', [INSWDataController::class, 'getData']);
         Route::get('INSWGetData/{filter?}/{size?}', [INSWDataController::class, 'getListHSCode']);
     });
+
+    Route::group(['prefix' => 'pu'], function () {
+        # code...
+    });
 });
 
 Route::group((['prefix' => 'scheduller']), function () {
-
+    Route::get('downloadData', [WEBEdiTYOExtractor::class, 'downloadData']);
 });
 
 Route::post('login', [AuthController::class, 'login']);

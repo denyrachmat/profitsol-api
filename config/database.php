@@ -143,6 +143,19 @@ return [
             'prefix_indexes' => true,
         ],
 
+        'sqlsrv_pu' => [
+            'driver' => 'sqlsrv',
+            'url' => env('DATABASE_URL'),
+            'host' => env('DB_PU_HOST', 'localhost'),
+            'port' => env('DB_PU_PORT', '1433'),
+            'database' => env('DB_PU_DATABASE', 'forge'),
+            'username' => env('DB_PU_USERNAME', 'forge'),
+            'password' => env('DB_PU_PASSWORD', ''),
+            'charset' => 'utf8',
+            'prefix' => '',
+            'prefix_indexes' => true,
+        ],
+
         'sqlsrv_mega_tyo' => [
             'driver' => 'sqlsrv',
             'url' => env('DATABASE_URL'),

@@ -22,6 +22,7 @@ use App\Exports\STXT\exportDeliveryHist;
 use App\Exports\STXI\ExportDODelivery;
 use App\Exports\STXI\ExportDOWeeklyReport;
 use App\Exports\STXI\ExportDOMegaUpload;
+use App\Exports\STXI\ExportDOChecker;
 
 use App\Imports\STXI\importWeeklyReport;
 use App\Imports\STXI\EMS2\ImportPOWebEDITYO;
@@ -263,11 +264,12 @@ class deliveryMethodToPSIController extends BaseController
             $date_to = date('d', strtotime($req->date)) == 1 ? date('Y-m-d') : date('Y-m-d', strtotime($req->date . "-1 days"));
             $query = "SET NOCOUNT ON;EXEC Z_STXI_GET_CPO_DLV_STXI_ITEC @model = '" . $value . "', @date_start = '" . date('Y-m-01', strtotime($req->date)) . "', @date_to = '" . $date_to . "'";
 
-            $dataCPO = collect(DB::connection('sqlsrv_mega_tyo')->select(
-                DB::raw(
-                    $query
+            $dataCPO = collect(
+                DB::connection('sqlsrv_mega_tyo')->select(
+                    DB::raw(
+                        $query
+                    )
                 )
-            )
             )[0];
 
             $getSPQDataPersheet = $this->SPQIndex($value)->original['data'] ? $this->SPQIndex($value)->original['data']['MITM_SPQ_CHECK'] : false;
@@ -514,11 +516,12 @@ class deliveryMethodToPSIController extends BaseController
 
         // return $query;
 
-        $dataCPO = collect(DB::connection('sqlsrv_mega_tyo')->select(
-            DB::raw(
-                $query
+        $dataCPO = collect(
+            DB::connection('sqlsrv_mega_tyo')->select(
+                DB::raw(
+                    $query
+                )
             )
-        )
         );
 
         $getCPO = $dataCPO->where('BAL_STOCK', '>', 0)
@@ -633,11 +636,11 @@ class deliveryMethodToPSIController extends BaseController
                             $hasilFifo = [];
                             foreach ($checkFIFO as $key => $valueFif) {
                                 $hasilFifo[] = array_merge(
-                                        (array)$valueFif,
-                                        [
-                                            'ID_CUST' => trim($valueFif->SSO2_DELNO). '-' . date('y-m-d', strtotime($valueFif->SSO2_ISUDT)). '-' .$valueFif->SSO2_SLPRC
-                                        ]
-                                    );
+                                    (array) $valueFif,
+                                    [
+                                        'ID_CUST' => trim($valueFif->SSO2_DELNO) . '-' . date('y-m-d', strtotime($valueFif->SSO2_ISUDT)) . '-' . $valueFif->SSO2_SLPRC
+                                    ]
+                                );
                             }
 
                             if ($valueID['IO_REMARK'] == 'TO_ITEC') {
@@ -1005,8 +1008,8 @@ class deliveryMethodToPSIController extends BaseController
         if ($extNya == 'xls') {
             $spreadsheet = \PhpOffice\PhpSpreadsheet\IOFactory::load($file);
             $writer = new Xlsx($spreadsheet);
-            $nama_file = $fileHash.'.xlsx';
-            $writer->save('/public/upload_raw_po_tyo/'.$nama_file);
+            $nama_file = $fileHash . '.xlsx';
+            $writer->save('/public/upload_raw_po_tyo/' . $nama_file);
         }
 
         $importer = new ImportPOWebEDITYO();
@@ -1018,14 +1021,40 @@ class deliveryMethodToPSIController extends BaseController
 
     public function getDataPOTYO(Request $req)
     {
-        $data = TYO_PO_MSTR::join(
+        $data = TYO_PO_MSTR::select(
+            'TPM_ITMCD',
+            'MITM_ITMCD',
+            'TPM_ORDERNO',
+            'TPM_STATUS',
+            'TPM_ORDERQTY',
+            'TPM_ORDER_CRTDT',
+            'TPM_DLVDT',
+            DB::raw('CASE WHEN PPO2_DELNO IS NULL
+                THEN NULL
+                ELSE PPO2_ISUDT
+            END AS IS_POEXSTS
+            '),
+            DB::raw("CASE WHEN PPO2_DELNO IS NULL
+                THEN 'New PO'
+                ELSE 'Exists PO'
+            END AS IS_POEXSTS_DESC
+            ")
+        )
+        ->join(
             DB::raw('[MGSVR].[VMI_TYO].[dbo].[MITM_TBL]'),
             'MITM_ITMCD',
             'TPM_ITMCD'
         )
-        ->where('TPM_STATUS', 'New')
-        ->whereNull('TPM_STOREID')
-        ->orderBy('created_at');
+            ->leftjoin(
+                DB::raw('[MGSVR].[VMI_TYO].[dbo].[PPO2_TBL]'),
+                function ($j) {
+                    $j->on('PPO2_MDLCD', 'TPM_ITMCD');
+                    $j->on('PPO2_DELNO', 'TPM_ORDERNO');
+                }
+            )
+            ->where('TPM_STATUS', 'New')
+            ->whereNull('TPM_STOREID')
+            ->orderBy('created_at');
 
         if ($req->has('cols')) {
             foreach ($req->cols as $key => $value) {
@@ -1033,9 +1062,15 @@ class deliveryMethodToPSIController extends BaseController
                     if ($value['eq'] === 'between') {
                         $data->whereBetween($value['name'], $value['filter']);
                     } else {
-                        $data->where($value['name'], $value['eq'] , $value['eq'] === 'like' ? '%'.$value['filter'].'%': $value['filter']);
+                        $data->where(
+                            $value['type'] === 'date' || $value['type'] === 'datetime' && $value['eq'] === 'like'
+                            ? DB::raw('CONVERT(VARCHAR(25), ' . $value['name'] . ', 126)')
+                            : $value['name'],
+                            $value['eq'],
+                            $value['eq'] === 'like' ? $value['filter'] . '%' : $value['filter']
+                        );
                     }
-                    
+
                 }
             }
         }
@@ -1057,13 +1092,28 @@ class deliveryMethodToPSIController extends BaseController
         }
 
         if (count($hasil) > 0) {
-            return $this->handleResponse($hasil, count($req->selected).' Data Submited !');
+            return $this->handleResponse($hasil, count($req->selected) . ' Data Submited !');
         } else {
             return $this->handleError('Data Failed submit !');
         }
     }
 
-    public function getPOTYOMegaReady($date)
+    public function deleteDraftPOTYO(Request $req)
+    {
+        $hasil = [];
+
+        foreach ($req->selected as $key => $value) {
+            $hasil[] = TYO_PO_MSTR::where('id', $value['id'])->delete();
+        }
+
+        if (count($hasil) > 0) {
+            return $this->handleResponse($hasil, count($req->selected) . ' Data Deleted !');
+        } else {
+            return $this->handleError('Data Failed to delete !');
+        }
+    }
+
+    public function getPOTYOMegaReady($date, $isResponse = false)
     {
         $data = TYO_PO_MSTR::select(
             'TYO_PO_MSTR.id',
@@ -1073,35 +1123,39 @@ class deliveryMethodToPSIController extends BaseController
             'TPM_DLVDT',
             'TPM_ORDERNO',
             'TPM_ORDERQTY',
-            DB::raw('CASE WHEN SPQ_BOX_PROT_FLAG = 1
-                THEN STXI_SPQ
-                ELSE CAST(MITM_SPQ AS INT)
-            END AS SPQ'),
-            DB::raw('TPM_ORDERQTY / (
+            DB::raw('CAST(MITM_SPQ AS INT) AS SPQ'),
+            DB::raw('CAST(TPM_ORDERQTY / (
                 CASE WHEN SPQ_BOX_PROT_FLAG = 1
                     THEN STXI_SPQ
                     ELSE CAST(MITM_SPQ AS INT)
                 END
-            ) AS SHEET'),
+            ) AS DECIMAL (15,2)) AS SHEET'),
+            DB::raw('CAST(TPM_ORDERQTY / (
+                CASE WHEN SPQ_BOX_PROT_FLAG = 1
+                    THEN STXI_SPQ
+                    ELSE CAST(MITM_SPQ AS INT)
+                END
+            ) AS DECIMAL (15,2)) AS SHEET'),
             'MITM_RUNFG',
             'TPM_VERSION',
             'TPM_REMARK',
+            'TPM_PRC',
             DB::raw('
                 DATEDIFF(day, TPM_ISSDT, TPM_DLVDT) as diff_days
             ')
         )->join(
-            DB::raw('[MGSVR].[VMI_TYO].[dbo].[MITM_TBL]'),
-            'MITM_ITMCD',
-            'TPM_ITMCD'
-        )->join(
-            'SPQ_MSTR_TBL',
-            'MITM_MODELCD',
-            'TPM_ITMCD'
-        )
-        ->where('TPM_ISSDT', $date)
-        ->whereNull('TPM_EXPORT');
+                DB::raw('[MGSVR].[VMI_TYO].[dbo].[MITM_TBL]'),
+                'MITM_ITMCD',
+                'TPM_ITMCD'
+            )->leftjoin(
+                'SPQ_MSTR_TBL',
+                'MITM_MODELCD',
+                'TPM_ITMCD'
+            )
+            ->where('TPM_ISSDT', $date)
+            ->whereNull('TPM_EXPORT');
 
-        return $this->handleResponse($data->get(), 'Data Found !');
+        return !$isResponse ? $this->handleResponse($data->get(), 'Data Found !') : $data->get()->toArray();
     }
 
     public function UpdatePOTYOCells(Request $req)
@@ -1153,7 +1207,7 @@ class deliveryMethodToPSIController extends BaseController
             TYO_PO_MSTR::where('id', $value['id'])->update([
                 'TPM_EXPORT' => 1
             ]);
-            
+
             $data[] = TYO_PO_MSTR::where('id', $value['id'])->first();
         }
 
@@ -1161,5 +1215,16 @@ class deliveryMethodToPSIController extends BaseController
         Excel::store(new ExportDOMegaUpload($data, $date), 'export_do_tyo_upload_mega.xlsx', 'public');
 
         return 'storage/app/public/export_do_tyo_upload_mega.xlsx';
+    }
+
+    public function ExportDOChecker($date)
+    {
+        $data = $this->getPOTYOMegaReady($date, true);
+
+        // return $data;
+
+        Excel::store(new ExportDOChecker($data), 'export_do_tyo_checker.xlsx', 'public');
+
+        return 'storage/app/public/export_do_tyo_checker.xlsx';
     }
 }
