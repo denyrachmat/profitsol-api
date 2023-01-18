@@ -65,7 +65,7 @@ class PAApprovalController extends BaseController
         }
 
         if ($hasil) {
-            return $this->handleResponse($hasil, 'Update Sukses !');
+            return $this->handleResponse(PAApprovalMS::where('PAINSNO', $id)->first(), 'Update Sukses !');
         } else {
             return $this->handleError('Update data gagal !');
         }

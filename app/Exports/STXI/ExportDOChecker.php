@@ -3,9 +3,16 @@
 namespace App\Exports\STXI;
 
 use Maatwebsite\Excel\Concerns\FromCollection;
+use Maatwebsite\Excel\Concerns\WithHeadings;
+use Maatwebsite\Excel\Events\AfterSheet;
+use Maatwebsite\Excel\Concerns\RegistersEventListeners;
+use Maatwebsite\Excel\Concerns\Exportable;
+use Maatwebsite\Excel\Concerns\WithEvents;
+use Maatwebsite\Excel\Concerns\WithTitle;
 
-class ExportDOChecker implements FromCollection
+class ExportDOChecker implements FromCollection, WithHeadings, WithEvents
 {
+    use Exportable, RegistersEventListeners;
     private $data;
 
     public function __construct($data)
