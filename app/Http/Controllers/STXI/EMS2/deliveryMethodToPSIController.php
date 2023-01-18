@@ -1022,6 +1022,7 @@ class deliveryMethodToPSIController extends BaseController
     public function getDataPOTYO(Request $req)
     {
         $data = TYO_PO_MSTR::select(
+            'TYO_PO_MSTR.id as id',
             'TPM_ITMCD',
             'MITM_ITMCD',
             'TPM_ORDERNO',
@@ -1116,7 +1117,7 @@ class deliveryMethodToPSIController extends BaseController
     public function getPOTYOMegaReady($date, $isResponse = false)
     {
         $data = TYO_PO_MSTR::select(
-            'TYO_PO_MSTR.id',
+            'TYO_PO_MSTR.id as id',
             'TPM_ITMCD',
             'MITM_ITMD1',
             'TPM_ISSDT',
