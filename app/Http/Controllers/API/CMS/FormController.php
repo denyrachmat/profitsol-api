@@ -106,8 +106,8 @@ class FormController extends Controller
                         ? 'TOS/Quiz/showLiveForms'
                         : '',
                     'pnm_hash_id_location' => $randomString,
-                    'pnm_start_date' => $request->setupTraining['startQuiz'],
-                    'pnm_end_date' => $request->setupTraining['endQuiz']
+                    'pnm_start_date' => $request->has('setupTraining') ? $request->setupTraining['startQuiz'] : date('Y-m-d'),
+                    'pnm_end_date' => $request->has('setupTraining') ? $request->setupTraining['endQuiz'] : NULL
                 ]);
             }
         }

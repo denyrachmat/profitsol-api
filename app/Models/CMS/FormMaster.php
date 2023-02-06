@@ -42,6 +42,11 @@ class FormMaster extends Model
         return $this->hasMany(FormAnswerDet::class, 'cfmd_id', 'id');
     }
 
+    public function formUserAnswer()
+    {
+        return $this->hasMany(FormAnswerUserDet::class, 'cfmd_id', 'id');
+    }
+
     public function childrenContent()
     {
         return $this->hasMany(FormMaster::class, 'cfm_parent_id', 'id');

@@ -5,6 +5,8 @@ namespace App\Http\Controllers\API\PORTAL;
 use Illuminate\Http\Request;
 use App\Models\PORTAL\PortalNotif;
 use App\Http\Controllers\API\PORTAL\BaseController as BaseController;
+use Illuminate\Support\Facades\DB;
+use App\Models\CMS\FormAnswerUserDet;
 
 class NotifController extends BaseController
 {
@@ -15,7 +17,33 @@ class NotifController extends BaseController
      */
     public function index(Request $request)
     {
-        return $this->handleResponse(PortalNotif::where('pnm_to_users', $request->header('username'))->get(), 'Data Found !');
+        $data = PortalNotif::where('pnm_to_users', $request->header('username'))
+            ->where(DB::raw("(
+                CASE WHEN pnm_end_date IS NULL OR pnm_end_date = '1900-01-01 00:00:00'
+                    THEN 1
+                    ELSE CASE WHEN GETDATE() <= pnm_end_date
+                        THEN 1
+                        ELSE 0
+                    END
+                END
+            )"), 1)
+            ->with('shared.forms.formMaster')
+            ->get()
+            ->toArray();
+
+        $hasil = [];
+        foreach ($data as $key => $value) {
+            // $hasil[] = $value->shared->forms->id;
+            if ($value['shared']['forms']['cfmt_quiz_flag'] == 1) {
+                $cekJawaban = FormAnswerUserDet::where('cfm_id', $value['shared']['forms']['id'])->get()->toArray();
+
+                $hasil[] = array_merge($value, ['answers' => $cekJawaban]);
+            } else {
+                $hasil[] = $value;
+            }
+        }
+
+        return $this->handleResponse($hasil, 'Data Found !');
     }
 
     /**
