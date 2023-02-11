@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class PortalRoleAppMap extends Model
 {
+    use \Awobaz\Compoships\Compoships;
     use HasFactory;
 
     protected $table = 'portal_role_app_map';
@@ -29,7 +30,7 @@ class PortalRoleAppMap extends Model
 
     public function child()
     {
-        return $this->hasMany('App\Models\PORTAL\PortalRoleAppMap','am_app_parent','am_app_id');
+        return $this->hasMany('App\Models\PORTAL\PortalRoleAppMap',['am_app_parent', 'rm_role_id'],['am_app_id', 'rm_role_id']);
     }
 
     public function childRoles()

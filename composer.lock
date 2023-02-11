@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "64fb6d36eafe919483b21e3d6f761436",
+    "content-hash": "cc6f9ac23416bfa2fd734bb155764520",
     "packages": [
         {
             "name": "24slides/laravel-saml2",
@@ -83,23 +83,24 @@
         },
         {
             "name": "awobaz/compoships",
-            "version": "2.1.4",
+            "version": "2.2.2",
             "source": {
                 "type": "git",
                 "url": "https://github.com/topclaudy/compoships.git",
-                "reference": "ba86741d9b439d1179a6432dded92b0ecc89a63a"
+                "reference": "9f058e013cca6e3350e3e61701d5f734937e4219"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/topclaudy/compoships/zipball/ba86741d9b439d1179a6432dded92b0ecc89a63a",
-                "reference": "ba86741d9b439d1179a6432dded92b0ecc89a63a",
+                "url": "https://api.github.com/repos/topclaudy/compoships/zipball/9f058e013cca6e3350e3e61701d5f734937e4219",
+                "reference": "9f058e013cca6e3350e3e61701d5f734937e4219",
                 "shasum": ""
             },
             "require": {
-                "illuminate/database": ">=5.6 <10.0"
+                "illuminate/database": ">=5.6 <11.0"
             },
             "require-dev": {
-                "ext-sqlite3": "*"
+                "ext-sqlite3": "*",
+                "phpunit/phpunit": "^6.0|^8.0|^9.0"
             },
             "suggest": {
                 "awobaz/blade-active": "Blade directives for the Laravel 'Active' package",
@@ -131,7 +132,7 @@
             ],
             "support": {
                 "issues": "https://github.com/topclaudy/compoships/issues",
-                "source": "https://github.com/topclaudy/compoships/tree/2.1.4"
+                "source": "https://github.com/topclaudy/compoships/tree/2.2.2"
             },
             "funding": [
                 {
@@ -139,7 +140,7 @@
                     "type": "custom"
                 }
             ],
-            "time": "2022-06-22T11:42:37+00:00"
+            "time": "2023-02-03T14:30:07+00:00"
         },
         {
             "name": "brick/math",

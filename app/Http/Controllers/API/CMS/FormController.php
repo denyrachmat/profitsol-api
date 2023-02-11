@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers\API\CMS;
 
-use App\Http\Controllers\Controller;
+use App\Http\Controllers\API\PORTAL\BaseController as BaseController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 
@@ -15,7 +15,7 @@ use App\Models\CMS\FormShareDet;
 use App\Models\PORTAL\PortalNotif;
 
 use App\Traits\CMS\FormsTraits;
-class FormController extends Controller
+class FormController extends BaseController
 {
     use FormsTraits;
 
@@ -61,7 +61,7 @@ class FormController extends Controller
             FormMaster::where('cfmt_id', $request->idRef)->delete();
         }
 
-        if (isset($request->setupTraining)) {
+        if (isset($request->setupTraining) && !empty($request->idRef)) {
             FormSetupDet::where('cfmt_id', $request->idRef)->delete();
             FormSetupDet::create([
                 'cfmt_id' => $request->idRef,
@@ -82,7 +82,7 @@ class FormController extends Controller
 
         }
 
-        if (isset($request->shareForms)) {
+        if (isset($request->shareForms) && !empty($request->idRef)) {
             $randomString = Str::random(30);
             foreach ($request->shareForms as $keyShare => $valueShare) {
                 FormShareDet::updateOrCreate([
@@ -127,8 +127,12 @@ class FormController extends Controller
                 $key
             );
         }
-
-        return response($hasil);
+        
+        return $this->handleResponse([
+            'insert' => $hasil,
+            'id' => $insertMaster->id
+        ], 'Data Found !');
+        // return response($hasil);
     }
 
     /**

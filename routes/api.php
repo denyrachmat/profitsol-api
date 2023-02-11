@@ -6,7 +6,9 @@ use App\Http\Controllers\API\DMS\DocumentController;
 use App\Http\Controllers\API\DMS\FolderController;
 use App\Http\Controllers\API\PORTAL\NotifController;
 use App\Http\Controllers\API\TOS\QuizViewController;
+use App\Http\Controllers\API\TOS\TrainingController;
 use App\Http\Controllers\Scheduller\EMS2\WEBEdiTYOExtractor;
+use App\Http\Controllers\STXI\EMS2\ForcastDOTYOController;
 use App\Http\Controllers\STXI\PU\PAApprovalController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -76,6 +78,7 @@ Route::group(['prefix' => 'cms'], function () {
 
 Route::group(['prefix' => 'tos'], function () {
     Route::resource('quizView', QuizViewController::class);
+    Route::resource('training', TrainingController::class);
 });
 
 Route::group(['prefix' => 'div'], function () {
@@ -129,6 +132,10 @@ Route::group(['prefix' => 'div'], function () {
         Route::get('POExportData/{date}', [poSummaryController::class, 'exportPO']);
         Route::get('PODetExportData/{date}', [poSummaryController::class, 'exportPODet']);
         // End PO Summary
+
+        // Start DO Forcast TYO
+        
+        Route::post('getReport', [ForcastDOTYOController::class, 'getReport']);
     });
 
     Route::group(['prefix' => 'log'], function () {

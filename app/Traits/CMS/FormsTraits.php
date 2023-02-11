@@ -79,6 +79,7 @@ trait FormsTraits
             }
 
             $hasil[] = [
+                'id' => $value['id'],
                 'type' => $value['cfm_type'],
                 'required' => $value['cfm_type'] === 'form' ? ($value['cfm_required'] == 1) : false,
                 'seq_name' => $value['cfm_seq_name'],

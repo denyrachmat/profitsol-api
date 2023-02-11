@@ -7,9 +7,13 @@ use App\Models\PORTAL\PortalNotif;
 use App\Http\Controllers\API\PORTAL\BaseController as BaseController;
 use Illuminate\Support\Facades\DB;
 use App\Models\CMS\FormAnswerUserDet;
+use App\Models\CMS\FormShareDet;
+use App\Traits\TOS\TrainingTraits;
+use App\Traits\CMS\FormsTraits;
 
 class NotifController extends BaseController
 {
+    use TrainingTraits, FormsTraits;
     /**
      * Display a listing of the resource.
      *
@@ -36,8 +40,9 @@ class NotifController extends BaseController
             // $hasil[] = $value->shared->forms->id;
             if ($value['shared']['forms']['cfmt_quiz_flag'] == 1) {
                 $cekJawaban = FormAnswerUserDet::where('cfm_id', $value['shared']['forms']['id'])->get()->toArray();
-
-                $hasil[] = array_merge($value, ['answers' => $cekJawaban]);
+                $cekListHasil = $this->getTrainingList($request->header('username'), $value['shared']['forms']['id'])[0];
+                
+                $hasil[] = array_merge($value, ['answers' => $cekJawaban, 'listHasil' => $cekListHasil]);
             } else {
                 $hasil[] = $value;
             }
@@ -107,8 +112,15 @@ class NotifController extends BaseController
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function destroy($id)
+    public function destroy(Request $req, $id)
     {
-        //
+        $hasil = PortalNotif::where('id', $id)->first();
+        $deleteShare = FormShareDet::where('cfsd_gen_link', $hasil->pnm_hash_id_location)->where('p_u_username', $req->header('username'))->delete();
+        $deleteNotif = PortalNotif::where('id', $id)->delete();
+        return $this->handleResponse([
+            'dataNotif' => $hasil,
+            'delete_share' => $deleteShare,
+            'delete_notif' => $deleteNotif
+        ], 'Data Deleted !');
     }
 }
