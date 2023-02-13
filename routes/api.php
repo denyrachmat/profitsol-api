@@ -134,8 +134,11 @@ Route::group(['prefix' => 'div'], function () {
         // End PO Summary
 
         // Start DO Forcast TYO
-        
+
+        Route::resource('forecastDLVTYO', ForcastDOTYOController::class);
         Route::post('getReport', [ForcastDOTYOController::class, 'getReport']);
+        Route::get('getItemList/{item?}', [ForcastDOTYOController::class, 'getItemList']);
+        
     });
 
     Route::group(['prefix' => 'log'], function () {
