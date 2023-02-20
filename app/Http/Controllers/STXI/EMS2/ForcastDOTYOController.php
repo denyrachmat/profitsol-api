@@ -148,7 +148,7 @@ class ForcastDOTYOController extends Controller
             $hasil[$dt->format('Y-m')] = [
                 'full_date' => $dt->format("Y M"),
                 'range_date' => [$dt->format("Y-m-01"), date('Y-m-t', strtotime($dt->format("Y-m-1")))],
-                'data' => $data 
+                'data' => (array)$data->toArray() 
             ];
         }
 
@@ -186,13 +186,14 @@ class ForcastDOTYOController extends Controller
         $hasil = [];
         $no = 1;
         foreach (array_values($data) as $key => $value) {
+            // Item Only
             if ($key === 0) {
                 foreach ($value['data'] as $keyDet => $valueDet) {
                     $hasil[] = [
-                        'NO' => $no,
-                        'MITM_ITMCD' => $valueDet->MITM_ITMCD,
-                        'FDT_QTY_'.$key => $valueDet->FDT_QTY,
-                        'SSHP_SHPQT_'.$key => $valueDet->SSHP_SHPQT
+                        0 => $no,
+                        1 => trim($valueDet->MITM_ITMCD),
+                        // 'FDT_QTY_'.$key => $valueDet->FDT_QTY,
+                        // 'SSHP_SHPQT_'.$key => $valueDet->SSHP_SHPQT,
                     ];
 
                     $no++;
@@ -200,27 +201,34 @@ class ForcastDOTYOController extends Controller
             } else {
                 foreach ($value['data'] as $keyDet => $valueDet) {
                     $checkExistsItem = array_filter(array_values($hasil), function ($f) use ($valueDet) {
-                        return $f['MITM_ITMCD'] == $valueDet->MITM_ITMCD;
+                        return $f[1] === trim($valueDet->MITM_ITMCD);
                     }, ARRAY_FILTER_USE_BOTH);
-
-                    if (count($checkExistsItem) > 0) {
-                        $hasil[array_keys($checkExistsItem)[0]] = array_merge(
-                            $hasil[array_keys($checkExistsItem)[0]],
-                            [
-                                'FDT_QTY_'.$key => $valueDet->FDT_QTY,
-                                'SSHP_SHPQT_'.$key => $valueDet->SSHP_SHPQT
-                            ]
-                        );
-                    } else {
+                    if (count($checkExistsItem) === 0) {
                         $hasil[] = [
-                            'NO' => $no,
-                            'MITM_ITMCD' => $valueDet->MITM_ITMCD,
-                            'FDT_QTY_'.$key => $valueDet->FDT_QTY,
-                            'SSHP_SHPQT_'.$key => $valueDet->SSHP_SHPQT
+                            0 => $no,
+                            1 => trim($valueDet->MITM_ITMCD),
+                            // 'FDT_QTY_'.$key => $valueDet->FDT_QTY,
+                            // 'SSHP_SHPQT_'.$key => $valueDet->SSHP_SHPQT,
                         ];
     
                         $no++;
                     }
+                }
+            }
+        }
+
+        // return $hasil;
+
+        foreach ($hasil as $keyCont => $valueCont) {
+            foreach (array_values($data) as $key2 => $value2) {
+                $findItem = array_values(array_filter(json_decode(json_encode($value2['data']), true), function ($f) use ($valueCont) {
+                    return trim($f['MITM_ITMCD']) === $valueCont[1];
+                }, ARRAY_FILTER_USE_BOTH));
+
+                if (isset($findItem[0]) && count($findItem) > 0) {
+                    array_push($hasil[$keyCont], (int)$findItem[0]['FDT_QTY'], $findItem[0]['SSHP_SHPQT']);
+                } else {
+                    array_push($hasil[$keyCont], 0, 0);
                 }
             }
         }
