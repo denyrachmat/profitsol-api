@@ -2,15 +2,18 @@
 
 namespace App\Http\Controllers\STXI\EMS2;
 
-use App\Http\Controllers\Controller;
+use App\Http\Controllers\API\PORTAL\BaseController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use App\Models\STXI\EMS2\FRCST_DLV_TYO;
 use Excel;
+use Illuminate\Http\File;
+use App\Imports\STXI\EMS2\ImportDOForecastTYO;
 
-use App\Exports\STXI\ExportForcastDLVTYO;
+use App\Exports\STXI\ExportForcastDLVTYOCover;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 
-class ForcastDOTYOController extends Controller
+class ForcastDOTYOController extends BaseController
 {
     /**
      * Display a listing of the resource.
@@ -43,15 +46,15 @@ class ForcastDOTYOController extends Controller
         FRCST_DLV_TYO::where('FDT_MONTH', date('m', strtotime(($request->fdate))))->where('FDT_YEAR', date('Y', strtotime(($request->ldate))))->delete();
         $hasil = [];
         foreach ($request->data as $key => $value) {
-            $cekSameItem = array_filter($hasil, function ($f) use($value){
+            $cekSameItem = array_filter($hasil, function ($f) use ($value) {
                 return $f['FDT_ITMCD'] === $value[0];
             });
-            
+
             $hasil[] = [
                 'FDT_ITMCD' => $value[0],
                 'FDT_MONTH' => date('m', strtotime(($request->fdate))),
                 'FDT_YEAR' => date('Y', strtotime(($request->ldate))),
-                'FDT_QTY' => (int)$value[1],
+                'FDT_QTY' => (int) $value[1],
                 'created_at' => date('Y-m-d H:i:s'),
                 'updated_at' => date('Y-m-d H:i:s')
             ];
@@ -133,7 +136,7 @@ class ForcastDOTYOController extends Controller
                         AND fdt.FDT_YEAR = YEAR(MAX(vfds.SSHP_SHPDT))
                     ) AS FDT_QTY')
                 )
-                ->whereBetween('SSHP_SHPDT', [$dt->format("Y-m-1"), date('Y-m-t', strtotime($dt->format("Y-m-1")))])          
+                ->whereBetween('SSHP_SHPDT', [$dt->format("Y-m-1"), date('Y-m-t', strtotime($dt->format("Y-m-1")))])
                 ->groupBy(
                     'MITM_ITMCD',
                     'MITM_ITMD1',
@@ -144,11 +147,11 @@ class ForcastDOTYOController extends Controller
             // if ($dt->format("Y-m-1") == '2022-02-1') {
             //     return $data;
             // }
-            
+
             $hasil[$dt->format('Y-m')] = [
                 'full_date' => $dt->format("Y M"),
                 'range_date' => [$dt->format("Y-m-01"), date('Y-m-t', strtotime($dt->format("Y-m-1")))],
-                'data' => (array)$data->toArray() 
+                'data' => (array) $data->toArray()
             ];
         }
 
@@ -161,10 +164,10 @@ class ForcastDOTYOController extends Controller
             ->table('MGSVR.VMI_EXIM.dbo.MITM_TBL');
 
         if (!empty($search)) {
-            $data->where('MITM_ITMCD', 'like', base64_decode($search).'%');
+            $data->where('MITM_ITMCD', 'like', base64_decode($search) . '%');
         }
 
-        $hasil = []; 
+        $hasil = [];
         foreach ($data->get()->pluck('MITM_ITMCD') as $key => $value) {
             $hasil[] = trim($value);
         }
@@ -172,11 +175,25 @@ class ForcastDOTYOController extends Controller
         return $hasil;
     }
 
+    public function getReportSummary(Request $req)
+    {
+        $hasil = DB::connection('sqlsrv_ems2')
+            ->table("f_frcst_dlv_shp_monthly('" . $req->fdate . "', '" . $req->ldate . "')")
+            ->orderBy('year_ret', 'desc')
+            ->orderBy('month_ret')
+            ->get()
+            ->toArray();
+
+        return $hasil;
+    }
+
     public function exportForcast(Request $req)
     {
         $data = $this->getReport(new Request($req->all()));
+        $dataSum = $this->getReportSummary(new Request($req->all()));
 
-        Excel::store(new ExportForcastDLVTYO($data), 'export_do_tyo_forcast.xlsx', 'public');
+        // return $dataSum;
+        Excel::store(new ExportForcastDLVTYOCover($data, $dataSum), 'export_do_tyo_forcast.xlsx', 'public');
 
         return 'storage/app/public/export_do_tyo_forcast.xlsx';
     }
@@ -210,7 +227,7 @@ class ForcastDOTYOController extends Controller
                             // 'FDT_QTY_'.$key => $valueDet->FDT_QTY,
                             // 'SSHP_SHPQT_'.$key => $valueDet->SSHP_SHPQT,
                         ];
-    
+
                         $no++;
                     }
                 }
@@ -218,21 +235,65 @@ class ForcastDOTYOController extends Controller
         }
 
         // return $hasil;
-
+        $total = ['Total Per Month', ''];
         foreach ($hasil as $keyCont => $valueCont) {
+            $totalMonthFC = 0;
+            $totalMonth = 0;
             foreach (array_values($data) as $key2 => $value2) {
                 $findItem = array_values(array_filter(json_decode(json_encode($value2['data']), true), function ($f) use ($valueCont) {
                     return trim($f['MITM_ITMCD']) === $valueCont[1];
                 }, ARRAY_FILTER_USE_BOTH));
 
                 if (isset($findItem[0]) && count($findItem) > 0) {
-                    array_push($hasil[$keyCont], (int)$findItem[0]['FDT_QTY'], $findItem[0]['SSHP_SHPQT']);
+                    $totalMonthFC += (int) $findItem[0]['FDT_QTY'];
+                    $totalMonth += (int) $findItem[0]['SSHP_SHPQT'];
+                    array_push($hasil[$keyCont], (int) $findItem[0]['FDT_QTY'], $findItem[0]['SSHP_SHPQT']);
                 } else {
                     array_push($hasil[$keyCont], 0, 0);
                 }
             }
+
+            array_push($total, $totalMonthFC, $totalMonth);
         }
 
         return $hasil;
+    }
+
+    public function uploadForecast(Request $req)
+    {
+        ini_set('max_execution_time', '300');
+        // $nama_file = $req->file->hashName();
+        $file = new File($req->file);
+        $extNya = $req->file('file')->getClientOriginalExtension();
+
+        $fileHash = str_replace('.' . $file->extension(), '', $file->hashName());
+        $nama_file = $fileHash . '.' . $extNya;
+
+        // return $nama_file;
+        $oriFileName = $req->file('file')->getClientOriginalName();
+
+        if (str_contains($oriFileName, 'TYO') && str_contains($oriFileName, 'FORECAST')) {
+            $splitString = intval(preg_replace('/[^0-9]+/', '', $oriFileName), 10);
+
+
+            $req->file->storeAs('/public/upload_forecast_tyo/', $nama_file);
+
+            if ($extNya == 'xls') {
+                $spreadsheet = \PhpOffice\PhpSpreadsheet\IOFactory::load($file);
+                $writer = new Xlsx($spreadsheet);
+                $nama_file = $fileHash . '.xlsx';
+                $writer->save('/public/upload_forecast_tyo/' . $nama_file);
+            }
+
+            FRCST_DLV_TYO::whereIn('FDT_YEAR', [$splitString,((int)$splitString) + 1])->delete();
+
+            $importer = new ImportDOForecastTYO($splitString);
+
+            Excel::import($importer, public_path('/storage/upload_forecast_tyo/' . $nama_file));
+
+            return $this->handleResponse([], 'Upload Sukses ' . $nama_file);
+        } else {
+            return $this->handleError("File name doesn't right! please check again !");
+        }
     }
 }

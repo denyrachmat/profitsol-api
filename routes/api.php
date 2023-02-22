@@ -139,6 +139,7 @@ Route::group(['prefix' => 'div'], function () {
         Route::post('getReport', [ForcastDOTYOController::class, 'getReport']);
         Route::get('getItemList/{item?}', [ForcastDOTYOController::class, 'getItemList']);
         Route::post('exportForcast', [ForcastDOTYOController::class, 'exportForcast']);
+        Route::post('uploadForecast', [ForcastDOTYOController::class, 'uploadForecast']);        
     });
 
     Route::group(['prefix' => 'log'], function () {

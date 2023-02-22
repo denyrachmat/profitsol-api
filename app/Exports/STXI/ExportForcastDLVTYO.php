@@ -9,7 +9,9 @@ use Maatwebsite\Excel\Concerns\RegistersEventListeners;
 use Maatwebsite\Excel\Concerns\WithCustomStartCell;
 use Maatwebsite\Excel\Concerns\Exportable;
 use Maatwebsite\Excel\Concerns\WithEvents;
-class ExportForcastDLVTYO implements FromCollection, WithHeadings, WithEvents, WithCustomStartCell
+use Maatwebsite\Excel\Concerns\WithTitle;
+
+class ExportForcastDLVTYO implements FromCollection, WithHeadings, WithEvents, WithCustomStartCell, WithTitle
 {
     use RegistersEventListeners, Exportable;
     private $data;
@@ -17,6 +19,11 @@ class ExportForcastDLVTYO implements FromCollection, WithHeadings, WithEvents, W
     public function __construct($data)
     {
         $this->data = $data;
+    }
+
+    public function title(): string
+    {
+        return 'FC';
     }
 
     public function startCell(): string
@@ -71,7 +78,7 @@ class ExportForcastDLVTYO implements FromCollection, WithHeadings, WithEvents, W
                 foreach ($value['data'] as $keyDet => $valueDet) {
                     $hasil[] = [
                         0 => $no,
-                        1 => $valueDet->MITM_ITMCD,
+                        1 => trim($valueDet->MITM_ITMCD),
                         // 'FDT_QTY_'.$key => $valueDet->FDT_QTY,
                         // 'SSHP_SHPQT_'.$key => $valueDet->SSHP_SHPQT,
                     ];
@@ -81,37 +88,73 @@ class ExportForcastDLVTYO implements FromCollection, WithHeadings, WithEvents, W
             } else {
                 foreach ($value['data'] as $keyDet => $valueDet) {
                     $checkExistsItem = array_filter(array_values($hasil), function ($f) use ($valueDet) {
-                        return $f[1] == $valueDet->MITM_ITMCD;
+                        return $f[1] === trim($valueDet->MITM_ITMCD);
                     }, ARRAY_FILTER_USE_BOTH);
                     if (count($checkExistsItem) === 0) {
                         $hasil[] = [
                             0 => $no,
-                            1 => $valueDet->MITM_ITMCD,
+                            1 => trim($valueDet->MITM_ITMCD),
                             // 'FDT_QTY_'.$key => $valueDet->FDT_QTY,
                             // 'SSHP_SHPQT_'.$key => $valueDet->SSHP_SHPQT,
                         ];
-    
+
                         $no++;
                     }
                 }
             }
         }
 
+        // Content
         foreach ($hasil as $keyCont => $valueCont) {
-            foreach (array_values($this->data) as $key2 => $value2) {
+            foreach ($this->data as $key2 => $value2) {
                 $findItem = array_values(array_filter(json_decode(json_encode($value2['data']), true), function ($f) use ($valueCont) {
                     return trim($f['MITM_ITMCD']) === $valueCont[1];
                 }, ARRAY_FILTER_USE_BOTH));
 
-                // return $findItem;
                 if (isset($findItem[0]) && count($findItem) > 0) {
-                    array_push($hasil[$keyCont], (int)$findItem[0]['FDT_QTY'], (int)$findItem[0]['SSHP_SHPQT']);
+                    array_push($hasil[$keyCont], $findItem[0]['FDT_QTY'], $findItem[0]['SSHP_SHPQT']);
                 } else {
-                    array_push($hasil[$keyCont], 0, 0);
+                    array_push($hasil[$keyCont], '0', '0');
                 }
             }
         }
+        // logger(json_encode($hasil));
+        // logger(json_encode(array_values($this->data)));
+        // Total per month
+        $start = 2;
+        $total = ['Total Per Month', ''];
+        $totalCek = ['Total Per Month', ''];
+        // Total
+        foreach (array_values($this->data) as $key3 => $value3) {
+            $totalF = 0;
+            $totalA = 0;
+            $cekF = [];
+            $cekA = [];
 
+            // Rows
+            foreach ($hasil as $key => $value) {
+                $totalF += $value[$start];
+                // $cekF[] = [
+                //     'valRow' => $value,
+                //     'keyCol' => $key3
+                // ];
+
+                $totalA += $value[$start + 1];
+                // $cekA[] = [
+                //     'valRow' => $value,
+                //     'keyCol' => $key3
+                // ];
+                // $totalF += $hasil[$key3][$key];
+                // $totalA += $hasil[$key3][$key + 1];
+            }
+
+            array_push($total, (string) $totalF, (string) $totalA);
+            array_push($totalCek, $cekF, $cekA);
+            $start = $start + 2;
+        }
+
+        // logger($totalCek);
+        array_push($hasil, $total);
         return collect($hasil);
     }
 
@@ -133,22 +176,22 @@ class ExportForcastDLVTYO implements FromCollection, WithHeadings, WithEvents, W
                     ]
                 ]);
 
-                $event->sheet->getDelegate()->mergeCells('C5:'.$highestColumn.'5');
+                $event->sheet->getDelegate()->mergeCells('C5:' . $highestColumn . '5');
 
                 $event->sheet->getStyle('A5')->getAlignment()->setHorizontal('center');
                 $event->sheet->getStyle('A5')->getAlignment()->setVertical('center');
                 $event->sheet->getStyle('B5')->getAlignment()->setHorizontal('center');
                 $event->sheet->getStyle('B5')->getAlignment()->setVertical('center');
-                
-                $event->sheet->getStyle('C5:'.$highestColumn.'6')->getAlignment()->setHorizontal('center');
-                $event->sheet->getStyle('C8:'.$highestColumn.$highestRow)->getAlignment()->setHorizontal('right');
+
+                $event->sheet->getStyle('C5:' . $highestColumn . '6')->getAlignment()->setHorizontal('center');
+                $event->sheet->getStyle('C8:' . $highestColumn . $highestRow)->getAlignment()->setHorizontal('right');
                 $event->sheet->getDelegate()->mergeCells('A5:A7');
                 $event->sheet->getDelegate()->mergeCells('B5:B7');
 
-                $event->sheet->getStyle('C8:'.$highestColumn.$highestRow)->getNumberFormat()
-                ->setFormatCode(
-                    \PhpOffice\PhpSpreadsheet\Style\NumberFormat::FORMAT_NUMBER_COMMA_SEPARATED1
-                );
+                $event->sheet->getStyle('C8:' . $highestColumn . $highestRow)->getNumberFormat()
+                    ->setFormatCode(
+                            \PhpOffice\PhpSpreadsheet\Style\NumberFormat::FORMAT_NUMBER_COMMA_SEPARATED1
+                    );
 
                 $event->sheet->getStyle('A5:' . $highestColumn . '7')->applyFromArray([
                     'font' => [
@@ -157,10 +200,21 @@ class ExportForcastDLVTYO implements FromCollection, WithHeadings, WithEvents, W
                     ],
                 ]);
 
+                $event->sheet->styleCells(
+                    'A5:' . $highestColumn . $highestRow,
+                    [
+                        'borders' => [
+                            'allBorders' => [
+                                'borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN,
+                            ],
+                        ]
+                    ]
+                );
+
                 $startCol = 2;
                 foreach (array_values($this->data) as $key => $value) {
                     // logger($this->toAlpha($startCol).'6:'.$this->toAlpha($startCol + 1).'6');
-                    $event->sheet->getDelegate()->mergeCells($this->toAlpha($startCol).'6:'.$this->toAlpha($startCol + 1).'6');
+                    $event->sheet->getDelegate()->mergeCells($this->toAlpha($startCol) . '6:' . $this->toAlpha($startCol + 1) . '6');
                     $startCol = $startCol + 2;
                     // $hasilHeaderTanggal[] = $value['full_date'];
                     // $hasilHeaderTanggal[] = '';
@@ -169,11 +223,10 @@ class ExportForcastDLVTYO implements FromCollection, WithHeadings, WithEvents, W
         ];
     }
 
-    
     public function toAlpha($num)
     {
-        for($r = ""; $num >= 0; $num = intval($num / 26) - 1)
-            $r = chr($num%26 + 0x41) . $r;
+        for ($r = ""; $num >= 0; $num = intval($num / 26) - 1)
+            $r = chr($num % 26 + 0x41) . $r;
         return $r;
     }
 }

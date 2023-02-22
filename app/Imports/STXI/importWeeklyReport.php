@@ -25,8 +25,8 @@ class importWeeklyReport implements ToModel, WithStartRow
             ], [
                 'ITEM_CODE' => $row[3],
                 'PO_NUM' => $row[5],
-                'ORDER_DATE' => \PhpOffice\PhpSpreadsheet\Shared\Date::excelToDateTimeObject($row[6]),
-                'DUE_DATE' => \PhpOffice\PhpSpreadsheet\Shared\Date::excelToDateTimeObject($row[7]),
+                'ORDER_DATE' => \PhpOffice\PhpSpreadsheet\Shared\Date::excelToDateTimeObject($row[6])->format('Y-m-d'),
+                'DUE_DATE' => \PhpOffice\PhpSpreadsheet\Shared\Date::excelToDateTimeObject($row[7])->format('Y-m-d'),
                 'ORDER_QTY' => $row[8],
                 'RCV_QTY' => $row[9],
                 'PIC' => $row[0],
@@ -36,6 +36,6 @@ class importWeeklyReport implements ToModel, WithStartRow
 
     public function startRow(): int
     {
-        return 4;
+        return 5;
     }
 }
