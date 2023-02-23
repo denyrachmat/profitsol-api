@@ -1140,19 +1140,27 @@ class deliveryMethodToPSIController extends BaseController
             'MITM_RUNFG',
             'TPM_VERSION',
             'TPM_REMARK',
-            'TPM_PRC',
+            DB::raw('
+                ( TPM_ORDERQTY * (
+                    SELECT TOP 1
+                        MSPR_SLPRC
+                    FROM[MGSVR].[VMI_TYO].[dbo].[MSPR_TBL] mtpr
+                    WHERE mtpr.MSPR_ITMCD = TPM_ITMCD
+                    ORDER BY MSPR_EFFDT DESC
+                )) AS TPM_PRC
+            '),
             DB::raw('
                 DATEDIFF(day, TPM_ISSDT, TPM_DLVDT) as diff_days
             ')
         )->join(
-                DB::raw('[MGSVR].[VMI_TYO].[dbo].[MITM_TBL]'),
-                'MITM_ITMCD',
-                'TPM_ITMCD'
-            )->leftjoin(
-                'SPQ_MSTR_TBL',
-                'MITM_MODELCD',
-                'TPM_ITMCD'
-            )
+            DB::raw('[MGSVR].[VMI_TYO].[dbo].[MITM_TBL]'),
+            'MITM_ITMCD',
+            'TPM_ITMCD'
+        )->leftjoin(
+            'SPQ_MSTR_TBL',
+            'MITM_MODELCD',
+            'TPM_ITMCD'
+        )
             ->where('TPM_ISSDT', $date)
             ->whereNull('TPM_EXPORT');
 
