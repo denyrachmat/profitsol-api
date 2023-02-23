@@ -102,7 +102,7 @@ class ExportDOChecker implements FromCollection, WithHeadings, WithEvents
 
                 $event->sheet->getStyle('G3:G' . $highestRow)->getNumberFormat()
                 ->setFormatCode(
-                        \PhpOffice\PhpSpreadsheet\Style\NumberFormat::FORMAT_CURRENCY_USD
+                        \PhpOffice\PhpSpreadsheet\Style\NumberFormat::FORMAT_NUMBER_COMMA_SEPARATED1
                 );
                 $event->sheet->styleCells(
                     'A2:'.$highestColumn.$highestRow,
