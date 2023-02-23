@@ -95,7 +95,10 @@ class ExportDOChecker implements FromCollection, WithHeadings, WithEvents
                 ]);
 
                 $event->sheet->getStyle('A2:'.$highestColumn.'2')->getAlignment()->setHorizontal('center');
-
+                $event->sheet->getStyle('I3:I' . $highestRow)->getNumberFormat()
+                ->setFormatCode(
+                        \PhpOffice\PhpSpreadsheet\Style\NumberFormat::FORMAT_NUMBER_COMMA_SEPARATED1
+                );
                 $event->sheet->styleCells(
                     'A2:'.$highestColumn.$highestRow,
                     [

@@ -1131,12 +1131,6 @@ class deliveryMethodToPSIController extends BaseController
                     ELSE CAST(MITM_SPQ AS INT)
                 END
             ) AS DECIMAL (15,2)) AS SHEET'),
-            DB::raw('CAST(TPM_ORDERQTY / (
-                CASE WHEN SPQ_BOX_PROT_FLAG = 1
-                    THEN STXI_SPQ
-                    ELSE CAST(MITM_SPQ AS INT)
-                END
-            ) AS DECIMAL (15,2)) AS SHEET'),
             'MITM_RUNFG',
             'TPM_VERSION',
             'TPM_REMARK',
