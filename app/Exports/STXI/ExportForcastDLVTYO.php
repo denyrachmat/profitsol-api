@@ -188,6 +188,8 @@ class ExportForcastDLVTYO implements FromCollection, WithHeadings, WithEvents, W
                 $event->sheet->getDelegate()->mergeCells('A5:A7');
                 $event->sheet->getDelegate()->mergeCells('B5:B7');
 
+                $event->sheet->getStyle('A5:' . $highestColumn . '5')->getFill()->applyFromArray(['fillType' => 'solid','rotation' => 0, 'color' => ['rgb' => 'FFFF33'],]);
+
                 $event->sheet->getStyle('C8:' . $highestColumn . $highestRow)->getNumberFormat()
                     ->setFormatCode(
                             \PhpOffice\PhpSpreadsheet\Style\NumberFormat::FORMAT_NUMBER_COMMA_SEPARATED1
@@ -215,10 +217,14 @@ class ExportForcastDLVTYO implements FromCollection, WithHeadings, WithEvents, W
                 foreach (array_values($this->data) as $key => $value) {
                     // logger($this->toAlpha($startCol).'6:'.$this->toAlpha($startCol + 1).'6');
                     $event->sheet->getDelegate()->mergeCells($this->toAlpha($startCol) . '6:' . $this->toAlpha($startCol + 1) . '6');
+                    $event->sheet->getStyle($this->toAlpha($startCol) . '6:' . $this->toAlpha($startCol + 1) . '6')->getFill()->applyFromArray(['fillType' => 'solid','rotation' => 0, 'color' => ['rgb' => '33AEFF'],]);
                     $startCol = $startCol + 2;
                     // $hasilHeaderTanggal[] = $value['full_date'];
                     // $hasilHeaderTanggal[] = '';
                 }
+
+                $event->sheet->getDelegate()->mergeCells('A'.$highestRow.':B'.$highestRow);
+                $event->sheet->getStyle('A'.$highestRow.':' . $highestColumn.$highestRow)->getFill()->applyFromArray(['fillType' => 'solid','rotation' => 0, 'color' => ['rgb' => 'AEAEAE'],]);
             }
         ];
     }

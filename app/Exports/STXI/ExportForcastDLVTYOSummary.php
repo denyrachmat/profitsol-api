@@ -153,7 +153,10 @@ class ExportForcastDLVTYOSummary implements FromCollection, WithHeadings, WithEv
                 $event->sheet->getStyle('A1:' . $highestColumn . '3')->getAlignment()->setHorizontal('center');
                 $event->sheet->getStyle('A1:' . $highestColumn . '3')->getAlignment()->setVertical('center');
 
+                
+                $event->sheet->getStyle('A3:' . $highestColumn . '3')->getFill()->applyFromArray(['fillType' => 'solid','rotation' => 0, 'color' => ['rgb' => 'FFFF33'],]);
                 $event->sheet->getStyle('A4:' . 'A' . $highestRow)->getAlignment()->setHorizontal('right');
+                $event->sheet->getStyle('A4:' . 'A' . $highestRow)->getFill()->applyFromArray(['fillType' => 'solid','rotation' => 0, 'color' => ['rgb' => 'D9D9D9'],]);
 
                 $event->sheet->getStyle('B4:' . $highestColumn . $highestRow)->getAlignment()->setHorizontal('right');
                 $event->sheet->getStyle('B4:' . $highestColumn . $highestRow)->getNumberFormat()
