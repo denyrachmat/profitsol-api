@@ -54,26 +54,36 @@ class PAApprovalController extends BaseController
         }
 
         if ($table == 'PAINS_PRTCHG_MS') {
-            $hasil = DB::connection('sqlsrv_pu')->table('PAINS_PRTCHG_MS')->where('PAINSNO', $id)->update([
-                'ACKG_DIR_DT' => date('Y-m-d H:i:s'),
-                'ACKG_DIR' => $username
-            ]); 
+            $data = DB::connection('sqlsrv_pu')->table('PAINS_PRTCHG_MS')->where('PAINSNO', $id)->first();
+            if (empty($data->ACKG_DIR_DT)) {
+                $hasil = DB::connection('sqlsrv_pu')->table('PAINS_PRTCHG_MS')->where('PAINSNO', $id)->update([
+                    'ACKG_DIR_DT' => date('Y-m-d H:i:s'),
+                    'ACKG_DIR' => $username
+                ]); 
 
-            if ($hasil) {
-                return $this->handleResponse(PAApprovalMS::where('PAINSNO', $id)->first(), 'Update Sukses !');
+                if ($hasil) {
+                    return $this->handleResponse(PAApprovalMS::where('PAINSNO', $id)->first(), 'Update Sukses !');
+                } else {
+                    return $this->handleError('Update data gagal !', $hasil);
+                }
             } else {
-                return $this->handleError('Update data gagal !', $hasil);
+                return $this->handleError('PA No Already approved !', []);
             }
         } else {
-            $hasil = DB::connection('sqlsrv_pu')->table('PAINS_PRTCHG')->where('PAINSNO', $id)->update([
-                'ACKG_DIR_DT' => date('Y-m-d H:i:s'),
-                'ACKG_DIR' => $username
-            ]);            
+            $data = DB::connection('sqlsrv_pu')->table('PAINS_PRTCHG')->where('PAINSNO', $id)->first();
+            if (empty($data->ACKG_DIR_DT)) {
+                $hasil = DB::connection('sqlsrv_pu')->table('PAINS_PRTCHG')->where('PAINSNO', $id)->update([
+                    'ACKG_DIR_DT' => date('Y-m-d H:i:s'),
+                    'ACKG_DIR' => $username
+                ]); 
 
-            if ($hasil) {
-                return $this->handleResponse(PAApproval::where('PAINSNO', $id)->get(), 'Update Sukses !');
+                if ($hasil) {
+                    return $this->handleResponse(PAApproval::where('PAINSNO', $id)->first(), 'Update Sukses !');
+                } else {
+                    return $this->handleError('Update data gagal !', $hasil);
+                }
             } else {
-                return $this->handleError('Update data gagal !', $hasil);
+                return $this->handleError('PA No Already approved !', []);
             }
         }
     }
