@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use App\Models\STXI\PU\PAApproval;
 use App\Models\STXI\PU\PAApprovalMS;
 use App\Http\Controllers\API\PORTAL\BaseController;
+use Illuminate\Support\Facades\DB;
 class PAApprovalController extends BaseController
 {
     /**
@@ -53,10 +54,10 @@ class PAApprovalController extends BaseController
         }
 
         if ($table = 'PAINS_PRTCHG_MS') {
-            $hasil = PAApprovalMS::where('PAINSNO', $id)->update([
+            $hasil = DB::connection('sqlsrv_pu')->table('PAINS_PRTCHG_MS')->where('PAINSNO', $id)->update([
                 'ACKG_DIR_DT' => date('Y-m-d H:i:s'),
                 'ACKG_DIR' => $username
-            ]);
+            ]); 
 
             if ($hasil) {
                 return $this->handleResponse(PAApprovalMS::where('PAINSNO', $id)->first(), 'Update Sukses !');
@@ -64,13 +65,13 @@ class PAApprovalController extends BaseController
                 return $this->handleError('Update data gagal !');
             }
         } else {
-            $hasil = PAApproval::where('PAINSNO', $id)->update([
+            $hasil = DB::connection('sqlsrv_pu')->table('PAINS_PRTCHG')->where('PAINSNO', $id)->update([
                 'ACKG_DIR_DT' => date('Y-m-d H:i:s'),
                 'ACKG_DIR' => $username
-            ]);
+            ]);            
 
             if ($hasil) {
-                return $this->handleResponse(PAApproval::where('PAINSNO', $id)->first(), 'Update Sukses !');
+                return $this->handleResponse(PAApproval::where('PAINSNO', $id)->get(), 'Update Sukses !');
             } else {
                 return $this->handleError('Update data gagal !');
             }
