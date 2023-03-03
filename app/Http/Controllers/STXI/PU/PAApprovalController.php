@@ -53,7 +53,7 @@ class PAApprovalController extends BaseController
             return $this->handleError('Update data gagal, ID tidak di temukan !');
         }
 
-        if ($table = 'PAINS_PRTCHG_MS') {
+        if ($table == 'PAINS_PRTCHG_MS') {
             $hasil = DB::connection('sqlsrv_pu')->table('PAINS_PRTCHG_MS')->where('PAINSNO', $id)->update([
                 'ACKG_DIR_DT' => date('Y-m-d H:i:s'),
                 'ACKG_DIR' => $username
@@ -62,7 +62,7 @@ class PAApprovalController extends BaseController
             if ($hasil) {
                 return $this->handleResponse(PAApprovalMS::where('PAINSNO', $id)->first(), 'Update Sukses !');
             } else {
-                return $this->handleError('Update data gagal !');
+                return $this->handleError('Update data gagal !', $hasil);
             }
         } else {
             $hasil = DB::connection('sqlsrv_pu')->table('PAINS_PRTCHG')->where('PAINSNO', $id)->update([
@@ -73,7 +73,7 @@ class PAApprovalController extends BaseController
             if ($hasil) {
                 return $this->handleResponse(PAApproval::where('PAINSNO', $id)->get(), 'Update Sukses !');
             } else {
-                return $this->handleError('Update data gagal !');
+                return $this->handleError('Update data gagal !', $hasil);
             }
         }
     }
