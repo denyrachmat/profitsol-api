@@ -315,22 +315,26 @@ class deliveryMethodToPSIController extends BaseController
 
     public function deleteDelivery($date, $loc = 'smt', $item = '')
     {
-        $hasil = DLVTYOHist::where('DEL_DATE', $date);
+        $q = DLVTYOHist::where('DEL_DATE', $date);
 
         if ($loc === 'smt') {
-            $hasil->whereIn('IO_REMARK', ['TO_ITEC', 'FROM_SMT'])->get();
+            $q->whereIn('IO_REMARK', ['TO_ITEC', 'FROM_SMT'])->get();
         } else {
-            $hasil->whereIn('IO_REMARK', ['TO_ITEC_STOCKDLV', 'FROM_STOCK'])->get();
+            $q->whereIn('IO_REMARK', ['TO_ITEC_STOCKDLV', 'FROM_STOCK'])->get();
         }
 
         if (!empty($item)) {
-            $hasil->where('MITM_MODELCD', $item);
+            $q->where('MITM_MODELCD', $item);
         }
+
+        $hasil = $q->get();
 
         foreach ($hasil as $key => $value) {
             DLVTYODet::where('DRST_ID', $value->id)->delete();
             DLVTYODlvDet::where('DRT_ITMCD', $value->MITM_MODELCD)->where('DRT_PSI_DELDT', $value->DEL_DATE)->delete();
         }
+
+        $q->delete();
 
         return $this->handleResponse($hasil, 'Data delivery on ' . $date . ' deleted !');
     }
