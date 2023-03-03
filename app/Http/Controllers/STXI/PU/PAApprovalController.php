@@ -48,7 +48,7 @@ class PAApprovalController extends BaseController
      */
     public function show($id, $username = '', $table = '')
     {
-        if (empty(PAApprovalMS::where('PAINSNO', $id)->first()) || empty(PAApproval::where('PAINSNO', $id)->first())) {
+        if (empty(PAApprovalMS::where('PAINSNO', $id)->first()) && empty(PAApproval::where('PAINSNO', $id)->first())) {
             return $this->handleError('Update data gagal, ID tidak di temukan !');
         }
 
@@ -57,17 +57,23 @@ class PAApprovalController extends BaseController
                 'ACKG_DIR_DT' => date('Y-m-d H:i:s'),
                 'ACKG_DIR' => $username
             ]);
+
+            if ($hasil) {
+                return $this->handleResponse(PAApprovalMS::where('PAINSNO', $id)->first(), 'Update Sukses !');
+            } else {
+                return $this->handleError('Update data gagal !');
+            }
         } else {
             $hasil = PAApproval::where('PAINSNO', $id)->update([
                 'ACKG_DIR_DT' => date('Y-m-d H:i:s'),
                 'ACKG_DIR' => $username
             ]);
-        }
 
-        if ($hasil) {
-            return $this->handleResponse(PAApprovalMS::where('PAINSNO', $id)->first(), 'Update Sukses !');
-        } else {
-            return $this->handleError('Update data gagal !');
+            if ($hasil) {
+                return $this->handleResponse(PAApproval::where('PAINSNO', $id)->first(), 'Update Sukses !');
+            } else {
+                return $this->handleError('Update data gagal !');
+            }
         }
     }
 
