@@ -48,7 +48,7 @@ class PAApprovalController extends BaseController
      */
     public function show($id, $username = '', $table = '')
     {
-        if (empty(PAApprovalMS::where('PAINSNO', $id)->first())) {
+        if (empty(PAApprovalMS::where('PAINSNO', $id)->first()) || empty(PAApproval::where('PAINSNO', $id)->first())) {
             return $this->handleError('Update data gagal, ID tidak di temukan !');
         }
 
