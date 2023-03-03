@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 class PAApproval extends Model
 {
     use HasFactory;
+    public $timestamps = false;
     protected $connection = 'sqlsrv_pu';
     protected $table = 'PAINS_PRTCHG';
 
