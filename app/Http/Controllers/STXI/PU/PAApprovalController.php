@@ -8,6 +8,7 @@ use App\Models\STXI\PU\PAApproval;
 use App\Models\STXI\PU\PAApprovalMS;
 use App\Http\Controllers\API\PORTAL\BaseController;
 use Illuminate\Support\Facades\DB;
+
 class PAApprovalController extends BaseController
 {
     /**
@@ -50,7 +51,7 @@ class PAApprovalController extends BaseController
     public function show($id, $username = '', $table = '')
     {
         if (empty(PAApprovalMS::where('PAINSNO', $id)->first()) && empty(PAApproval::where('PAINSNO', $id)->first())) {
-            return $this->handleError('Update data gagal, ID tidak di temukan !');
+            $return = $this->handleError('Update data failed, ID not found !');
         }
 
         if ($table == 'PAINS_PRTCHG_MS') {
@@ -59,15 +60,15 @@ class PAApprovalController extends BaseController
                 $hasil = DB::connection('sqlsrv_pu')->table('PAINS_PRTCHG_MS')->where('PAINSNO', $id)->update([
                     'ACKG_DIR_DT' => date('Y-m-d H:i:s'),
                     'ACKG_DIR' => $username
-                ]); 
+                ]);
 
                 if ($hasil) {
-                    return $this->handleResponse(PAApprovalMS::where('PAINSNO', $id)->first(), 'Update Sukses !');
+                    $return = $this->handleResponse(PAApprovalMS::where('PAINSNO', $id)->first(), 'Update Success !');
                 } else {
-                    return $this->handleError('Update data gagal !', $hasil);
+                    $return = $this->handleError('Update failed !', $hasil);
                 }
             } else {
-                return $this->handleError('PA No Already approved !', []);
+                $return = $this->handleError('PA No Already approved !', []);
             }
         } else {
             $data = DB::connection('sqlsrv_pu')->table('PAINS_PRTCHG')->where('PAINSNO', $id)->first();
@@ -75,17 +76,19 @@ class PAApprovalController extends BaseController
                 $hasil = DB::connection('sqlsrv_pu')->table('PAINS_PRTCHG')->where('PAINSNO', $id)->update([
                     'ACKG_DIR_DT' => date('Y-m-d H:i:s'),
                     'ACKG_DIR' => $username
-                ]); 
+                ]);
 
                 if ($hasil) {
-                    return $this->handleResponse(PAApproval::where('PAINSNO', $id)->first(), 'Update Sukses !');
+                    $return = $this->handleResponse(PAApproval::where('PAINSNO', $id)->first(), 'Update Success !');
                 } else {
-                    return $this->handleError('Update data gagal !', $hasil);
+                    $return = $this->handleError('Update failed !', $hasil);
                 }
             } else {
-                return $this->handleError('PA No Already approved !', []);
+                $return = $this->handleError('PA No Already approved !', []);
             }
         }
+
+        return view('STXI/PU/paApproval', collect(['return' => $return->getContent()]));
     }
 
     /**
