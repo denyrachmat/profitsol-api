@@ -38,7 +38,7 @@ class importRawPO implements ToModel, WithStartRow
 
                 $date = date('Y-m', strtotime($this->date)).'-'.$countDate;
 
-                if (!empty($value)) {
+                if (!empty($value) && !empty($row[0])) {
                     $item = $row[0];
                     FRCST_PO_MRI::updateOrCreate([
                         'FPM_ITMCD' => $this->formatItem($item),
