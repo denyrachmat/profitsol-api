@@ -26,6 +26,7 @@ use App\Exports\STXI\ExportDOChecker;
 
 use App\Imports\STXI\importWeeklyReport;
 use App\Imports\STXI\EMS2\ImportPOWebEDITYO;
+use App\Imports\STXI\EMS2\ImportFIFODOTYO;
 
 class deliveryMethodToPSIController extends BaseController
 {
@@ -914,6 +915,41 @@ class deliveryMethodToPSIController extends BaseController
         }
 
         return $this->handleResponse($hasil, 'Delivery note created !');
+    }
+
+    public function uploadFifoDOData(Request $req)
+    {
+        ini_set('max_execution_time', '300');
+        // $nama_file = $req->file->hashName();
+        $file = new File($req->file);
+        $extNya = $req->file('file')->getClientOriginalExtension();
+
+        $fileHash = str_replace('.' . $file->extension(), '', $file->hashName());
+        $nama_file = $fileHash . '.' . $extNya;
+
+        // return $nama_file;
+
+        $req->file->storeAs('/public/upload_fifo_do_data/', $nama_file);
+
+        if ($extNya == 'xls') {
+            $spreadsheet = \PhpOffice\PhpSpreadsheet\IOFactory::load($file);
+            $writer = new Xlsx($spreadsheet);
+            $nama_file = $fileHash . '.xlsx';
+            $writer->save('/public/upload_fifo_do_data/' . $nama_file);
+        }
+
+        // Delete exists DO by ID transaction
+        $masterHist = DLVTYOHist::where('DEL_DATE', $req->date)->where('IO_REMARK', $req->typeTrans)->get();
+
+        foreach ($masterHist as $key => $value) {
+            DLVTYODet::where('DRST_ID', $value->id)->delete();
+        }
+
+        $importer = new ImportFIFODOTYO($req->date, $req->typeTrans);
+
+        Excel::import($importer, public_path('/storage/upload_fifo_do_data/' . $nama_file));
+
+        return $this->handleResponse($importer->getHasil(), 'Upload Sukses ' . $nama_file);
     }
 
     public function uploadWeeklyPOData(Request $req)

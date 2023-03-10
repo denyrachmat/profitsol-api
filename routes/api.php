@@ -123,6 +123,7 @@ Route::group(['prefix' => 'div'], function () {
         Route::get('getAllRecordDateOnly', [deliveryMethodToPSIController::class, 'getAllRecordDateOnly']);        
         Route::post('ExportTYODOMega/{date}', [deliveryMethodToPSIController::class, 'ExportTYODOMega']);
         Route::get('ExportDOChecker/{date}', [deliveryMethodToPSIController::class, 'ExportDOChecker']);                        
+        Route::post('uploadFifoDOData', [deliveryMethodToPSIController::class, 'uploadFifoDOData']);
         // End DLV TYO
 
         // Start PO Summary
