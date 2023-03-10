@@ -90,7 +90,7 @@ Route::group(['prefix' => 'div'], function () {
         Route::delete('spq/{id}', [deliveryMethodToPSIController::class, 'SPQDeleteData']);
         Route::get('spqChecker/{qty}/{qtyDel}/{model}', [deliveryMethodToPSIController::class, 'DLVCalSPQRes']);
 
-        Route::get('dlv/{date?}', [deliveryMethodToPSIController::class, 'DLVIndex']);
+        Route::get('dlv/{paginate}/{date?}', [deliveryMethodToPSIController::class, 'DLVIndex']);
         Route::get('dlvEmail/{date}', [deliveryMethodToPSIController::class, 'DLVSendEmail']);
         Route::post('dlv', [deliveryMethodToPSIController::class, 'DLVWithBarcode']);
         Route::post('dlvStore', [deliveryMethodToPSIController::class, 'DLVStore']);

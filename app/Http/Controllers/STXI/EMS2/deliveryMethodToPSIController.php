@@ -106,14 +106,28 @@ class deliveryMethodToPSIController extends BaseController
         return $this->handleResponse($data, 'Data deleted !');
     }
 
-    public function DLVIndex($date = '')
+    public function DLVIndex($paginate = 0, $date = '')
     {        
         ini_set('max_execution_time', '300');
-        $data = $this->DLVGetData($date, !empty($date) ? [
-            'MITM_MODELCD',
-            'MITM_ITMD1',
-            'DEL_DATE'
-        ] : ['DEL_DATE'], !empty($date), true, false, '', true);
+        $data = $this->DLVGetData(
+            $date, 
+            !empty($date) 
+                ? [
+                    'MITM_MODELCD',
+                    'MITM_ITMD1',
+                    'DEL_DATE'
+                ] 
+                : ['DEL_DATE'],
+            !empty($date), 
+            true, 
+            false, 
+            '', 
+            true, 
+            false,
+            $paginate !== 0
+            ? json_decode(base64_decode($paginate))
+            : []
+        );
 
         return $this->handleResponse($data, 'Data found !');
     }
@@ -130,7 +144,8 @@ class deliveryMethodToPSIController extends BaseController
         $fromDate = false,
         $item = '',
         $withFifo = false,
-        $withTransID = false
+        $withTransID = false,
+        $isPaginate = []
     )
     {
         ini_set('max_execution_time', '300');
@@ -187,9 +202,42 @@ class deliveryMethodToPSIController extends BaseController
             $data->where('MITM_ITMCD', $item);
         }
 
-        // if ($withFifo) {
-        //     $data->leftJoin('DLV_REQ_DET', 'DLV_REQ_SMT_TYO.id', 'DRST_ID');
-        // }
+        // If return as pagination
+        if (isset($isPaginate->rowsPerPage)) {
+            $keysa = 0;
+            $itemsPaginated = $data->paginate($isPaginate->rowsPerPage, [], 'page', $isPaginate->page);
+            $itemsTransformed = $itemsPaginated->getCollection()
+            ->transform(function($item, $key) use ($withFifo) {
+                $hasilFIFO = 0;
+                if ($withFifo) {
+                    $dataFIFO = $this->fifoUpdateDLV($item->DEL_DATE, '', false, true);
+                    foreach ($dataFIFO as $keyFIFO => $valueFIFO) {
+                        $hasilFIFO += $valueFIFO['DRD_QTY'];
+                    }
+                }
+
+                return array_merge(
+                    ['no' => $key + 1],
+                    (array)$item,
+                    [
+                        'TOTAL_FIFO' => $hasilFIFO,
+                        'det' => []
+                    ]
+                );
+            })->toArray();
+
+            return new \Illuminate\Pagination\LengthAwarePaginator(
+                $itemsTransformed,
+                $itemsPaginated->total(),
+                $itemsPaginated->perPage(),
+                $itemsPaginated->currentPage(), [
+                    'path' => \Request::url(),
+                    'query' => [
+                        'page' => $itemsPaginated->currentPage()
+                    ]
+                ]
+            );
+        }
 
         $dataHasil = array_map(function ($value) {
             return (array) $value;
@@ -203,13 +251,6 @@ class deliveryMethodToPSIController extends BaseController
                     'MITM_ITMD1',
                     'DEL_DATE'
                 ], false, $isDLVStock, false);
-
-                // $dataFifo = [];
-                // foreach ($dataDet as $keyDet => $valueDet) {
-                //     $dataFifo[] = array_merge(
-                //         $valueDet
-                //     );
-                // }
 
                 if ($withFifo) {
                     $hasilFIFO = 0;
@@ -717,17 +758,17 @@ class deliveryMethodToPSIController extends BaseController
         foreach ($data as $key => $value) {
             $fifoUpdate = [];
             foreach ($this->fifoUpdateDLV($date, $value['MITM_MODELCD'], false, true) as $keyFIFO => $valueFIFO) {
-                $fifoUpdate[] = array_merge(
-                    $valueFIFO,
-                    // [
-                    //     'SPQ' => $this->DLVCalSPQRes($valueFIFO['DRD_QTY'], 0,$value['MITM_MODELCD'], true)
-                    // ]
-                );
+                $fifoUpdate[] = $valueFIFO;
             }
-            $getDataSPQ = SPQMaster::where('MITM_MODELCD', $value['MITM_MODELCD'])->first();
+
+            if (isset($this->SPQIndex($value['MITM_MODELCD'])->original['data']['MITM_SPQ_CHECK'])) {
+                $getDataSPQ = $this->SPQIndex($value['MITM_MODELCD'])->original['data']['MITM_SPQ_CHECK'];
+            } else {
+                $getDataSPQ = DB::connection('sqlsrv_mega_tyo')->table('MITM_TBL')->where('MITM_ITMCD', $value['MITM_MODELCD'])->first()->MITM_SPQ;
+            }
             $getSPQFetTest = $this->newFIFOSPQ3(
                 $fifoUpdate,
-                $this->SPQIndex($value['MITM_MODELCD'])->original['data']['MITM_SPQ_CHECK'],
+                $getDataSPQ,
                 $value['TOT_OUT_BC_DLV'] + $value['TOT_OUT_STOCK_DLV']
             );
 
