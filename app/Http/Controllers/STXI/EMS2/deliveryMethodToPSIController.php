@@ -107,7 +107,8 @@ class deliveryMethodToPSIController extends BaseController
     }
 
     public function DLVIndex($date = '')
-    {
+    {        
+        ini_set('max_execution_time', '300');
         $data = $this->DLVGetData($date, !empty($date) ? [
             'MITM_MODELCD',
             'MITM_ITMD1',
