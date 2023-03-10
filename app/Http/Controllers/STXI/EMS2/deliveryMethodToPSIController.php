@@ -133,6 +133,7 @@ class deliveryMethodToPSIController extends BaseController
         $withTransID = false
     )
     {
+        ini_set('max_execution_time', '300');
         $selHeader = array_merge($sel);
 
         if (!empty($date)) {
