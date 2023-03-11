@@ -137,6 +137,9 @@ class ExportForcastDLVTYOSummary implements FromCollection, WithHeadings, WithEv
                 $highestRow = $event->sheet->getHighestRow();
                 $highestColumn = $event->sheet->getHighestColumn();
 
+                $chart = $this->charts();
+                $event->sheet->getDelegate()->addChart($chart);
+
                 $event->sheet->getDelegate()->getPageSetup()
                     ->setOrientation(\PhpOffice\PhpSpreadsheet\Worksheet\PageSetup::ORIENTATION_LANDSCAPE)
                     ->setPaperSize(\PhpOffice\PhpSpreadsheet\Worksheet\PageSetup::PAPERSIZE_A4);
