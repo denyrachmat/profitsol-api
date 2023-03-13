@@ -11,6 +11,7 @@ use Maatwebsite\Excel\Concerns\WithCustomStartCell;
 use Maatwebsite\Excel\Concerns\Exportable;
 use Maatwebsite\Excel\Concerns\WithEvents;
 use Maatwebsite\Excel\Concerns\WithTitle;
+use Maatwebsite\Excel\Concerns\WithCharts;
 use PhpOffice\PhpSpreadsheet\Chart\Chart;
 use PhpOffice\PhpSpreadsheet\Chart\DataSeries;
 use PhpOffice\PhpSpreadsheet\Chart\DataSeriesValues;
@@ -20,7 +21,7 @@ use PhpOffice\PhpSpreadsheet\Chart\PlotArea;
 use App\Models\STXI\EMS2\FRCST_DLV_TYO;
 use PhpOffice\PhpSpreadsheet\Chart\Title;
 
-class ExportForcastDLVTYOSummary implements FromCollection, WithHeadings, WithEvents, WithCustomStartCell, WithTitle
+class ExportForcastDLVTYOSummary implements FromCollection, WithHeadings, WithEvents, WithCustomStartCell, WithTitle, WithCharts
 {
     use RegistersEventListeners, Exportable;
     private $data;
@@ -33,16 +34,35 @@ class ExportForcastDLVTYOSummary implements FromCollection, WithHeadings, WithEv
 
     public function charts()
     {
-        $label      = [new DataSeriesValues('String', 'Summary!$A$3', null, 1)];
-        $categories = [new DataSeriesValues('String', 'Summary!$A$4:$A$6', null, 4)];
-        $values     = [new DataSeriesValues('Number', 'Summary!$B$4:$M$6', null, 4)];
+        $label      = [];
+        $values     = [];
+        $start = 4;
+        foreach ($this->data as $key => $value) {
+            if ($key === 0 || $value['year_ret'] !== $this->data[$key - 1]['year_ret']) {
+                $label[] = new DataSeriesValues('String', 'Summary!$A$'.$start, null, $key + 1);
+                $values[] = new DataSeriesValues('Number', 'Summary!$B$'.$start.':$M$'.$start, null, $key + 2);
+                $start++;
+            }
+        }
 
-        $series = new DataSeries(DataSeries::TYPE_LINECHART, DataSeries::GROUPING_STANDARD,
-            range(0, \count($values) - 1), $label, $categories, $values);
+        $categories = [new DataSeriesValues('String', 'Summary!$B$3:$M$3', null, $start + 1)];
+        // $values     = [new DataSeriesValues('Number', 'Summary!$B$4:$M$6', null, 4)];
+
+        $series = new DataSeries(
+            DataSeries::TYPE_LINECHART, 
+            DataSeries::GROUPING_STACKED,
+            range(0, \count($values) - 1), 
+            $label, 
+            $categories, 
+            $values
+        );
         $plot   = new PlotArea(null, [$series]);
 
         $legend = new Legend();
-        $chart  = new Chart('chart name', new Title('chart title'), $legend, $plot);
+        $chart  = new Chart('chart name', new Title('Chart each years'), $legend, $plot);
+
+        $chart->setTopLeftPosition('O3');
+        $chart->setBottomRightPosition('Y20');
 
         return $chart;
     }

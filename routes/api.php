@@ -8,6 +8,7 @@ use App\Http\Controllers\API\PORTAL\NotifController;
 use App\Http\Controllers\API\TOS\QuizViewController;
 use App\Http\Controllers\API\TOS\TrainingController;
 use App\Http\Controllers\Scheduller\EMS2\WEBEdiTYOExtractor;
+use App\Http\Controllers\STXI\BIM\CircullarTenController;
 use App\Http\Controllers\STXI\EMS2\ForcastDOTYOController;
 use App\Http\Controllers\STXI\PU\PAApprovalController;
 use Illuminate\Http\Request;
@@ -151,6 +152,10 @@ Route::group(['prefix' => 'div'], function () {
     Route::group(['prefix' => 'pu'], function () {
         Route::resource('PAApproval', PAApprovalController::class);
         Route::get('PAApproval/{id}/{username}/{table}', [PAApprovalController::class, 'show']);
+    });
+
+    Route::group(['prefix' => 'bim'], function () {
+        Route::resource('cirten', CircullarTenController::class);
     });
 });
 

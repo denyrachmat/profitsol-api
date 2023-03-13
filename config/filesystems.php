@@ -65,6 +65,11 @@ return [
             'root'   => 'z:/',
         ],
 
+        'ten_bim' => [
+            'driver' => 'local',
+            'root'   => 'x:/bim_dept',
+        ],
+
         'public' => [
             'driver' => 'local',
             'root' => storage_path('app/public'),

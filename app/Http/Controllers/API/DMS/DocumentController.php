@@ -54,7 +54,7 @@ class DocumentController extends BaseController
                 $this->getAliasFolderbyAuthor($req->p_u_username, 'source') == 1
                     ? $value
                     : $fileNameFormat,
-                $file,
+                $file
             );
 
             // return $storeRealFile;
@@ -70,7 +70,7 @@ class DocumentController extends BaseController
                         !empty($dataFolder) ? $this->pathCreator($dataFolder->toArray()) : '',
                         $this->getAliasFolderbyAuthor($req->p_u_username, 'source') == 1
                             ? $value
-                            : $fileNameFormat,
+                            : $fileNameFormat
                     ),
                     'ddm_doc_flag' => $req->ddm_doc_flag,
                 ]);
