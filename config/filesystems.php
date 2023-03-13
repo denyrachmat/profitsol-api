@@ -67,7 +67,7 @@ return [
 
         'ten_bim' => [
             'driver' => 'local',
-            'root'   => 'x:/bim_dept',
+            'root'   => 'x:/ten',
         ],
 
         'public' => [
