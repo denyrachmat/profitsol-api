@@ -5,7 +5,6 @@ namespace App\Http\Controllers\STXI\EMS2;
 use App\Http\Controllers\API\PORTAL\BaseController;
 use Illuminate\Http\Request;
 use Maatwebsite\Excel\Facades\Excel;
-use App\Imports\STXI\importSPQMaster;
 use Illuminate\Support\Facades\DB;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 use Illuminate\Http\File;
@@ -24,6 +23,7 @@ use App\Exports\STXI\ExportDOWeeklyReport;
 use App\Exports\STXI\ExportDOMegaUpload;
 use App\Exports\STXI\ExportDOChecker;
 
+use App\Imports\STXI\importSPQMaster;
 use App\Imports\STXI\importWeeklyReport;
 use App\Imports\STXI\EMS2\ImportPOWebEDITYO;
 use App\Imports\STXI\EMS2\ImportFIFODOTYO;

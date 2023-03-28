@@ -2,11 +2,16 @@
 
 namespace App\Http\Controllers\STXI\BIM;
 
-use App\Http\Controllers\Controller;
+use App\Http\Controllers\API\PORTAL\BaseController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use Maatwebsite\Excel\Facades\Excel;
+use Illuminate\Support\Facades\DB;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
+use Illuminate\Http\File;
 
-class CircullarTenController extends Controller
+use App\Models\STXI\BIM\CircularTenMstr;
+class CircullarTenController extends BaseController
 {
     /**
      * Display a listing of the resource.
@@ -15,7 +20,36 @@ class CircullarTenController extends Controller
      */
     public function index()
     {
-        //
+        $data = Storage::disk('local')->allDirectories('public/circular_ten');
+        $hasil = [];
+        foreach ($data as $key => $value) {
+            $path = $value;
+
+            $totalSize = 0;
+            $allFiles = Storage::disk('local')->allFiles($path);
+            foreach ($allFiles as $key => $value) {
+                $totalSize += Storage::disk('local')->getSize($value);
+            }
+
+            $getTenNo = explode('/', $path)[2];
+            $cekCreator = CircularTenMstr::where('CIRTEN_NO', $getTenNo)->whereNotNull('CIRTEN_GENDT')->first();
+
+            if (empty($cekCreator)) {
+                $hasil[] = [
+                    'ten_no' => $getTenNo,
+                    'path' => $path,
+                    'size' => (($totalSize / 1000) > 1024 ? number_format((float)(($totalSize / 1000) / 1000), 2, '.', ''). ' MB' : (($totalSize / 1000)). ' KB'),
+                    'files' => $allFiles
+                ];
+            }
+        }
+        // return $cekCreator;
+
+        if (count($hasil) > 0) {
+            return $this->handleResponse($hasil, 'Data found !');
+        }
+
+        return $this->handleError('Data not found !' ,[]);
     }
 
     /**
@@ -82,5 +116,48 @@ class CircullarTenController extends Controller
     public function destroy($id)
     {
         //
+    }
+
+    public function uploadCirTenFolder(Request $req)
+    {
+        ini_set('max_execution_time', '300');
+        // $nama_file = $req->file->hashName();
+        $file = new File($req->file);
+        $extNya = $req->file('file')->getClientOriginalExtension();
+        $realName = $req->file('file')->getClientOriginalName();
+        $tenNo = '';
+        if ($extNya === 'htm') {
+            $splitName = explode('.', $realName);
+            $tenNo = trim($splitName[1]);
+
+            CircularTenMstr::updateOrCreate([
+                'CIRTEN_NO' => $req->ten_no
+            ],[
+                'CIRTEN_NO' => $req->ten_no,
+                'CIRTEN_MAILDT' => $req->emailDate
+            ]);
+        }
+
+        $nama_file = $realName . '.' . $extNya;
+
+        $req->file->storeAs('/public/circular_ten/'.$req->ten_no.'/', $nama_file);
+
+        if ($extNya == 'xls') {
+            $spreadsheet = \PhpOffice\PhpSpreadsheet\IOFactory::load($file);
+            $writer = new Xlsx($spreadsheet);
+            $nama_file = $realName . '.xlsx';
+            $writer->save('/public/circular_ten/'.$req->ten_no.'/' . $nama_file);
+        }
+
+        return $this->handleResponse([], 'Upload Sukses ' . $nama_file);
+    }
+
+    public function generateDocument($ten)
+    {
+        $data = CircularTenMstr::where('CIRTEN_NO', $ten)->first();
+        return view('STXI/BIM/circularTenLayout', [
+            'ten' => $ten,
+            'mail_date' => $data
+        ]);
     }
 }

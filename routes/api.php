@@ -10,6 +10,7 @@ use App\Http\Controllers\API\TOS\TrainingController;
 use App\Http\Controllers\Scheduller\EMS2\WEBEdiTYOExtractor;
 use App\Http\Controllers\STXI\BIM\CircullarTenController;
 use App\Http\Controllers\STXI\EMS2\ForcastDOTYOController;
+use App\Http\Controllers\STXI\EMS2\yeidPOConfirmController;
 use App\Http\Controllers\STXI\PU\PAApprovalController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -136,12 +137,21 @@ Route::group(['prefix' => 'div'], function () {
         // End PO Summary
 
         // Start DO Forcast TYO
-
         Route::resource('forecastDLVTYO', ForcastDOTYOController::class);
-        Route::post('getReport', [ForcastDOTYOController::class, 'getReport']);
+        Route::post('getReport/{export?}', [ForcastDOTYOController::class, 'getReport']);
         Route::get('getItemList/{item?}', [ForcastDOTYOController::class, 'getItemList']);
         Route::post('exportForcast', [ForcastDOTYOController::class, 'exportForcast']);
         Route::post('uploadForecast', [ForcastDOTYOController::class, 'uploadForecast']);        
+        // End DO Forcast TYO
+
+        // Start YEID PO Confirmation
+        Route::resource('ypoConfirm', yeidPOConfirmController::class);
+        Route::get('checkYeidItem/{item}/{col?}', [yeidPOConfirmController::class, 'searchItem']);
+        Route::get('searchPO/{item}/{po?}/{col?}', [yeidPOConfirmController::class, 'searchPO']);
+        Route::post('getYPOData', [yeidPOConfirmController::class, 'getDataPagination']);
+        Route::post('YPOExportExcel', [yeidPOConfirmController::class, 'exportExcel']);
+        
+        // End YEID PO Confirmation
     });
 
     Route::group(['prefix' => 'log'], function () {
@@ -156,6 +166,8 @@ Route::group(['prefix' => 'div'], function () {
 
     Route::group(['prefix' => 'bim'], function () {
         Route::resource('cirten', CircullarTenController::class);
+        Route::post('uploadCirten', [CircullarTenController::class, 'uploadCirTenFolder']); 
+        Route::get('generateDocument/{ten}', [CircullarTenController::class, 'generateDocument']); 
     });
 });
 

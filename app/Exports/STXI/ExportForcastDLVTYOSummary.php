@@ -39,7 +39,7 @@ class ExportForcastDLVTYOSummary implements FromCollection, WithHeadings, WithEv
         $start = 4;
         foreach ($this->data as $key => $value) {
             if ($key === 0 || $value['year_ret'] !== $this->data[$key - 1]['year_ret']) {
-                $label[] = new DataSeriesValues('String', 'Summary!$A$'.$start, null, $key + 1);
+                $label[] = new DataSeriesValues('Number', 'Summary!$A$'.$start, null, $key + 1);
                 $values[] = new DataSeriesValues('Number', 'Summary!$B$'.$start.':$M$'.$start, null, $key + 2);
                 $start++;
             }
@@ -128,9 +128,11 @@ class ExportForcastDLVTYOSummary implements FromCollection, WithHeadings, WithEv
 
                         array_push($hasil[$keyHasil], $cekTotalForcast->FDT_QTY);
 
-                        if ($valueMonth === 3) {
-                            $hasil[$keyHasil][0] = $hasil[$keyHasil + 1][0] . ' FC';
-                        }
+                        // if ($valueMonth === 3) {
+                        //     $hasil[$keyHasil][0] = $hasil[$keyHasil + 1][0] . ' FC';
+                        // }
+                        
+                        $hasil[$keyHasil][0] = $hasil[$keyHasil + 1][0] . ' FC';
                     } else {
                         array_push($hasil[$keyHasil], '0');
                     }

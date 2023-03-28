@@ -112,7 +112,7 @@ class ForcastDOTYOController extends BaseController
         //
     }
 
-    public function getReport(Request $req)
+    public function getReport(Request $req, $isExport = false)
     {
         $begin = new \DateTime($req->fdate);
         $end = new \DateTime($req->ldate);
@@ -121,6 +121,7 @@ class ForcastDOTYOController extends BaseController
         $period = new \DatePeriod($begin, $interval, $end);
 
         $hasil = [];
+        $hasilList = [];
         foreach ($period as $dt) {
             $data = DB::connection('sqlsrv_ems2')
                 ->table('V_FRCST_DLV_SHP as vfds')
@@ -128,6 +129,7 @@ class ForcastDOTYOController extends BaseController
                     'vfds.MITM_ITMCD',
                     'vfds.MITM_ITMD1',
                     'vfds.MITM_SPTNO',
+                    'vfds.MITM_MODEL',
                     DB::raw('SUM(vfds.SSHP_SHPQT) AS SSHP_SHPQT'),
                     DB::raw('(
                         SELECT COALESCE(SUM(FDT_QTY),0) FROM FRCST_DLV_TYO as fdt
@@ -140,14 +142,28 @@ class ForcastDOTYOController extends BaseController
                 ->groupBy(
                     'MITM_ITMCD',
                     'MITM_ITMD1',
-                    'MITM_SPTNO'
-                )
-                ->get();
+                    'MITM_SPTNO',
+                    'vfds.MITM_MODEL'
+                );
 
+            if ($req->has('type') && !empty($req->type)) {
+                $data->whereIn('vfds.MITM_MODEL', (
+                    $req->type === 'all'
+                    ? ['0', '1']
+                    : (
+                        $req->type === 'part'
+                        ? ['0']
+                        : ['1']
+                    )
+                ));
+            }
+                
+            $data = $data->get();
             // if ($dt->format("Y-m-1") == '2022-02-1') {
             //     return $data;
             // }
 
+            $hasilList[] = $data;
             $hasil[$dt->format('Y-m')] = [
                 'full_date' => $dt->format("Y M"),
                 'range_date' => [$dt->format("Y-m-01"), date('Y-m-t', strtotime($dt->format("Y-m-1")))],
@@ -155,7 +171,21 @@ class ForcastDOTYOController extends BaseController
             ];
         }
 
-        return $hasil;
+        $listData = array_filter($hasil, function($f) {
+            if (count($f['data'])) {
+                return $f;
+            }
+        });
+
+        if ($isExport) {
+            return $hasil;
+        }
+
+        if(count($listData) > 0) {
+            return $this->handleResponse($hasil, 'Data Found !');
+        }
+
+        return $this->handleError("Data not found !");
     }
 
     public function getItemList($search = '')
@@ -189,7 +219,7 @@ class ForcastDOTYOController extends BaseController
 
     public function exportForcast(Request $req)
     {
-        $data = $this->getReport(new Request($req->all()));
+        $data = $this->getReport(new Request($req->all()), true);
         $dataSum = $this->getReportSummary(new Request($req->all()));
 
         // return $dataSum;
