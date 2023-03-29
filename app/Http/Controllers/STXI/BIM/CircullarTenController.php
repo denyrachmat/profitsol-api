@@ -11,6 +11,13 @@ use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 use Illuminate\Http\File;
 
 use App\Models\STXI\BIM\CircularTenMstr;
+
+use Facebook\WebDriver\Chrome\ChromeOptions;
+use Facebook\WebDriver\Remote\DesiredCapabilities;
+use Facebook\WebDriver\Remote\RemoteWebDriver;
+use Laravel\Dusk\Browser;
+use Laravel\Dusk\Chrome\ChromeProcess;
+use Laravel\Dusk\ElementResolver;
 class CircullarTenController extends BaseController
 {
     /**
@@ -159,5 +166,25 @@ class CircullarTenController extends BaseController
             'ten' => $ten,
             'mail_date' => $data
         ]);
+    }
+
+    public function checkTrial()
+    {
+        $process = (new ChromeProcess)->toProcess();
+        //$process->start();
+        $process->start(null, [
+            'SystemRoot' => 'C:\\WINDOWS',
+            'TEMP' => 'C:\Users\MAHAVIR\AppData\Local\Temp',
+        ]);
+        $options = new ChromeOptions;
+        $options->setBinary("C:\Program Files\Google\Chrome\Application\chrome.exe");
+        $capabilities = DesiredCapabilities::chrome()->setCapability(ChromeOptions::CAPABILITY, $options);
+        $driver = retry(5, function () use($capabilities) {
+            return RemoteWebDriver::create('http://localhost:9515', $capabilities);
+        }, 50);
+        $browser = new Browser($driver);
+        $browser->visit('https://www.google.com');
+        $browser->quit();
+        $process->stop();
     }
 }

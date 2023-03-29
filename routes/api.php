@@ -167,7 +167,8 @@ Route::group(['prefix' => 'div'], function () {
     Route::group(['prefix' => 'bim'], function () {
         Route::resource('cirten', CircullarTenController::class);
         Route::post('uploadCirten', [CircullarTenController::class, 'uploadCirTenFolder']); 
-        Route::get('generateDocument/{ten}', [CircullarTenController::class, 'generateDocument']); 
+        Route::get('generateDocument/{ten}', [CircullarTenController::class, 'generateDocument']);
+        Route::get('checkTrial', [CircullarTenController::class, 'checkTrial']);
     });
 });
 

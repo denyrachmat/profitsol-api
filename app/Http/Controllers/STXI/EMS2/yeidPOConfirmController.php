@@ -164,8 +164,8 @@ class yeidPOConfirmController extends BaseController
     {
         $data = DB::connection('sqlsrv_ems2')->table('V_YPO_OS_GIT')
             ->where('PGIT_ITMCD', base64_decode($item))
-            ->whereNull('PGRN_RCVDT')
-            ->where('PGIT_RCVQT', '>', 0);
+            // ->whereNull('PGRN_RCVDT')
+            ->where(DB::raw('PGIT_RCVQT - COALESCE(SHP_QT, 0)'), '>', 0);
 
         if (!empty($po) || $po != '0') {
             $data->where('PPO1_PONO', 'LIKE', base64_decode($po) . "%");
