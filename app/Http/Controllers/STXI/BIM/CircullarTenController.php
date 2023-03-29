@@ -18,6 +18,8 @@ use Facebook\WebDriver\Remote\RemoteWebDriver;
 use Laravel\Dusk\Browser;
 use Laravel\Dusk\Chrome\ChromeProcess;
 use Laravel\Dusk\ElementResolver;
+use Symfony\Component\DomCrawler\Crawler;
+
 class CircullarTenController extends BaseController
 {
     /**
@@ -162,9 +164,29 @@ class CircullarTenController extends BaseController
     public function generateDocument($ten)
     {
         $data = CircularTenMstr::where('CIRTEN_NO', $ten)->first();
+        $files = '';
+        foreach (Storage::disk('local')->allFiles('public/circular_ten/'.$ten) as $file) {
+            if (pathinfo($file, PATHINFO_EXTENSION) == 'htm') {
+                $hasZip = true;
+                $files = $file;
+                break;
+            }
+        }
+
+        $dom = new \DOMDocument();
+        $dom->loadHtml($files);
+        $crawler = new Crawler($files);
+
+        $hasil = [];
+        foreach ($crawler as $domElement) {
+            $hasil[] = $domElement->nodeName;
+        }
+
+        return $hasil;
         return view('STXI/BIM/circularTenLayout', [
             'ten' => $ten,
-            'mail_date' => $data
+            'mail_date' => $data,
+            'file' => $crawler
         ]);
     }
 

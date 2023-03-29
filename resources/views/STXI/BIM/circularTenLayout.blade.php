@@ -9,5 +9,5 @@
 <div>
     <b>1). Model :</b>
     <br>
-    
+    {{$file}}
 </div>

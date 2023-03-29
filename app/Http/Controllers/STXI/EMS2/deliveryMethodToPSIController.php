@@ -145,7 +145,8 @@ class deliveryMethodToPSIController extends BaseController
         $item = '',
         $withFifo = false,
         $withTransID = false,
-        $isPaginate = []
+        $isPaginate = [],
+        $orderDate = 'DESC'
     )
     {
         ini_set('max_execution_time', '300');
@@ -186,7 +187,7 @@ class deliveryMethodToPSIController extends BaseController
                 $j->on('DRT_PSI_DELDT', 'DEL_DATE');
             })
             ->groupBy($selHeader)
-            ->orderBy('DEL_DATE', 'DESC');
+            ->orderBy('DEL_DATE', $orderDate);
 
         // $data->whereIn('IO_REMARK', ['FROM_SMT', 'TO_ITEC', 'TO_ITEC_STOCKDLV']);
 
@@ -594,7 +595,7 @@ class deliveryMethodToPSIController extends BaseController
             'DEL_DATE',
             'DRT_TRANID',
             'DRT_DELDT'
-        ], false, true, $isSave, $item);
+        ], false, true, $isSave, $item, false, false, [], 'ASC');
 
         // return $data;
 
@@ -651,6 +652,7 @@ class deliveryMethodToPSIController extends BaseController
                         $hasil[$value['MITM_MODELCD']]['DATA_DATE'][$value['DEL_DATE']][$keyID]['ID_HIST'] = $valueID['id'];
                         $hasil[$value['MITM_MODELCD']]['DATA_DATE'][$value['DEL_DATE']][$keyID]['FIFO_DATA'] = $statInsert;
                         $hasil[$value['MITM_MODELCD']]['DATA_DATE'][$value['DEL_DATE']][$keyID]['FIFO_QUERY'] = "Z_STXI_FIFO_OS_SO(" . $valFifo . ")";
+                        // $hasil[$value['MITM_MODELCD']]['FIFO_LIST'] = $dataFIfo;
                         // $hasil[$value['MITM_MODELCD']]['DATA_DATE'][$value['DEL_DATE']][$keyID]['FIFO_DATA_TEST'] = $dataFIfo;
                     } else {
                         if ($byItemOnly) {
@@ -713,7 +715,7 @@ class deliveryMethodToPSIController extends BaseController
                 }
             }
         }
-
+        // return $hasil;
         return array_values($hasil);
     }
 
