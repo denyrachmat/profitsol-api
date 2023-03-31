@@ -121,12 +121,12 @@ class ExportForcastDLVTYOSummary implements FromCollection, WithHeadings, WithEv
                 if (count($findYear) > 0) {
                     array_push($hasil[$keyHasil], $findYear[0]['total']);
                 } else {
-                    if ($keyHasil === 0) {
+                    if ($keyHasil === 0 && isset($hasil[$keyHasil + 1])) {
                         // $hasil[$keyHasil][0] = $hasil[$keyHasil + 1][0] . ' FC';
 
                         $cekTotalForcast = FRCST_DLV_TYO::select(DB::raw('COALESCE(SUM(FDT_QTY), 0) AS FDT_QTY'))->where('FDT_MONTH', $valueMonth)->where(
                             'FDT_YEAR', (
-                                isset($hasil[$keyHasil + 1]) && $valueMonth == 1 || $valueMonth == 2 || $valueMonth == 3 
+                                $valueMonth == 1 || $valueMonth == 2 || $valueMonth == 3 
                                 ? ((int) $hasil[$keyHasil + 1][0] + 1) 
                                 : $hasil[$keyHasil + 1][0])
                             )->first();
