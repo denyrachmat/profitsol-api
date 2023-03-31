@@ -47,7 +47,7 @@ class CircullarTenController extends BaseController
                 $hasil[] = [
                     'ten_no' => $getTenNo,
                     'path' => $path,
-                    'size' => (($totalSize / 1000) > 1024 ? number_format((float)(($totalSize / 1000) / 1000), 2, '.', ''). ' MB' : (($totalSize / 1000)). ' KB'),
+                    'size' => (($totalSize / 1000) > 1024 ? number_format((float) (($totalSize / 1000) / 1000), 2, '.', '') . ' MB' : (($totalSize / 1000)) . ' KB'),
                     'files' => $allFiles
                 ];
             }
@@ -58,7 +58,7 @@ class CircullarTenController extends BaseController
             return $this->handleResponse($hasil, 'Data found !');
         }
 
-        return $this->handleError('Data not found !' ,[]);
+        return $this->handleError('Data not found !', []);
     }
 
     /**
@@ -141,21 +141,21 @@ class CircullarTenController extends BaseController
 
             CircularTenMstr::updateOrCreate([
                 'CIRTEN_NO' => $req->ten_no
-            ],[
-                'CIRTEN_NO' => $req->ten_no,
-                'CIRTEN_MAILDT' => $req->emailDate
-            ]);
+            ], [
+                    'CIRTEN_NO' => $req->ten_no,
+                    'CIRTEN_MAILDT' => $req->emailDate
+                ]);
         }
 
         $nama_file = $realName . '.' . $extNya;
 
-        $req->file->storeAs('/public/circular_ten/'.$req->ten_no.'/', $nama_file);
+        $req->file->storeAs('/public/circular_ten/' . $req->ten_no . '/', $nama_file);
 
         if ($extNya == 'xls') {
             $spreadsheet = \PhpOffice\PhpSpreadsheet\IOFactory::load($file);
             $writer = new Xlsx($spreadsheet);
             $nama_file = $realName . '.xlsx';
-            $writer->save('/public/circular_ten/'.$req->ten_no.'/' . $nama_file);
+            $writer->save('/public/circular_ten/' . $req->ten_no . '/' . $nama_file);
         }
 
         return $this->handleResponse([], 'Upload Sukses ' . $nama_file);
@@ -165,29 +165,79 @@ class CircullarTenController extends BaseController
     {
         $data = CircularTenMstr::where('CIRTEN_NO', $ten)->first();
         $files = '';
-        foreach (Storage::disk('local')->allFiles('public/circular_ten/'.$ten) as $file) {
+        $filesData = Storage::disk('local')->allFiles('public/circular_ten/' . $ten);
+        foreach ( $filesData as $file) {
             if (pathinfo($file, PATHINFO_EXTENSION) == 'htm') {
-                $hasZip = true;
                 $files = $file;
                 break;
             }
         }
 
-        $dom = new \DOMDocument();
-        $dom->loadHtml($files);
-        $crawler = new Crawler($files);
+        $getModel = $this->extractCirtenCover($files);
 
+        // return $getModel;
         $hasil = [];
-        foreach ($crawler as $domElement) {
-            $hasil[] = $domElement->nodeName;
+        if(count($getModel['list_item'])) {
+            foreach ($getModel['list_item'] as $key => $value) {
+                $getDataItem = DB::connection('sqlsrv_mega_sme')->table('MITM_TBL')
+                    ->where('MITM_ITMCD', $value)
+                    ->first();
+
+                if (!empty($getDataItem)) {
+                    $hasil[substr($getDataItem->MITM_SUPCD, 0, 3)] = substr($getDataItem->MITM_SUPCD, 0, 3);
+                }
+            }
         }
 
-        return $hasil;
         return view('STXI/BIM/circularTenLayout', [
             'ten' => $ten,
             'mail_date' => $data,
-            'file' => $crawler
+            'model' => array_values($hasil),
+            'content' => str_replace(["\n","\r","\\"],"",$getModel['list_content'][0]),
+            'subject' => count($getModel['subject']) > 1 ? $getModel['subject'][1] : $getModel['subject'][0],
+            'list_files' => $filesData
         ]);
+    }
+
+    public function extractCirtenCover($path)
+    {
+        $filenya = Storage::disk('local')->get($path);
+        $crawler = new Crawler($filenya);
+
+        $listItem = $crawler->filterXPath('//*[@class="NaiyoTblE1"]/tbody/tr/td/font')->extract(['_text']);
+
+        $getModel = [];
+        foreach ($listItem as $key => $value) {
+            if (!empty($value)) {
+                $itemCodeFixRemoveArrow = explode(" -> ", $value);
+                if (count($itemCodeFixRemoveArrow) > 0) {
+                    $itemCodeFixStrip = explode("-", $itemCodeFixRemoveArrow[0]);
+                    if (count($itemCodeFixStrip) > 1) {
+                        $itemCode = $itemCodeFixStrip[0].$itemCodeFixStrip[1];
+
+                        $getModel[] = $itemCode;
+                    }
+                }
+            }
+        }
+
+        $getContent = $crawler->filterXPath('//*[@class="NaiyoTblE2"]')->each(function ($value) {
+            return $value->html();
+        });
+
+        $getSubject = $crawler->filterXPath('//table/tbody/tr[@valign="top"]/td[@width="64%"]/b/*')->each(function ($value) {
+            return $value->text();
+        });
+
+        $getRevisedDoc = $crawler->filterXPath('//*[@class="NaiyoTblCmt"]')->each(function ($value) {
+            return $value->html();
+        });
+
+        return [
+            'list_item' => $getModel,
+            'list_content' => count($getContent) > 0 ? $getContent : $getRevisedDoc,
+            'subject' => $getSubject
+        ];
     }
 
     public function checkTrial()
@@ -201,7 +251,7 @@ class CircullarTenController extends BaseController
         $options = new ChromeOptions;
         $options->setBinary("C:\Program Files\Google\Chrome\Application\chrome.exe");
         $capabilities = DesiredCapabilities::chrome()->setCapability(ChromeOptions::CAPABILITY, $options);
-        $driver = retry(5, function () use($capabilities) {
+        $driver = retry(5, function () use ($capabilities) {
             return RemoteWebDriver::create('http://localhost:9515', $capabilities);
         }, 50);
         $browser = new Browser($driver);
