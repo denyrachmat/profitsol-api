@@ -5,6 +5,7 @@ namespace App\Http\Controllers\STXI\BIM;
 use App\Http\Controllers\API\PORTAL\BaseController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use Barryvdh\Snappy\Facades\SnappyPdf as PDF;
 use Maatwebsite\Excel\Facades\Excel;
 use Illuminate\Support\Facades\DB;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
@@ -165,7 +166,7 @@ class CircullarTenController extends BaseController
     {
         $data = CircularTenMstr::where('CIRTEN_NO', $ten)->first();
         $files = '';
-        $filesData = Storage::disk('local')->allFiles('public/circular_ten/' . $ten);
+        $filesData = Storage::disk('local')->files('public/circular_ten/' . $ten);
         foreach ( $filesData as $file) {
             if (pathinfo($file, PATHINFO_EXTENSION) == 'htm') {
                 $files = $file;
@@ -189,14 +190,18 @@ class CircullarTenController extends BaseController
             }
         }
 
-        return view('STXI/BIM/circularTenLayout', [
+        $pdf = Pdf::loadView('STXI/BIM/circularTenLayout', [
             'ten' => $ten,
             'mail_date' => $data,
             'model' => array_values($hasil),
             'content' => str_replace(["\n","\r","\\"],"",$getModel['list_content'][0]),
             'subject' => count($getModel['subject']) > 1 ? $getModel['subject'][1] : $getModel['subject'][0],
-            'list_files' => $filesData
+            'list_files' => $filesData,
+            'exec_sch' => count($getModel['exec_sch']) > 2 ? $getModel['exec_sch'][2] : '',
+            'reason' => count($getModel['reason']) > 1 ? $getModel['reason'][1] : ''
         ]);
+
+        return $pdf->download($ten.'.pdf');
     }
 
     public function extractCirtenCover($path)
@@ -233,10 +238,20 @@ class CircullarTenController extends BaseController
             return $value->html();
         });
 
+        $getExecSchedule = $crawler->filterXPath('//table[@style="border:1px solid #333;"]/tbody/tr[@valign="top"]/td[@width="100%"]/*')->each(function ($value) {
+            return $value->text();
+        }); 
+
+        $getReason = $crawler->filterXPath('//table[@style="border:1px solid #333;border-top-style: hidden;"]/tbody/tr[@valign="top"]/td[@width="100%"]/*')->each(function ($value) {
+            return $value->text();
+        }); 
+
         return [
             'list_item' => $getModel,
             'list_content' => count($getContent) > 0 ? $getContent : $getRevisedDoc,
-            'subject' => $getSubject
+            'subject' => $getSubject,
+            'exec_sch' => $getExecSchedule,
+            'reason' => $getReason
         ];
     }
 

@@ -6,7 +6,7 @@
     <h3>Date : {{date('d M Y', strtotime($mail_date->CIRTEN_MAILDT))}}</h3>
 </div>
 <div>
-    <h3>{{$subject}}</h3>
+    <h3>Subject: {{$subject}}</h3>
 </div>
 
 <div style="padding-top: 3em">
@@ -27,13 +27,13 @@
 <div style="padding-top: 2em">
     <b>3). Issued Document :</b>
     <br>
-    {{implode(', ', $model)}}
+    @foreach($list_files as $file)
+        <a target="_blank" href="{{asset('storage/circular_ten/'.$ten.'/'.basename($file))}}">{{basename($file)}}</a><br>
+    @endforeach
 </div>
 
 <div style="padding-top: 2em">
-    <b>3). Issued Document :</b>
+    <b>Execution Schedule:</b> {{$exec_sch}}
     <br>
-    @foreach($list_files as $file)
-        {{ $file }}<br>
-    @endforeach
+    <b>Reason:</b> {{$reason}}
 </div>
