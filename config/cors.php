@@ -19,7 +19,7 @@ return [
 
     'allowed_methods' => ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
 
-    'allowed_origins' => ['localhost:*', '192.168.100.32:8081'],
+    'allowed_origins' => ['*'],
 
     'allowed_origins_patterns' => [],
 
