@@ -387,7 +387,8 @@ class CircullarTenController extends BaseController
 
         $hasil = [
             'store_stat' => $storepdf,
-            'upload_res' => $result
+            'upload_res' => $result,
+            'test_cfile' => $cFile
         ];
 
         curl_close ($ch);
