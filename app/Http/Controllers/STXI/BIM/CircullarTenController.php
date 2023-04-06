@@ -207,7 +207,7 @@ class CircullarTenController extends BaseController
         ];
 
         if ($isExport) {
-            return view('STXI/BIM/circularTenLayout', $data);
+            // return view('STXI/BIM/circularTenLayout', $data);
 
             $pdf = Pdf::loadView('STXI/BIM/circularTenLayout', $data);
 
