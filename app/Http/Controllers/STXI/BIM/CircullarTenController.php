@@ -359,8 +359,34 @@ class CircullarTenController extends BaseController
         return $this->handleResponse($cekDataModel, 'Update data Sukses ' . $item . ' on TEN ' . $ten);
     }
 
-    public function sendToDMS($ten)
+    public function savePDFtoLocal($ten)
     {
-        # code...
+        
+    }
+
+    public function sendToDMS($ten)
+    {  
+        $pdf = $this->generateDocument($ten, true);
+
+        $target_url = 'http://192.168.100.32:8081/stx_api/public/api/dms/docsupload'; // Write your URL here
+        $dir = '/var/www/html/storage/test.zip'; // full directory of the file
+
+        $cFile = curl_file_create($pdf);
+        $post = [
+            'file'=> $cFile,
+            'username' => 'susi',
+            'folder_id' => '2vxtcJxq4YDBmS5v23cKaWRU4o01LXsUtBPtU9jWm2x9NklzyD',
+            'folder_name' => "New System Cirten (Don't Delete)"
+        ]; // Parameter to be sent
+
+        $ch = curl_init();
+        curl_setopt($ch, CURLOPT_URL, $target_url);
+        curl_setopt($ch, CURLOPT_POST,1);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, $post);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+        $result=json_decode(curl_exec($ch));
+        curl_close ($ch);
+
+        return $result;
     }
 }
