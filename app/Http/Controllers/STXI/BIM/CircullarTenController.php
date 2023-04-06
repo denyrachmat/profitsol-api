@@ -12,6 +12,7 @@ use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 use Illuminate\Http\File;
 
 use App\Models\STXI\BIM\CircularTenMstr;
+use App\Models\STXI\BIM\CircularTenModelDet;
 
 use Facebook\WebDriver\Chrome\ChromeOptions;
 use Facebook\WebDriver\Remote\DesiredCapabilities;
@@ -135,39 +136,37 @@ class CircullarTenController extends BaseController
         $file = new File($req->file);
         $extNya = $req->file('file')->getClientOriginalExtension();
         $realName = $req->file('file')->getClientOriginalName();
-        $tenNo = '';
-        if ($extNya === 'htm') {
-            $splitName = explode('.', $realName);
-            $tenNo = trim($splitName[1]);
+        $filenameOnly = pathinfo($realName, PATHINFO_FILENAME);
 
-            CircularTenMstr::updateOrCreate([
+        $nama_file = $filenameOnly . '.' . $extNya;
+        $req->file->storeAs('/public/circular_ten/' . $req->ten_no . '/', $nama_file);
+
+        if ($extNya === 'htm') {
+            $storedTen = CircularTenMstr::updateOrCreate([
                 'CIRTEN_NO' => $req->ten_no
             ], [
                     'CIRTEN_NO' => $req->ten_no,
                     'CIRTEN_MAILDT' => $req->emailDate
                 ]);
-        }
 
-        $nama_file = $realName . '.' . $extNya;
-
-        $req->file->storeAs('/public/circular_ten/' . $req->ten_no . '/', $nama_file);
-
-        if ($extNya == 'xls') {
-            $spreadsheet = \PhpOffice\PhpSpreadsheet\IOFactory::load($file);
-            $writer = new Xlsx($spreadsheet);
-            $nama_file = $realName . '.xlsx';
-            $writer->save('/public/circular_ten/' . $req->ten_no . '/' . $nama_file);
+            $getModelList = $this->generateDocument($req->ten_no, false)['list_model'];
+            foreach ($getModelList as $key => $value) {
+                CircularTenModelDet::create([
+                    'CM_ID' => $storedTen->id,
+                    'CIM_ITMCD' => $value['MDLCD'],
+                ]);
+            }
         }
 
         return $this->handleResponse([], 'Upload Sukses ' . $nama_file);
     }
 
-    public function generateDocument($ten)
+    public function generateDocument($ten, $isExport = true)
     {
         $data = CircularTenMstr::where('CIRTEN_NO', $ten)->first();
         $files = '';
         $filesData = Storage::disk('local')->files('public/circular_ten/' . $ten);
-        foreach ( $filesData as $file) {
+        foreach ($filesData as $file) {
             if (pathinfo($file, PATHINFO_EXTENSION) == 'htm') {
                 $files = $file;
                 break;
@@ -175,33 +174,47 @@ class CircullarTenController extends BaseController
         }
 
         $getModel = $this->extractCirtenCover($files);
+        $hasil = $this->listModelFromHTM($ten)['SUBCONT'];
 
-        // return $getModel;
-        $hasil = [];
-        if(count($getModel['list_item'])) {
-            foreach ($getModel['list_item'] as $key => $value) {
+        $cekDataModel = CircularTenModelDet::where('CM_ID', $data->id)->get();
+        if (count($cekDataModel) > 0) {
+            $listModel = [];
+            foreach ($cekDataModel as $keyMdl => $valueMdl) {
                 $getDataItem = DB::connection('sqlsrv_mega_sme')->table('MITM_TBL')
-                    ->where('MITM_ITMCD', $value)
+                    ->where('MITM_ITMCD', 'like', $valueMdl->CIM_ITMCD . '%')
                     ->first();
 
-                if (!empty($getDataItem)) {
-                    $hasil[substr($getDataItem->MITM_SUPCD, 0, 3)] = substr($getDataItem->MITM_SUPCD, 0, 3);
-                }
+                $listModel[] = [
+                    'MDLCD' => $valueMdl->CIM_ITMCD,
+                    'DESC' => $getDataItem->MITM_ITMD1,
+                    'PARTNO' => $getDataItem->MITM_SPTNO,
+                ];
             }
+        } else {
+            $listModel = $this->listModelFromHTM($ten)['ITEM'];
         }
 
-        $pdf = Pdf::loadView('STXI/BIM/circularTenLayout', [
+        $data = [
             'ten' => $ten,
             'mail_date' => $data,
             'model' => array_values($hasil),
-            'content' => str_replace(["\n","\r","\\"],"",$getModel['list_content'][0]),
+            'list_model' => array_values($listModel),
+            'content' => isset($getModel['list_content'][0]) ? str_replace(["\n", "\r", "\\"], "", $getModel['list_content'][0]) : '',
             'subject' => count($getModel['subject']) > 1 ? $getModel['subject'][1] : $getModel['subject'][0],
             'list_files' => $filesData,
             'exec_sch' => count($getModel['exec_sch']) > 2 ? $getModel['exec_sch'][2] : '',
             'reason' => count($getModel['reason']) > 1 ? $getModel['reason'][1] : ''
-        ]);
+        ];
 
-        return $pdf->download($ten.'.pdf');
+        if ($isExport) {
+            return view('STXI/BIM/circularTenLayout', $data);
+
+            $pdf = Pdf::loadView('STXI/BIM/circularTenLayout', $data);
+
+            return $pdf->download($ten . '.pdf');
+        }
+
+        return $data;
     }
 
     public function extractCirtenCover($path)
@@ -218,7 +231,7 @@ class CircullarTenController extends BaseController
                 if (count($itemCodeFixRemoveArrow) > 0) {
                     $itemCodeFixStrip = explode("-", $itemCodeFixRemoveArrow[0]);
                     if (count($itemCodeFixStrip) > 1) {
-                        $itemCode = $itemCodeFixStrip[0].$itemCodeFixStrip[1];
+                        $itemCode = $itemCodeFixStrip[0] . $itemCodeFixStrip[1];
 
                         $getModel[] = $itemCode;
                     }
@@ -227,6 +240,10 @@ class CircullarTenController extends BaseController
         }
 
         $getContent = $crawler->filterXPath('//*[@class="NaiyoTblE2"]')->each(function ($value) {
+            return $value->html();
+        });
+
+        $getContentWoTable = $crawler->filterXPath("//*[text()[contains(.,'1.Contents')]]")->each(function ($value) {
             return $value->html();
         });
 
@@ -240,38 +257,110 @@ class CircullarTenController extends BaseController
 
         $getExecSchedule = $crawler->filterXPath('//table[@style="border:1px solid #333;"]/tbody/tr[@valign="top"]/td[@width="100%"]/*')->each(function ($value) {
             return $value->text();
-        }); 
+        });
 
         $getReason = $crawler->filterXPath('//table[@style="border:1px solid #333;border-top-style: hidden;"]/tbody/tr[@valign="top"]/td[@width="100%"]/*')->each(function ($value) {
             return $value->text();
-        }); 
+        });
 
         return [
             'list_item' => $getModel,
-            'list_content' => count($getContent) > 0 ? $getContent : $getRevisedDoc,
+            'list_content' => count($getContent) > 0 ? $getContent : (
+                count($getRevisedDoc) > 0
+                ? $getRevisedDoc
+                : $getContentWoTable
+            ),
             'subject' => $getSubject,
             'exec_sch' => $getExecSchedule,
             'reason' => $getReason
         ];
     }
 
-    public function checkTrial()
+    public function listModelFromHTM($ten)
     {
-        $process = (new ChromeProcess)->toProcess();
-        //$process->start();
-        $process->start(null, [
-            'SystemRoot' => 'C:\\WINDOWS',
-            'TEMP' => 'C:\Users\MAHAVIR\AppData\Local\Temp',
-        ]);
-        $options = new ChromeOptions;
-        $options->setBinary("C:\Program Files\Google\Chrome\Application\chrome.exe");
-        $capabilities = DesiredCapabilities::chrome()->setCapability(ChromeOptions::CAPABILITY, $options);
-        $driver = retry(5, function () use ($capabilities) {
-            return RemoteWebDriver::create('http://localhost:9515', $capabilities);
-        }, 50);
-        $browser = new Browser($driver);
-        $browser->visit('https://www.google.com');
-        $browser->quit();
-        $process->stop();
+        $data = CircularTenMstr::where('CIRTEN_NO', $ten)->first();
+        $files = '';
+        $filesData = Storage::disk('local')->files('public/circular_ten/' . $ten);
+        foreach ($filesData as $file) {
+            if (pathinfo($file, PATHINFO_EXTENSION) == 'htm') {
+                $files = $file;
+                break;
+            }
+        }
+
+        $getModel = $this->extractCirtenCover($files);
+
+        $hasil = [];
+        $hasilItem = [];
+        if (count($getModel['list_item'])) {
+            foreach ($getModel['list_item'] as $key => $value) {
+                $getDataItem = DB::connection('sqlsrv_mega_sme')->table('MITM_TBL')
+                    ->where('MITM_ITMCD', 'like', $value . '%')
+                    ->first();
+
+                if (!empty($getDataItem)) {
+                    $hasilItem[] = [
+                        'MDLCD' => $value,
+                        'DESC' => trim($getDataItem->MITM_ITMD1),
+                        'PARTNO' => trim($getDataItem->MITM_SPTNO)
+                    ];
+                    $hasil[substr($getDataItem->MITM_SUPCD, 0, 3)] = substr($getDataItem->MITM_SUPCD, 0, 3);
+                }
+            }
+        } else {
+            $cekDataModel = CircularTenModelDet::where('CM_ID', $data->id)->get();
+            foreach ($cekDataModel as $keyMdl => $valueMdl) {
+                $getDataItem = DB::connection('sqlsrv_mega_sme')->table('MITM_TBL')
+                    ->where('MITM_ITMCD', $valueMdl->CIM_ITMCD)
+                    ->first();
+                if (!empty($getDataItem)) {
+                    $hasil[substr($getDataItem->MITM_SUPCD, 0, 3)] = substr($getDataItem->MITM_SUPCD, 0, 3);
+                    $hasilItem[] = [
+                        'MDLCD' => $valueMdl->CIM_ITMCD,
+                        'DESC' => trim($getDataItem->MITM_ITMD1),
+                        'PARTNO' => trim($getDataItem->MITM_SPTNO)
+                    ];
+                }
+            }
+        }
+
+        return ['SUBCONT' => $hasil, 'ITEM' => $hasilItem];
+    }
+
+    public function findItem($item)
+    {
+        $getDataItem = DB::connection('sqlsrv_mega_sme')->table('MITM_TBL')
+            ->where('MITM_ITMCD', 'like', $item . '%')
+            ->orwhere('MITM_ITMD1', 'like', $item . '%')
+            ->get();
+
+        $hasil = [];
+        foreach ($getDataItem as $key => $value) {
+            $hasil[] = [
+                'label' => trim($value->MITM_ITMCD) . ' - ' . trim($value->MITM_ITMD1),
+                'value' => trim($value->MITM_ITMCD)
+            ];
+        }
+
+        return $hasil;
+    }
+
+    public function addModelDetail($ten, $item)
+    {
+        $mainTen = CircularTenMstr::where('CIRTEN_NO', $ten)->first();
+        $cekDataModel = CircularTenModelDet::updateOrCreate([
+            'CM_ID' => $mainTen->id,
+            'CIM_ITMCD' => $item
+        ], [
+                'CM_ID' => $mainTen->id,
+                'CIM_ITMCD' => $item
+            ]);
+
+        return $this->handleResponse($cekDataModel, 'Update data Sukses ' . $item . ' on TEN ' . $ten);
+    }
+
+    public function sendToDMS($ten)
+    {
+        # code...
     }
 }
