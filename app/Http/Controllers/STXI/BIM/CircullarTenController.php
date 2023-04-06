@@ -369,24 +369,38 @@ class CircullarTenController extends BaseController
         $pdf = $this->generateDocument($ten, true);
 
         $target_url = 'http://192.168.100.32:8081/stx_api/public/api/dms/docsupload'; // Write your URL here
-        $dir = '/var/www/html/storage/test.zip'; // full directory of the file
+        // This is the entire file that was uploaded to a temp location.
+        $localFile = $pdf; 
 
-        // $cFile = curl_file_create($pdf);
-        $post = [
-            'file'=> $pdf,
-            'username' => 'susi',
-            'folder_id' => '2vxtcJxq4YDBmS5v23cKaWRU4o01LXsUtBPtU9jWm2x9NklzyD',
-            'folder_name' => "New System Cirten (Don't Delete)"
-        ]; // Parameter to be sent
+        $fp = fopen($localFile, 'r');
 
+        // Connecting to website.
         $ch = curl_init();
+
+        curl_setopt($ch, CURLOPT_USERPWD, "email@email.org:password");
         curl_setopt($ch, CURLOPT_URL, $target_url);
-        curl_setopt($ch, CURLOPT_POST,1);
-        curl_setopt($ch, CURLOPT_POSTFIELDS, $post);
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-        $result=json_decode(curl_exec($ch));
+        curl_setopt($ch, CURLOPT_UPLOAD, 1);
+        curl_setopt($ch, CURLOPT_TIMEOUT, 86400); // 1 Day Timeout
+        curl_setopt($ch, CURLOPT_INFILE, $fp);
+        curl_setopt($ch, CURLOPT_NOPROGRESS, false);
+        curl_setopt($ch, CURLOPT_PROGRESSFUNCTION, 'CURL_callback');
+        curl_setopt($ch, CURLOPT_BUFFERSIZE, 128);
+        curl_setopt($ch, CURLOPT_INFILESIZE, filesize($localFile));
+        curl_exec ($ch);
+
+        if (curl_errno($ch)) {
+
+            $msg = curl_error($ch);
+        }
+        else {
+
+            $msg = 'File uploaded successfully.';
+        }
+
         curl_close ($ch);
 
-        return $result;
+        $return = array('msg' => $msg);
+
+        return json_encode($return);
     }
 }
