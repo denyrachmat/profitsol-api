@@ -373,7 +373,7 @@ class CircullarTenController extends BaseController
 
         $cFile = curl_file_create($pdf);
         $post = [
-            'file'=> $cFile,
+            'file'=> $pdf,
             'username' => 'susi',
             'folder_id' => '2vxtcJxq4YDBmS5v23cKaWRU4o01LXsUtBPtU9jWm2x9NklzyD',
             'folder_name' => "New System Cirten (Don't Delete)"
