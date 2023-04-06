@@ -367,11 +367,10 @@ class CircullarTenController extends BaseController
     public function sendToDMS($ten)
     {  
         $pdf = $this->generateDocument($ten, true);
-
+        $storepdf = Storage::disk('local')->put($ten.'.pdf', $pdf);
         $target_url = 'http://192.168.100.32:8081/stx_api/public/api/dms/docsupload'; // Write your URL here
-        $dir = '/var/www/html/storage/test.zip'; // full directory of the file
 
-        $cFile = curl_file_create($pdf, 'application/pdf');
+        $cFile = curl_file_create('/public/circular_ten/' . $ten . '/', $ten.'.pdf', 'application/pdf');
         $post = [
             'file'=> $cFile,
             'username' => 'susi',
