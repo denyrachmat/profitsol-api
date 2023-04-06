@@ -383,16 +383,18 @@ class CircullarTenController extends BaseController
         curl_setopt($ch, CURLOPT_POST,1);
         curl_setopt($ch, CURLOPT_POSTFIELDS, $post);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-        $result=json_decode(curl_exec($ch));
-
         $status = '';
         if(curl_exec($ch) === false)
         {
             $status = 'Curl error: ' . curl_error($ch);
+            $result=json_decode(curl_exec($ch));
+    
         }
         else
         {
             $status = 'Operation completed without any errors, you have the response';
+            $result=json_decode(curl_exec($ch));
+    
         }
 
         $hasil = [
