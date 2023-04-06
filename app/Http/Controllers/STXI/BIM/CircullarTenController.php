@@ -384,11 +384,14 @@ class CircullarTenController extends BaseController
         curl_setopt($ch, CURLOPT_POSTFIELDS, $post);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
         $result=json_decode(curl_exec($ch));
-        curl_close ($ch);
 
-        return [
+        $hasil = [
             'store_stat' => $storepdf,
             'upload_res' => $result
         ];
+
+        curl_close ($ch);
+
+        return $hasil;
     }
 }
