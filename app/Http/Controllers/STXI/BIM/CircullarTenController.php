@@ -387,15 +387,7 @@ class CircullarTenController extends BaseController
             'timeout'  => 2.0,
         ]);
 
-        $res = $client->request('POST', 'dms/docsupload', [
-            'multipart' => [
-                [
-                    'name'     => 'file',
-                    'contents' => $pdf,
-                    'filename' => $ten.'.pdf'
-                ]
-            ],
-        ]);
+        $res = $client->request('POST', 'dms/docsupload', $post);
 
         return $res;
         // $ch = curl_init();
