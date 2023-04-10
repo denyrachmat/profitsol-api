@@ -22,6 +22,7 @@ use Laravel\Dusk\Chrome\ChromeProcess;
 use Laravel\Dusk\ElementResolver;
 use Symfony\Component\DomCrawler\Crawler;
 use GuzzleHttp\Client;
+
 class CircullarTenController extends BaseController
 {
     /**
@@ -361,20 +362,20 @@ class CircullarTenController extends BaseController
 
     public function savePDFtoLocal($ten)
     {
-        
+
     }
 
     public function sendToDMS($ten)
-    {  
+    {
         $pdf = $this->generateDocument($ten, true);
-        $storepdf = Storage::disk('local')->put('/public/circular_ten/' . $ten . '/'.$ten.'.pdf', $pdf);
+        $storepdf = Storage::disk('local')->put('/public/circular_ten/' . $ten . '/' . $ten . '.pdf', $pdf);
         $target_url = 'http://192.168.100.32:8081/stx_api/public/api/'; // Write your URL here
 
         // Old
 
-        $cFile = curl_file_create('/public/circular_ten/' . $ten . '/'. $ten.'.pdf', 'application/pdf', $ten.'.pdf');
+        $cFile = curl_file_create('/public/circular_ten/' . $ten . '/' . $ten . '.pdf', 'application/pdf', $ten . '.pdf');
         $post = [
-            'file'=> $pdf,
+            'file' => $cFile,
             'username' => 'susi',
             'folder_id' => '2vxtcJxq4YDBmS5v23cKaWRU4o01LXsUtBPtU9jWm2x9NklzyD',
             'folder_name' => "New System Cirten (Don't Delete)"
@@ -384,10 +385,27 @@ class CircullarTenController extends BaseController
             // Base URI is used with relative requests
             'base_uri' => $target_url,
             // You can set any number of default request options.
-            'timeout'  => 2.0,
+            'timeout' => 2.0,
         ]);
 
-        $res = $client->request('POST', 'dms/docsupload', $post);
+        $res = $client->request('POST', 'dms/docsupload', [
+            'multipart' => [
+                [
+                    'name' => 'body',
+                    'contents' => json_encode([
+                        'username' => 'susi',
+                        'folder_id' => '2vxtcJxq4YDBmS5v23cKaWRU4o01LXsUtBPtU9jWm2x9NklzyD',
+                        'folder_name' => "New System Cirten (Don't Delete)"
+                    ]),
+                    'headers' => ['Content-Type' => 'application/json']
+                ],
+                [
+                    'name' => 'file',
+                    'contents' => fopen($pdf, 'r'),
+                    'headers' => ['Content-Type' => 'application/pdf']
+                ],
+            ],
+        ]);
 
         return $res;
         // $ch = curl_init();
@@ -400,13 +418,13 @@ class CircullarTenController extends BaseController
         // {
         //     $status = 'Curl error: ' . curl_error($ch);
         //     $result=json_decode(curl_exec($ch));
-    
+
         // }
         // else
         // {
         //     $status = 'Operation completed without any errors, you have the response';
         //     $result=json_decode(curl_exec($ch));
-    
+
         // }
 
         // $hasil = [
