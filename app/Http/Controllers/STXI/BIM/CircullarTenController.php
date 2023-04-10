@@ -412,6 +412,6 @@ class CircullarTenController extends BaseController
         
         // http://192.168.100.32:8081/stx_api/public/api/dms/toggleapprovedocflag/QRz3ifYp1fraZd2SfFMbzavsEdDVKvka7DBUoA3E5wpp7lmsvP/1
 
-        return $resApproveDoc->getBody();
+        return [$resApproveDoc->getBody(), 'dms/toggleapprovedocflag/'. $uploadResult.'/1'];
     }
 }
