@@ -408,7 +408,7 @@ class CircullarTenController extends BaseController
             ],
         ]);
 
-        return $res;
+        return $res->getBody();
         // $ch = curl_init();
         // curl_setopt($ch, CURLOPT_URL, $target_url);
         // curl_setopt($ch, CURLOPT_POST,1);
