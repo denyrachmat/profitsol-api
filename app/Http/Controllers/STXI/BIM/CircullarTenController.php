@@ -388,7 +388,7 @@ class CircullarTenController extends BaseController
         ]);
 
         $res = $client->request('POST', 'dms/docsupload', [
-            'multipart' => [
+            'file' => [
                 [
                     'name'     => 'FileContents',
                     'contents' => $pdf,
