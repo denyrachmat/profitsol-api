@@ -384,14 +384,8 @@ class CircullarTenController extends BaseController
         $resLogin = $client->request('POST', 'dms/login', [
             'query' => [
                 [
-                    'name' => 'username',
-                    'contents' => 'susi',
-                    'headers' => ['Content-Type' => 'application/json']
-                ],
-                [
-                    'name' => 'password',
-                    'contents' => '123456789',
-                    'headers' => ['Content-Type' => 'application/json']
+                    'username' => 'susi',
+                    'password' => '12345678',
                 ],
             ],
         ]);
