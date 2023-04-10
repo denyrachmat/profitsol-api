@@ -401,7 +401,7 @@ class CircullarTenController extends BaseController
                 ],
                 [
                     'name' => 'file',
-                    'contents' => fopen($pathFile, 'r'),
+                    'contents' => Psr7\Utils::tryFopen($pathFile, 'r'),
                     'headers' => ['Content-Type' => 'application/pdf']
                 ],
             ],
