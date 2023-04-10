@@ -62,7 +62,7 @@ class CircullarTenController extends BaseController
                     'path' => $path,
                     'size' => (($totalSize / 1000) > 1024 ? number_format((float) (($totalSize / 1000) / 1000), 2, '.', '') . ' MB' : (($totalSize / 1000)) . ' KB'),
                     'files' => $allFiles,
-                    'DMS_DOC_ID' => $cekDMS->doc_id,
+                    'DMS_DOC_ID' => $cekDMS,
                     'cirten_content' => [
                         'model' => $model,
                         'sch' => $sch,
