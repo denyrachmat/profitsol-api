@@ -392,12 +392,18 @@ class CircullarTenController extends BaseController
         $res = $client->request('POST', 'dms/docsupload', [
             'multipart' => [
                 [
-                    'name' => 'body',
-                    'contents' => json_encode([
-                        'username' => 'susi',
-                        'folder_id' => '2vxtcJxq4YDBmS5v23cKaWRU4o01LXsUtBPtU9jWm2x9NklzyD',
-                        'folder_name' => "New System Cirten (Don't Delete)"
-                    ]),
+                    'name' => 'username',
+                    'contents' => 'susi',
+                    'headers' => ['Content-Type' => 'application/json']
+                ],
+                [
+                    'name' => 'folder_id',
+                    'contents' => '2vxtcJxq4YDBmS5v23cKaWRU4o01LXsUtBPtU9jWm2x9NklzyD',
+                    'headers' => ['Content-Type' => 'application/json']
+                ],
+                [
+                    'name' => 'folder_name',
+                    'contents' => "New System Cirten (Don't Delete)",
                     'headers' => ['Content-Type' => 'application/json']
                 ],
                 [
