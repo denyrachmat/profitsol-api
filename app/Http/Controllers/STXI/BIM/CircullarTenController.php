@@ -390,7 +390,7 @@ class CircullarTenController extends BaseController
                 ],
                 [
                     'name' => 'password',
-                    'contents' => '12345678',
+                    'contents' => '123456789',
                     'headers' => ['Content-Type' => 'application/json']
                 ],
             ],
