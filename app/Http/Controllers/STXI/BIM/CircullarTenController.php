@@ -22,6 +22,7 @@ use Laravel\Dusk\Chrome\ChromeProcess;
 use Laravel\Dusk\ElementResolver;
 use Symfony\Component\DomCrawler\Crawler;
 use GuzzleHttp\Client;
+use GuzzleHttp\Psr7;
 
 class CircullarTenController extends BaseController
 {
