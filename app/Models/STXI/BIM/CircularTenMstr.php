@@ -13,6 +13,7 @@ class CircularTenMstr extends Model
     protected $fillable = [
         'CIRTEN_NO',
         'CIRTEN_GENDT',
-        'CIRTEN_MAILDT'
+        'CIRTEN_MAILDT',
+        'CIRTEN_DMS_DOC_ID'
     ];
 }

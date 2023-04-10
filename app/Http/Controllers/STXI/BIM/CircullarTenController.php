@@ -368,19 +368,11 @@ class CircullarTenController extends BaseController
 
     public function sendToDMS($ten)
     {
+        // Upload PDF to DMS
         $pdf = $this->generateDocument($ten, true);
         $storepdf = Storage::disk('local')->put('/public/circular_ten/' . $ten . '/' . $ten . '.pdf', $pdf);
         $target_url = 'http://192.168.100.32:8081/stx_api/public/api/'; // Write your URL here
         $pathFile = '../storage/app/public/circular_ten/' . $ten . '/' . $ten . '.pdf';
-        // Old
-
-        $cFile = curl_file_create($pathFile);
-        $post = [
-            'file' => $cFile,
-            'username' => 'susi',
-            'folder_id' => '2vxtcJxq4YDBmS5v23cKaWRU4o01LXsUtBPtU9jWm2x9NklzyD',
-            'folder_name' => "New System Cirten (Don't Delete)"
-        ]; // Parameter to be sent
 
         $client = new Client([
             // Base URI is used with relative requests
@@ -414,35 +406,12 @@ class CircullarTenController extends BaseController
             ],
         ]);
 
-        return $res->getBody();
-        // $ch = curl_init();
-        // curl_setopt($ch, CURLOPT_URL, $target_url);
-        // curl_setopt($ch, CURLOPT_POST,1);
-        // curl_setopt($ch, CURLOPT_POSTFIELDS, $post);
-        // curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-        // $status = '';
-        // if(curl_exec($ch) === false)
-        // {
-        //     $status = 'Curl error: ' . curl_error($ch);
-        //     $result=json_decode(curl_exec($ch));
+        $uploadResult = $res->getBody();
 
-        // }
-        // else
-        // {
-        //     $status = 'Operation completed without any errors, you have the response';
-        //     $result=json_decode(curl_exec($ch));
+        $resApproveDoc = $client->request('GET', 'dms/toggleapprovedocflag/'. $uploadResult.'/1');
+        
+        // http://192.168.100.32:8081/stx_api/public/api/dms/toggleapprovedocflag/QRz3ifYp1fraZd2SfFMbzavsEdDVKvka7DBUoA3E5wpp7lmsvP/1
 
-        // }
-
-        // $hasil = [
-        //     'store_stat' => $storepdf,
-        //     'upload_res' => $result,
-        //     'test_cfile' => $cFile,
-        //     'status' => $status
-        // ];
-
-        // curl_close ($ch);
-
-        // return $hasil;
+        return $resApproveDoc->getBody();
     }
 }
