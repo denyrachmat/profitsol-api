@@ -371,7 +371,7 @@ class CircullarTenController extends BaseController
         $pdf = $this->generateDocument($ten, true);
         $storepdf = Storage::disk('local')->put('/public/circular_ten/' . $ten . '/' . $ten . '.pdf', $pdf);
         $target_url = 'http://192.168.100.32:8081/stx_api/public/api/'; // Write your URL here
-        $pathFile = '../public/circular_ten/' . $ten . '/' . $ten . '.pdf';
+        $pathFile = '../storage/app/public/circular_ten/' . $ten . '/' . $ten . '.pdf';
         // Old
 
         $cFile = curl_file_create($pathFile);
