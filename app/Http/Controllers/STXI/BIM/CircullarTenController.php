@@ -53,7 +53,8 @@ class CircullarTenController extends BaseController
                     'ten_no' => $getTenNo,
                     'path' => $path,
                     'size' => (($totalSize / 1000) > 1024 ? number_format((float) (($totalSize / 1000) / 1000), 2, '.', '') . ' MB' : (($totalSize / 1000)) . ' KB'),
-                    'files' => $allFiles
+                    'files' => $allFiles,
+                    'DMS_DOC_ID' => $cekCreator->CIRTEN_DMS_DOC_ID
                 ];
             }
         }
@@ -410,6 +411,10 @@ class CircullarTenController extends BaseController
     
             $uploadResult = $res->getBody();
             $resApproveDoc = $client->request('GET', 'dms/toggleapprovedocflag/'. $uploadResult.'/1');
+
+            CircularTenMstr::where('CIRTEN_NO', $ten)->update([
+                'CIRTEN_DMS_DOC_ID' => $uploadResult
+            ]);
             
             return $this->handleResponse($resApproveDoc, 'TEN has been uploaded to DMS, please check DMS Apps !');
         } catch (ClientException $e) {
