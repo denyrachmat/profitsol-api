@@ -382,7 +382,7 @@ class CircullarTenController extends BaseController
         ]);
 
         $resLogin = $client->request('POST', 'dms/login', [
-            'query' => [
+            'form_params' => [
                 [
                     'username' => 'susi',
                     'password' => '12345678',
