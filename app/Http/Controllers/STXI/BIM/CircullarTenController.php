@@ -408,7 +408,13 @@ class CircullarTenController extends BaseController
 
         $uploadResult = $res->getBody();
 
-        $resApproveDoc = $client->request('GET', 'dms/toggleapprovedocflag/'. $uploadResult.'/1');
+        $client2 = new Client([
+            // Base URI is used with relative requests
+            'base_uri' => $target_url,
+            // You can set any number of default request options.
+            'timeout' => 2.0,
+        ]);
+        $resApproveDoc = $client2->request('GET', 'dms/toggleapprovedocflag/'. $uploadResult.'/1');
         
         // http://192.168.100.32:8081/stx_api/public/api/dms/toggleapprovedocflag/QRz3ifYp1fraZd2SfFMbzavsEdDVKvka7DBUoA3E5wpp7lmsvP/1
 
