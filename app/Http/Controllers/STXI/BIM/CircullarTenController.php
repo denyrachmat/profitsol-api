@@ -49,12 +49,26 @@ class CircullarTenController extends BaseController
             $cekCreator = CircularTenMstr::where('CIRTEN_NO', $getTenNo)->whereNotNull('CIRTEN_GENDT')->first();
 
             if (empty($cekCreator)) {
+                $cekCirtenMstr = CircularTenMstr::where('CIRTEN_NO', $getTenNo)->first();
+                $cekDMS = DB::table('DMS.dbo.dms_doc_mstr')->where('doc_id', $cekCirtenMstr->CIRTEN_DMS_DOC_ID)->first();
+                $getModelList = $this->generateDocument($getTenNo, false);
+                $model = $getModelList['model'];
+                $sch = $getModelList['exec_sch'];
+                $reason = $getModelList['reason'];
+                $content = $getModelList['content'];
+
                 $hasil[] = [
                     'ten_no' => $getTenNo,
                     'path' => $path,
                     'size' => (($totalSize / 1000) > 1024 ? number_format((float) (($totalSize / 1000) / 1000), 2, '.', '') . ' MB' : (($totalSize / 1000)) . ' KB'),
                     'files' => $allFiles,
-                    'DMS_DOC_ID' => CircularTenMstr::where('CIRTEN_NO', $getTenNo)->first()->CIRTEN_DMS_DOC_ID
+                    'DMS_DOC_ID' => $cekDMS->doc_id,
+                    'cirten_content' => [
+                        'model' => $model,
+                        'sch' => $sch,
+                        'reason' => $reason,
+                        'content ' => $content,
+                    ]
                 ];
             }
         }
@@ -146,6 +160,8 @@ class CircullarTenController extends BaseController
         $req->file->storeAs('/public/circular_ten/' . $req->ten_no . '/', $nama_file);
 
         if ($extNya === 'htm') {
+            $getModelList = $this->generateDocument($req->ten_no, false);
+
             $storedTen = CircularTenMstr::updateOrCreate([
                 'CIRTEN_NO' => $req->ten_no
             ], [
@@ -153,18 +169,29 @@ class CircullarTenController extends BaseController
                     'CIRTEN_MAILDT' => $req->emailDate
                 ]);
 
-            $getModelList = $this->generateDocument($req->ten_no, false)['list_model'];
-            foreach ($getModelList as $key => $value) {
-                CircularTenModelDet::create([
-                    'CM_ID' => $storedTen->id,
-                    'CIM_ITMCD' => $value['MDLCD'],
-                ]);
+            $model = $getModelList['model'];
+            $sch = $getModelList['exec_sch'];
+            $reason = $getModelList['reason'];
+            $content = $getModelList['content'];
+
+            if (!empty($model) && !empty($sch) && !empty($reason) && !empty($content)) {
+                $this->sendToDMS($req->ten_no);
+
+                foreach ($getModelList['list_model'] as $key => $value) {
+                    CircularTenModelDet::create([
+                        'CM_ID' => $storedTen->id,
+                        'CIM_ITMCD' => $value['MDLCD'],
+                    ]);
+                }
             }
         }
 
-        $this->sendToDMS($req->ten_no);
-
-        return $this->handleResponse([], 'Upload Sukses ' . $nama_file);
+        return $this->handleResponse([
+            'model' => $model,
+            'sch' => $sch,
+            'reason' => $reason,
+            'content ' => $content,
+        ], 'Upload Sukses ' . $nama_file);
     }
 
     public function generateDocument($ten, $isExport = true)
@@ -410,14 +437,14 @@ class CircullarTenController extends BaseController
                     ],
                 ],
             ]);
-    
+
             $uploadResult = $res->getBody();
-            $resApproveDoc = $client->request('GET', 'dms/toggleapprovedocflag/'. $uploadResult.'/1');
+            $resApproveDoc = $client->request('GET', 'dms/toggleapprovedocflag/' . $uploadResult . '/1');
 
             CircularTenMstr::where('CIRTEN_NO', $ten)->update([
                 'CIRTEN_DMS_DOC_ID' => $uploadResult
             ]);
-            
+
             return $this->handleResponse($resApproveDoc, 'TEN has been uploaded to DMS, please check DMS Apps !');
         } catch (ClientException $e) {
             return $this->handleError(Psr7\Message::toString($e->getResponse()));
