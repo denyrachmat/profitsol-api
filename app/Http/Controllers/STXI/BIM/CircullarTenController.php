@@ -21,7 +21,7 @@ use Laravel\Dusk\Browser;
 use Laravel\Dusk\Chrome\ChromeProcess;
 use Laravel\Dusk\ElementResolver;
 use Symfony\Component\DomCrawler\Crawler;
-
+use GuzzleHttp\Client;
 class CircullarTenController extends BaseController
 {
     /**
@@ -368,7 +368,9 @@ class CircullarTenController extends BaseController
     {  
         $pdf = $this->generateDocument($ten, true);
         $storepdf = Storage::disk('local')->put('/public/circular_ten/' . $ten . '/'.$ten.'.pdf', $pdf);
-        $target_url = 'http://192.168.100.32:8081/stx_api/public/api/dms/docsupload'; // Write your URL here
+        $target_url = 'http://192.168.100.32:8081/stx_api/public/api/'; // Write your URL here
+
+        // Old
 
         $cFile = curl_file_create('/public/circular_ten/' . $ten . '/'. $ten.'.pdf', 'application/pdf', $ten.'.pdf');
         $post = [
@@ -378,34 +380,52 @@ class CircullarTenController extends BaseController
             'folder_name' => "New System Cirten (Don't Delete)"
         ]; // Parameter to be sent
 
-        $ch = curl_init();
-        curl_setopt($ch, CURLOPT_URL, $target_url);
-        curl_setopt($ch, CURLOPT_POST,1);
-        curl_setopt($ch, CURLOPT_POSTFIELDS, $post);
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-        $status = '';
-        if(curl_exec($ch) === false)
-        {
-            $status = 'Curl error: ' . curl_error($ch);
-            $result=json_decode(curl_exec($ch));
+        $client = new Client([
+            // Base URI is used with relative requests
+            'base_uri' => $target_url,
+            // You can set any number of default request options.
+            'timeout'  => 2.0,
+        ]);
+
+        $res = $client->request('POST', 'dms/docsupload', [
+            'multipart' => [
+                [
+                    'name'     => 'FileContents',
+                    'contents' => $pdf,
+                    'filename' => $ten.'.pdf'
+                ]
+            ],
+        ]);
+
+        return $res;
+        // $ch = curl_init();
+        // curl_setopt($ch, CURLOPT_URL, $target_url);
+        // curl_setopt($ch, CURLOPT_POST,1);
+        // curl_setopt($ch, CURLOPT_POSTFIELDS, $post);
+        // curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+        // $status = '';
+        // if(curl_exec($ch) === false)
+        // {
+        //     $status = 'Curl error: ' . curl_error($ch);
+        //     $result=json_decode(curl_exec($ch));
     
-        }
-        else
-        {
-            $status = 'Operation completed without any errors, you have the response';
-            $result=json_decode(curl_exec($ch));
+        // }
+        // else
+        // {
+        //     $status = 'Operation completed without any errors, you have the response';
+        //     $result=json_decode(curl_exec($ch));
     
-        }
+        // }
 
-        $hasil = [
-            'store_stat' => $storepdf,
-            'upload_res' => $result,
-            'test_cfile' => $cFile,
-            'status' => $status
-        ];
+        // $hasil = [
+        //     'store_stat' => $storepdf,
+        //     'upload_res' => $result,
+        //     'test_cfile' => $cFile,
+        //     'status' => $status
+        // ];
 
-        curl_close ($ch);
+        // curl_close ($ch);
 
-        return $hasil;
+        // return $hasil;
     }
 }
