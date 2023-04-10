@@ -381,17 +381,6 @@ class CircullarTenController extends BaseController
             'timeout' => 2.0,
         ]);
 
-        $resLogin = $client->request('POST', 'dms/login', [
-            'form_params' => [
-                [
-                    'username' => 'susi',
-                    'password' => '12345678',
-                ],
-            ],
-        ]);
-
-        return $resLogin->getBody();
-
         $res = $client->request('POST', 'dms/docsupload', [
             'multipart' => [
                 [
