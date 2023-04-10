@@ -413,7 +413,7 @@ class CircullarTenController extends BaseController
             
             return $this->handleResponse($resApproveDoc, 'TEN has been uploaded to DMS, please check DMS Apps !');
         } catch (ClientException $e) {
-            return $this->handleError($e->getResponse());
+            return $this->handleError(Psr7\Message::toString($e->getResponse()));
         }
     }
 }
