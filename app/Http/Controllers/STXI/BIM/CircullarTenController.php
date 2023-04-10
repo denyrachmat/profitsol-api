@@ -57,6 +57,36 @@ class CircullarTenController extends BaseController
                 $reason = $getModelList['reason'];
                 $content = $getModelList['content'];
 
+                $statusnya = '';
+
+                if (empty($model)) {
+                    if (!empty($statusnya)) {
+                        $statusnya .= '<br>';
+                    }
+                    $statusnya .= 'Model not recognized !';
+                }
+
+                if (empty($sch)) {
+                    if (!empty($statusnya)) {
+                        $statusnya .= '<br>';
+                    }
+                    $statusnya .= 'Schedule not recognized !';
+                }
+
+                if (empty($reason)) {
+                    if (!empty($statusnya)) {
+                        $statusnya .= '<br>';
+                    }
+                    $statusnya .= 'Reason not recognized !';
+                }
+                
+                if (empty($content)) {
+                    if (!empty($statusnya)) {
+                        $statusnya .= '<br>';
+                    }
+                    $statusnya .= 'Content not recognized !';
+                }
+
                 $hasil[] = [
                     'ten_no' => $getTenNo,
                     'path' => $path,
@@ -68,7 +98,8 @@ class CircullarTenController extends BaseController
                         'sch' => $sch,
                         'reason' => $reason,
                         'content ' => $content,
-                    ]
+                    ],
+                    'status' => $statusnya
                 ];
             }
         }
