@@ -413,39 +413,54 @@ class CircullarTenController extends BaseController
         ]);
 
         try {
-            $res = $client->request('POST', 'dms/docsupload', [
-                'multipart' => [
-                    [
-                        'name' => 'username',
-                        'contents' => 'susi',
-                        'headers' => ['Content-Type' => 'application/json']
-                    ],
-                    [
-                        'name' => 'folder_id',
-                        'contents' => '2vxtcJxq4YDBmS5v23cKaWRU4o01LXsUtBPtU9jWm2x9NklzyD',
-                        'headers' => ['Content-Type' => 'application/json']
-                    ],
-                    [
-                        'name' => 'folder_name',
-                        'contents' => "New System Cirten (Don't Delete)",
-                        'headers' => ['Content-Type' => 'application/json']
-                    ],
-                    [
-                        'name' => 'file',
-                        'contents' => Psr7\Utils::tryFopen($pathFile, 'r'),
-                        'headers' => ['Content-Type' => 'application/pdf']
-                    ],
-                ],
-            ]);
+            $getModelList = $this->generateDocument($ten, false);
+            $model = $getModelList['model'];
+            $sch = $getModelList['exec_sch'];
+            $reason = $getModelList['reason'];
+            $content = $getModelList['content'];
 
-            $uploadResult = $res->getBody();
-            $resApproveDoc = $client->request('GET', 'dms/toggleapprovedocflag/' . $uploadResult . '/1');
+            if (!empty($model) && !empty($sch) && !empty($reason) && !empty($content)) {
+                $res = $client->request('POST', 'dms/docsupload', [
+                    'multipart' => [
+                        [
+                            'name' => 'username',
+                            'contents' => 'susi',
+                            'headers' => ['Content-Type' => 'application/json']
+                        ],
+                        [
+                            'name' => 'folder_id',
+                            'contents' => '2vxtcJxq4YDBmS5v23cKaWRU4o01LXsUtBPtU9jWm2x9NklzyD',
+                            'headers' => ['Content-Type' => 'application/json']
+                        ],
+                        [
+                            'name' => 'folder_name',
+                            'contents' => "New System Cirten (Don't Delete)",
+                            'headers' => ['Content-Type' => 'application/json']
+                        ],
+                        [
+                            'name' => 'file',
+                            'contents' => Psr7\Utils::tryFopen($pathFile, 'r'),
+                            'headers' => ['Content-Type' => 'application/pdf']
+                        ],
+                    ],
+                ]);
+    
+                $uploadResult = $res->getBody();
+                $resApproveDoc = $client->request('GET', 'dms/toggleapprovedocflag/' . $uploadResult . '/1');
+    
+                CircularTenMstr::where('CIRTEN_NO', $ten)->update([
+                    'CIRTEN_DMS_DOC_ID' => $uploadResult
+                ]);
 
-            CircularTenMstr::where('CIRTEN_NO', $ten)->update([
-                'CIRTEN_DMS_DOC_ID' => $uploadResult
-            ]);
-
-            return $this->handleResponse($resApproveDoc, 'TEN has been uploaded to DMS, please check DMS Apps !');
+                return $this->handleResponse($resApproveDoc, 'TEN has been uploaded to DMS, please check DMS Apps !');
+            } else {
+                return $this->handleError('Some data for ten is not recognized yet !!', [
+                    'model' => $model,
+                    'sch' => $sch,
+                    'reason' => $reason,
+                    'content' => $content,
+                ]);
+            }
         } catch (ClientException $e) {
             return $this->handleError(Psr7\Message::toString($e->getResponse()));
         }
