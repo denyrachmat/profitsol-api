@@ -162,6 +162,8 @@ class CircullarTenController extends BaseController
             }
         }
 
+        $this->sendToDMS($req->ten_no);
+
         return $this->handleResponse([], 'Upload Sukses ' . $nama_file);
     }
 
