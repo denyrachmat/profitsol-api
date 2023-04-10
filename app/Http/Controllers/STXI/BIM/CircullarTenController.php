@@ -23,6 +23,7 @@ use Laravel\Dusk\ElementResolver;
 use Symfony\Component\DomCrawler\Crawler;
 use GuzzleHttp\Client;
 use GuzzleHttp\Psr7;
+use GuzzleHttp\Exception\ClientException;
 
 class CircullarTenController extends BaseController
 {
@@ -381,36 +382,38 @@ class CircullarTenController extends BaseController
             'timeout' => 2.0,
         ]);
 
-        $res = $client->request('POST', 'dms/docsupload', [
-            'multipart' => [
-                [
-                    'name' => 'username',
-                    'contents' => 'susi',
-                    'headers' => ['Content-Type' => 'application/json']
+        try {
+            $res = $client->request('POST', 'dms/docsupload', [
+                'multipart' => [
+                    [
+                        'name' => 'username',
+                        'contents' => 'susi',
+                        'headers' => ['Content-Type' => 'application/json']
+                    ],
+                    [
+                        'name' => 'folder_id',
+                        'contents' => '2vxtcJxq4YDBmS5v23cKaWRU4o01LXsUtBPtU9jWm2x9NklzyD',
+                        'headers' => ['Content-Type' => 'application/json']
+                    ],
+                    [
+                        'name' => 'folder_name',
+                        'contents' => "New System Cirten (Don't Delete)",
+                        'headers' => ['Content-Type' => 'application/json']
+                    ],
+                    [
+                        'name' => 'file',
+                        'contents' => Psr7\Utils::tryFopen($pathFile, 'r'),
+                        'headers' => ['Content-Type' => 'application/pdf']
+                    ],
                 ],
-                [
-                    'name' => 'folder_id',
-                    'contents' => '2vxtcJxq4YDBmS5v23cKaWRU4o01LXsUtBPtU9jWm2x9NklzyD',
-                    'headers' => ['Content-Type' => 'application/json']
-                ],
-                [
-                    'name' => 'folder_name',
-                    'contents' => "New System Cirten (Don't Delete)",
-                    'headers' => ['Content-Type' => 'application/json']
-                ],
-                [
-                    'name' => 'file',
-                    'contents' => Psr7\Utils::tryFopen($pathFile, 'r'),
-                    'headers' => ['Content-Type' => 'application/pdf']
-                ],
-            ],
-        ]);
-
-        $uploadResult = $res->getBody();
-        $resApproveDoc = $client->request('GET', 'dms/toggleapprovedocflag/'. $uploadResult.'/1');
-        
-        // http://192.168.100.32:8081/stx_api/public/api/dms/toggleapprovedocflag/QRz3ifYp1fraZd2SfFMbzavsEdDVKvka7DBUoA3E5wpp7lmsvP/1
-
-        return [$resApproveDoc->getBody(), 'dms/toggleapprovedocflag/'. $uploadResult.'/1'];
+            ]);
+    
+            $uploadResult = $res->getBody();
+            $resApproveDoc = $client->request('GET', 'dms/toggleapprovedocflag/'. $uploadResult.'/1');
+            
+            return $this->handleResponse($resApproveDoc, 'TEN has been uploaded to DMS, please check DMS Apps !');
+        } catch (ClientException $e) {
+            return $this->handleError($e->getResponse());
+        }
     }
 }
