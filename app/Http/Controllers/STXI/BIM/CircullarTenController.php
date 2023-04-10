@@ -381,6 +381,23 @@ class CircullarTenController extends BaseController
             'timeout' => 2.0,
         ]);
 
+        $resLogin = $client->request('POST', 'dms/docsupload', [
+            'query' => [
+                [
+                    'name' => 'username',
+                    'contents' => 'susi',
+                    'headers' => ['Content-Type' => 'application/json']
+                ],
+                [
+                    'name' => 'password',
+                    'contents' => '12345678',
+                    'headers' => ['Content-Type' => 'application/json']
+                ],
+            ],
+        ]);
+
+        return $resLogin->getBody();
+
         $res = $client->request('POST', 'dms/docsupload', [
             'multipart' => [
                 [
@@ -407,14 +424,7 @@ class CircullarTenController extends BaseController
         ]);
 
         $uploadResult = $res->getBody();
-
-        $client2 = new Client([
-            // Base URI is used with relative requests
-            'base_uri' => $target_url,
-            // You can set any number of default request options.
-            'timeout' => 2.0,
-        ]);
-        $resApproveDoc = $client2->request('GET', 'dms/toggleapprovedocflag/'. $uploadResult.'/1');
+        $resApproveDoc = $client->request('GET', 'dms/toggleapprovedocflag/'. $uploadResult.'/1');
         
         // http://192.168.100.32:8081/stx_api/public/api/dms/toggleapprovedocflag/QRz3ifYp1fraZd2SfFMbzavsEdDVKvka7DBUoA3E5wpp7lmsvP/1
 
