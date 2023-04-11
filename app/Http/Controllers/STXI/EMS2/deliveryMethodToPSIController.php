@@ -999,6 +999,7 @@ class deliveryMethodToPSIController extends BaseController
 
     public function uploadWeeklyPOData(Request $req)
     {
+        ini_set('memory_limit', '2G');
         ini_set('max_execution_time', '300');
         // $nama_file = $req->file->hashName();
         $file = new File($req->file);

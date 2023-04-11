@@ -13,6 +13,7 @@ use Illuminate\Http\File;
 
 use App\Models\STXI\BIM\CircularTenMstr;
 use App\Models\STXI\BIM\CircularTenModelDet;
+use App\Models\STXI\BIM\CircularTenPathHtm;
 
 use Facebook\WebDriver\Chrome\ChromeOptions;
 use Facebook\WebDriver\Remote\DesiredCapabilities;
@@ -307,7 +308,7 @@ class CircullarTenController extends BaseController
             return $value->html();
         });
 
-        $getContentWoTable = $crawler->filterXPath("//*[text()[contains(.,'1.Contents')]]")->each(function ($value) {
+        $getContentWoTable = $crawler->filterXPath("//*[text()[contains(.,'1.Contents')]] or [text()[contains(.,'Contents')]]")->each(function ($value) {
             return $value->html();
         });
 
@@ -323,13 +324,19 @@ class CircullarTenController extends BaseController
             return $value->text();
         });
 
+        $getExecSchedule2 = $crawler->filterXPath('//table[@frame="void"]/tbody/tr[@valign="top"]/td[@width="100%"]/*')->each(function ($value) {
+            return $value->text();
+        });
+
         $getReason = $crawler->filterXPath('//table[@style="border:1px solid #333;border-top-style: hidden;"]/tbody/tr[@valign="top"]/td[@width="100%"]/*')->each(function ($value) {
             return $value->text();
         });
 
         return [
             'list_item' => $getModel,
-            'list_content' => count($getContent) > 0 ? $getContent : (
+            'list_content' => count($getContent) > 0 
+            ? $getContent 
+            : (
                 count($getRevisedDoc) > 0
                 ? $getRevisedDoc
                 : $getContentWoTable
@@ -338,6 +345,31 @@ class CircullarTenController extends BaseController
             'exec_sch' => $getExecSchedule,
             'reason' => $getReason
         ];
+    }
+
+    public function newExtractCirtenCover($path)
+    {
+        $filenya = Storage::disk('local')->get($path);
+        $crawler = new Crawler($filenya);
+
+        $listItem = $crawler->filterXPath('//*[@class="NaiyoTblE1"]/tbody/tr/td/font')->extract(['_text']);
+
+        $getModel = [];
+        foreach ($listItem as $key => $value) {
+            if (!empty($value)) {
+                $itemCodeFixRemoveArrow = explode(" -> ", $value);
+                if (count($itemCodeFixRemoveArrow) > 0) {
+                    $itemCodeFixStrip = explode("-", $itemCodeFixRemoveArrow[0]);
+                    if (count($itemCodeFixStrip) > 1) {
+                        $itemCode = $itemCodeFixStrip[0] . $itemCodeFixStrip[1];
+
+                        $getModel[] = $itemCode;
+                    }
+                }
+            }
+        }
+
+        $data = CircularTenPathHtm::where('CHR_NMPROP','content');
     }
 
     public function listModelFromHTM($ten)
