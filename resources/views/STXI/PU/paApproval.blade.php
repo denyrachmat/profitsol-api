@@ -18,8 +18,8 @@
         <div class="mdc-card" style="margin: 20vh; height: 50vh">
             <div class="mdc-card__primary-action">
                 <div class="mdc-card__media mdc-card__media--square">
-                    <div class="mdc-card__media-content" style="text-align: center; background-color: {!! json_decode($return)->status ? '#20aafa' : '#fa7369' !!}">
-                        <span class="material-icons" style="font-size: 15em; color: white;padding: 20px 0;">
+                    <div class="mdc-card__media-content" style="text-align: center; background-color: {!! json_decode($return)->status ? '#20aafa' : '#9e9d9d' !!}">
+                        <span class="material-icons" style="font-size: 15em; color: #fa7369;padding: 20px 0;">
                             @if(json_decode($return)->status)
                                 check_circle_outline
                             @else

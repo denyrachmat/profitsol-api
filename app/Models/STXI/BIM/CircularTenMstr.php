@@ -14,6 +14,8 @@ class CircularTenMstr extends Model
         'CIRTEN_NO',
         'CIRTEN_GENDT',
         'CIRTEN_MAILDT',
-        'CIRTEN_DMS_DOC_ID'
+        'CIRTEN_DMS_DOC_ID',
+        'CIRTEN_EXEC',
+        'CIRTEN_RESON'
     ];
 }

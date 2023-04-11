@@ -100,7 +100,8 @@ class CircullarTenController extends BaseController
                         'reason' => $reason,
                         'content ' => $content,
                     ],
-                    'status' => $statusnya
+                    'status' => $statusnya,
+                    'created_at' => $cekCirtenMstr->created_at
                 ];
             }
         }
@@ -194,17 +195,19 @@ class CircullarTenController extends BaseController
         if ($extNya === 'htm') {
             $getModelList = $this->generateDocument($req->ten_no, false);
 
-            $storedTen = CircularTenMstr::updateOrCreate([
-                'CIRTEN_NO' => $req->ten_no
-            ], [
-                    'CIRTEN_NO' => $req->ten_no,
-                    'CIRTEN_MAILDT' => $req->emailDate
-                ]);
-
             $model = $getModelList['model'];
             $sch = $getModelList['exec_sch'];
             $reason = $getModelList['reason'];
             $content = $getModelList['content'];
+
+            $storedTen = CircularTenMstr::updateOrCreate([
+                'CIRTEN_NO' => $req->ten_no
+            ], [
+                    'CIRTEN_NO' => $req->ten_no,
+                    'CIRTEN_MAILDT' => $req->emailDate,
+                    'CIRTEN_EXEC' => $sch,
+                    'CIRTEN_RESON' => $content
+                ]);
 
             if (!empty($model) && !empty($sch) && !empty($reason) && !empty($content)) {
                 $this->sendToDMS($req->ten_no);
@@ -218,12 +221,15 @@ class CircullarTenController extends BaseController
             }
         }
 
-        return $this->handleResponse([
+        $hasilRet = $extNya === 'htm' 
+        ? [
             'model' => $model,
             'sch' => $sch,
             'reason' => $reason,
             'content ' => $content,
-        ], 'Upload Sukses ' . $nama_file);
+        ] : [];
+
+        return $this->handleResponse($hasilRet, 'Upload Sukses ' . $nama_file);
     }
 
     public function generateDocument($ten, $isExport = true)
@@ -272,7 +278,7 @@ class CircullarTenController extends BaseController
         ];
 
         if ($isExport) {
-            // return view('STXI/BIM/circularTenLayout', $data);
+            return view('STXI/BIM/circularTenLayout', $data);
 
             $pdf = Pdf::loadView('STXI/BIM/circularTenLayout', $data);
 
@@ -308,7 +314,7 @@ class CircullarTenController extends BaseController
             return $value->html();
         });
 
-        $getContentWoTable = $crawler->filterXPath("//*[text()[contains(.,'1.Contents')]] or [text()[contains(.,'Contents')]]")->each(function ($value) {
+        $getContentWoTable = $crawler->filterXPath("//*[text()[contains(.,'1.Contents')]] or //*[text()[contains(.,'Contents')]]")->each(function ($value) {
             return $value->html();
         });
 
