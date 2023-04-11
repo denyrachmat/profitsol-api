@@ -68,7 +68,7 @@ class PAApprovalController extends BaseController
                     $return = $this->handleError('Update failed !', $hasil);
                 }
             } else {
-                $return = $this->handleError('PA Instruction had been already approved !', []);
+                $return = $this->handleError('PA Instruction had already been approved !', []);
             }
         } else {
             $data = DB::connection('sqlsrv_pu')->table('PAINS_PRTCHG')->where('PAINSNO', $id)->first();
@@ -84,7 +84,7 @@ class PAApprovalController extends BaseController
                     $return = $this->handleError('Update failed !', $hasil);
                 }
             } else {
-                $return = $this->handleError('PA Instruction had been already approved !', []);
+                $return = $this->handleError('PA Instruction had already been approved !', []);
             }
         }
 
