@@ -51,7 +51,7 @@ class CircullarTenController extends BaseController
 
             if (empty($cekCreator)) {
                 $cekCirtenMstr = CircularTenMstr::where('CIRTEN_NO', $getTenNo)->first();
-                $cekDMS = DB::table('DMS.dbo.dms_doc_mstr')->where('doc_id', $cekCirtenMstr->CIRTEN_DMS_DOC_ID)->first();
+                $cekDMS = DB::table('DMS.dbo.dms_doc_mstr')->where('doc_id', $cekCirtenMstr->CIRTEN_DMS_DOC_ID)->where('doc_stat_flag', '<>', '0')->first();
                 $getModelList = $this->generateDocument($getTenNo, false);
                 $model = $getModelList['model'];
                 $sch = $getModelList['exec_sch'];
