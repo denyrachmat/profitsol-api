@@ -80,7 +80,7 @@ class CircullarTenController extends BaseController
                     }
                     $statusnya .= 'Reason not recognized !';
                 }
-                
+
                 if (empty($content)) {
                     if (!empty($statusnya)) {
                         $statusnya .= '<br>';
@@ -108,6 +108,17 @@ class CircullarTenController extends BaseController
         // return $cekCreator;
 
         if (count($hasil) > 0) {
+            usort($hasil, function ($a, $b) {
+                $ad = new \DateTime($a['created_at']);
+                $bd = new \DateTime($b['created_at']);
+
+                if ($ad == $bd) {
+                    return 0;
+                }
+
+                return $ad > $bd ? -1 : 1;
+            });
+
             return $this->handleResponse($hasil, 'Data found !');
         }
 
@@ -193,6 +204,13 @@ class CircullarTenController extends BaseController
         $req->file->storeAs('/public/circular_ten/' . $req->ten_no . '/', $nama_file);
 
         if ($extNya === 'htm') {
+            $storedTen = CircularTenMstr::updateOrCreate([
+                'CIRTEN_NO' => $req->ten_no
+            ], [
+                    'CIRTEN_NO' => $req->ten_no,
+                    'CIRTEN_MAILDT' => $req->emailDate,
+                ]);
+
             $getModelList = $this->generateDocument($req->ten_no, false);
 
             $model = $getModelList['model'];
@@ -200,14 +218,10 @@ class CircullarTenController extends BaseController
             $reason = $getModelList['reason'];
             $content = $getModelList['content'];
 
-            $storedTen = CircularTenMstr::updateOrCreate([
-                'CIRTEN_NO' => $req->ten_no
-            ], [
-                    'CIRTEN_NO' => $req->ten_no,
-                    'CIRTEN_MAILDT' => $req->emailDate,
-                    'CIRTEN_EXEC' => $sch,
-                    'CIRTEN_RESON' => $content
-                ]);
+            CircularTenMstr::where('CIRTEN_NO', $req->ten_no)->update([
+                'CIRTEN_EXEC' => $sch,
+                'CIRTEN_RESON' => $content
+            ]);
 
             if (!empty($model) && !empty($sch) && !empty($reason) && !empty($content)) {
                 $this->sendToDMS($req->ten_no);
@@ -221,13 +235,13 @@ class CircullarTenController extends BaseController
             }
         }
 
-        $hasilRet = $extNya === 'htm' 
-        ? [
-            'model' => $model,
-            'sch' => $sch,
-            'reason' => $reason,
-            'content ' => $content,
-        ] : [];
+        $hasilRet = $extNya === 'htm'
+            ? [
+                'model' => $model,
+                'sch' => $sch,
+                'reason' => $reason,
+                'content ' => $content,
+            ] : [];
 
         return $this->handleResponse($hasilRet, 'Upload Sukses ' . $nama_file);
     }
@@ -270,15 +284,32 @@ class CircullarTenController extends BaseController
             'mail_date' => $data,
             'model' => array_values($hasil),
             'list_model' => array_values($listModel),
-            'content' => isset($getModel['list_content'][0]) ? str_replace(["\n", "\r", "\\"], "", $getModel['list_content'][0]) : '',
+            'content' => isset($getModel['list_content'][0]) 
+                ? (
+                    count($getModel['list_content']) > 1 
+                    ? str_replace(["\n", "\r", "\\"], "", $getModel['list_content'][1])
+                    : str_replace(["\n", "\r", "\\"], "", $getModel['list_content'][0])
+                ) 
+                : '',
+            'real_content' => $getModel,
             'subject' => count($getModel['subject']) > 1 ? $getModel['subject'][1] : $getModel['subject'][0],
             'list_files' => $filesData,
-            'exec_sch' => count($getModel['exec_sch']) > 2 ? $getModel['exec_sch'][2] : '',
-            'reason' => count($getModel['reason']) > 1 ? $getModel['reason'][1] : ''
+            'exec_sch' => count($getModel['exec_sch']) > 2 
+                ? $getModel['exec_sch'][2] 
+                : (count($getModel['exec_sch']) == 1
+                    ? explode(':', $getModel['exec_sch'][0])[1]
+                    : ''
+                ),
+            'reason' => count($getModel['reason']) > 1 
+                ? $getModel['reason'][1] 
+                : (count($getModel['reason']) == 1
+                    ? $getModel['reason'][0]
+                    : ''
+                )
         ];
 
         if ($isExport) {
-            return view('STXI/BIM/circularTenLayout', $data);
+            // return view('STXI/BIM/circularTenLayout', $data);
 
             $pdf = Pdf::loadView('STXI/BIM/circularTenLayout', $data);
 
@@ -314,7 +345,7 @@ class CircullarTenController extends BaseController
             return $value->html();
         });
 
-        $getContentWoTable = $crawler->filterXPath("//*[text()[contains(.,'1.Contents')]] or //*[text()[contains(.,'Contents')]]")->each(function ($value) {
+        $getContentWoTable = $crawler->filterXPath("//*[text()[contains(.,'Content')]]")->each(function ($value) {
             return $value->html();
         });
 
@@ -326,7 +357,11 @@ class CircullarTenController extends BaseController
             return $value->html();
         });
 
-        $getExecSchedule = $crawler->filterXPath('//table[@style="border:1px solid #333;"]/tbody/tr[@valign="top"]/td[@width="100%"]/*')->each(function ($value) {
+        // $getExecSchedule = $crawler->filterXPath('//table[@style="border:1px solid #333;"]/tbody/tr[@valign="top"]/td[@width="100%"]/*')->each(function ($value) {
+        //     return $value->text();
+        // });
+
+        $getExecSchedule = $crawler->filterXPath("//*[text()[contains(.,'Exec')]]/parent::td")->each(function ($value) {
             return $value->text();
         });
 
@@ -334,14 +369,18 @@ class CircullarTenController extends BaseController
             return $value->text();
         });
 
-        $getReason = $crawler->filterXPath('//table[@style="border:1px solid #333;border-top-style: hidden;"]/tbody/tr[@valign="top"]/td[@width="100%"]/*')->each(function ($value) {
+        // $getReason = $crawler->filterXPath('//table[@style="border:1px solid #333;border-top-style: hidden;"]/tbody/tr[@valign="top"]/td[@width="100%"]/*')->each(function ($value) {
+        //     return $value->text();
+        // });
+
+        $getReason = $crawler->filterXPath("//*[text()[contains(.,'Reason')]]/parent::td")->each(function ($value) {
             return $value->text();
         });
 
         return [
             'list_item' => $getModel,
-            'list_content' => count($getContent) > 0 
-            ? $getContent 
+            'list_content' => count($getContent) > 0
+            ? $getContent
             : (
                 count($getRevisedDoc) > 0
                 ? $getRevisedDoc
@@ -375,7 +414,7 @@ class CircullarTenController extends BaseController
             }
         }
 
-        $data = CircularTenPathHtm::where('CHR_NMPROP','content');
+        $data = CircularTenPathHtm::where('CHR_NMPROP', 'content');
     }
 
     public function listModelFromHTM($ten)
@@ -513,10 +552,10 @@ class CircullarTenController extends BaseController
                         ],
                     ],
                 ]);
-    
+
                 $uploadResult = $res->getBody();
                 $resApproveDoc = $client->request('GET', 'dms/toggleapprovedocflag/' . $uploadResult . '/1');
-    
+
                 CircularTenMstr::where('CIRTEN_NO', $ten)->update([
                     'CIRTEN_DMS_DOC_ID' => $uploadResult
                 ]);
