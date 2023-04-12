@@ -297,7 +297,7 @@ class CircullarTenController extends BaseController
             'exec_sch' => count($getModel['exec_sch']) > 2 
                 ? $getModel['exec_sch'][2] 
                 : (count($getModel['exec_sch']) == 1
-                    ? explode(':', $getModel['exec_sch'][0])[1]
+                    ? substr(strstr($getModel['exec_sch'][0],":"), 1)
                     : ''
                 ),
             'reason' => count($getModel['reason']) > 1 
