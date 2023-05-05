@@ -56,7 +56,7 @@ class DLVSMTTYOEmailQueue implements ShouldQueue
     public function handle()
     {
         $to = [
-            'nidya-sianty@sumitronics.co.jp'
+            'mayang-trivena@sumitronics.co.jp'
         ];
 
         $cc = [
