@@ -254,6 +254,8 @@ class CircullarTenController extends BaseController
         $data = CircularTenMstr::where('CIRTEN_NO', $ten)->first();
         $files = '';
         $filesData = Storage::disk('local')->files('public/circular_ten/' . $ten);
+
+        // return $filesData;
         foreach ($filesData as $file) {
             if (pathinfo($file, PATHINFO_EXTENSION) == 'htm' || pathinfo($file, PATHINFO_EXTENSION) == 'html') {
                 $files = $file;
@@ -261,7 +263,10 @@ class CircullarTenController extends BaseController
             }
         }
 
+        // return $files;
+
         $getModel = $this->extractCirtenCover($files);
+        return $getModel;
         $hasil = $this->listModelFromHTM($ten)['SUBCONT'];
 
         $cekDataModel = CircularTenModelDet::where('CM_ID', $data->id)->get();
@@ -324,6 +329,7 @@ class CircullarTenController extends BaseController
 
     public function extractCirtenCover($path)
     {
+        // return $path;
         $filenya = Storage::disk('local')->get($path);
         $crawler = new Crawler($filenya);
 
@@ -398,6 +404,7 @@ class CircullarTenController extends BaseController
     public function newExtractCirtenCover($path)
     {
         $filenya = Storage::disk('local')->get($path);
+        return $filenya;
         $crawler = new Crawler($filenya);
 
         $listItem = $crawler->filterXPath('//*[@class="NaiyoTblE1"]/tbody/tr/td/font')->extract(['_text']);
@@ -433,6 +440,8 @@ class CircullarTenController extends BaseController
         }
 
         $getModel = $this->extractCirtenCover($files);
+
+        return $getModel;
 
         $hasil = [];
         $hasilItem = [];
