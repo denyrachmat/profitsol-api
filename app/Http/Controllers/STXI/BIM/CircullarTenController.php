@@ -291,6 +291,7 @@ class CircullarTenController extends BaseController
         $data = [
             'ten' => $ten,
             'mail_date' => $data,
+            'ori_list_item' => $getModel['ori_list_item'],
             'model' => array_values($hasil),
             'list_model' => array_values($listModel),
             'content' => isset($getModel['list_content'][0]) 
@@ -342,8 +343,14 @@ class CircullarTenController extends BaseController
 
         $listItem = $crawler->filterXPath('//*[@class="NaiyoTblE1"]/tbody/tr/td/font')->extract(['_text']);
 
+        $getListItem = $crawler->filterXPath('//*[@class="NaiyoCel"]')->each(function ($value) {
+            return $value->extract(['_text'])[0];
+        });
+
+        $realItem = count($listItem) > 0 ? $listItem : $getListItem; 
+        
         $getModel = [];
-        foreach ($listItem as $key => $value) {
+        foreach ($realItem as $key => $value) {
             if (!empty($value)) {
                 $itemCodeFixRemoveArrow = explode(" -> ", $value);
                 if (count($itemCodeFixRemoveArrow) > 0) {
@@ -399,6 +406,7 @@ class CircullarTenController extends BaseController
 
         return [
             'list_item' => $getModel,
+            'ori_list_item' => $getListItem,
             'list_content' => count($getContent) > 0
             ? $getContent
             : (
