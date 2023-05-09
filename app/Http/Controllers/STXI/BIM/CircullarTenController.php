@@ -255,7 +255,7 @@ class CircullarTenController extends BaseController
         $files = '';
         $filesData = Storage::disk('local')->files('public/circular_ten/' . $ten);
         foreach ($filesData as $file) {
-            if (pathinfo($file, PATHINFO_EXTENSION) == 'htm') {
+            if (pathinfo($file, PATHINFO_EXTENSION) == 'htm' || pathinfo($file, PATHINFO_EXTENSION) == 'html') {
                 $files = $file;
                 break;
             }
