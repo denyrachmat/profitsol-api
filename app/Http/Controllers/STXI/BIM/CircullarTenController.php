@@ -369,6 +369,10 @@ class CircullarTenController extends BaseController
             return $value->text();
         });
 
+        $getSubject2 = $crawler->filterXPath('//table/tbody/tr[@valign="top"]/td[@width="64%"]/b/font/*')->each(function ($value) {
+            return $value->text();
+        });
+
         $getRevisedDoc = $crawler->filterXPath('//*[@class="NaiyoTblCmt"]')->each(function ($value) {
             return $value->html();
         });
@@ -402,7 +406,7 @@ class CircullarTenController extends BaseController
                 ? $getRevisedDoc
                 : $getContentWoTable
             ),
-            'subject' => $getSubject,
+            'subject' => count($getSubject) === 0 ? $getSubject2 : $getSubject2,
             'exec_sch' => $getExecSchedule,
             'reason' => $getReason
         ];
