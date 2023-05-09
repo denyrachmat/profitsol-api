@@ -206,7 +206,7 @@ class CircullarTenController extends BaseController
         $nama_file = $filenameOnly . '.' . $extNya;
         $req->file->storeAs('/public/circular_ten/' . $req->ten_no . '/', $nama_file);
 
-        if ($extNya === 'htm') {
+        if ($extNya === 'htm' || $extNya === 'html') {
             $storedTen = CircularTenMstr::updateOrCreate([
                 'CIRTEN_NO' => $req->ten_no
             ], [
@@ -238,7 +238,7 @@ class CircullarTenController extends BaseController
             }
         }
 
-        $hasilRet = $extNya === 'htm'
+        $hasilRet = $extNya === 'htm' || $extNya === 'html'
             ? [
                 'model' => $model,
                 'sch' => $sch,
@@ -266,12 +266,13 @@ class CircullarTenController extends BaseController
         // return $files;
 
         $getModel = $this->extractCirtenCover($files);
-        return $getModel;
+        // return $getModel;
         $hasil = $this->listModelFromHTM($ten)['SUBCONT'];
+        // return $hasil;
 
         $cekDataModel = CircularTenModelDet::where('CM_ID', $data->id)->get();
+        $listModel = [];
         if (count($cekDataModel) > 0) {
-            $listModel = [];
             foreach ($cekDataModel as $keyMdl => $valueMdl) {
                 $getDataItem = DB::connection('sqlsrv_mega_sme')->table('MITM_TBL')
                     ->where('MITM_ITMCD', 'like', $valueMdl->CIM_ITMCD . '%')
@@ -433,7 +434,7 @@ class CircullarTenController extends BaseController
         $files = '';
         $filesData = Storage::disk('local')->files('public/circular_ten/' . $ten);
         foreach ($filesData as $file) {
-            if (pathinfo($file, PATHINFO_EXTENSION) == 'htm') {
+            if (pathinfo($file, PATHINFO_EXTENSION) == 'htm' || pathinfo($file, PATHINFO_EXTENSION) == 'html') {
                 $files = $file;
                 break;
             }
@@ -441,7 +442,7 @@ class CircullarTenController extends BaseController
 
         $getModel = $this->extractCirtenCover($files);
 
-        return $getModel;
+        // return $getModel;
 
         $hasil = [];
         $hasilItem = [];
