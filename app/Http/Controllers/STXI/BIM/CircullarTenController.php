@@ -369,7 +369,7 @@ class CircullarTenController extends BaseController
             return $value->text();
         });
 
-        $getSubject2 = $crawler->filterXPath('//table/tbody/tr[@valign="top"]/td[@width="64%"]/b/font/*')->each(function ($value) {
+        $getSubject2 = $crawler->filterXPath('//*[@width="64%"]')->each(function ($value) {
             return $value->text();
         });
 
@@ -406,7 +406,9 @@ class CircullarTenController extends BaseController
                 ? $getRevisedDoc
                 : $getContentWoTable
             ),
-            'subject' => count($getSubject) === 0 ? $getSubject2 : $getSubject2,
+            'subject' => count($getSubject) === 0 
+                ? $getSubject2 
+                : $getSubject,
             'exec_sch' => $getExecSchedule,
             'reason' => $getReason
         ];
