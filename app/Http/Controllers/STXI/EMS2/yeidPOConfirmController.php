@@ -74,7 +74,7 @@ class yeidPOConfirmController extends BaseController
      */
     public function show($id)
     {
-        //
+        return $this->getDataYpo('', $id)->get();
     }
 
     /**
@@ -164,7 +164,7 @@ class yeidPOConfirmController extends BaseController
     {
         $data = DB::connection('sqlsrv_ems2')->table('V_YPO_OS_GIT')
             ->where('PGIT_ITMCD', base64_decode($item))
-            // ->whereNull('PGRN_RCVDT')
+            ->whereNull('PGRN_RCVDT')
             ->where(DB::raw('PGIT_RCVQT - COALESCE(SHP_QT, 0)'), '>', 0);
 
         if (!empty($po) || $po != '0') {
@@ -173,7 +173,10 @@ class yeidPOConfirmController extends BaseController
 
         if (count($data->get()) > 0) {
             if (!empty($col) || $col != 0) {
-                $data = $data->get()->pluck($col);
+                $data = $data->select($col)
+                    ->groupBy($col)
+                    ->get()
+                    ->pluck($col);
             } else {
                 $data = $data->get();
             }
@@ -226,6 +229,24 @@ class yeidPOConfirmController extends BaseController
 
     public function exportExcel(Request $req)
     {
+        $data = $this->getDataYpo();
+
+        if ($req->has('filter')) {
+            foreach ($req->filter as $key => $value) {
+                $data->where($value['cols'], 'LIKE', $value['value'] . '%');
+            }
+        }
+
+        $data = $data->get();
+
+        // return $data;
+        Excel::store(new ExportYPOManual($data), 'export_ypo_manual.xlsx', 'public');
+
+        return 'storage/app/public/export_ypo_manual.xlsx';
+    }
+
+    public function getDataYpo($id = '', $idx = '')
+    {
         $data = YPOMaster::select(
             'YPO_MSTR_TBL.*',
             'YSPDT_PONO',
@@ -246,23 +267,21 @@ class yeidPOConfirmController extends BaseController
             ->leftjoin('V_YPO_OS_GIT', function($f) {
                 $f->on('PPO1_PONO', 'YSPDT_PONO');
                 $f->on('YSPDT_INVNO', 'PGIT_SUPNO');
+                $f->on('YPO_ITMCD', 'PGIT_ITMCD');
             })
             ->join(DB::raw('MGSVR.VMI_EXIM.DBO.MITM_TBL as mt'), 'mt.MITM_ITMCD', 'YPO_ITMCD')
             ->join(DB::raw('MGSVR.VMI_EXIM.DBO.MSUP_TBL as mt2'), 'mt2.MSUP_SUPCD', 'mt.MITM_SUPCD')
             ->orderBy('YPO_TXID', 'desc')
             ->orderBy('YPO_ITMCD');
 
-        if ($req->has('filter')) {
-            foreach ($req->filter as $key => $value) {
-                $data->where($value['cols'], 'LIKE', $value['value'] . '%');
-            }
+        if (!empty($id)) {
+            $data->where('YPO_TXID', $id);
         }
 
-        $data = $data->get();
+        if (!empty($idx)) {
+            $data->where('YPO_MSTR_TBL.id', $idx);
+        }
 
-        // return $data;
-        Excel::store(new ExportYPOManual($data), 'export_ypo_manual.xlsx', 'public');
-
-        return 'storage/app/public/export_ypo_manual.xlsx';
+        return $data;
     }
 }
