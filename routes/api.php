@@ -149,6 +149,7 @@ Route::group(['prefix' => 'div'], function () {
         Route::get('searchPO/{item}/{po?}/{col?}', [yeidPOConfirmController::class, 'searchPO']);
         Route::post('getYPOData', [yeidPOConfirmController::class, 'getDataPagination']);
         Route::post('YPOExportExcel', [yeidPOConfirmController::class, 'exportExcel']);
+        Route::get('updateData', [yeidPOConfirmController::class, 'cekData']);
         
         // End YEID PO Confirmation
     });

@@ -10,6 +10,8 @@ use App\Models\STXI\EMS2\YPOSTXIPODet;
 use App\Exports\STXI\ExportYPOManual;
 use Excel;
 
+use App\Jobs\STXI\EMS2\updateInvoiceYPOManualQueue;
+
 class yeidPOConfirmController extends BaseController
 {
     /**
@@ -111,6 +113,7 @@ class yeidPOConfirmController extends BaseController
                 'YSPDT_PONO' => $value['PPO1_PONO'],
                 'YSPDT_INVNO' => $value['PGIT_SUPNO'],
                 'YSPDT_POQT' => (int) $value['PGIT_RCVQT'] >= $needQty ? $needQty : (int) $value['PGIT_RCVQT'],
+                'YSPDT_POQTY' => (int)$value['PPO2_POQTY'],
             ]);
         }
 
@@ -163,7 +166,7 @@ class yeidPOConfirmController extends BaseController
     public function searchPO($item, $po = '', $col = 'PPO1_PONO')
     {
         $data = DB::connection('sqlsrv_ems2')->table('V_YPO_OS_GIT')
-            ->where('PGIT_ITMCD', base64_decode($item));
+            ->where('PPO2_ITMCD', base64_decode($item));
             // ->whereNull('PGRN_RCVDT')
             // ->where(DB::raw('PGIT_RCVQT - COALESCE(SHP_QT, 0)'), '>', 0);
 
@@ -195,6 +198,10 @@ class yeidPOConfirmController extends BaseController
                 SELECT SUM(YSPDT_POQT) FROM YPO_STXI_PO_DET_TBL
                 WHERE YMT_ID = YPO_MSTR_TBL.id
             ), 0) as REG_PO_QTY"),
+            DB::raw("COALESCE((
+                SELECT COUNT(*) FROM YPO_STXI_PO_DET_TBL
+                WHERE YMT_ID = YPO_MSTR_TBL.id
+            ), 0) as INV_QTY"),
             'mt.MITM_ITMD1',
             'mt.MITM_SPTNO',
             'mt2.MSUP_ABBRV',
@@ -219,6 +226,8 @@ class yeidPOConfirmController extends BaseController
         } else {
             $data = $data->get();
         }
+
+        updateInvoiceYPOManualQueue::dispatch()->onQueue('updateInvoiceYPOManualQueue');
 
         if (count($data) > 0) {
             return $this->handleResponse($data, 'Data found !');
@@ -283,5 +292,40 @@ class yeidPOConfirmController extends BaseController
         }
 
         return $data;
+    }
+
+    public function cekData()
+    {
+        $data = YPOSTXIPODet::join('YPO_MSTR_TBL', 'YMT_ID', 'YPO_MSTR_TBL.id')->whereNull('YSPDT_INVNO')->get();
+
+        if (count($data) > 0) {
+
+            $hasil = [];
+            foreach ($data as $key => $value) {    
+                $dataView = DB::connection('sqlsrv_ems2')->table('V_YPO_OS_GIT')
+                    ->where('PPO1_PONO', $value->YSPDT_PONO)
+                    ->where('PPO2_ITMCD', $value->YPO_ITMCD)
+                    ->where('PGIT_RCVQT', '>=', $value->YSPDT_POQTY)
+                    ->orderBy('PPO1_ISUDT', 'asc')
+                    ->first();
+                
+                if (!empty($dataView)) {
+                    $hasil[] = YPOSTXIPODet::where('YMT_ID', $value->YMT_ID)
+                        ->where('YSPDT_PONO', $value->YSPDT_PONO)
+                        ->update([
+                            'YSPDT_INVNO' => $dataView->PGIT_SUPNO,
+                            'YSPDT_POQT' => $dataView->PGIT_RCVQT
+                        ]);
+                }
+            }
+
+            if (count($hasil) > 0) {
+                return 'update';
+            }
+
+            return 'tidak update';
+        }        
+
+        return 'tidak update';
     }
 }
