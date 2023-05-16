@@ -70,8 +70,8 @@ class ExportYPOManual implements FromCollection, WithEvents, WithHeadings
                 'PIB_FINISH' => $value['PIB_FINISH'],
                 '2' => '',
                 'SHP_STAT' => empty($value['PGRN_RCVDT']) 
-                    ? '-'
-                    : ($value['ORI_PGIT_RCVQT'] - $value['SHP_QT'] === 0 ? 'CLOSE' : $value['ORI_PGIT_RCVQT'] - $value['SHP_QT']),
+                    ? $value['TOT_QT']
+                    : ($value['TOT_QT'] == 0 ? 'CLOSE' : $value['ORI_PGIT_RCVQT'] - $value['SHP_QT']),
             ];
         }
 

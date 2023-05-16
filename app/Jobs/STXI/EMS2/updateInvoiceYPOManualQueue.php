@@ -51,7 +51,7 @@ class updateInvoiceYPOManualQueue implements ShouldQueue
                         ->where('YSPDT_PONO', $value->YSPDT_PONO)
                         ->update([
                             'YSPDT_INVNO' => $dataView->PGIT_SUPNO,
-                            'YSPDT_POQT' => $dataView->PGIT_RCVQT
+                            'YSPDT_POQT' => (int)$dataView->PGIT_RCVQT
                         ]);
                 }
             }
