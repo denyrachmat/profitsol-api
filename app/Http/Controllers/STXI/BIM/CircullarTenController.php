@@ -361,7 +361,7 @@ class CircullarTenController extends BaseController
                     if (count($itemCodeFixStrip) > 1) {
                         $itemCode = $itemCodeFixStrip[0] . $itemCodeFixStrip[1];
 
-                        $getModel[] = $itemCode;
+                        $getModel[] = str_replace('*', 'X', $itemCode);
                     }
                 }
             }
