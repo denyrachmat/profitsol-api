@@ -284,6 +284,7 @@ class CircullarTenController extends BaseController
                     'MDLCD' => $valueMdl->CIM_ITMCD,
                     'DESC' => $getDataItem->MITM_ITMD1,
                     'PARTNO' => $getDataItem->MITM_SPTNO,
+                    'SUBCD' => $valueMdl->MITM_SUPCD,
                 ];
             }
         } else {
@@ -494,7 +495,8 @@ class CircullarTenController extends BaseController
                     $hasilItem[] = [
                         'MDLCD' => $valueMdl->CIM_ITMCD,
                         'DESC' => trim($getDataItem->MITM_ITMD1),
-                        'PARTNO' => trim($getDataItem->MITM_SPTNO)
+                        'PARTNO' => trim($getDataItem->MITM_SPTNO),
+                        'SUPCD' => trim($getDataItem->MITM_SUPCD)
                     ];
                 }
             }
