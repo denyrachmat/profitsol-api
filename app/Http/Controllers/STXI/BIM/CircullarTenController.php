@@ -485,11 +485,13 @@ class CircullarTenController extends BaseController
                 }
             }
         } else {
+            logger('cek item 1 - start');
             $cekDataModel = CircularTenModelDet::where('CM_ID', $data->id)->get();
             foreach ($cekDataModel as $keyMdl => $valueMdl) {
                 $getDataItem = DB::connection('sqlsrv_mega_sme')->table('MITM_TBL')
                     ->where('MITM_ITMCD', 'like', $valueMdl->CIM_ITMCD . '%')
                     ->first();
+                    logger($getDataItem);
                 if (!empty($getDataItem)) {
                     $hasil[(empty($getDataItem->MITM_SUPCD) ? substr($getDataItem->MITM_ITMTY, 0, 3) : substr($getDataItem->MITM_SUPCD, 0, 3))] = (empty($getDataItem->MITM_SUPCD) ? substr($getDataItem->MITM_ITMTY, 0, 3) : substr($getDataItem->MITM_SUPCD, 0, 3));
                     $hasilItem[] = [
@@ -501,6 +503,7 @@ class CircullarTenController extends BaseController
                     ];
                 }
             }
+            logger('cek item 1 - end');
         }
 
         return ['SUBCONT' => $hasil, 'ITEM' => $hasilItem];
