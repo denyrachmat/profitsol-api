@@ -284,7 +284,7 @@ class CircullarTenController extends BaseController
                     'MDLCD' => $valueMdl->CIM_ITMCD,
                     'DESC' => $getDataItem->MITM_ITMD1,
                     'PARTNO' => $getDataItem->MITM_SPTNO,
-                    'SUBCD' => $valueMdl->MITM_SUPCD,
+                    'SUBCD' => $getDataItem->MITM_SUPCD,
                 ];
             }
         } else {
@@ -469,7 +469,7 @@ class CircullarTenController extends BaseController
 
         $hasil = [];
         $hasilItem = [];
-        if (count($getModel['list_item'])) {
+        if (count($getModel['list_item']) > 0) {
             foreach ($getModel['list_item'] as $key => $value) {
                 $getDataItem = DB::connection('sqlsrv_mega_sme')->table('MITM_TBL')
                     ->where('MITM_ITMCD', 'like', $value . '%')
