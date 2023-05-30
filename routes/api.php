@@ -180,6 +180,10 @@ Route::group((['prefix' => 'scheduller']), function () {
     Route::get('downloadData', [WEBEdiTYOExtractor::class, 'downloadData']);
 });
 
+Route::group(['prefix' => 'macro'], function() {
+    
+});
+
 Route::post('login', [AuthController::class, 'login']);
 Route::post('register', [AuthController::class, 'register']);
 Route::get('countryList', [ProfileController::class, 'getCountryList']);
