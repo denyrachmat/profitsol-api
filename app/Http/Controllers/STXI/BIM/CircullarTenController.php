@@ -491,7 +491,7 @@ class CircullarTenController extends BaseController
                 $getDataItem = DB::connection('sqlsrv_mega_sme')->table('MITM_TBL')
                     ->where('MITM_ITMCD', 'like', $valueMdl->CIM_ITMCD . '%')
                     ->first();
-                    logger($getDataItem);
+                    logger($getDataItem->toJson());
                 if (!empty($getDataItem)) {
                     $hasil[(empty($getDataItem->MITM_SUPCD) ? substr($getDataItem->MITM_ITMTY, 0, 3) : substr($getDataItem->MITM_SUPCD, 0, 3))] = (empty($getDataItem->MITM_SUPCD) ? substr($getDataItem->MITM_ITMTY, 0, 3) : substr($getDataItem->MITM_SUPCD, 0, 3));
                     $hasilItem[] = [
