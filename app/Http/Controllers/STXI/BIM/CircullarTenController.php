@@ -486,7 +486,7 @@ class CircullarTenController extends BaseController
             $cekDataModel = CircularTenModelDet::where('CM_ID', $data->id)->get();
             foreach ($cekDataModel as $keyMdl => $valueMdl) {
                 $getDataItem = DB::connection('sqlsrv_mega_sme')->table('MITM_TBL')
-                    ->where('MITM_ITMCD', $valueMdl->CIM_ITMCD)
+                    ->where(DB::raw('RTRIM(MITM_ITMCD)'), $valueMdl->CIM_ITMCD)
                     ->first();
                 if (!empty($getDataItem)) {
                     $hasil[substr($getDataItem->MITM_SUPCD, 0, 3)] = substr($getDataItem->MITM_SUPCD, 0, 3);
