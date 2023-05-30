@@ -277,14 +277,14 @@ class CircullarTenController extends BaseController
         if (count($cekDataModel) > 0) {
             foreach ($cekDataModel as $keyMdl => $valueMdl) {
                 $getDataItem = DB::connection('sqlsrv_mega_sme')->table('MITM_TBL')
-                    ->where(DB::raw('RTRIM(MITM_ITMCD)'), $valueMdl->CIM_ITMCD)
+                    ->where('MITM_ITMCD', 'like', $valueMdl->CIM_ITMCD . '%')
                     ->first();
 
                 $listModel[] = [
                     'MDLCD' => $valueMdl->CIM_ITMCD,
                     'DESC' => $getDataItem->MITM_ITMD1,
                     'PARTNO' => $getDataItem->MITM_SPTNO,
-                    'SUBCD' => $getDataItem->MITM_SUPCD,
+                    'SUBCD' => $valueMdl->MITM_SUPCD,
                 ];
             }
         } else {
@@ -488,7 +488,7 @@ class CircullarTenController extends BaseController
             $cekDataModel = CircularTenModelDet::where('CM_ID', $data->id)->get();
             foreach ($cekDataModel as $keyMdl => $valueMdl) {
                 $getDataItem = DB::connection('sqlsrv_mega_sme')->table('MITM_TBL')
-                    ->where(DB::raw('RTRIM(MITM_ITMCD)'), $valueMdl->CIM_ITMCD)
+                    ->where('MITM_ITMCD', 'like', $valueMdl->CIM_ITMCD . '%')
                     ->first();
                 if (!empty($getDataItem)) {
                     $hasil[substr($getDataItem->MITM_SUPCD, 0, 3)] = substr($getDataItem->MITM_SUPCD, 0, 3);
