@@ -277,14 +277,14 @@ class CircullarTenController extends BaseController
         if (count($cekDataModel) > 0) {
             foreach ($cekDataModel as $keyMdl => $valueMdl) {
                 $getDataItem = DB::connection('sqlsrv_mega_sme')->table('MITM_TBL')
-                    ->where('MITM_ITMCD', 'like', $valueMdl->CIM_ITMCD . '%')
+                    ->where(DB::raw('RTRIM(MITM_ITMCD)'), $valueMdl->CIM_ITMCD)
                     ->first();
 
                 $listModel[] = [
                     'MDLCD' => $valueMdl->CIM_ITMCD,
                     'DESC' => $getDataItem->MITM_ITMD1,
                     'PARTNO' => $getDataItem->MITM_SPTNO,
-                    'SUBCD' => $valueMdl->MITM_SUPCD,
+                    'SUBCD' => $getDataItem->MITM_SUPCD,
                 ];
             }
         } else {
