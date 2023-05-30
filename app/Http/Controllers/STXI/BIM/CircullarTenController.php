@@ -105,7 +105,8 @@ class CircullarTenController extends BaseController
                         'content ' => $content,
                     ],
                     'status' => $statusnya,
-                    'created_at' => $cekCirtenMstr->created_at
+                    'created_at' => $cekCirtenMstr->created_at,
+                    'source_data' => $getModelList
                 ];
             }
         }
