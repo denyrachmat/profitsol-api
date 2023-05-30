@@ -481,7 +481,7 @@ class CircullarTenController extends BaseController
                         'DESC' => trim($getDataItem->MITM_ITMD1),
                         'PARTNO' => trim($getDataItem->MITM_SPTNO)
                     ];
-                    $hasil[substr($getDataItem->MITM_SUPCD, 0, 3)] = substr($getDataItem->MITM_SUPCD, 0, 3);
+                    $hasil[(empty($getDataItem->MITM_SUPCD) ? substr($getDataItem->MITM_ITMTY, 0, 3) : substr($getDataItem->MITM_SUPCD, 0, 3))] = (empty($getDataItem->MITM_SUPCD) ? substr($getDataItem->MITM_ITMTY, 0, 3) : substr($getDataItem->MITM_SUPCD, 0, 3));
                 }
             }
         } else {
@@ -491,7 +491,7 @@ class CircullarTenController extends BaseController
                     ->where('MITM_ITMCD', 'like', $valueMdl->CIM_ITMCD . '%')
                     ->first();
                 if (!empty($getDataItem)) {
-                    $hasil[substr($getDataItem->MITM_SUPCD, 0, 3)] = substr($getDataItem->MITM_SUPCD, 0, 3);
+                    $hasil[(empty($getDataItem->MITM_SUPCD) ? substr($getDataItem->MITM_ITMTY, 0, 3) : substr($getDataItem->MITM_SUPCD, 0, 3))] = (empty($getDataItem->MITM_SUPCD) ? substr($getDataItem->MITM_ITMTY, 0, 3) : substr($getDataItem->MITM_SUPCD, 0, 3));
                     $hasilItem[] = [
                         'MDLCD' => $valueMdl->CIM_ITMCD,
                         'DESC' => trim($getDataItem->MITM_ITMD1),
