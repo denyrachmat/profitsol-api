@@ -65,6 +65,11 @@ return [
             'root'   => 'z:/',
         ],
 
+        'macro_list' => [
+            'driver' => 'local',
+            'root'   => 'W:/',
+        ],
+
         'ten_bim' => [
             'driver' => 'local',
             'root'   => 'x:/ten',

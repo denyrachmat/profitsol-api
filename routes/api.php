@@ -3,6 +3,7 @@ use App\Http\Controllers\API\CMS\FormController;
 use App\Http\Controllers\API\CMS\QuizController;
 use App\Http\Controllers\API\DMS\DocumentController;
 use App\Http\Controllers\API\DMS\FolderController;
+use App\Http\Controllers\API\MACROLIST\macroListController;
 use App\Http\Controllers\API\PORTAL\NotifController;
 use App\Http\Controllers\API\TOS\QuizViewController;
 use App\Http\Controllers\API\TOS\TrainingController;
@@ -10,6 +11,8 @@ use App\Http\Controllers\Scheduller\EMS2\WEBEdiTYOExtractor;
 use App\Http\Controllers\STXI\BIM\CircullarTenController;
 use App\Http\Controllers\STXI\EMS2\ForcastDOTYOController;
 use App\Http\Controllers\STXI\EMS2\yeidPOConfirmController;
+use App\Http\Controllers\STXI\EMS2\YMICDCUController;
+use App\Http\Controllers\STXI\EMS2\YMIQuotantionController;
 use App\Http\Controllers\STXI\PU\PAApprovalController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -152,6 +155,17 @@ Route::group(['prefix' => 'div'], function () {
         Route::get('updateData', [yeidPOConfirmController::class, 'cekData']);
         
         // End YEID PO Confirmation
+        
+        // Start CD/CU Price MRI
+        Route::resource('ymiCDCU', YMICDCUController::class);
+        Route::post('ymiCDCUPage', [YMICDCUController::class, 'getData']);
+        Route::post('uploadPriceList', [YMICDCUController::class, 'uploadPriceList']);
+        Route::post('registerPOMRI', [YMICDCUController::class, 'registerPO']);
+        Route::post('exportExcelPriceList', [YMICDCUController::class, 'exportExcel']);
+
+        
+        Route::post('ymiQuoList', [YMIQuotantionController::class, 'getData']);
+        // End CD/CU Price MRI
     });
 
     Route::group(['prefix' => 'log'], function () {
@@ -181,7 +195,8 @@ Route::group((['prefix' => 'scheduller']), function () {
 });
 
 Route::group(['prefix' => 'macro'], function() {
-    
+    Route::resource('list', macroListController::class);
+    Route::get('download', [macroListController::class, 'download']);
 });
 
 Route::post('login', [AuthController::class, 'login']);
