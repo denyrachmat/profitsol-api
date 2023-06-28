@@ -72,11 +72,11 @@ class ExportYMIPriceList implements FromCollection, WithEvents, WithHeadings
                 'ITEM_CODE' => $value->ITEM_CODE,
                 'MK_PART_NO' => $value->MK_PART_NO,
                 'ITEM_DESC' => $value->ITEM_DESC,
-                'PO_DATE' => $value->PO_DATE,
-                'ETA_DATE' => $value->ETA_DATE,
+                'PO_DATE' => Date::PHPToExcel(date('Y-m-d', strtotime($value->PO_DATE))),
+                'ETA_DATE' => Date::PHPToExcel(date('Y-m-d', strtotime($value->ETA_DATE))),
                 'SUPP_PRICE' => $value->SUPP_PRICE,
                 'PO_QTY' => $value->PO_QTY,
-                'GIT_DATE' => $value->GIT_DATE,
+                'GIT_DATE' => Date::PHPToExcel(date('Y-m-d', strtotime($value->GIT_DATE))),
                 'GIT_QTY' => $value->GIT_QTY,
                 'GIT_DOCNO' => $value->GIT_DOCNO,
                 'PURC_AMT' => $value->PURC_AMT,
@@ -152,6 +152,9 @@ class ExportYMIPriceList implements FromCollection, WithEvents, WithHeadings
 
                 $event->sheet->getDelegate()->mergeCells('A1:Q1');
 
+                $event->sheet->getStyle('J')->getNumberFormat()->setFormatCode(NumberFormat::FORMAT_DATE_XLSX15);
+                $event->sheet->getStyle('K')->getNumberFormat()->setFormatCode(NumberFormat::FORMAT_DATE_XLSX15);
+                $event->sheet->getStyle('N')->getNumberFormat()->setFormatCode(NumberFormat::FORMAT_DATE_XLSX15);
                 $event->sheet->getStyle('A3:Q3')->getFill()->applyFromArray(['fillType' => 'solid','rotation' => 0, 'color' => ['rgb' => 'FFFF33'],]);
                 $event->sheet->getStyle('S3:T3')->getFill()->applyFromArray(['fillType' => 'solid','rotation' => 0, 'color' => ['rgb' => 'FFFF33'],]);
                 $event->sheet->getStyle('V3:W3')->getFill()->applyFromArray(['fillType' => 'solid','rotation' => 0, 'color' => ['rgb' => 'FFFF33'],]);

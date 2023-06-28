@@ -97,11 +97,25 @@ class YMICDCUController extends BaseController
 
     public function getData(Request $req)
     {
-        $data = DB::connection('sqlsrv_ems2')->table('MGSVR.VMI_EXIM.dbo.Z_STXI_V_YEID_PO_SUPP_LIST')->select('*')
-            ->leftJoin('YMI_PO_PRC_MSTR_TBL', function ($j) {
-                $j->on('PO_NO', 'YPPMT_PONO');
-                $j->on('PO_LINE', 'YPPMT_POLNO');
-                $j->on('ITEM_CODE', 'YPPMT_ITMCD');
+        $data = DB::connection('sqlsrv_ems2')->table('MGSVR.VMI_EXIM.dbo.Z_STXI_V_YEID_PO_SUPP_LIST as zsvypsl')
+            ->select(
+                'zsvypsl.*', 
+                DB::raw('CASE WHEN yqmt.YPPMT_BP IS NULL THEN NULL ELSE zsvypsl.PO_LINE END as YPPMT_POLNO'), 
+                'yqmt.*'
+            )
+            ->leftJoin(DB::raw("(
+                SELECT
+                    YQMT_ITMCD as YPPMT_ITMCD,
+                    YQMT_BP as YPPMT_BP,
+                    YQMT_SP AS YQMT_SP
+                FROM YMI_QUO_MSTR_TBL
+                GROUP BY 
+                    YQMT_ITMCD,
+                    YQMT_BP,
+                    YQMT_SP
+            ) yqmt"), function($j) {
+                $j->on('ITEM_CODE', 'yqmt.YPPMT_ITMCD');
+                $j->on('SUPP_PRICE', DB::raw('CAST(yqmt.YPPMT_BP AS DECIMAL(15,5))'));
             });
 
         if ($req->has('filter')) {
@@ -251,11 +265,20 @@ class YMICDCUController extends BaseController
                     END
             END as REMARKS"),
         )
-            ->join('YMI_PO_PRC_MSTR_TBL', function ($j) {
-                $j->on('PO_NO', 'YPPMT_PONO');
-                $j->on('PO_LINE', 'YPPMT_POLNO');
-                $j->on('ITEM_CODE', 'YPPMT_ITMCD');
-            });
+        ->join(DB::raw("(
+            SELECT
+                YQMT_ITMCD as YPPMT_ITMCD,
+                YQMT_BP as YPPMT_BP,
+                YQMT_SP AS YQMT_SP
+            FROM YMI_QUO_MSTR_TBL
+            GROUP BY 
+                YQMT_ITMCD,
+                YQMT_BP,
+                YQMT_SP
+        ) yqmt"), function($j) {
+            $j->on('ITEM_CODE', 'yqmt.YPPMT_ITMCD');
+            $j->on('SUPP_PRICE', DB::raw('CAST(yqmt.YPPMT_BP AS DECIMAL(15,5))'));
+        });
 
         if ($req->has('filter')) {
             foreach ($req->filter as $key => $value) {
