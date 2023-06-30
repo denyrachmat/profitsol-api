@@ -78,6 +78,9 @@ Route::group(['prefix' => 'dms'], function () {
 Route::group(['prefix' => 'cms'], function () {
     Route::resource('forms', FormController::class);
     Route::resource('quiz', QuizController::class);
+    
+    Route::get('migrationHRMS', [QuizController::class, 'migrationHRMS']);
+    Route::get('migrationHRMSUserAns', [QuizController::class, 'migrateUsersAnswers']);
 });
 
 Route::group(['prefix' => 'tos'], function () {

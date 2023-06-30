@@ -80,9 +80,14 @@ class AuthController extends BaseController
             $success['rolesGroup'] = $getRolesGroup;
             $success['menus'] = PortalApp::where('am_app_parent', null)->with('childApps')->get();
 
+            if (count($getRolesGroup['roles']) === 0) {
+                return $this->handleError([
+                    'password' => ["This user role not defined, please ask IT MIS to define it first !"]
+                ]);
+            }
+
             return $this->handleResponse($success, 'User logged-in!');
-        }
-        else{
+        } else {
             return $this->handleError([
                 'password' => ["User or Password not match !"]
             ]);

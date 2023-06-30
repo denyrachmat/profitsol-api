@@ -27,8 +27,10 @@ trait TrainingTraits
                     END AS status
                 ")
             )
+            ->join(DB::raw('cms_form_share_det cfsd2'), 'cfsd2.cfmt_id','cfmt.id')
             ->where('cfmt_quiz_flag', 1)
-            ->where('cfmt.p_u_username', $username);
+            ->where('cfsd2.cfsd_to', $username);
+            //->where('cfmt.p_u_username', $username);
 
         if (!empty($id)) {
             $data->where('cfmt.id', $id);
@@ -46,7 +48,7 @@ trait TrainingTraits
                     cfaud.cfaud_batch,
                     MAX(cfaud.deleted_at) as deleted_at,
                     MAX(cfaud.created_at) as created_at,
-                    SUM(CASE WHEN cfad.cfm_val = cfaud.cfm_val and cfaud.deleted_at is null
+                    SUM(CASE WHEN cast(cfad.cfm_val as varchar(max)) = cast(cfaud.cfm_val as varchar(max)) and cfaud.deleted_at is null
                         then 1
                         else 0
                     end) as cfm_val,
@@ -54,6 +56,7 @@ trait TrainingTraits
                 FROM cms_form_ans_user_det cfaud
                 LEFT JOIN cms_form_ans_det cfad ON cfaud.cfm_id = cfad.cfm_id
                     AND cfaud.cfmd_id = cfad.cfmd_id
+                WHERE cfaud.deleted_at is null
                 GROUP BY
                     cfaud.cfm_id,
                     cfaud.cfaud_batch
