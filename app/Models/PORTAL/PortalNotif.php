@@ -9,8 +9,8 @@ use Illuminate\Database\Eloquent\Model;
 class PortalNotif extends Model
 {
     use HasFactory;
+    protected $connection = 'sqlsrv';
     protected $table = 'portal_notif_mstr';
-
     protected $fillable = [
         'p_u_username',
         'pnm_to_users',

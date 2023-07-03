@@ -323,7 +323,7 @@ class QuizController extends Controller
             ->select('hum.email', 'hum.first_name', 'hum.last_name', 'hum.username')
             ->join(DB::raw('HRMS.dbo.hrms_form_hist hfh'), 'hum.username', 'hfh.form_hist_username')
             ->join(DB::raw('HRMS.dbo.hrms_form_content_mapping hfcm'), 'hfcm.div_id', 'hfh.form_id')
-            ->where('hum.email', 'muhammad-zubir@sumitronics.co.jp')
+            //->where('hum.email', 'muhammad-zubir@sumitronics.co.jp')
             ->groupBy('hum.email', 'hum.first_name', 'hum.last_name', 'hum.username')
             ->get();
 
@@ -373,7 +373,7 @@ class QuizController extends Controller
             $userAns = [];
             foreach ($dataJawaban as $key => $valueJawaban) {
                 $cekIDJawaban = FormMultiDet::whereIn(DB::raw('CAST(cfmd_label AS VARCHAR(MAX))'), json_decode($valueJawaban->form_hist_value))
-                ->orderBy('id', 'desc');
+                ->orderBy('cfm_id', 'asc');
 
                 $getIDJawaban = (clone $cekIDJawaban)->get()->pluck('cfmd_value');
                 $getIDJawabanAll = (clone $cekIDJawaban)->get();
@@ -392,7 +392,7 @@ class QuizController extends Controller
                     $cekJawabanExists = FormAnswerUserDet::where('cfm_id',$valueJawaban->cfmt_id)
                         // ->whereIn('cfmd_id', (clone $getIDJawabanAll)->pluck('cfm_id'))
                         ->where('p_u_username', $valueJawaban->email)
-                        ->where('cfm_val', count(array_values($groupJawaban)) > 1 ? json_encode(array_values($groupJawaban)) : array_values($groupJawaban)[0])
+                        // ->where('cfm_val', count(array_values($groupJawaban)) > 1 ? json_encode(array_values($groupJawaban)) : array_values($groupJawaban)[0])
                         ->get()
                         ->pluck('cfmd_id')
                         ->toArray();
@@ -402,12 +402,27 @@ class QuizController extends Controller
                         return !in_array($f, $cekJawabanExists);
                     }));
 
-                    if (count($filterDataAnsExists) > 0) {                    
+                    if (count($filterDataAnsExists) > 0) {    
+                        if (count($filterDataAnsExists) > 1) {
+                            // logger([$valueJawaban->cfmt_id, $viewDataJawaban, $cekJawabanExists, $filterDataAnsExists]);
+                        }
+
+                        $cekBatch = FormAnswerUserDet::select('cfaud_batch')->where('p_u_username',$valueJawaban->email)
+                            ->where('cfm_id', $valueJawaban->cfmt_id)
+                            ->where('cfmd_id', $filterDataAnsExists[0])
+                            ->withTrashed()
+                            ->first();
+
+                        $cekLatestBatch = FormAnswerUserDet::select('cfaud_batch')->where('p_u_username',$valueJawaban->email)
+                        ->where('cfm_id', $valueJawaban->cfmt_id)
+                        ->first();
+
                         $userAja = FormAnswerUserDet::create([
                             'p_u_username' => $valueJawaban->email,
                             'cfm_id' => $valueJawaban->cfmt_id,
                             'cfmd_id' => $filterDataAnsExists[0],
                             'cfm_val' => count(array_values($groupJawaban)) > 1 ? json_encode(array_values($groupJawaban)) : array_values($groupJawaban)[0],
+                            'cfaud_batch' => empty($cekBatch) ? (empty($cekLatestBatch) ? 1 : $cekLatestBatch->cfaud_batch) : $cekBatch->cfaud_batch + 1
                         ]);
         
                         if (!empty($valueJawaban->deleted_at)) {
@@ -451,7 +466,7 @@ class QuizController extends Controller
                     // ->where('p_u_username', $valueAnsRevision->p_u_username)
                     ->first();
 
-                logger($cekJawaban);
+                // logger($cekJawaban);
 
                 if (!empty($cekJawaban)) {
                     FormAnswerUserDet::where('cfm_id', $valueAnsRevision->cfm_id)
@@ -463,7 +478,7 @@ class QuizController extends Controller
                 }
             }
 
-            return [
+            $hasil[] = [
                 'data' => $dataJawaban,
                 'insertAns' => $userAns
             ];

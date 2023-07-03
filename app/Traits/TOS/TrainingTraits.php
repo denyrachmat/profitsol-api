@@ -18,14 +18,15 @@ trait TrainingTraits
                 DB::raw('MIN(cfaud.created_at) as first_answers'),
                 'cfsd.cfsd_start_quiz',
                 'cfsd.cfsd_end_quiz',
-                DB::raw('CAST((CAST((COALESCE(SUM(cfaud.cfm_val), 0)) as decimal(5,2)) / MAX(cfaud.tot_question)) * 100 AS DECIMAL(5,2)) as cfm_val'),
+                DB::raw('CAST((CAST((COALESCE(SUM(cfaud.cfm_val), 0)) as decimal(12,2)) / MAX(cfaud.tot_question)) * 100 AS DECIMAL(12,2)) as cfm_val'),
                 DB::raw('MAX(cfaud.tot_question) as tot_question'),
                 DB::raw("
                     CASE WHEN ((SUM(cfaud.cfm_val) / MAX(cfaud.tot_question)) * 100) >= cfsd.cfsd_min_pass
                         THEN 'PASSED'
                         ELSE 'NOT PASSED'
                     END AS status
-                ")
+                "),
+                DB::raw("SUM(cfaud.cfm_val) as total_answer")
             )
             ->join(DB::raw('cms_form_share_det cfsd2'), 'cfsd2.cfmt_id','cfmt.id')
             ->where('cfmt_quiz_flag', 1)
@@ -46,6 +47,7 @@ trait TrainingTraits
                 SELECT 
                     cfaud.cfm_id,
                     cfaud.cfaud_batch,
+                    cfaud.p_u_username,
                     MAX(cfaud.deleted_at) as deleted_at,
                     MAX(cfaud.created_at) as created_at,
                     SUM(CASE WHEN cast(cfad.cfm_val as varchar(max)) = cast(cfaud.cfm_val as varchar(max)) and cfaud.deleted_at is null
@@ -56,11 +58,17 @@ trait TrainingTraits
                 FROM cms_form_ans_user_det cfaud
                 LEFT JOIN cms_form_ans_det cfad ON cfaud.cfm_id = cfad.cfm_id
                     AND cfaud.cfmd_id = cfad.cfmd_id
-                WHERE cfaud.deleted_at is null
+                    AND cfaud.deleted_at is null
+                --WHERE cfaud.deleted_at is null
+                --AND cfaud.cfaud_batch is not null
                 GROUP BY
                     cfaud.cfm_id,
+                    cfaud.p_u_username,
                     cfaud.cfaud_batch
-            ) as cfaud'), 'cfmt.id', 'cfaud.cfm_id')
+            ) as cfaud'), function($j) {
+                $j->on('cfmt.id', 'cfaud.cfm_id');
+                $j->on('cfsd2.cfsd_to', 'cfaud.p_u_username');
+            })
             ->leftjoin('cms_form_setup_det as cfsd', 'cfmt.id', 'cfsd.cfmt_id')
             ->groupBy(
                 'cfmt.id',

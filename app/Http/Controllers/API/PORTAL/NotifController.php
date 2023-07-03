@@ -32,6 +32,7 @@ class NotifController extends BaseController
                 END
             )"), 1)
             ->with('shared.forms.formMaster')
+            ->has('shared')
             ->get()
             ->toArray();
 
