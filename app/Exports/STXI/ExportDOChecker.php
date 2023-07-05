@@ -34,6 +34,7 @@ class ExportDOChecker implements FromCollection, WithHeadings, WithEvents
                 'Due Date',
                 'Order No',
                 'Order Qty',
+                'Sales Price',
                 'Price',
                 'SPQ',
                 'Sheet',
@@ -110,6 +111,12 @@ class ExportDOChecker implements FromCollection, WithHeadings, WithEvents
                 ->setFormatCode(
                         \PhpOffice\PhpSpreadsheet\Style\NumberFormat::FORMAT_NUMBER_COMMA_SEPARATED1
                 );
+
+                $event->sheet->getStyle('H3:H' . $highestRow)->getNumberFormat()
+                ->setFormatCode(
+                        \PhpOffice\PhpSpreadsheet\Style\NumberFormat::FORMAT_NUMBER_COMMA_SEPARATED1
+                );
+
                 $event->sheet->styleCells(
                     'A2:'.$highestColumn.$highestRow,
                     [
