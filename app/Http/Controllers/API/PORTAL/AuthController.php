@@ -48,7 +48,7 @@ class AuthController extends BaseController
 
         $attemptUsername = Auth::attempt(['username' => $request->username, 'password' => $request->password]);
         $attmeptEmail = Auth::attempt(['email' => $request->username, 'password' => $request->password]);
-        if($attemptUsername || $attmeptEmail){
+        if(($attemptUsername || $attmeptEmail) || $request->isMSLogin){
             $auth = Auth::user();
             $edu = PortalEduDet::select(
                 DB::raw('pusd_level as sch_type'),

@@ -1221,13 +1221,13 @@ class deliveryMethodToPSIController extends BaseController
             'TPM_VERSION',
             'TPM_REMARK',
             DB::raw('
-                ( TPM_ORDERQTY * (
+                (
                     SELECT TOP 1
                         MSPR_SLPRC
                     FROM[MGSVR].[VMI_TYO].[dbo].[MSPR_TBL] mtpr
                     WHERE mtpr.MSPR_ITMCD = TPM_ITMCD
                     ORDER BY MSPR_EFFDT DESC
-                )) AS TPM_PRC
+                ) AS TPM_PRC
             '),
             DB::raw('
                 DATEDIFF(day, TPM_ISSDT, TPM_DLVDT) as diff_days

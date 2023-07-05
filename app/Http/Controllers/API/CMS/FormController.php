@@ -104,7 +104,7 @@ class FormController extends BaseController
                         : 'You have new information about <b>'.$request->title.'</b>',
                     'pnm_action_url' => $request->isQuiz == true
                         ? 'TOS/Quiz/showLiveForms'
-                        : '',
+                        : 'TOS/Quiz/showLiveForms',
                     'pnm_hash_id_location' => $randomString,
                     'pnm_start_date' => $request->has('setupTraining') ? $request->setupTraining['startQuiz'] : date('Y-m-d'),
                     'pnm_end_date' => $request->has('setupTraining') ? $request->setupTraining['endQuiz'] : NULL

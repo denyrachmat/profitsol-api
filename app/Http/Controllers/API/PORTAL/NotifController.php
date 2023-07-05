@@ -32,20 +32,21 @@ class NotifController extends BaseController
                 END
             )"), 1)
             ->with('shared.forms.formMaster')
-            ->has('shared')
             ->get()
             ->toArray();
 
         $hasil = [];
         foreach ($data as $key => $value) {
             // $hasil[] = $value->shared->forms->id;
-            if ($value['shared']['forms']['cfmt_quiz_flag'] == 1) {
-                $cekJawaban = FormAnswerUserDet::where('cfm_id', $value['shared']['forms']['id'])->get()->toArray();
-                $cekListHasil = $this->getTrainingList($request->header('username'), $value['shared']['forms']['id'])[0];
-                
-                $hasil[] = array_merge($value, ['answers' => $cekJawaban, 'listHasil' => $cekListHasil]);
-            } else {
-                $hasil[] = $value;
+            if (isset($value['shared'])) {
+                if ($value['shared']['forms']['cfmt_quiz_flag'] == 1) {
+                    $cekJawaban = FormAnswerUserDet::where('cfm_id', $value['shared']['forms']['id'])->get()->toArray();
+                    $cekListHasil = $this->getTrainingList($request->header('username'), $value['shared']['forms']['id'])[0];
+                    
+                    $hasil[] = array_merge($value, ['answers' => $cekJawaban, 'listHasil' => $cekListHasil]);
+                } else {
+                    $hasil[] = $value;
+                }
             }
         }
 

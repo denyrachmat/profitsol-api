@@ -9,8 +9,11 @@ use App\Models\STXI\EMS2\YPOMaster;
 use App\Models\STXI\EMS2\YPOSTXIPODet;
 use App\Exports\STXI\ExportYPOManual;
 use Excel;
+use Illuminate\Http\File;
 
 use App\Jobs\STXI\EMS2\updateInvoiceYPOManualQueue;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
+use App\Imports\STXI\EMS2\ImportSTXIYEIDPOConfirmation;
 
 class yeidPOConfirmController extends BaseController
 {
@@ -327,5 +330,43 @@ class yeidPOConfirmController extends BaseController
         }        
 
         return 'tidak update';
+    }
+
+    public function uploadManualPO(Request $req)
+    {
+        ini_set('max_execution_time', '300');
+        // $nama_file = $req->file->hashName();
+        $file = new File($req->file);
+        $extNya = $req->file('file')->getClientOriginalExtension();
+
+        $fileHash = str_replace('.' . $file->extension(), '', $file->hashName());
+        $nama_file = $fileHash . '.' . $extNya;
+
+        // return $nama_file;
+        $oriFileName = $req->file('file')->getClientOriginalName();
+
+        if ($extNya == 'xls' || $extNya == 'xlsx') {
+            $splitString = intval(preg_replace('/[^0-9]+/', '', $oriFileName), 10);
+
+
+            $req->file->storeAs('/public/upload_manual_ymi_po/', $nama_file);
+
+            if ($extNya == 'xls') {
+                $spreadsheet = \PhpOffice\PhpSpreadsheet\IOFactory::load($file);
+                $writer = new Xlsx($spreadsheet);
+                $nama_file = $fileHash . '.xlsx';
+                $writer->save('/public/upload_manual_ymi_po/' . $nama_file);
+            }
+
+            YPOMaster::truncate();
+            YPOSTXIPODet::truncate();
+            $importer = new ImportSTXIYEIDPOConfirmation();
+
+            Excel::import($importer, public_path('/storage/upload_manual_ymi_po/' . $nama_file));
+
+            return $this->handleResponse([], 'Upload Sukses ' . $nama_file);
+        } else {
+            return $this->handleError("File name doesn't right! please check again !");
+        }
     }
 }
