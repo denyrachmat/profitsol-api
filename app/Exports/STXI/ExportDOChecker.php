@@ -9,6 +9,8 @@ use Maatwebsite\Excel\Concerns\RegistersEventListeners;
 use Maatwebsite\Excel\Concerns\Exportable;
 use Maatwebsite\Excel\Concerns\WithEvents;
 use Maatwebsite\Excel\Concerns\WithTitle;
+use PhpOffice\PhpSpreadsheet\Shared\Date;
+use PhpOffice\PhpSpreadsheet\Style\NumberFormat;
 
 class ExportDOChecker implements FromCollection, WithHeadings, WithEvents
 {
@@ -53,11 +55,12 @@ class ExportDOChecker implements FromCollection, WithHeadings, WithEvents
             $hasil[] = [
                 'TPM_ITMCD' => $value['TPM_ITMCD'],
                 'MITM_ITMD1' => $value['MITM_ITMD1'],
-                'TPM_ISSDT' => $value['TPM_ISSDT'],
-                'TPM_DLVDT' => $value['TPM_DLVDT'],
+                'TPM_ISSDT' => Date::PHPToExcel(date('Y-m-d', strtotime($value['TPM_ISSDT']))),
+                'TPM_DLVDT' => Date::PHPToExcel(date('Y-m-d', strtotime($value['TPM_DLVDT']))),
                 'TPM_ORDERNO' => $value['TPM_ORDERNO'],
                 'TPM_ORDERQTY' => $value['TPM_ORDERQTY'],
-                'TPM_PRC' => $value['TPM_PRC'],
+                'TPM_SLSPRC' => $value['TPM_PRC'],
+                'TPM_PRC' => $value['TPM_ORDERQTY'] * $value['TPM_PRC'],
                 'SPQ' => $value['SPQ'],
                 'SHEET' => $value['SHEET'],
                 'TPM_VERSION' => $value['TPM_VERSION'],
@@ -94,6 +97,9 @@ class ExportDOChecker implements FromCollection, WithHeadings, WithEvents
                     ]
                 ]);
 
+                $event->sheet->getStyle('C')->getNumberFormat()->setFormatCode(NumberFormat::FORMAT_DATE_XLSX15);
+                $event->sheet->getStyle('D')->getNumberFormat()->setFormatCode(NumberFormat::FORMAT_DATE_XLSX15);
+                
                 $event->sheet->getStyle('A2:'.$highestColumn.'2')->getAlignment()->setHorizontal('center');
                 $event->sheet->getStyle('I3:I' . $highestRow)->getNumberFormat()
                 ->setFormatCode(
