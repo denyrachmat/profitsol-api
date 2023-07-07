@@ -18,6 +18,7 @@ class ExportYPOManual implements FromCollection, WithEvents, WithHeadings
     public function __construct($data)
     {
         $this->data = $data;
+        $this->hasil = [];
     }
     /**
     * @return \Illuminate\Support\Collection
@@ -75,6 +76,7 @@ class ExportYPOManual implements FromCollection, WithEvents, WithHeadings
             ];
         }
 
+        $this->hasil = $hasil;
         return collect($hasil);
     }
 
@@ -217,6 +219,8 @@ class ExportYPOManual implements FromCollection, WithEvents, WithHeadings
                 $event->sheet->getStyle('A4:'.$highestColumn.'5')->getAlignment()->setWrapText(true);
                 $event->sheet->getStyle('A4:'.$highestColumn.'5')->getAlignment()->setHorizontal('center');
 
+                // $event->sheet->getStyle('G')->getAlignment()->setWrapText(true);
+
                 $event->sheet->getDelegate()->mergeCells('A1:'.$highestColumn.'1');
                 $event->sheet->getDelegate()->mergeCells('X4:Y4');
 
@@ -231,6 +235,25 @@ class ExportYPOManual implements FromCollection, WithEvents, WithHeadings
                 $event->sheet->getStyle('J')
                     ->getNumberFormat()
                     ->setFormatCode(\PhpOffice\PhpSpreadsheet\Style\NumberFormat::FORMAT_DATE_XLSX15);
+                
+                $startRow = 6;
+                foreach ($this->hasil as $key => $value) {
+                    if (str_contains($value['NO'], 'YPO-')) {
+                        // Merge first table
+                        $event->sheet->getDelegate()->mergeCells('A'.$startRow.':M'.$startRow);
+                        $event->sheet->getStyle('A'.$startRow.':M'.$startRow)->getFill()->applyFromArray(['fillType' => 'solid','rotation' => 0, 'color' => ['rgb' => '73D2F5'],]);
+
+                        // Merge second table
+                        $event->sheet->getDelegate()->mergeCells('O'.$startRow.':V'.$startRow);
+                        $event->sheet->getStyle('O'.$startRow.':V'.$startRow)->getFill()->applyFromArray(['fillType' => 'solid','rotation' => 0, 'color' => ['rgb' => '73D2F5'],]);
+                        
+                        // Merge third table
+                        $event->sheet->getDelegate()->mergeCells('X'.$startRow.':Y'.$startRow);
+                        $event->sheet->getStyle('X'.$startRow.':Y'.$startRow)->getFill()->applyFromArray(['fillType' => 'solid','rotation' => 0, 'color' => ['rgb' => '73D2F5'],]);
+                    }
+
+                    $startRow++;
+                }
         }];
     }
 }
