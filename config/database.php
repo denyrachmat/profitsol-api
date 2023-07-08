@@ -117,6 +117,19 @@ return [
             'prefix_indexes' => true,
         ],
 
+        'sqlsrv_mrs' => [
+            'driver' => 'sqlsrv',
+            'url' => env('DATABASE_URL'),
+            'host' => env('DB_MRS_HOST', 'localhost'),
+            'port' => env('DB_MRS_PORT', '1433'),
+            'database' => env('DB_MRS_DATABASE', 'forge'),
+            'username' => env('DB_MRS_USERNAME', 'forge'),
+            'password' => env('DB_MRS_PASSWORD', ''),
+            'charset' => 'utf8',
+            'prefix' => '',
+            'prefix_indexes' => true,
+        ],
+
         'sqlsrv_ems2' => [
             'driver' => 'sqlsrv',
             'url' => env('DATABASE_URL'),

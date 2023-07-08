@@ -27,6 +27,7 @@ class ImportSTXIYEIDPOConfirmation implements ToModel, WithStartRow, WithCalcula
     */
     public function model(array $row)
     {
+        date_default_timezone_set('Asia/Jakarta');
         ini_set("memory_limit", "4G");
 
         // logger($row);
