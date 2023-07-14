@@ -487,13 +487,22 @@ class CircullarTenController extends BaseController
         } else {
             logger('cek item 1 - start');
             $cekDataModel = CircularTenModelDet::where('CM_ID', $data->id)->get();
+
+            if ($ten == 'TEN1060366') {
+                logger($data);
+                logger($cekDataModel);
+            }
+
             foreach ($cekDataModel as $keyMdl => $valueMdl) {
                 $getDataItem = DB::connection('sqlsrv_mega_sme')->table('MITM_TBL')
                     ->where('MITM_ITMCD', 'like', $valueMdl->CIM_ITMCD . '%')
                     ->first();
-                    logger([$getDataItem->MITM_ITMD1, $getDataItem->MITM_ITMTY, $getDataItem->MITM_SUPCD]);
+                    // logger([$getDataItem->MITM_ITMD1, $getDataItem->MITM_ITMTY, $getDataItem->MITM_SUPCD]);
                 if (!empty($getDataItem)) {
-                    $hasil[(empty($getDataItem->MITM_SUPCD) ? substr($getDataItem->MITM_ITMTY, 0, 3) : substr($getDataItem->MITM_SUPCD, 0, 3))] = (empty($getDataItem->MITM_SUPCD) ? substr($getDataItem->MITM_ITMTY, 0, 3) : substr($getDataItem->MITM_SUPCD, 0, 3));
+                    $hasil[(empty($getDataItem->MITM_SUPCD) 
+                        ? substr($getDataItem->MITM_ITMTY, 0, 3) 
+                        : substr($getDataItem->MITM_SUPCD, 0, 3))
+                    ] = (empty($getDataItem->MITM_SUPCD) ? substr($getDataItem->MITM_ITMTY, 0, 3) : substr($getDataItem->MITM_SUPCD, 0, 3));
                     $hasilItem[] = [
                         'MDLCD' => $valueMdl->CIM_ITMCD,
                         'DESC' => trim($getDataItem->MITM_ITMD1),
