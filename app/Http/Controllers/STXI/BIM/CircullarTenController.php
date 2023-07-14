@@ -286,6 +286,11 @@ class CircullarTenController extends BaseController
                     'PARTNO' => $getDataItem->MITM_SPTNO,
                     'SUBCD' => $getDataItem->MITM_SUPCD,
                 ];
+                
+                $hasil[(empty($getDataItem->MITM_SUPCD) 
+                    ? substr($getDataItem->MITM_ITMTY, 0, 3) 
+                    : substr($getDataItem->MITM_SUPCD, 0, 3))
+                ] = (empty($getDataItem->MITM_SUPCD) ? substr($getDataItem->MITM_ITMTY, 0, 3) : substr($getDataItem->MITM_SUPCD, 0, 3));
             }
         } else {
             $listModel = $this->listModelFromHTM($ten)['ITEM'];
