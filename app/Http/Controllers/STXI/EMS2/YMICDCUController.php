@@ -235,6 +235,7 @@ class YMICDCUController extends BaseController
     }
 
     public function exportExcel(Request $req) {
+        ini_set('max_execution_time', '3000');
         ini_set('memory_limit', '2G');
         $data = DB::connection('sqlsrv_ems2')->table('MGSVR.VMI_EXIM.dbo.Z_STXI_V_YEID_PO_SUPP_LIST')->select(
             'SUPP_CD',
