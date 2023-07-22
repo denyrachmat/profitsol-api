@@ -4,6 +4,9 @@ use App\Http\Controllers\API\CMS\QuizController;
 use App\Http\Controllers\API\DMS\DocumentController;
 use App\Http\Controllers\API\DMS\FolderController;
 use App\Http\Controllers\API\MACROLIST\macroListController;
+use App\Http\Controllers\API\MRS\DBConnectionController;
+use App\Http\Controllers\API\MRS\ReportColsController;
+use App\Http\Controllers\API\MRS\ReportController;
 use App\Http\Controllers\API\PORTAL\NotifController;
 use App\Http\Controllers\API\TOS\QuizViewController;
 use App\Http\Controllers\API\TOS\TrainingController;
@@ -86,6 +89,18 @@ Route::group(['prefix' => 'cms'], function () {
 Route::group(['prefix' => 'tos'], function () {
     Route::resource('quizView', QuizViewController::class);
     Route::resource('training', TrainingController::class);
+});
+
+Route::group(['prefix' => 'mrs'], function () {
+    Route::resource('dbconn', DBConnectionController::class);
+    Route::get('listDB/{id}/{type?}/{dbname?}', [DBConnectionController::class, 'listDB']);
+    Route::post('checkConnection', [DBConnectionController::class, 'testConnection']);
+
+    Route::resource('report', ReportController::class);
+    Route::post('simRunning', [ReportController::class, 'simRunning']);
+    Route::post('runningReport/{id}', [ReportController::class, 'runningReport']);
+
+    Route::resource('reportCols', ReportColsController::class);
 });
 
 Route::group(['prefix' => 'div'], function () {

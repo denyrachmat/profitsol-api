@@ -234,6 +234,19 @@ return [
             'prefix' => '',
             'prefix_indexes' => true,
         ],
+
+        'sqlsrv_conn_dyn' => [
+            'driver' => 'sqlsrv',
+            'url' => env('DATABASE_URL'),
+            'host' => env('DB_CD_HOST', 'localhost'),
+            'port' => env('DB_CD_PORT', '1433'),
+            'database' => env('DB_CD_DATABASE', 'forge'),
+            'username' => env('DB_CD_USERNAME', 'forge'),
+            'password' => env('DB_CD_PASSWORD', ''),
+            'charset' => 'utf8',
+            'prefix' => '',
+            'prefix_indexes' => true,
+        ],
     ],
 
     /*

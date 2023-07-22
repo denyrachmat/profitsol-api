@@ -4,7 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-class CreateMrsDbMstrTable extends Migration
+class CreateMrsReportMstrTable extends Migration
 {
     /**
      * Run the migrations.
@@ -13,13 +13,15 @@ class CreateMrsDbMstrTable extends Migration
      */
     public function up()
     {
-        Schema::connection('sqlsrv_mrs')->create('mrs_db_mstr', function (Blueprint $table) {
+        Schema::connection('sqlsrv_mrs')->create('mrs_report_mstr', function (Blueprint $table) {
             $table->id();
             $table->string('p_u_username');
-            $table->string('mdm_host')->unique();
-            $table->string('mdm_name');
-            $table->string('mdm_username');
-            $table->string('mdm_password');
+            $table->string('mdm_id');
+            $table->string('mrm_name');
+            $table->string('mrm_db');
+            $table->string('mrm_table');
+            $table->text('mrm_query');
+            $table->string('mrm_url_gen');
             $table->timestamps();
         });
     }
@@ -31,6 +33,6 @@ class CreateMrsDbMstrTable extends Migration
      */
     public function down()
     {
-        Schema::dropIfExists('mrs_db_mstr');
+        Schema::dropIfExists('mrs_report_mstr');
     }
 }
