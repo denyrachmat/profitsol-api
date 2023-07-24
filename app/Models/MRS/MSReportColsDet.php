@@ -17,5 +17,7 @@ class MSReportColsDet extends Model
         'mrcd_label',
         'mrcd_isActive',
         'mrcd_sortable',
+        'mrcd_isFiltered',
+        'mrcd_isExported',
     ];
 }

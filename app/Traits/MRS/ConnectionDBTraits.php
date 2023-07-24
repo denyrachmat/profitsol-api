@@ -38,10 +38,11 @@ trait ConnectionDBTraits
             $formatCols[] = [
                 'name' => $value['mrcd_field'],
                 'label' => $value['mrcd_label'],
-                'sortable' => $value['mrcd_sortable'],
+                'sortable' => (bool)$value['mrcd_sortable'],
                 'field' => $value['mrcd_field'],
-                'active' => $value['mrcd_isActive'],
-                'filterable' => $value['mrcd_sortable']
+                'active' => (bool)$value['mrcd_isActive'],
+                'filterable' => (bool)$value['mrcd_isFiltered'],
+                'exported' => (bool)$value['mrcd_isExported']
             ];
         }
 

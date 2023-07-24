@@ -23,10 +23,21 @@ class ReportController extends BaseController
      */
     public function index()
     {
-        return $this->handleResponse(MRSReportMstr::select(
-            'mrs_report_mstr.*',
-            'mrs_db_mstr.mdm_host'
-        )->join('mrs_db_mstr', 'mdm_id', 'mrs_db_mstr.id')->get(), 'Data Found');
+        $data = MRSReportMstr::select(
+                'mrs_report_mstr.*',
+                'mrs_db_mstr.mdm_host'
+            )->join('mrs_db_mstr', 'mdm_id', 'mrs_db_mstr.id')
+            ->get()
+            ->toArray();
+
+        $hasil = [];
+        foreach ($data as $key => $value) {
+            $hasil[] = array_merge($value, [
+                'cols' => $this->getCols(MSReportColsDet::where('mrm_id', $value['id'])->get()->toArray())
+            ]);
+        }
+
+        return $this->handleResponse($hasil, 'Data Found');
     }
 
     /**
@@ -47,16 +58,23 @@ class ReportController extends BaseController
      */
     public function store(ReportCreateRequest $request)
     {
-        $insertHeader = MRSReportMstr::create($request->header);
+        $insertHeader = MRSReportMstr::updateorcreate([
+            'id' => $request->header['id']
+        ],$request->header);
         $insertCols = [];
 
         foreach ($request->det as $key => $value) {
-            $insertCols[] = MSReportColsDet::create([
+            $insertCols[] = MSReportColsDet::updateorcreate([
+                'mrm_id' => $insertHeader->id,
+                'mrcd_field' => $value['field']
+            ],[
                 'mrm_id' => $insertHeader->id,
                 'mrcd_field' => $value['field'],
                 'mrcd_label' => $value['label'],
                 'mrcd_isActive' => $value['active'],
                 'mrcd_sortable' => $value['sortable'],
+                'mrcd_isFiltered' => $value['filterable'],
+                'mrcd_isExported' => $value['exported'],
             ]);
         }
         return $this->handleResponse(['header' => $insertHeader, 'det' => $insertCols], 'Data Created !');
