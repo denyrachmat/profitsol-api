@@ -118,7 +118,7 @@ class ExportYMIPriceList implements FromCollection, WithEvents, WithHeadings
                     ]
                 ]);
 
-                $event->sheet->getStyle('A3:W3')->applyFromArray([
+                $event->sheet->getStyle('A3:AA3')->applyFromArray([
                     'font' => [
                         'size' => '12',
                         'bold' => true
@@ -170,6 +170,7 @@ class ExportYMIPriceList implements FromCollection, WithEvents, WithHeadings
                 );
 
                 $event->sheet->getDelegate()->mergeCells('A1:Q1');
+                $event->sheet->getStyle('A3:'.$highestColumn.'3')->getAlignment()->setHorizontal('center');
 
                 $event->sheet->getStyle('J')->getNumberFormat()->setFormatCode(NumberFormat::FORMAT_DATE_XLSX15);
                 $event->sheet->getStyle('K')->getNumberFormat()->setFormatCode(NumberFormat::FORMAT_DATE_XLSX15);
