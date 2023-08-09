@@ -148,7 +148,18 @@ class ExportYMIPriceList implements FromCollection, WithEvents, WithHeadings
                 );
 
                 $event->sheet->styleCells(
-                    'V3:W'.$highestRow,
+                    'V3:X'.$highestRow,
+                    [
+                        'borders' => [
+                            'allBorders' => [
+                                'borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN,
+                            ],
+                        ]
+                    ]
+                );
+
+                $event->sheet->styleCells(
+                    'Z3:AA'.$highestRow,
                     [
                         'borders' => [
                             'allBorders' => [
@@ -170,7 +181,8 @@ class ExportYMIPriceList implements FromCollection, WithEvents, WithHeadings
                 $event->sheet->getStyle('X')->getNumberFormat()->setFormatCode(NumberFormat::FORMAT_NUMBER_00);
                 $event->sheet->getStyle('A3:Q3')->getFill()->applyFromArray(['fillType' => 'solid','rotation' => 0, 'color' => ['rgb' => 'FFFF33'],]);
                 $event->sheet->getStyle('S3:T3')->getFill()->applyFromArray(['fillType' => 'solid','rotation' => 0, 'color' => ['rgb' => 'FFFF33'],]);
-                $event->sheet->getStyle('V3:W3')->getFill()->applyFromArray(['fillType' => 'solid','rotation' => 0, 'color' => ['rgb' => 'FFFF33'],]);
+                $event->sheet->getStyle('V3:X3')->getFill()->applyFromArray(['fillType' => 'solid','rotation' => 0, 'color' => ['rgb' => 'FFFF33'],]);
+                $event->sheet->getStyle('Z3:AA3')->getFill()->applyFromArray(['fillType' => 'solid','rotation' => 0, 'color' => ['rgb' => 'FFFF33'],]);
             }
         ];
     }
