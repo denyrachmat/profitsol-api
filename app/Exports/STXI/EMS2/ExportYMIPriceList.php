@@ -49,6 +49,10 @@ class ExportYMIPriceList implements FromCollection, WithEvents, WithHeadings
                 'SP (USD)',
                 'Sales Amount (USD)',
                 '',
+                'DIFF (SA - PA)',
+                'MU%',
+                'GP%',
+                '',
                 'Enjoy Amount (USD)',
                 'Remarks'
             ]
@@ -84,8 +88,12 @@ class ExportYMIPriceList implements FromCollection, WithEvents, WithHeadings
                 'YQMT_SP' => $value->YQMT_SP,
                 'SALES_AMNT' => $value->SALES_AMNT,
                 'FS2' => '',
-                'ENJ_AMNT' => $value->ENJ_AMNT < 0 ? $value->ENJ_AMNT * -1 : $value->ENJ_AMNT,
-                'REMARKS' => $value->REMARKS,
+                'DIFF' => $value->SALES_AMNT - $value->PURC_AMT,
+                'MU' => ($value->SALES_AMNT - $value->PURC_AMT) / $value->PURC_AMT,
+                'GP' => ($value->SALES_AMNT - $value->PURC_AMT) / $value->SALES_AMNT,
+                'FS3' => '',
+                'ENJ_AMNT' => $value->ENJ_AMNT === 0 ? '' : ($value->ENJ_AMNT < 0 ? $value->ENJ_AMNT * -1 : $value->ENJ_AMNT),
+                'REMARKS' => $value->ENJ_AMNT === 0 ? '' : $value->REMARKS,
             ];
         }
 
@@ -155,6 +163,11 @@ class ExportYMIPriceList implements FromCollection, WithEvents, WithHeadings
                 $event->sheet->getStyle('J')->getNumberFormat()->setFormatCode(NumberFormat::FORMAT_DATE_XLSX15);
                 $event->sheet->getStyle('K')->getNumberFormat()->setFormatCode(NumberFormat::FORMAT_DATE_XLSX15);
                 $event->sheet->getStyle('N')->getNumberFormat()->setFormatCode(NumberFormat::FORMAT_DATE_XLSX15);
+                $event->sheet->getStyle('Q')->getNumberFormat()->setFormatCode(NumberFormat::FORMAT_NUMBER_00);
+                $event->sheet->getStyle('T')->getNumberFormat()->setFormatCode(NumberFormat::FORMAT_NUMBER_00);
+                $event->sheet->getStyle('V')->getNumberFormat()->setFormatCode(NumberFormat::FORMAT_NUMBER_00);
+                $event->sheet->getStyle('W')->getNumberFormat()->setFormatCode(NumberFormat::FORMAT_NUMBER_00);
+                $event->sheet->getStyle('X')->getNumberFormat()->setFormatCode(NumberFormat::FORMAT_NUMBER_00);
                 $event->sheet->getStyle('A3:Q3')->getFill()->applyFromArray(['fillType' => 'solid','rotation' => 0, 'color' => ['rgb' => 'FFFF33'],]);
                 $event->sheet->getStyle('S3:T3')->getFill()->applyFromArray(['fillType' => 'solid','rotation' => 0, 'color' => ['rgb' => 'FFFF33'],]);
                 $event->sheet->getStyle('V3:W3')->getFill()->applyFromArray(['fillType' => 'solid','rotation' => 0, 'color' => ['rgb' => 'FFFF33'],]);
