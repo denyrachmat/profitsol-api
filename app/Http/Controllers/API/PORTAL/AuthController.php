@@ -49,6 +49,7 @@ class AuthController extends BaseController
         $attemptUsername = Auth::attempt(['username' => $request->username, 'password' => $request->password]);
         $attmeptEmail = Auth::attempt(['email' => $request->username, 'password' => $request->password]);
         if(($attemptUsername || $attmeptEmail) || $request->isMSLogin){
+            Auth::loginUsingId($request->username);
             $auth = Auth::user();
             $edu = PortalEduDet::select(
                 DB::raw('pusd_level as sch_type'),
@@ -57,13 +58,13 @@ class AuthController extends BaseController
                 DB::raw('pusd_sch_minors as sch_minor'),
                 DB::raw('pusd_sch_end as sch_grade_years'),
                 DB::raw('pusd_grade as sch_grade'),
-            )->where('u_username', $request->username)
+            )->where('u_username', $auth->username)
             ->get()->toArray();
 
-            $dataUsers = User::where('username', $request->username)->first();
+            $dataUsers = User::where('username', $auth->username)->first();
 
-            $username = $request->username;
-            $getRolesGroup = User::where('username', $request->username)->with(['roles.role.role_app_map' => function ($r) use ($username) {
+            $username = $auth->username;
+            $getRolesGroup = User::where('username', $auth->username)->with(['roles.role.role_app_map' => function ($r) use ($username) {
                 $r->with(['childRoles' => function ($q) use($username) {
                     $q->with('apps');
                     $q->whereHas('role.users_map', function ($h) use($username){
