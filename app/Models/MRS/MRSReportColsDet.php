@@ -5,7 +5,7 @@ namespace App\Models\MRS;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class MSReportColsDet extends Model
+class MRSReportColsDet extends Model
 {
     use HasFactory;
     protected $connection = 'sqlsrv_mrs';
@@ -19,5 +19,7 @@ class MSReportColsDet extends Model
         'mrcd_sortable',
         'mrcd_isFiltered',
         'mrcd_isExported',
+        'mrcd_fieldType',
+        'mrcd_col_prop'
     ];
 }

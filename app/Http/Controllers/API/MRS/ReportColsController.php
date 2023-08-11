@@ -3,9 +3,11 @@
 namespace App\Http\Controllers\API\MRS;
 
 use App\Http\Controllers\API\PORTAL\BaseController as BaseController;
+use App\Models\MRS\MRSReportMstr;
 use Illuminate\Http\Request;
-use App\Models\MRS\MSReportColsDet;
+use App\Models\MRS\MRSReportColsDet;
 use App\Traits\MRS\ConnectionDBTraits;
+use Illuminate\Support\Facades\DB;
 
 class ReportColsController extends BaseController
 {
@@ -49,9 +51,32 @@ class ReportColsController extends BaseController
      */
     public function show($id)
     {
-        $data = MSReportColsDet::join('mrs_report_mstr', 'mrm_id', 'mrs_report_mstr.id')->where('mrm_id', $id)->where('mrcd_isActive', 1)->get();
+        $master = MRSReportMstr::where('id', $id)->first();
 
-        return $this->handleResponse($this->getCols($data), 'Data Found');
+        $data = MRSReportColsDet::select(
+            'mrs_report_cols_det.*', 
+            DB::raw('mrs_report_mstr.mrm_name as tbl_nm')
+        )->join('mrs_report_mstr', 'mrm_id', 'mrs_report_mstr.id')
+        ->where('mrcd_col_prop', 'cols')
+        ->where('mrm_id', $id)
+        ->where('mrcd_isActive', 1)
+        ->get();
+
+        $dataParam = MRSReportColsDet::select(
+            'mrs_report_cols_det.*', 
+            DB::raw('mrs_report_mstr.mrm_name as tbl_nm')
+        )->join('mrs_report_mstr', 'mrm_id', 'mrs_report_mstr.id')
+        ->where('mrcd_col_prop', 'params')
+        ->where('mrm_id', $id)
+        ->where('mrcd_isActive', 1)
+        ->get();
+
+        return $this->handleResponse([
+            'title' => $data[0]->tbl_nm,
+            'cols' => $this->getCols($data),
+            'colsParam' => $this->getCols($dataParam),
+            'props' => $master->mrm_url_gen
+        ], 'Data Found');
     }
 
     /**

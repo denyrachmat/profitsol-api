@@ -6,7 +6,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use App\Http\Controllers\API\PORTAL\BaseController;
-
+use App\Models\PORTAL\PortalRole;
 class macroListController extends BaseController
 {
     /**

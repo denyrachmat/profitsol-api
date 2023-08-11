@@ -94,12 +94,14 @@ Route::group(['prefix' => 'tos'], function () {
 Route::group(['prefix' => 'mrs'], function () {
     Route::resource('dbconn', DBConnectionController::class);
     Route::get('listDB/{id}/{type?}/{dbname?}', [DBConnectionController::class, 'listDB']);
+    Route::get('getParameterSP/{id}/{dbname?}/{spname?}', [DBConnectionController::class, 'getParameterSP']);
     Route::post('checkConnection', [DBConnectionController::class, 'testConnection']);
 
     Route::resource('report', ReportController::class);
     Route::post('simRunning', [ReportController::class, 'simRunning']);
     Route::post('runningReport/{id}', [ReportController::class, 'runningReport']);
-
+    Route::post('exportReport/{id}', [ReportController::class, 'exportToExcel']);
+    
     Route::resource('reportCols', ReportColsController::class);
 });
 
@@ -215,7 +217,7 @@ Route::group((['prefix' => 'scheduller']), function () {
 
 Route::group(['prefix' => 'macro'], function() {
     Route::resource('list', macroListController::class);
-    Route::get('download', [macroListController::class, 'download']);
+    Route::get('download/{path}', [macroListController::class, 'download']);
 });
 
 Route::post('login', [AuthController::class, 'login']);

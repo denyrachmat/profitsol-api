@@ -25,7 +25,7 @@ class DBConnectionController extends BaseController
     public function index()
     {
         $data = MRSDBConnMstr::select(
-            'id as value',
+            DB::raw('CAST(id AS INT) as value'),
             DB::raw("concat(mdm_name, ' ( ', mdm_host,' )') as label")
         )->get();
         return $this->handleResponse($data, 'Data Found !');
@@ -115,8 +115,25 @@ class DBConnectionController extends BaseController
             sort($listTable);
             return $this->handleResponse($listTable, 'Data Found !');
         } elseif ($list == 'sp') {
-            return $this->handleResponse($sm->listSequences($dbname), 'Data Found !');
-        } elseif ($list == 'tables') {
+            // select o.name,p.name from sys.all_parameters p inner join sys.all_objects o on p.object_id = o.object_id 
+            // where o.type = 'P'
+            $sm2 = (clone $conn)->createQueryBuilder()
+                ->select('o.name')
+                ->from('sys.all_parameters','p')
+                ->innerJoin('p', 'sys.all_objects', 'o', 'o.object_id = p.object_id')
+                ->andwhere("o.type = 'P'")
+                ->andwhere("o.schema_id = 1")
+                ->groupBy('o.name')
+                ->executeQuery()
+                ->fetchAllAssociative();
+
+            $hasilSP = [];
+            foreach ($sm2 as $key => $value) {
+                $hasilSP[] = $value['name'];
+            }
+
+            return $this->handleResponse($hasilSP, 'Data Found !');
+        } elseif ($list == 'tables' || $list == 'query') {
             $tables = $sm->listTables();
 
             $listTable = [];
@@ -129,6 +146,27 @@ class DBConnectionController extends BaseController
         } else {
             return $this->handleError('No list defined');
         }
+    }
+
+    public function getParameterSP($id, $dbname = 'master', $sp = ''){
+        $conn = $this->masterConn($id, $dbname);
+        $sm2 = (clone $conn)->createQueryBuilder()
+                ->select('p.name')
+                ->from('sys.all_parameters','p')
+                ->innerJoin('p', 'sys.all_objects', 'o', 'o.object_id = p.object_id')
+                ->andwhere("o.type = 'P'")
+                ->andwhere("o.schema_id = 1")
+                ->andwhere("o.name = '".$sp."'")
+                ->groupBy('p.name')
+                ->executeQuery()
+                ->fetchAllAssociative();
+
+        $hasil = [];
+        foreach ($sm2 as $key => $value) {
+            $hasil[] = $value['name'];
+        }
+        
+        return $this->handleResponse($hasil, 'Data Found !');
     }
 
     public function testConnection(Request $request){
