@@ -57,13 +57,13 @@ class AuthController extends BaseController
                 DB::raw('pusd_sch_minors as sch_minor'),
                 DB::raw('pusd_sch_end as sch_grade_years'),
                 DB::raw('pusd_grade as sch_grade'),
-            )->where('u_username', $auth->username)
+            )->where('u_username', $request->username)
             ->get()->toArray();
 
-            $dataUsers = User::where('username', $auth->username)->first();
+            $dataUsers = User::where('username', $request->username)->first();
 
-            $username = $auth->username;
-            $getRolesGroup = User::where('username', $auth->username)->with(['roles.role.role_app_map' => function ($r) use ($username) {
+            $username = $request->username;
+            $getRolesGroup = User::where('username', $request->username)->with(['roles.role.role_app_map' => function ($r) use ($username) {
                 $r->with(['childRoles' => function ($q) use($username) {
                     $q->with('apps');
                     $q->whereHas('role.users_map', function ($h) use($username){
