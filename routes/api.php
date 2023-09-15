@@ -218,6 +218,8 @@ Route::group((['prefix' => 'scheduller']), function () {
 Route::group(['prefix' => 'macro'], function() {
     Route::resource('list', macroListController::class);
     Route::get('download/{path}', [macroListController::class, 'download']);
+    Route::get('listRole', [macroListController::class, 'listFolderStxiWebSystem']);
+    
 });
 
 Route::post('login', [AuthController::class, 'login']);

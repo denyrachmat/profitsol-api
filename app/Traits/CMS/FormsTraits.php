@@ -179,8 +179,8 @@ trait FormsTraits
                                 'p_u_username' => $uname,
                                 'cfm_id' => $idTitle,
                                 'cfmd_id' => $insert->id,
-                                'cfm_val' => is_array($valueAns) ? json_encode($valueAns) : $valueAns,
-                                'cfm_exp' => $keyExp[$keyAns],
+                                'cfm_val' => is_array($valueAns) ? (string)json_encode($valueAns) : (string)$valueAns,
+                                'cfm_exp' => (string)$keyExp[$keyAns],
                             ]);
                         }
                     }

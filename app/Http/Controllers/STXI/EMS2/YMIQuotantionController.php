@@ -106,8 +106,8 @@ class YMIQuotantionController extends BaseController
         )->join(
             'MGSVR.VMI_EXIM.dbo.MITM_TBL', 'MITM_ITMCD', 'A.YQMT_ITMCD'
         )->join(DB::raw("(
-            SELECT YQMT_ITMCD, MAX(ID) AS maxid FROM YMI_QUO_MSTR_TBL
-            group by YQMT_ITMCD
+            SELECT bb.YQMT_ITMCD, MAX(ID) AS maxid FROM YMI_QUO_MSTR_TBL bb
+            group by bb.YQMT_ITMCD
         ) aa "), function($j) {
             $j->on('A.YQMT_ITMCD', 'aa.YQMT_ITMCD');
             $j->on('A.id', 'aa.maxid');
@@ -118,7 +118,12 @@ class YMIQuotantionController extends BaseController
                 if (strpos(strtolower($value['cols']), 'date') !== false) {
                     $data->where($value['cols'], $value['value']);
                 } else {
-                    $data->where($value['cols'], 'LIKE', $value['value'] . '%');
+                    if ($value['cols'] === 'YQMT_ITMCD') {
+                        $colsnya = 'A.YQMT_ITMCD';
+                    } else {
+                        $colsnya = $value['cols'];
+                    }
+                    $data->where($colsnya, 'LIKE', $value['value'] . '%');
                 }
             }
         }

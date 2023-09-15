@@ -92,7 +92,6 @@ class QuizController extends Controller
     public function show(Request $request, $id, $idDet = '')
     {
         $dataAnswers = FormAnswerDet::where('cfm_id', $id)->get();
-        // return $dataAnswers;
         $dataHeader = FormMasterTitle::where('id', $id)->with([
             'formMaster' => function ($f2) {
                 $f2->where('cfm_parent_id', 0);
@@ -101,14 +100,12 @@ class QuizController extends Controller
             }
         ])->first();
 
-        // return $dataHeader;
         $hasil = [];
         foreach ($dataAnswers as $key => $value) {
             $answers = is_array(json_decode($value['cfm_val'])) ? json_decode($value['cfm_val']) : $value['cfm_val'];
 
-            $data = FormAnswerUserDet::where('p_u_username', $request->header('username'))->where('cfm_id', $id)->where('cfmd_id', $value['cfmd_id'])->first();
+            $data = FormAnswerUserDet::where('p_u_username', $request->header('username'))->where('cfm_id', (int)$id)->where('cfmd_id', (int)$value['cfmd_id'])->first();
 
-            // logger($data);
             $answersUser = !empty($data)
                 ? (is_array(json_decode($data->cfm_val)) ? json_decode($data->cfm_val) : $data->cfm_val)
                 : (is_array(json_decode($value['cfm_val'])) ? [] : "");

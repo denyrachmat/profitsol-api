@@ -30,7 +30,7 @@ class INSWDataController extends BaseController
 
     public function getListMaster($hsCode = '', $size = 200)
     {
-        $endpoint = 'https://api.insw.go.id/api-prod-ba/cms/hscode?keyword=' . $hsCode . '&size=' . $size . '&from=0';
+        $endpoint = 'https://api.insw.go.id/api/cms/hscode?keyword=' . $hsCode . '&size=' . $size . '&from=0';
 
         $content = [];
         $guzz = new \GuzzleHttp\Client([
@@ -46,11 +46,16 @@ class INSWDataController extends BaseController
         return $content['CURL'];
     }
 
-    public function getListHSCode($hsCode = '', $maxSize = 200)
+    public function getListHSCode($hsCode = '', $maxSize = 2000)
     {
         ini_set('memory_limit', '2G');
         ini_set('max_execution_time', '10800');
         $data = $this->getListMaster($hsCode === 0 || !empty($hsCode) ? '' : $hsCode, $maxSize)['data'][0]['result'];
+
+        // return $data;
+        // INSWDataMaster::truncate();
+        // INSWDataJlsDetail::truncate();
+        // INSWDataSatDetail::truncate();
 
         $hasilData = [];
         foreach ($data as $key => $value) {

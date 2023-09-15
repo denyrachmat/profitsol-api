@@ -266,7 +266,7 @@ class YMICDCUController extends BaseController
                     END
             END as REMARKS"),
         )
-        ->join(DB::raw("(
+        ->leftjoin(DB::raw("(
             SELECT
                 YQMT_ITMCD as YPPMT_ITMCD,
                 YQMT_BP as YPPMT_BP,

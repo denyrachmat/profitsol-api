@@ -13,15 +13,22 @@ trait TrainingTraits
             ->select(
                 'cfmt.id',
                 'cfmt.cfmt_title',
+                DB::raw("
+                    CASE WHEN SUM(cfaud.cfm_val) > 0 AND ((SUM(cfaud.cfm_val) / MAX(cfaud.tot_question)) * 100) >= cfsd.cfsd_min_pass
+                        THEN ((SUM(cfaud.cfm_val) / MAX(cfaud.tot_question)) * 100)
+                        ELSE 0
+                    END AS cfm_val
+                "),
                 DB::raw('count(cfaud.cfaud_batch) as tot_try'),
                 DB::raw('MAX(cfaud.created_at) as last_answers'),
                 DB::raw('MIN(cfaud.created_at) as first_answers'),
                 'cfsd.cfsd_start_quiz',
                 'cfsd.cfsd_end_quiz',
-                DB::raw('CAST((CAST((COALESCE(SUM(cfaud.cfm_val), 0)) as decimal(12,2)) / MAX(cfaud.tot_question)) * 100 AS DECIMAL(12,2)) as cfm_val'),
+                'cfsd.cfsd_timer',
+                // DB::raw('CAST((CAST((COALESCE(SUM(cfaud.cfm_val), 0)) as decimal(12,2)) / MAX(cfaud.tot_question)) * 100 AS DECIMAL(12,2)) as cfm_val'),
                 DB::raw('MAX(cfaud.tot_question) as tot_question'),
                 DB::raw("
-                    CASE WHEN ((SUM(cfaud.cfm_val) / MAX(cfaud.tot_question)) * 100) >= cfsd.cfsd_min_pass
+                    CASE WHEN SUM(cfaud.cfm_val) > 0 AND ((SUM(cfaud.cfm_val) / MAX(cfaud.tot_question)) * 100) >= cfsd.cfsd_min_pass
                         THEN 'PASSED'
                         ELSE 'NOT PASSED'
                     END AS status
@@ -75,7 +82,8 @@ trait TrainingTraits
                 'cfmt_title',
                 'cfsd.cfsd_start_quiz',
                 'cfsd.cfsd_end_quiz',
-                'cfsd.cfsd_min_pass'
+                'cfsd.cfsd_min_pass',
+                'cfsd.cfsd_timer',
             );
 
         $hasil = [];

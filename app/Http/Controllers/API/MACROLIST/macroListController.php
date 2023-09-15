@@ -6,7 +6,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use App\Http\Controllers\API\PORTAL\BaseController;
-use App\Models\PORTAL\PortalRole;
+use App\Models\PORTAL\PortalApp;
 class macroListController extends BaseController
 {
     /**
@@ -49,7 +49,27 @@ class macroListController extends BaseController
      */
     public function store(Request $request)
     {
-        //
+        // PortalApp::create([]);
+        $hasil = [];
+        foreach ($request->selectedMacro as $key => $value) {
+            if (str_contains($value, '.')) {
+                $getLatestID = PortalApp::where('am_app_code', 'like', 'M%')->orderBy('created_at', 'desc')->first();
+                $explodeFilePath = explode('/', $value);
+                $fileName = $explodeFilePath[count($explodeFilePath) - 1];
+                $hasil[] = PortalApp::create([
+                    'u_username' => $request->u_username,
+                    'am_app_code' => empty($getLatestID) ? 'M0001' : 'M'.sprintf('%04d', (int) substr($getLatestID->am_app_code, -3) + 1),
+                    'am_app_name' => $fileName,
+                    'am_app_desc' => 'Macro system',
+                    'am_app_url' => $value,
+                    'am_app_icon' => 'las la-file-excel',
+                    'am_app_parent' => PortalApp::where('id', $request->idMenu)->first()->am_app_code,
+                    'am_is_files' => 1
+                ]);
+            }
+        }
+
+        return $this->handleResponse($hasil, 'Data Inserted !!'); 
     }
 
     /**
@@ -69,17 +89,19 @@ class macroListController extends BaseController
             $resFolders[] = [
                 'icon' => 'folder',
                 'filename' => end($expData),
-                'path' => $value
+                'path' => $value,
             ];
         }
 
         $resFiles = [];
         foreach ($listFiles as $key => $value) {
+            $portalMenu = PortalApp::where('am_app_url', $value)->first();
             $expData = explode('/', $value);
             $resFiles[] = [
                 'icon' => 'las la-file-excel',
                 'filename' => end($expData),
-                'path' => $value
+                'path' => $value,
+                'AppRole' => empty($portalMenu) ? '' : $portalMenu->am_app_code
             ];
         }
 
@@ -124,5 +146,18 @@ class macroListController extends BaseController
 
     public function download($path) {
         return Storage::disk('macro_list')->download(base64_decode($path));
+    }
+
+    public function listFolderStxiWebSystem(){
+        $resFolders = PortalApp::with('childApps')->where('am_app_code', 'A005')->first()->childApps;
+
+        $hasil = [];
+        foreach ($resFolders as $key => $value) {
+            $hasil[] = [
+                'label' => $value->am_app_name,
+                'value' => $value->id
+            ];
+        }
+        return $this->handleResponse($hasil, 'Data Found !!');
     }
 }
