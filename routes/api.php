@@ -54,7 +54,7 @@ use App\Http\Controllers\STXI\LOG\INSWDataController;
 Route::group(['prefix' => 'portal', 'middleware' => 'auth:sanctum', 'verify' => true], function() {
 
     // Settings Menu
-    Route::resource('users', UsersController::class);
+    // Route::resource('users', UsersController::class);
 
     Route::resource('profiles', ProfilesController::class);
 
@@ -229,3 +229,4 @@ Route::group(['prefix' => 'macro'], function() {
 Route::post('login', [AuthController::class, 'login']);
 Route::post('register', [AuthController::class, 'register']);
 Route::get('countryList', [ProfileController::class, 'getCountryList']);
+Route::resource('users', UsersController::class);
