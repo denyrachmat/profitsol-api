@@ -1,8 +1,4 @@
 <?php
-header('Access-Control-Allow-Origin:  *');
-header('Access-Control-Allow-Methods:  POST, GET, OPTIONS, PUT, PATCH, DELETE');
-header('Access-Control-Allow-Headers: Accept, Content-Type, X-Auth-Token, Origin, Authorization');
-
 use App\Http\Controllers\API\CMS\FormController;
 use App\Http\Controllers\API\CMS\QuizController;
 use App\Http\Controllers\API\DMS\DocumentController;
@@ -54,7 +50,7 @@ use App\Http\Controllers\STXI\LOG\INSWDataController;
 Route::group(['prefix' => 'portal', 'middleware' => 'auth:sanctum', 'verify' => true], function() {
 
     // Settings Menu
-    // Route::resource('users', UsersController::class);
+    Route::resource('users', UsersController::class);
 
     Route::resource('profiles', ProfilesController::class);
 
@@ -229,4 +225,3 @@ Route::group(['prefix' => 'macro'], function() {
 Route::post('login', [AuthController::class, 'login']);
 Route::post('register', [AuthController::class, 'register']);
 Route::get('countryList', [ProfileController::class, 'getCountryList']);
-Route::resource('users', UsersController::class);
