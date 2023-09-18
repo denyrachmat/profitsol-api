@@ -32,6 +32,7 @@ class NotifController extends BaseController
                 END
             )"), 1)
             ->with('shared.forms.formMaster')
+            ->orderBy('created_at', 'desc')
             ->get()
             ->toArray();
 
@@ -40,7 +41,7 @@ class NotifController extends BaseController
             // $hasil[] = $value->shared->forms->id;
             if (isset($value['shared'])) {
                 if ($value['shared']['forms']['cfmt_quiz_flag'] == 1) {
-                    $cekJawaban = FormAnswerUserDet::where('cfm_id', $value['shared']['forms']['id'])->get()->toArray();
+                    $cekJawaban = FormAnswerUserDet::where('p_u_username', $request->header('username'))->where('cfm_id', $value['shared']['forms']['id'])->get()->toArray();
                     $cekListHasil = $this->getTrainingList($request->header('username'), $value['shared']['forms']['id'])[0];
                     
                     $hasil[] = array_merge($value, ['answers' => $cekJawaban, 'listHasil' => $cekListHasil]);
