@@ -14,7 +14,7 @@ trait TrainingTraits
                 'cfmt.id',
                 'cfmt.cfmt_title',
                 DB::raw("
-                    CASE WHEN SUM(cfaud.cfm_val) > 0 AND ((SUM(cfaud.cfm_val) / MAX(cfaud.tot_question)) * 100) >= cfsd.cfsd_min_pass
+                    CASE WHEN SUM(cfaud.cfm_val) > 0
                         THEN ((SUM(cfaud.cfm_val) / MAX(cfaud.tot_question)) * 100)
                         ELSE 0
                     END AS cfm_val
