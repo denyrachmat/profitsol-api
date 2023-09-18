@@ -13,12 +13,12 @@ trait TrainingTraits
             ->select(
                 'cfmt.id',
                 'cfmt.cfmt_title',
-                DB::raw("
-                    CASE WHEN SUM(cfaud.cfm_val) > 0
-                        THEN ((SUM(cfaud.cfm_val) / MAX(cfaud.tot_question)) * 100)
-                        ELSE 0
-                    END AS cfm_val
-                "),
+                // DB::raw("
+                //     CASE WHEN SUM(CAST(cfaud.cfm_val AS int)) > 0
+                //         THEN SUM(CAST(cfaud.cfm_val AS int)) / CAST(MAX(cfaud.tot_question) as int)
+                //         ELSE SUM(cfaud.cfm_val)
+                //     END AS cfm_val
+                // "),
                 DB::raw('count(cfaud.cfaud_batch) as tot_try'),
                 DB::raw('MAX(cfaud.created_at) as last_answers'),
                 DB::raw('MIN(cfaud.created_at) as first_answers'),
@@ -83,14 +83,16 @@ trait TrainingTraits
                 'cfsd.cfsd_start_quiz',
                 'cfsd.cfsd_end_quiz',
                 'cfsd.cfsd_min_pass',
-                'cfsd.cfsd_timer',
+                'cfsd.cfsd_timer'
             );
-
+        
+        // return $data->get()->toArray();
         $hasil = [];
         foreach ($data->get()->toArray() as $key => $value) {
             if(count($value['form_master']) > 0) {
                 $hasil[] = array_merge($value, [
-                    'forms' => $this->convertToFE($value['form_master'])
+                    'forms' => $this->convertToFE($value['form_master']),
+                    'cfm_val' => (int)$value['total_answer'] > 0 ? round(((int)$value['total_answer'] / (int)$value['tot_question']) * 100, 2) : 0
                 ]);
             } else {
                 $hasil[] = $value;
