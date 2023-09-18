@@ -31,7 +31,7 @@ class ImportPOWebEDITYO implements ToModel
                 'TPM_CSVOUTDT' => date('Y-m-d H:i:s', strtotime($row[80])),
                 'TPM_ORDER_CRTDT' => date('Y-m-d H:i:s', strtotime($row[81])),
                 'TPM_ORDER_REGDT' => date('Y-m-d H:i:s', strtotime($row[82])),
-                'TPM_PRC' => (float)$row[91],
+                'TPM_PRC' => isset($row[91]) ? (float)$row[91] : 0,
                 'TPM_RPLY_DEADLNDT' => date('Y-m-d', strtotime($row[94])),
             ]);
         }
