@@ -3,8 +3,11 @@
 namespace App\Http\Controllers\API\PORTAL;
 
 use Illuminate\Http\Request;
+use Illuminate\Mail\Message;
 use Illuminate\Support\Facades\Auth;
 use App\Http\Controllers\API\PORTAL\BaseController as BaseController;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\DB;
 
@@ -42,13 +45,13 @@ class AuthController extends BaseController
             'password' => 'required'
         ]);
 
-        if($validator->fails()){
+        if ($validator->fails()) {
             return $this->handleError($validator->errors());
         }
 
         $attemptUsername = Auth::attempt(['username' => $request->username, 'password' => $request->password]);
         $attmeptEmail = Auth::attempt(['email' => $request->username, 'password' => $request->password]);
-        if(($attemptUsername || $attmeptEmail) || $request->isMSLogin){
+        if (($attemptUsername || $attmeptEmail) || $request->isMSLogin) {
             $cekUser = User::where('username', $request->username)->first();
             Auth::loginUsingId($cekUser->id);
 
@@ -62,22 +65,27 @@ class AuthController extends BaseController
                 DB::raw('pusd_sch_end as sch_grade_years'),
                 DB::raw('pusd_grade as sch_grade'),
             )->where('u_username', $auth->username)
-            ->get()->toArray();
+                ->get()->toArray();
 
             $dataUsers = User::where('username', $auth->username)->first();
 
             $username = $auth->username;
-            $getRolesGroup = User::where('username', $auth->username)->with(['roles.role.role_app_map' => function ($r) use ($username) {
-                $r->with(['childRoles' => function ($q) use($username) {
-                    $q->with('apps');
-                    $q->whereHas('role.users_map', function ($h) use($username){
-                        $h->where('u_username', $username);
-                    });
-                }, 'apps'])->whereNull('am_app_parent');
-            }])->first();
+            $getRolesGroup = User::where('username', $auth->username)->with([
+                'roles.role.role_app_map' => function ($r) use ($username) {
+                    $r->with([
+                        'childRoles' => function ($q) use ($username) {
+                            $q->with('apps');
+                            $q->whereHas('role.users_map', function ($h) use ($username) {
+                                $h->where('u_username', $username);
+                            });
+                        },
+                        'apps'
+                    ])->whereNull('am_app_parent');
+                }
+            ])->first();
 
-            $success['token'] =  $auth->createToken('LaravelSanctumAuth')->plainTextToken;
-            $success['username'] =  $auth->username;
+            $success['token'] = $auth->createToken('LaravelSanctumAuth')->plainTextToken;
+            $success['username'] = $auth->username;
             $success['user_det'] = $dataUsers->det;
             $success['edu'] = $edu;
             $success['fam'] = $dataUsers->fam;
@@ -142,7 +150,7 @@ class AuthController extends BaseController
             'password_confirmation' => 'required|same:password',
         ]);
 
-        if($validator->fails()){
+        if ($validator->fails()) {
             return $this->handleError($validator->errors());
         }
 
@@ -155,9 +163,64 @@ class AuthController extends BaseController
             'pud_last_name' => $request->pud_last_name
         ]);
 
-        $success['token'] =  $user->createToken('LaravelSanctumAuth')->plainTextToken;
-        $success['username'] =  $user->username;
+        $success['token'] = $user->createToken('LaravelSanctumAuth')->plainTextToken;
+        $success['username'] = $user->username;
 
         return $this->handleResponse($success, 'User successfully registered!');
+    }
+
+    public function forgot_password(Request $request)
+    {
+        $input = $request->only('email');
+        $validator = Validator::make($input, [
+            'email' => "required|email"
+        ]);
+        if ($validator->fails()) {
+            return response()->json($validator->errors());
+        }
+        $response = Password::sendResetLink($input);
+
+        $message = $response == Password::RESET_LINK_SENT ? 'Mail send successfully' : GLOBAL_SOMETHING_WANTS_TO_WRONG;
+
+        return response()->json($message);
+    }
+
+    public function change_password(Request $request)
+    {
+        $input = $request->all();
+        $rules = array(
+            'old_password' => 'required',
+            'new_password' => 'required|min:6',
+            'confirm_password' => 'required|same:new_password',
+        );
+        $validator = Validator::make($input, $rules);
+        if ($validator->fails()) {
+            return $this->handleError('Check your old password.', $validator->errors());
+        } else {
+            $userid = $request->header('username');
+            try {
+                $user = User::where('username', $userid)->first();
+                if ((Hash::check(request('old_password'), $user->password)) == false) {
+                    return $this->handleError('Check your old password.',[
+                        'old_password' => ['Check your old password.']
+                    ]);
+                } else if ((Hash::check(request('new_password'), $user->password)) == true) {
+                    return $this->handleError('Please enter a password which is not similar then current password.',[
+                        'old_password' => ['Please enter a password which is not similar then current password.']
+                    ]);
+                } else {
+                    User::where('username', $userid)->update(['password' => Hash::make($input['new_password'])]);
+                    return $this->handleResponse($user, 'Password updated successfully.');
+                }
+            } catch (\Exception $ex) {
+                if (isset($ex->errorInfo[2])) {
+                    $msg = $ex->errorInfo[2];
+                } else {
+                    $msg = $ex->getMessage();
+                }
+                $arr = array("status" => 400, "message" => $msg, "data" => array());
+            }
+        }
+        return \Response::json($arr);
     }
 }

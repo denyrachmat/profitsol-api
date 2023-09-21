@@ -10,6 +10,7 @@ use App\Http\Controllers\API\MRS\ReportController;
 use App\Http\Controllers\API\PORTAL\NotifController;
 use App\Http\Controllers\API\TOS\QuizViewController;
 use App\Http\Controllers\API\TOS\TrainingController;
+use App\Http\Controllers\API\TOS\TrainingListController;
 use App\Http\Controllers\Scheduller\EMS2\WEBEdiTYOExtractor;
 use App\Http\Controllers\STXI\BIM\CircullarTenController;
 use App\Http\Controllers\STXI\EMS2\ForcastDOTYOController;
@@ -28,6 +29,7 @@ use App\Http\Controllers\API\PORTAL\RoleController;
 use App\Http\Controllers\STXI\EMS2\deliveryMethodToPSIController;
 use App\Http\Controllers\STXI\EMS2\poSummaryController;
 use App\Http\Controllers\STXI\LOG\INSWDataController;
+
 /*
 |--------------------------------------------------------------------------
 | API Routes
@@ -47,7 +49,7 @@ use App\Http\Controllers\STXI\LOG\INSWDataController;
 //     // });
 // });
 
-Route::group(['prefix' => 'portal', 'middleware' => 'auth:sanctum', 'verify' => true], function() {
+Route::group(['prefix' => 'portal', 'middleware' => 'auth:sanctum', 'verify' => true], function () {
 
     // Settings Menu
     Route::resource('users', UsersController::class);
@@ -58,6 +60,7 @@ Route::group(['prefix' => 'portal', 'middleware' => 'auth:sanctum', 'verify' => 
     Route::get('appsParent', [AppController::class, 'indexParentOnly']);
 
     Route::resource('roles', RoleController::class);
+    Route::post('change-password', [AuthController::class, 'change_password']);
 
     // Dashboard
     Route::post('profile', [ProfileController::class, 'store'])->middleware('verified');
@@ -81,7 +84,7 @@ Route::group(['prefix' => 'dms'], function () {
 Route::group(['prefix' => 'cms'], function () {
     Route::resource('forms', FormController::class);
     Route::resource('quiz', QuizController::class);
-    
+
     Route::get('migrationHRMS', [QuizController::class, 'migrationHRMS']);
     Route::get('migrationHRMSUserAns', [QuizController::class, 'migrateUsersAnswers']);
 });
@@ -89,6 +92,9 @@ Route::group(['prefix' => 'cms'], function () {
 Route::group(['prefix' => 'tos'], function () {
     Route::resource('quizView', QuizViewController::class);
     Route::resource('training', TrainingController::class);
+    Route::resource('trainingList', TrainingListController::class);
+
+    Route::get('trainingListExport/{id}', [TrainingListController::class, 'exportData']);
 });
 
 Route::group(['prefix' => 'mrs'], function () {
@@ -101,7 +107,7 @@ Route::group(['prefix' => 'mrs'], function () {
     Route::post('simRunning', [ReportController::class, 'simRunning']);
     Route::post('runningReport/{id}', [ReportController::class, 'runningReport']);
     Route::post('exportReport/{id}', [ReportController::class, 'exportToExcel']);
-    
+
     Route::resource('reportCols', ReportColsController::class);
 });
 
@@ -144,9 +150,9 @@ Route::group(['prefix' => 'div'], function () {
         Route::get('getPOTYOMegaReady/{date}', [deliveryMethodToPSIController::class, 'getPOTYOMegaReady']);
         Route::post('UpdatePOTYOCells', [deliveryMethodToPSIController::class, 'UpdatePOTYOCells']);
         Route::post('deleteToDraft', [deliveryMethodToPSIController::class, 'deleteToDraft']);
-        Route::get('getAllRecordDateOnly', [deliveryMethodToPSIController::class, 'getAllRecordDateOnly']);        
+        Route::get('getAllRecordDateOnly', [deliveryMethodToPSIController::class, 'getAllRecordDateOnly']);
         Route::post('ExportTYODOMega/{date}', [deliveryMethodToPSIController::class, 'ExportTYODOMega']);
-        Route::get('ExportDOChecker/{date}', [deliveryMethodToPSIController::class, 'ExportDOChecker']);                        
+        Route::get('ExportDOChecker/{date}', [deliveryMethodToPSIController::class, 'ExportDOChecker']);
         Route::post('uploadFifoDOData', [deliveryMethodToPSIController::class, 'uploadFifoDOData']);
         // End DLV TYO
 
@@ -163,7 +169,7 @@ Route::group(['prefix' => 'div'], function () {
         Route::post('getReport/{export?}', [ForcastDOTYOController::class, 'getReport']);
         Route::get('getItemList/{item?}', [ForcastDOTYOController::class, 'getItemList']);
         Route::post('exportForcast', [ForcastDOTYOController::class, 'exportForcast']);
-        Route::post('uploadForecast', [ForcastDOTYOController::class, 'uploadForecast']);        
+        Route::post('uploadForecast', [ForcastDOTYOController::class, 'uploadForecast']);
         // End DO Forcast TYO
 
         // Start YEID PO Confirmation
@@ -174,9 +180,9 @@ Route::group(['prefix' => 'div'], function () {
         Route::post('YPOExportExcel', [yeidPOConfirmController::class, 'exportExcel']);
         Route::get('updateData', [yeidPOConfirmController::class, 'cekData']);
         Route::post('uploadPOManual', [yeidPOConfirmController::class, 'uploadManualPO']);
-        
+
         // End YEID PO Confirmation
-        
+
         // Start CD/CU Price MRI
         Route::resource('ymiCDCU', YMICDCUController::class);
         Route::post('ymiCDCUPage', [YMICDCUController::class, 'getData']);
@@ -184,7 +190,7 @@ Route::group(['prefix' => 'div'], function () {
         Route::post('registerPOMRI', [YMICDCUController::class, 'registerPO']);
         Route::post('exportExcelPriceList', [YMICDCUController::class, 'exportExcel']);
 
-        
+
         Route::post('ymiQuoList', [YMIQuotantionController::class, 'getData']);
         // End CD/CU Price MRI
     });
@@ -201,13 +207,13 @@ Route::group(['prefix' => 'div'], function () {
 
     Route::group(['prefix' => 'bim'], function () {
         Route::resource('cirten', CircullarTenController::class);
-        Route::post('uploadCirten', [CircullarTenController::class, 'uploadCirTenFolder']); 
+        Route::post('uploadCirten', [CircullarTenController::class, 'uploadCirTenFolder']);
         Route::get('generateDocument/{ten}/{isExport?}', [CircullarTenController::class, 'generateDocument']);
         Route::get('listModelFromHTM/{ten}', [CircullarTenController::class, 'listModelFromHTM']);
         Route::get('sendToDMS/{ten}', [CircullarTenController::class, 'sendToDMS']);
         Route::get('findModelCode/{item}', [CircullarTenController::class, 'findItem']);
         Route::get('addModelDetail/{ten}/{item}', [CircullarTenController::class, 'addModelDetail']);
-        
+
     });
 });
 
@@ -215,13 +221,15 @@ Route::group((['prefix' => 'scheduller']), function () {
     Route::get('downloadData', [WEBEdiTYOExtractor::class, 'downloadData']);
 });
 
-Route::group(['prefix' => 'macro'], function() {
+Route::group(['prefix' => 'macro'], function () {
     Route::resource('list', macroListController::class);
     Route::get('download/{path}', [macroListController::class, 'download']);
     Route::get('listRole', [macroListController::class, 'listFolderStxiWebSystem']);
-    
+
 });
 
 Route::post('login', [AuthController::class, 'login']);
 Route::post('register', [AuthController::class, 'register']);
 Route::get('countryList', [ProfileController::class, 'getCountryList']);
+
+Route::post('forgot-password', [AuthController::class, 'forgot_password']);

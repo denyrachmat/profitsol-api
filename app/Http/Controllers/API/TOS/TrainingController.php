@@ -21,7 +21,7 @@ class TrainingController extends BaseController
     {
         $hasil = $this->getTrainingList($req->header('username'));
         
-        return $this->handleResponse($hasil, 'Data Found !');
+        return $this->handleResponse($hasil, 'Data Founds !');
     }
 
     /**

@@ -22,7 +22,7 @@ class UsersController extends BaseController
      */
     public function index()
     {
-        $data = User::with('det')->get()->toArray();
+        $data = User::with('det')->orderBy('email')->get()->toArray();
 
         return $this->handleResponse(array_map(function ($item) {
             $hasil = array_merge($item, $item['det']);
