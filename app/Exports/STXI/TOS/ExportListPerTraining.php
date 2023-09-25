@@ -36,6 +36,7 @@ class ExportListPerTraining implements FromCollection, WithHeadings, WithEvents
             [
                 'Username',
                 'Full Name',
+                'Dept',
                 'First Time Answers',
                 'Last Time Answers',
                 'Learn Times',
@@ -56,6 +57,7 @@ class ExportListPerTraining implements FromCollection, WithHeadings, WithEvents
             $hasil[] = [
                 'email' => $value['email'],
                 'fullname' => $value['fullname'],
+                'Dept' => $value['rm_role_desc'],
                 'first_time_answer' => empty($value['first_time_answer']) ? null : Date::PHPToExcel(date('Y-m-d h:i:s', strtotime($value['first_time_answer']))),
                 'last_time_answer' => empty($value['last_time_answer']) ? null : Date::PHPToExcel(date('Y-m-d h:i:s', strtotime($value['last_time_answer']))),
                 'learn_time' => $value['learn_time'],

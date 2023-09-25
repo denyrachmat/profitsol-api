@@ -73,10 +73,15 @@ class TrainingListController extends BaseController
                     AND cfm_id = cfmt_id
                     GROUP BY cfaud.cfaud_batch
                 ) A
-            ) as learn_time")
+            ) as learn_time"),
+            DB::raw('portal_role_mstr.rm_role_desc')
         )
         ->join('portal_users_det', 'username', 'u_username')
         ->join('STX_CMS.dbo.cms_form_share_det', 'username', 'cfsd_to')
+        // -- Connect to Roles for temporary get division
+        ->join('portal_role_users_map', 'username', 'portal_role_users_map.u_username')
+        ->join('portal_role_mstr', 'portal_role_mstr.id', 'portal_role_users_map.rm_role_id')
+        // -- End Connect to Roles for temporary get division
         ->whereNotNull('email_verified_at')
         ->where('cfmt_id', $id)
         ->get()
