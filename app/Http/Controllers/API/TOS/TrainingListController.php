@@ -77,6 +77,7 @@ class TrainingListController extends BaseController
         )
         ->join('portal_users_det', 'username', 'u_username')
         ->join('STX_CMS.dbo.cms_form_share_det', 'username', 'cfsd_to')
+        ->whereNotNull('email_verified_at')
         ->where('cfmt_id', $id)
         ->get()
         ->toArray();
