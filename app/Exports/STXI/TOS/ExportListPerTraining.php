@@ -87,17 +87,17 @@ class ExportListPerTraining implements FromCollection, WithHeadings, WithEvents
                     ]
                 ]);
 
-                $event->sheet->getStyle('A4:G4')->applyFromArray([
+                $event->sheet->getStyle('A4:H4')->applyFromArray([
                     'font' => [
                         'size' => '12',
                         'bold' => true
                     ]
                 ]);
 
-                $event->sheet->getStyle('A4:G4')->getAlignment()->setHorizontal('center');
-                $event->sheet->getStyle('A4:G4')->getAlignment()->setVertical('center');
+                $event->sheet->getStyle('A4:H4')->getAlignment()->setHorizontal('center');
+                $event->sheet->getStyle('A4:H4')->getAlignment()->setVertical('center');
 
-                $event->sheet->getStyle('C5:D' . $highestRow)->getNumberFormat()
+                $event->sheet->getStyle('D5:E' . $highestRow)->getNumberFormat()
                 ->setFormatCode(
                         NumberFormat::FORMAT_DATE_DATETIME
                 );
