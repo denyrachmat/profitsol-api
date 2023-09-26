@@ -83,6 +83,7 @@ class TrainingListController extends BaseController
         ->join('portal_role_mstr', 'portal_role_mstr.id', 'portal_role_users_map.rm_role_id')
         // -- End Connect to Roles for temporary get division
         ->whereNotNull('email_verified_at')
+        ->where('rm_role_name', '<>', 'Administrator')
         ->where('cfmt_id', $id)
         ->get()
         ->toArray();
