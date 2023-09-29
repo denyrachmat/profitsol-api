@@ -8,6 +8,7 @@ use App\Models\CMS\FormAnswerDet;
 use App\Models\CMS\FormMasterTitle;
 use App\Models\CMS\FormSetupDet;
 use App\Models\CMS\FormShareDet;
+use Illuminate\Support\Facades\DB;
 
 trait FormsTraits
 {
@@ -27,7 +28,14 @@ trait FormsTraits
                 }
             }
 
-            $shared = FormShareDet::where('cfmt_id', $value['id'])->get()->pluck('cfsd_to');
+            $shared = FormShareDet::where('cfmt_id', $value['id'])
+                ->join('STX_PORTAL.dbo.portal_app_mstr', 'am_app_url', DB::raw("CONCAT('forms/', cfsd_gen_link)"))
+                ->get();
+
+            $roleList = [];
+            foreach ((clone $shared)->toArray() as $key => $value2) {
+                $roleList[$value2['cfsd_role_id']] = (int)$value2['cfsd_role_id'];
+            }
 
             $hasil[] = [
                 'id' => $value['id'],
@@ -37,7 +45,7 @@ trait FormsTraits
                 'ans' => $answer,
                 'exp' => $exp,
                 'ans_id' => $answerID,
-                'share' => $shared,
+                'share' => (clone $shared)->pluck('cfsd_to'),
                 'setupTraining' => !empty($value['quiz_setup'])
                 ? [
                     'defaultNumberOfChoice' => 1,
@@ -55,7 +63,12 @@ trait FormsTraits
                     'startQuiz' => $value['quiz_setup']['cfsd_start_quiz'],
                     'endQuiz' => $value['quiz_setup']['cfsd_end_quiz'],
                 ]
-                : null
+                : null,
+                'shareFormsIsMainMenu' => count((clone $shared)) > 0 && (clone $shared)[0]->cfsd_is_menu == 1 ? true : false,
+                'shareFormsIsRoles' => count((clone $shared)) > 0 && !empty((clone $shared)[0]->cfsd_role_id) ? true : false,
+                'selectedSharedMenu' => count((clone $shared)) > 0 && !empty((clone $shared)[0]->cfsd_role_id) ? (clone $shared)[0]->am_app_parent : '',
+                'shareFormsMenuIcon' => count((clone $shared)) > 0 && !empty((clone $shared)[0]->cfsd_role_id) ? (clone $shared)[0]->am_app_icon : '',
+                'shareFormsRoleID' => count((clone $shared)) > 0 && !empty((clone $shared)[0]->cfsd_role_id) ? array_values($roleList) : '',
             ];
         }
 

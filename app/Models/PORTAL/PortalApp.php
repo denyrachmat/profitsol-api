@@ -18,7 +18,9 @@ class PortalApp extends Model
         'am_app_desc',
         'am_app_url',
         'am_app_parent',
-        'am_is_files'
+        'am_is_files',
+        'am_is_shared',
+        'am_local_form'
     ];
 
     public function child()

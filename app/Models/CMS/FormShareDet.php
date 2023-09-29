@@ -16,6 +16,8 @@ class FormShareDet extends Model
         'p_u_username',
         'cfsd_to',
         'cfsd_gen_link',
+        'cfsd_role_id',
+        'cfsd_is_menu'
     ];
 
     public function forms()

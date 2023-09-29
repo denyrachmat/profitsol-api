@@ -55,7 +55,7 @@ class AppController extends BaseController
      */
     public function show($id)
     {
-        //
+        return $this->handleResponse(PortalApp::with('childApps')->where('am_is_shared', $id)->get(), 'Data Found !');
     }
 
     /**
@@ -86,6 +86,8 @@ class AppController extends BaseController
             'am_app_desc' => $req->am_app_desc,
             'am_app_url' => $req->am_app_url,
             'am_app_parent' => $req->am_app_parent,
+            'am_is_files' => $req->am_is_files,
+            'am_is_shared' => $req->am_is_shared,
         ]);
 
         return $this->handleResponse($update, 'Update Successfull !');
