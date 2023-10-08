@@ -98,6 +98,9 @@ Route::group(['prefix' => 'tos'], function () {
     Route::resource('trainingList', TrainingListController::class);
 
     Route::get('trainingListExport/{id}', [TrainingListController::class, 'exportData']);
+    Route::get('showHistoryPerUser/{username}/{id}', [TrainingListController::class, 'showHistoryPerUser']);
+
+    // showHistoryPerUser
 });
 
 Route::group(['prefix' => 'mrs'], function () {

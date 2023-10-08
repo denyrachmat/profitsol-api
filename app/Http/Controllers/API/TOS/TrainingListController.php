@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\API\TOS;
 
 use App\Http\Controllers\API\PORTAL\BaseController as BaseController;
+use App\Models\CMS\FormAnswerDet;
+use App\Models\CMS\FormAnswerUserDet;
 use Excel;
 use Illuminate\Http\Request;
 use App\Models\User;
@@ -142,5 +144,27 @@ class TrainingListController extends BaseController
         Excel::store(new ExportListPerTraining($this->show($id, 1), $title), $title['cfmt_title'].'-'.date('ddmmyyyy').'.xlsx', 'public');
 
         return 'storage/app/public/'.$title['cfmt_title'].'-'.date('ddmmyyyy').'.xlsx';
+    }
+
+    public function showHistoryPerUser($email, $id){
+        // $dataHeader = FormMasterTitle::where('id', $id)->with([
+        //     'formMaster' => function ($f2) {
+        //         $f2->where('cfm_parent_id', 0);
+        //         $f2->with('formDetail.formAnswer');
+        //         $f2->with('allChildrenContent');
+        //     }
+        // ])->first();
+        $dataAnswers = FormAnswerDet::where('cfm_id', $id)->get();
+        $getBatch = FormAnswerUserDet::select(
+            'cfaud_batch', 
+            DB::raw('MAX(created_at) as answersDate'))
+        ->where('p_u_username', $email)->where('cfm_id', $id)->withTrashed()->groupBy('cfaud_batch')->get();
+
+        $hasil = [];
+        foreach ($getBatch as $key => $value) {
+            $hasil[] = array_merge($this->dataAnswersPerUsers($dataAnswers, $email, $id, $value->cfaud_batch), ['times' => $value->answersDate, 'batch' => $value->cfaud_batch]);
+        }
+
+        return $this->handleResponse($hasil, 'Data Found !!');
     }
 }

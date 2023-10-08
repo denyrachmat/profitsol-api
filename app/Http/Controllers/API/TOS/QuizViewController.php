@@ -7,10 +7,10 @@ use Illuminate\Http\Request;
 use App\Models\CMS\FormShareDet;
 use App\Models\PORTAL\PortalNotif;
 use App\Traits\CMS\FormsTraits;
-
+use App\Traits\TOS\TrainingTraits;
 class QuizViewController extends BaseController
 {
-    use FormsTraits;
+    use FormsTraits, TrainingTraits;
     /**
      * Display a listing of the resource.
      *
@@ -50,6 +50,7 @@ class QuizViewController extends BaseController
      */
     public function show(Request $request, $id)
     {
+        // getAnswersComparation
         $cekID = PortalNotif::where('pnm_to_users', $request->header('username'))
             ->with([
                 'shared.forms' => function ($f) {
@@ -82,6 +83,7 @@ class QuizViewController extends BaseController
         //     ];
         // }
 
+        // return $this->handleResponse($this->getAnswersComparationWithNotif($id, $request->header('username'))[0], 'Data Found !');
         return $this->handleResponse($hasilHeader[0], 'Data Found !');
     }
 

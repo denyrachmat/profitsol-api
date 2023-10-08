@@ -12,6 +12,7 @@ use App\Models\CMS\FormMasterTitle;
 use App\Models\CMS\FormSetupDet;
 use App\Models\CMS\FormMaster;
 use App\Models\CMS\FormShareDet;
+use App\Traits\TOS\TrainingTraits;
 
 use App\Models\User;
 use Illuminate\Support\Facades\DB;

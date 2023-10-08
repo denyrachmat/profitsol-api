@@ -2,7 +2,13 @@
 
 namespace App\Traits\TOS;
 
+use App\Models\CMS\FormAnswerDet;
+use App\Models\CMS\FormAnswerUserDet;
+use App\Models\CMS\FormMaster;
 use App\Models\CMS\FormMasterTitle;
+use App\Models\CMS\FormMultiDet;
+use App\Models\CMS\FormSetupDet;
+use App\Models\PORTAL\PortalNotif;
 use Illuminate\Support\Facades\DB; 
 
 trait TrainingTraits
@@ -100,5 +106,158 @@ trait TrainingTraits
         }
 
         return $hasil;
+    }
+
+    public function getResult($id, $username){
+        $dataAnswers = FormAnswerDet::where('cfm_id', $id)->get();
+        $dataHeader = FormMasterTitle::where('id', $id)->with([
+            'formMaster' => function ($f2) {
+                $f2->where('cfm_parent_id', 0);
+                $f2->with('formDetail.formAnswer');
+                $f2->with('allChildrenContent');
+            }
+        ])->first();
+
+        $hasil = [];
+        foreach ($dataAnswers as $key => $value) {
+            $answers = is_array(json_decode($value['cfm_val'])) ? json_decode($value['cfm_val']) : $value['cfm_val'];
+
+            $data = FormAnswerUserDet::where('p_u_username', $username)->where('cfm_id', (int)$id)->where('cfmd_id', (int)$value['cfmd_id'])->first();
+
+            $answersUser = !empty($data)
+                ? (is_array(json_decode($data->cfm_val)) ? json_decode($data->cfm_val) : $data->cfm_val)
+                : (is_array(json_decode($value['cfm_val'])) ? [] : "");
+
+            $getLabelCek = FormMultiDet::select('cfmd_label')
+                ->where('cfm_id', $data->cfmd_id)
+                ->whereIn('cfmd_value', is_array(json_decode($value['cfm_val'])) ? json_decode($value['cfm_val']) : [$value['cfm_val']]);
+
+            if (!empty($idDet)) {
+                $getLabelCek->where('cfmd_id', $idDet);
+            }
+
+            $getLabel = $getLabelCek->pluck('cfmd_label');
+
+            $hasil[$key] = [
+                'status' => $answers === $answersUser,
+                'users' => $answersUser,
+                'ans' => $answers,
+                'ans_value' => $getLabel,
+                'exp' => $value['cfm_exp']
+            ];
+        }
+
+        $getGrade = array_filter($hasil, function ($f) {
+            return $f['status'];
+        });
+
+        $totalGrade = round((count($getGrade) / count($dataAnswers)) * 100, 2);
+        $cekStatGrade = FormSetupDet::where('cfmt_id', $id)->first();
+
+        return response([
+            'status' => true,
+            'data' => $hasil,
+            'grade' => $totalGrade,
+            'is_pass' => $totalGrade >= $cekStatGrade['cfsd_min_pass'],
+            'data_ori' => $this->getHeaderAllForms([$dataHeader->toArray()])[0]['forms']
+        ]);
+    }
+
+    public function getAnswersComparationWithNotif($id, $username, $from = 'notif'){
+
+        if ($from === 'notif') {
+            $cekID = PortalNotif::where('pnm_to_users', $username)
+                ->with([
+                    'shared.forms' => function ($f) {
+                        $f->with(['formMaster' => function ($f2) {
+                            $f2->where('cfm_parent_id', 0);
+                            $f2->with('formDetail.formAnswer');
+                            $f2->with('allChildrenContent');
+                        }]);
+    
+                        $f->with('quizSetup');
+                }])
+                ->where('pnm_hash_id_location', $id)
+                ->first();
+
+                $hasilHeader = $this->getHeaderAllForms([$cekID->shared->forms->toArray()]);
+        } else {
+            $cekID = FormMasterTitle::where('id', $id)
+                ->with(['formMaster' => function ($f2) {
+                    $f2->where('cfm_parent_id', 0);
+                    $f2->with('formDetail.formAnswer');
+                    $f2->with('allChildrenContent');
+                }])
+                ->first();
+            
+            $hasilHeader = $this->getHeaderAllForms([$cekID->toArray()]);
+        }
+        
+        if(empty($cekID)) {
+            return $this->handleError('Data Not Found !', $cekID);
+        }
+
+        return $hasilHeader;
+    }
+
+    public function dataAnswersPerUsers($dataAnswers, $username, $id, $batch = '') {
+        $dataHeader = FormMasterTitle::where('id', $id)->with([
+            'formMaster' => function ($f2) {
+                $f2->where('cfm_parent_id', 0);
+                $f2->with('formDetail.formAnswer');
+                $f2->with('allChildrenContent');
+            }
+        ])->first();
+        
+        $hasil = [];
+        foreach ($dataAnswers as $key => $value) {
+            $answers = is_array(json_decode($value['cfm_val'])) ? json_decode($value['cfm_val']) : $value['cfm_val'];
+
+            $dataCheck = FormAnswerUserDet::withTrashed()->where('p_u_username',$username)->where('cfm_id', (int)$id)->where('cfmd_id', (int)$value['cfmd_id']);
+            
+            if (!empty($batch)) {
+                $dataCheck->where('cfaud_batch', $batch);
+            }
+
+            $data = $dataCheck->first();
+
+            $answersUser = !empty($data)
+                ? (is_array(json_decode($data->cfm_val)) ? json_decode($data->cfm_val) : $data->cfm_val)
+                : (is_array(json_decode($value['cfm_val'])) ? [] : "");
+
+            $getLabelCek = FormMultiDet::select('cfmd_label')
+                ->where('cfm_id', $data->cfmd_id)
+                ->whereIn('cfmd_value', is_array(json_decode($value['cfm_val'])) ? json_decode($value['cfm_val']) : [$value['cfm_val']]);
+
+            if (!empty($idDet)) {
+                $getLabelCek->where('cfmd_id', $idDet);
+            }
+
+            $getLabel = $getLabelCek->pluck('cfmd_label');
+
+            $hasil[$key] = [
+                'status' => $answers === $answersUser,
+                'users' => $answersUser,
+                'ans' => $answers,
+                'ans_value' => $getLabel,
+                'exp' => $value['cfm_exp'],
+                'batch' => $data->cfaud_batch
+            ];
+        }
+
+        $getGrade = array_filter($hasil, function ($f) {
+            return $f['status'];
+        });
+
+        $totalGrade = round((count($getGrade) / count($dataAnswers)) * 100, 2);
+        $cekStatGrade = FormSetupDet::where('cfmt_id', $id)->first();
+
+        return [
+            'status' => true,
+            'data' => $hasil,
+            'grade' => $totalGrade,
+            'is_pass' => $totalGrade >= $cekStatGrade['cfsd_min_pass'],
+            'data_ori' => $this->getHeaderAllForms([$dataHeader->toArray()])[0]['forms']
+        ];
     }
 }
