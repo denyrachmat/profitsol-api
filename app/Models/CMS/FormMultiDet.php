@@ -4,10 +4,11 @@ namespace App\Models\CMS;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Awobaz\Compoships\Compoships;
 
 class FormMultiDet extends Model
 {
-    use HasFactory;
+    use HasFactory, Compoships;
     protected $connection = 'sqlsrv_cms';
     protected $table = 'cms_form_multi_det';
 
@@ -19,6 +20,6 @@ class FormMultiDet extends Model
     
     public function formAnswer()
     {
-        return $this->hasOne(FormAnswerDet::class, 'cfmd_id', 'id');
+        return $this->hasOne(FormAnswerDet::class, ['cfmd_id', 'cfm_val'], ['id', 'cfmd_value']);
     }
 }

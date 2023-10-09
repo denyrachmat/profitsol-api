@@ -89,7 +89,7 @@ Route::group(['prefix' => 'cms'], function () {
     
     Route::get('migrationHRMS', [QuizController::class, 'migrationHRMS']);
     Route::get('migrationHRMSUserAns', [QuizController::class, 'migrateUsersAnswers']);
-    Route::get('viewByLinkForm/{link}', [FormController::class, 'viewByLinkForm']);    
+    Route::get('viewByLinkForm/{link}', [FormController::class, 'viewByLinkForm']);
 });
 
 Route::group(['prefix' => 'tos'], function () {
@@ -99,6 +99,8 @@ Route::group(['prefix' => 'tos'], function () {
 
     Route::get('trainingListExport/{id}', [TrainingListController::class, 'exportData']);
     Route::get('showHistoryPerUser/{username}/{id}', [TrainingListController::class, 'showHistoryPerUser']);
+
+    Route::get('exportAnalyticsQuestion/{id}', [TrainingListController::class, 'exportAnalyticsQuestion']);
 
     // showHistoryPerUser
 });

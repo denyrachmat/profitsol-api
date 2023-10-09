@@ -5,6 +5,8 @@ namespace App\Http\Controllers\API\TOS;
 use App\Http\Controllers\API\PORTAL\BaseController as BaseController;
 use App\Models\CMS\FormAnswerDet;
 use App\Models\CMS\FormAnswerUserDet;
+use App\Models\CMS\FormMaster;
+use App\Models\CMS\FormMultiDet;
 use Excel;
 use Illuminate\Http\Request;
 use App\Models\User;
@@ -12,6 +14,8 @@ use Illuminate\Support\Facades\DB;
 use App\Traits\TOS\TrainingTraits;
 use App\Traits\CMS\FormsTraits;
 use App\Exports\STXI\TOS\ExportListPerTraining;
+use App\Exports\STXI\TOS\ExportQuestionAnalytics;
+
 use App\Models\CMS\FormMasterTitle;
 
 class TrainingListController extends BaseController
@@ -146,14 +150,7 @@ class TrainingListController extends BaseController
         return 'storage/app/public/'.$title['cfmt_title'].'-'.date('ddmmyyyy').'.xlsx';
     }
 
-    public function showHistoryPerUser($email, $id){
-        // $dataHeader = FormMasterTitle::where('id', $id)->with([
-        //     'formMaster' => function ($f2) {
-        //         $f2->where('cfm_parent_id', 0);
-        //         $f2->with('formDetail.formAnswer');
-        //         $f2->with('allChildrenContent');
-        //     }
-        // ])->first();
+    public function showHistoryPerUser($email, $id, $dataOnly = false){
         $dataAnswers = FormAnswerDet::where('cfm_id', $id)->get();
         $getBatch = FormAnswerUserDet::select(
             'cfaud_batch', 
@@ -165,6 +162,74 @@ class TrainingListController extends BaseController
             $hasil[] = array_merge($this->dataAnswersPerUsers($dataAnswers, $email, $id, $value->cfaud_batch), ['times' => $value->answersDate, 'batch' => $value->cfaud_batch]);
         }
 
+        if ($dataOnly) {
+            return $hasil;
+        }
+
         return $this->handleResponse($hasil, 'Data Found !!');
+    }
+
+    public function exportAnalyticsQuestion($id) {
+        $title = FormMasterTitle::where('cms_form_mstr_title.id', $id)
+            ->join('cms_form_setup_det', 'cms_form_mstr_title.id', 'cfmt_id')
+            ->first()
+            ->toArray();
+
+        $dataAnswersUsersOnly = FormAnswerUserDet::select('p_u_username')
+            ->where('cfm_id', $id)
+            ->groupBy('p_u_username')
+            ->get()
+            ->pluck('p_u_username');
+
+        $hasilUsers = [];
+        foreach ($dataAnswersUsersOnly as $keyUsers => $valueUsers) {
+            $dataPerUser = $this->showHistoryPerUser($valueUsers, $id, true);
+            $filterOnlyMoreThan1 = array_filter($dataPerUser, function($f) {
+                return !$f['is_pass'];
+            });
+            
+            if (count($filterOnlyMoreThan1) > 0) {
+                $hasilUsers[$valueUsers] = array_values($filterOnlyMoreThan1);
+            }
+        }
+
+        $dataQuestion = array_values($hasilUsers)[0][0]['data_ori'];
+        // return $dataQuestion;
+        $dataFinal = [];
+        foreach ($dataQuestion as $keyFinal => $valueFinal) {
+            $dataQ = [];
+            $dataQTrue = [];
+            foreach ($hasilUsers as $keyHU => $valueHU) {
+                foreach ($valueHU as $keyHUDet => $valueHUDet) {
+                    $testData = array_filter($valueHUDet['data'], function($f) use ($valueFinal) { return !$f['status'] && $f['id'] == $valueFinal['id'] ; });
+                    $testData2 = array_filter($valueHUDet['data'], function($f) use ($valueFinal) { return $f['status'] && $f['id'] == $valueFinal['id'] ; });
+                    
+                    if (count($testData) > 0) {
+                        $dataQ[$keyHU][] = array_values($testData)[0];
+                    }
+
+                    if (count($testData2) > 0) {
+                        $dataQTrue[$keyHU][] = array_values($testData2)[0];
+                    }
+                }
+            }
+
+            $cekAnswers = FormAnswerDet::where('cfmd_id', $valueFinal['id'])->with('answers')->first();
+                
+            // FormMultiDet::where('cfm_id', $valueFinal['id'])->first();
+
+            $dataFinal[] = array_merge(
+                $valueFinal,
+                [
+                    'failData' => $dataQ, 
+                    'successData' => $dataQTrue,
+                    'answers' => $cekAnswers->answers->cfmd_label
+                ]
+            );
+        }
+
+        Excel::store(new ExportQuestionAnalytics($dataFinal, $title), 'analytics-'.$title['cfmt_title'].'-'.date('ddmmyyyy').'.xlsx', 'public');
+
+        return 'storage/app/public/analytics-'.$title['cfmt_title'].'-'.date('ddmmyyyy').'.xlsx';
     }
 }

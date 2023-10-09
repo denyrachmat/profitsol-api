@@ -4,10 +4,11 @@ namespace App\Models\CMS;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Awobaz\Compoships\Compoships;
 
 class FormAnswerDet extends Model
 {
-    use HasFactory;
+    use HasFactory, Compoships;
     protected $connection = 'sqlsrv_cms';
     protected $table = 'cms_form_ans_det';
 
@@ -18,4 +19,9 @@ class FormAnswerDet extends Model
         'cfm_val',
         'cfm_exp',
     ];
+
+    public function answers()
+    {
+        return $this->belongsTo(FormMultiDet::class, ['cfmd_id', 'cfm_val'], ['cfm_id', 'cfmd_value']);
+    }
 }

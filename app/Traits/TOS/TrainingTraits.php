@@ -236,6 +236,7 @@ trait TrainingTraits
             $getLabel = $getLabelCek->pluck('cfmd_label');
 
             $hasil[$key] = [
+                'id' => $data->cfmd_id,
                 'status' => $answers === $answersUser,
                 'users' => $answersUser,
                 'ans' => $answers,
