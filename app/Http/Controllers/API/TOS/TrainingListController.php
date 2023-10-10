@@ -195,6 +195,7 @@ class TrainingListController extends BaseController
             }
         }
 
+        // return $hasilUsers;
         $dataQuestion = array_values($hasilUsers)[0][0]['data_ori'];
         // return $dataQuestion;
         $dataFinal = [];
@@ -204,7 +205,7 @@ class TrainingListController extends BaseController
             foreach ($hasilUsers as $keyHU => $valueHU) {
                 foreach ($valueHU as $keyHUDet => $valueHUDet) {
                     $testData = array_filter($valueHUDet['data'], function($f) use ($valueFinal) { return !$f['status'] && $f['id'] == $valueFinal['id'] ; });
-                    $testData2 = array_filter($valueHUDet['data'], function($f) use ($valueFinal) { return $f['status'] && $f['id'] == $valueFinal['id'] ; });
+                    $testData2 = array_filter($valueHUDet['data'], function($f, $k) use ($valueFinal, $dataQ, $keyHU) { return $f['status'] && $f['id'] == $valueFinal['id'] && !isset($dataQ[$keyHU]); }, ARRAY_FILTER_USE_BOTH);
                     
                     if (count($testData) > 0) {
                         $dataQ[$keyHU][] = array_values($testData)[0];
@@ -229,6 +230,8 @@ class TrainingListController extends BaseController
                 ]
             );
         }
+
+        return $dataFinal;
 
         Excel::store(new ExportQuestionAnalytics($dataFinal, $title), 'analytics-'.$title['cfmt_title'].'-'.date('ddmmyyyy').'.xlsx', 'public');
 
