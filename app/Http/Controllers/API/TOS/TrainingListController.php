@@ -190,9 +190,10 @@ class TrainingListController extends BaseController
                 return !$f['is_pass'];
             });
             
-            if (count($filterOnlyMoreThan1) > 0) {
-                $hasilUsers[$valueUsers] = array_values($filterOnlyMoreThan1);
-            }
+            // if (count($filterOnlyMoreThan1) > 0) {
+            //     $hasilUsers[$valueUsers] = array_values($dataPerUser);
+            // }
+            $hasilUsers[$valueUsers] = array_values($dataPerUser);
         }
 
         // return $hasilUsers;
@@ -204,7 +205,7 @@ class TrainingListController extends BaseController
             $dataQTrue = [];
             foreach ($hasilUsers as $keyHU => $valueHU) {
                 foreach ($valueHU as $keyHUDet => $valueHUDet) {
-                    $testData = array_filter($valueHUDet['data'], function($f) use ($valueFinal) { return !$f['status'] && $f['id'] == $valueFinal['id'] ; });
+                    $testData = array_filter($valueHUDet['data'], function($f) use ($valueFinal, $dataQTrue, $keyHU) { return !$f['status'] && $f['id'] == $valueFinal['id'] && !isset($dataQTrue[$keyHU]); });
                     $testData2 = array_filter($valueHUDet['data'], function($f, $k) use ($valueFinal, $dataQ, $keyHU) { return $f['status'] && $f['id'] == $valueFinal['id'] && !isset($dataQ[$keyHU]); }, ARRAY_FILTER_USE_BOTH);
                     
                     if (count($testData) > 0) {
