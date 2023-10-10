@@ -144,6 +144,7 @@ class TrainingListController extends BaseController
     }
 
     public function exportData($id){
+        ini_set('max_execution_time', '600');
         $title = FormMasterTitle::where('cms_form_mstr_title.id', $id)->join('cms_form_setup_det', 'cms_form_mstr_title.id', 'cfmt_id')->first()->toArray();
         Excel::store(new ExportListPerTraining($this->show($id, 1), $title), $title['cfmt_title'].'-'.date('ddmmyyyy').'.xlsx', 'public');
 
@@ -170,6 +171,7 @@ class TrainingListController extends BaseController
     }
 
     public function exportAnalyticsQuestion($id) {
+        ini_set('max_execution_time', '600');
         $title = FormMasterTitle::where('cms_form_mstr_title.id', $id)
             ->join('cms_form_setup_det', 'cms_form_mstr_title.id', 'cfmt_id')
             ->first()
