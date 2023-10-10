@@ -231,7 +231,7 @@ class TrainingListController extends BaseController
             );
         }
 
-        return $dataFinal;
+        // return $dataFinal;
 
         Excel::store(new ExportQuestionAnalytics($dataFinal, $title), 'analytics-'.$title['cfmt_title'].'-'.date('ddmmyyyy').'.xlsx', 'public');
 
