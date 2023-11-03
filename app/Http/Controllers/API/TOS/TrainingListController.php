@@ -157,7 +157,8 @@ class TrainingListController extends BaseController
             'cfaud_batch', 
             DB::raw('MAX(created_at) as answersDate'))
         ->where('p_u_username', $email)->where('cfm_id', $id)->withTrashed()->groupBy('cfaud_batch')->get();
-
+        
+        // return $getBatch->toArray();
         $hasil = [];
         foreach ($getBatch as $key => $value) {
             $hasil[] = array_merge($this->dataAnswersPerUsers($dataAnswers, $email, $id, $value->cfaud_batch), ['times' => $value->answersDate, 'batch' => $value->cfaud_batch]);
@@ -183,9 +184,12 @@ class TrainingListController extends BaseController
             ->get()
             ->pluck('p_u_username');
 
+            // return $dataAnswersUsersOnly;
         $hasilUsers = [];
         foreach ($dataAnswersUsersOnly as $keyUsers => $valueUsers) {
             $dataPerUser = $this->showHistoryPerUser($valueUsers, $id, true);
+
+            // return $dataPerUser;
             $filterOnlyMoreThan1 = array_filter($dataPerUser, function($f) {
                 return !$f['is_pass'];
             });
@@ -196,7 +200,6 @@ class TrainingListController extends BaseController
             $hasilUsers[$valueUsers] = array_values($dataPerUser);
         }
 
-        // return $hasilUsers;
         $dataQuestion = array_values($hasilUsers)[0][0]['data_ori'];
         // return $dataQuestion;
         $dataFinal = [];
@@ -227,7 +230,7 @@ class TrainingListController extends BaseController
                 [
                     'failData' => $dataQ, 
                     'successData' => $dataQTrue,
-                    'answers' => $cekAnswers->answers->cfmd_label
+                    'answers' => !empty($cekAnswers->answers->cfmd_label) ? $cekAnswers->answers->cfmd_label : ''
                 ]
             );
         }

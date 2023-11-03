@@ -53,7 +53,7 @@ class AuthController extends BaseController
         $attmeptEmail = Auth::attempt(['email' => $request->username, 'password' => $request->password]);
         if (($attemptUsername || $attmeptEmail) || $request->isMSLogin) {
             $cekUser = User::where('username', $request->username)->first();
-            Auth::loginUsingId($cekUser->id);
+            Auth::loginUsingId($cekUser->id, $request->has('remember') && $request->remember);
 
             // return Auth::check();
             $auth = Auth::user();

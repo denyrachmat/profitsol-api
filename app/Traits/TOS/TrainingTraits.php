@@ -226,7 +226,7 @@ trait TrainingTraits
                 : (is_array(json_decode($value['cfm_val'])) ? [] : "");
 
             $getLabelCek = FormMultiDet::select('cfmd_label')
-                ->where('cfm_id', $data->cfmd_id)
+                ->where('cfm_id', (int)$value['cfmd_id'])
                 ->whereIn('cfmd_value', is_array(json_decode($value['cfm_val'])) ? json_decode($value['cfm_val']) : [$value['cfm_val']]);
 
             if (!empty($idDet)) {
@@ -236,13 +236,13 @@ trait TrainingTraits
             $getLabel = $getLabelCek->pluck('cfmd_label');
 
             $hasil[$key] = [
-                'id' => $data->cfmd_id,
+                'id' => (int)$value['cfmd_id'],
                 'status' => $answers === $answersUser,
                 'users' => $answersUser,
                 'ans' => $answers,
                 'ans_value' => $getLabel,
                 'exp' => $value['cfm_exp'],
-                'batch' => $data->cfaud_batch
+                'batch' => isset($data->cfaud_batch) ? $data->cfaud_batch : 0
             ];
         }
 
