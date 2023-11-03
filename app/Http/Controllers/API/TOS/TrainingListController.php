@@ -222,6 +222,17 @@ class TrainingListController extends BaseController
             }
 
             $cekAnswers = FormAnswerDet::where('cfmd_id', $valueFinal['id'])->with('answers')->first();
+            $hasilAnswers = '';
+            if (!empty($cekAnswers)) {
+                $cekDataAns = FormMultiDet::where('cfm_id', $valueFinal['id'])
+                    ->whereIn('cfmd_value', is_array(json_decode($cekAnswers->cfm_val)) 
+                        ? json_decode($cekAnswers->cfm_val) 
+                        : [$cekAnswers->cfm_val])
+                    ->pluck('cfmd_label')
+                    ->toArray();
+
+                $hasilAnswers = implode('/n', $cekDataAns);
+            }            
                 
             // FormMultiDet::where('cfm_id', $valueFinal['id'])->first();
 
@@ -230,7 +241,8 @@ class TrainingListController extends BaseController
                 [
                     'failData' => $dataQ, 
                     'successData' => $dataQTrue,
-                    'answers' => !empty($cekAnswers->answers->cfmd_label) ? $cekAnswers->answers->cfmd_label : ''
+                    'answers' => $hasilAnswers,
+                    'data' => json_decode($cekAnswers->cfm_val)
                 ]
             );
         }
