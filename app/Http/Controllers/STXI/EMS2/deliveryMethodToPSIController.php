@@ -17,7 +17,7 @@ use App\Models\STXI\EMS2\DLVTYOWkRpt;
 use App\Models\STXI\EMS2\TYO_PO_MSTR;
 
 use App\Jobs\STXI\EMS2\DLVSMTTYOEmailQueue;
-use App\Exports\STXT\exportDeliveryHist;
+use App\Exports\STXI\exportDeliveryHist;
 use App\Exports\STXI\ExportDODelivery;
 use App\Exports\STXI\ExportDOWeeklyReport;
 use App\Exports\STXI\ExportDOMegaUpload;

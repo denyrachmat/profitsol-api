@@ -231,7 +231,7 @@ class TrainingListController extends BaseController
                     ->pluck('cfmd_label')
                     ->toArray();
 
-                $hasilAnswers = implode('/n', $cekDataAns);
+                $hasilAnswers = implode("\\r\\n", $cekDataAns);
             }            
                 
             // FormMultiDet::where('cfm_id', $valueFinal['id'])->first();

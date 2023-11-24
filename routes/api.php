@@ -1,4 +1,6 @@
 <?php
+use Illuminate\Support\Facades\Route;
+
 use App\Http\Controllers\API\CMS\FormController;
 use App\Http\Controllers\API\CMS\QuizController;
 use App\Http\Controllers\API\DMS\DocumentController;
@@ -17,18 +19,17 @@ use App\Http\Controllers\STXI\EMS2\ForcastDOTYOController;
 use App\Http\Controllers\STXI\EMS2\yeidPOConfirmController;
 use App\Http\Controllers\STXI\EMS2\YMICDCUController;
 use App\Http\Controllers\STXI\EMS2\YMIQuotantionController;
+use App\Http\Controllers\STXI\EMS2\deliveryMethodToPSIController;
+use App\Http\Controllers\STXI\EMS2\poSummaryController;
 use App\Http\Controllers\STXI\PU\PAApprovalController;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\STXI\LOG\INSWDataController;
+use App\Http\Controllers\STXI\LOG\Ceisa40UploaderController;
 use App\Http\Controllers\API\PORTAL\AuthController;
 use App\Http\Controllers\API\PORTAL\ProfileController;
 use App\Http\Controllers\API\PORTAL\ProfilesController;
 use App\Http\Controllers\API\PORTAL\UsersController;
 use App\Http\Controllers\API\PORTAL\AppController;
 use App\Http\Controllers\API\PORTAL\RoleController;
-use App\Http\Controllers\STXI\EMS2\deliveryMethodToPSIController;
-use App\Http\Controllers\STXI\EMS2\poSummaryController;
-use App\Http\Controllers\STXI\LOG\INSWDataController;
 
 /*
 |--------------------------------------------------------------------------
@@ -200,12 +201,18 @@ Route::group(['prefix' => 'div'], function () {
 
 
         Route::post('ymiQuoList', [YMIQuotantionController::class, 'getData']);
+        Route::post('exportPriceList', [YMIQuotantionController::class, 'exportPriceList']);
+        
         // End CD/CU Price MRI
     });
 
     Route::group(['prefix' => 'log'], function () {
         Route::get('INSWGetDataDetail/{filter}', [INSWDataController::class, 'getData']);
         Route::get('INSWGetData/{filter?}/{size?}', [INSWDataController::class, 'getListHSCode']);
+        
+        Route::post('uploadData', [Ceisa40UploaderController::class, 'uploadData']);
+        Route::post('getNopen', [Ceisa40UploaderController::class, 'getNopen']);
+        
     });
 
     Route::group(['prefix' => 'pu'], function () {

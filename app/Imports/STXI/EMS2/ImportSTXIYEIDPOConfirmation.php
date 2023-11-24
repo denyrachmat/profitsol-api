@@ -19,7 +19,7 @@ class ImportSTXIYEIDPOConfirmation implements ToModel, WithStartRow, WithCalcula
 
     public function startRow(): int
     {
-        return 4;
+        return 6;
     }
 
     /**
@@ -47,12 +47,12 @@ class ImportSTXIYEIDPOConfirmation implements ToModel, WithStartRow, WithCalcula
                 $insertMaster = YPOMaster::create([
                     'YPO_ITMCD' => $row[1],
                     'YPO_REMARKS' => $row[6],
-                    'YPO_MRPDT' => isset($row[7]) && is_numeric($row[7]) ? \PhpOffice\PhpSpreadsheet\Shared\Date::excelToDateTimeObject($row[7])->format('Y-m-d') : $row[7],
-                    'YPO_MAILDT' => isset($row[8]) && is_numeric($row[8]) ? \PhpOffice\PhpSpreadsheet\Shared\Date::excelToDateTimeObject($row[8])->format('Y-m-d') : NULL,
-                    'YPO_RCVDT' => isset($row[9]) && is_numeric($row[9]) ? \PhpOffice\PhpSpreadsheet\Shared\Date::excelToDateTimeObject($row[9])->format('Y-m-d') : NULL,
-                    'YPO_PONO' => $row[10],
-                    'YPO_PODUEDT' => isset($row[11]) && is_numeric($row[11]) ? \PhpOffice\PhpSpreadsheet\Shared\Date::excelToDateTimeObject($row[11])->format('Y-m-d') : $row[11],
-                    'YPO_POQTY' => $row[12],
+                    'YPO_MRPDT' => isset($row[8]) && !empty($row[8]) && is_numeric($row[8]) ? \PhpOffice\PhpSpreadsheet\Shared\Date::excelToDateTimeObject($row[8])->format('Y-m-d') : $row[8],
+                    'YPO_MAILDT' => isset($row[9]) && !empty($row[9]) && is_numeric($row[9]) ? \PhpOffice\PhpSpreadsheet\Shared\Date::excelToDateTimeObject($row[9])->format('Y-m-d') : NULL,
+                    'YPO_RCVDT' => isset($row[10]) && !empty($row[10]) && is_numeric($row[10]) ? \PhpOffice\PhpSpreadsheet\Shared\Date::excelToDateTimeObject($row[10])->format('Y-m-d') : NULL,
+                    'YPO_PONO' => $row[11],
+                    'YPO_PODUEDT' => isset($row[12]) && !empty($row[12]) && is_numeric($row[12]) ? \PhpOffice\PhpSpreadsheet\Shared\Date::excelToDateTimeObject($row[12])->format('Y-m-d') : $row[12],
+                    'YPO_POQTY' => is_numeric($row[13]) ? $row[13] : 0,
                     'YPO_TXID' => $this->id,
                     'YPO_STXI_PO' => '',
                 ]);
@@ -65,10 +65,10 @@ class ImportSTXIYEIDPOConfirmation implements ToModel, WithStartRow, WithCalcula
             if (!empty($row[14])) {
                 YPOSTXIPODet::create([
                     'YMT_ID' => $idMaster,
-                    'YSPDT_PONO' => $row[14],
-                    'YSPDT_INVNO' => isset($row[17]) ? $row[17] : '',
-                    'YSPDT_POQT' => isset($row[16]) ? (int)$row[16] : 0, //GIT Qty
-                    'YSPDT_POQTY' => isset($row[20]) ? (int)$row[20] : 0//PO Qty
+                    'YSPDT_PONO' => $row[16],
+                    'YSPDT_INVNO' => '',
+                    'YSPDT_POQT' => isset($row[19]) ? (int)$row[19] : 0, //GIT Qty
+                    'YSPDT_POQTY' => isset($row[19]) ? (int)$row[19] : 0//PO Qty
                 ]);
             }
 

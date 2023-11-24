@@ -182,6 +182,32 @@ return [
             'prefix_indexes' => true,
         ],
 
+        'sqlsrv_itinv' => [
+            'driver' => 'sqlsrv',
+            'url' => env('DATABASE_URL'),
+            'host' => env('DB_CRRPT_HOST', 'localhost'),
+            'port' => env('DB_CRRPT_PORT', '1433'),
+            'database' => env('DB_CRRPT_DATABASE', 'forge'),
+            'username' => env('DB_CRRPT_USERNAME', 'forge'),
+            'password' => env('DB_CRRPT_PASSWORD', ''),
+            'charset' => 'utf8',
+            'prefix' => '',
+            'prefix_indexes' => true,
+        ],
+
+        'sqlsrv_ceisa40' => [
+            'driver' => 'sqlsrv',
+            'url' => env('DATABASE_URL'),
+            'host' => env('DB_CEISA40_HOST', 'localhost'),
+            'port' => env('DB_CEISA40_PORT', '1433'),
+            'database' => env('DB_CEISA40_DATABASE', 'forge'),
+            'username' => env('DB_CEISA40_USERNAME', 'forge'),
+            'password' => env('DB_CEISA40_PASSWORD', ''),
+            'charset' => 'utf8',
+            'prefix' => '',
+            'prefix_indexes' => true,
+        ],
+
         'sqlsrv_mega_tyo' => [
             'driver' => 'sqlsrv',
             'url' => env('DATABASE_URL'),

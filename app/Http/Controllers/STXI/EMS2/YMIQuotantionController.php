@@ -5,9 +5,12 @@ namespace App\Http\Controllers\STXI\EMS2;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Http\Controllers\API\PORTAL\BaseController;
+use Excel;
 
 use App\Models\STXI\EMS2\YMI_QUO_TBL;
 use Illuminate\Support\Facades\DB;
+
+use App\Exports\STXI\EMS2\ExportPriceListYMICDCU;
 class YMIQuotantionController extends BaseController
 {
     /**
@@ -138,6 +141,8 @@ class YMIQuotantionController extends BaseController
             $data = $data->paginate($req->pagination['rowsPerPage'], [], 'page', $req->pagination['page']);
         } else {
             $data = $data->get();
+
+            return $data;
         }
 
         return $this->handleResponse($data, 'Data found !');
@@ -145,5 +150,13 @@ class YMIQuotantionController extends BaseController
 
     public function listDetail($item){
         
+    }
+
+    public function exportPriceList(Request $req){
+        $data = $this->getData($req);
+
+        Excel::store(new ExportPriceListYMICDCU($data), 'export_pricelist.xlsx', 'public');
+        
+        return 'storage/app/public/export_pricelist.xlsx';
     }
 }
