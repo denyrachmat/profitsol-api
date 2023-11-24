@@ -284,6 +284,7 @@ class Ceisa40UploaderController extends BaseController
                                 'no' => $value['nomorRespon'],
                                 'tgl' => $value['tanggalRespon']
                             ],
+                            'param'=>$request->all(),
                             'statInsert' => $request->has('isSaved') && $request->isSaved == 1 ? $insertCeisa : 'Not Saved',
                             'dataOri' => $value
                         ];
