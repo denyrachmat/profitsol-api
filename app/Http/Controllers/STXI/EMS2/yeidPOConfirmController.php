@@ -317,7 +317,7 @@ class yeidPOConfirmController extends BaseController
                         ->where('YSPDT_PONO', $value->YSPDT_PONO)
                         ->update([
                             'YSPDT_INVNO' => $dataView->PGIT_SUPNO,
-                            'YSPDT_POQT' => $dataView->PGIT_RCVQT
+                            'YSPDT_POQT' => (int)$dataView->PGIT_RCVQT
                         ]);
                 }
             }
@@ -334,7 +334,7 @@ class yeidPOConfirmController extends BaseController
 
     public function uploadManualPO(Request $req)
     {
-        ini_set('max_execution_time', '300');
+        ini_set('max_execution_time', '1200');
         // $nama_file = $req->file->hashName();
         $file = new File($req->file);
         $extNya = $req->file('file')->getClientOriginalExtension();
@@ -360,9 +360,11 @@ class yeidPOConfirmController extends BaseController
 
             YPOMaster::truncate();
             YPOSTXIPODet::truncate();
-            $importer = new ImportSTXIYEIDPOConfirmation();
+            $importer = new ImportSTXIYEIDPOConfirmation('new');
 
             Excel::import($importer, public_path('/storage/upload_manual_ymi_po/' . $nama_file));
+
+            // $this->cekData();
 
             return $this->handleResponse([], 'Upload Sukses ' . $nama_file);
         } else {

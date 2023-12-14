@@ -11,6 +11,8 @@ class ITINVOutgoing extends Model
 
     protected $connection = 'sqlsrv_itinv';
     protected $table = 'CR2_OUT_CR8';
+    const CREATED_AT = 'LUPDT';
+    const UPDATED_AT = 'LUPDT';
 
     protected $fillable = [
         'LOCCD',

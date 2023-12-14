@@ -1,4 +1,5 @@
 <?php
+use App\Http\Controllers\STXI\LOG\CeisaMonitoringController;
 use Illuminate\Support\Facades\Route;
 
 use App\Http\Controllers\API\CMS\FormController;
@@ -212,7 +213,11 @@ Route::group(['prefix' => 'div'], function () {
         
         Route::post('uploadData', [Ceisa40UploaderController::class, 'uploadData']);
         Route::post('getNopen', [Ceisa40UploaderController::class, 'getNopen']);
-        
+        Route::post('getDetPerusahaan', [Ceisa40UploaderController::class, 'getDetPerusahaan']);
+
+        Route::get('downloadExcelCeisa40/{noAju}', [Ceisa40UploaderController::class, 'downloadExcel']);
+
+        Route::resource('ceisaMon', CeisaMonitoringController::class);
     });
 
     Route::group(['prefix' => 'pu'], function () {

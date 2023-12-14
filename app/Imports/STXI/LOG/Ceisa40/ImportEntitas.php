@@ -12,6 +12,13 @@ use App\Models\STXI\LOG\ITINVUploadTemp;
 
 class ImportEntitas implements ToModel, WithHeadingRow
 {
+    private $incout;
+
+    public function __construct($incout)
+    {
+        $this->incout = $incout;
+    }
+
     /**
     * @param Collection $collection
     */
@@ -20,7 +27,7 @@ class ImportEntitas implements ToModel, WithHeadingRow
         ini_set("memory_limit", "3G");
         $cekTempData = ITINVUploadTemp::where('NO_AJU', $row['nomor_aju'])->first();
         
-        if ($cekTempData->STATE_FLG == 'INC') {
+        if ($this->incout == 'INC') {
             if ($row['kode_entitas'] == 9 || $row['kode_entitas'] == 7) {
                 ITINVUploadTemp::updateOrCreate([
                     'NO_AJU' => $row['nomor_aju'],
@@ -41,7 +48,7 @@ class ImportEntitas implements ToModel, WithHeadingRow
                 ]);
             }
         } else {
-            if ($row['kode_entitas'] == 8) {
+            if ($row['kode_entitas'] == 8 && !empty($cekTempData['NO_DAFTAR'])) {
                 ITINVUploadTemp::updateOrCreate([
                     'NO_AJU' => $row['nomor_aju'],
                     'NO_DAFTAR' => $cekTempData['NO_DAFTAR']

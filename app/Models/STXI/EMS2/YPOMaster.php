@@ -21,5 +21,6 @@ class YPOMaster extends Model
         'YPO_POQTY',
         'YPO_TXID',
         'YPO_STXI_PO',
+        'YPO_TYPE',
     ];
 }

@@ -25,9 +25,9 @@ class ImportCeisa40 implements WithMultipleSheets
     {
         return [
             'HEADER' => new ImportHeader($this->incout),
-            'ENTITAS' => new ImportEntitas(),
-            'BARANG' => new ImportBarang(),
-            // 'DOKUMEN' => new ImportDokumen(),
+            'ENTITAS' => new ImportEntitas($this->incout),
+            'BARANG' => new ImportBarang($this->incout),
+            'DOKUMEN' => new ImportDokumen($this->incout),
         ];
     }
 }

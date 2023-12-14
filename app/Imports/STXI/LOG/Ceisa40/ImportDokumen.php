@@ -12,6 +12,13 @@ use App\Models\STXI\LOG\ITINVUploadTemp;
 
 class ImportDokumen implements ToModel, WithHeadingRow
 {
+    private $incout;
+
+    public function __construct($incout)
+    {
+        $this->incout = $incout;
+    }
+
     /**
      * @param Collection $collection
      */
@@ -20,11 +27,11 @@ class ImportDokumen implements ToModel, WithHeadingRow
         ini_set("memory_limit", "3G");
         if ($row['kode_dokumen'] == 380) {
             $cekTempData = ITINVUploadTemp::where('NO_AJU', $row['nomor_aju'])->first();
-            if ($cekTempData->STATE_FLG == 'INC') {
+            if ($this->incout == 'INC') {
                 $cekIncoming = ITINVIncoming::where('BCDOCNO', $cekTempData['NO_DAFTAR'])
                     ->where('BCTYPE', $cekTempData['TYPE_BC'])
                     ->where('BCDOCDT', $cekTempData['TGL_DAFTAR'])
-                    ->where('ITMCD', trim($row['kode_barang']))
+                    ->whereNull('HHEINVNOd')
                     ->first();
     
                 if (!empty($cekIncoming)) {
@@ -39,7 +46,8 @@ class ImportDokumen implements ToModel, WithHeadingRow
                 $cekOutgoing = ITINVOutgoing::where('BCDOCNO', $cekTempData['NO_DAFTAR'])
                 ->where('BCTYPE', $cekTempData['TYPE_BC'])
                 ->where('BCDOCDT', $cekTempData['TGL_DAFTAR'])
-                ->where('ITMCD', trim($row['kode_barang']))
+                ->whereNull('INVNO')
+                // ->where('ITMCD', trim($row['kode_barang']))
                 ->first();
 
                 if (!empty($cekOutgoing)) {
@@ -48,6 +56,46 @@ class ImportDokumen implements ToModel, WithHeadingRow
                         ->where('BCDOCDT', $cekTempData["TGL_DAFTAR"])
                         ->update([
                             'INVNO' => $row['nomor_dokumen']
+                        ]);
+                }
+            }
+        }
+
+        if ($row['kode_dokumen'] == 630) {
+            $cekTempData = ITINVUploadTemp::where('NO_AJU', $row['nomor_aju'])->first();
+            if ($this->incout == 'INC') {
+                $cekIncoming = ITINVIncoming::where('BCDOCNO', $cekTempData['NO_DAFTAR'])
+                    ->where('BCTYPE', $cekTempData['TYPE_BC'])
+                    ->where('BCDOCDT', $cekTempData['TGL_DAFTAR'])
+                    ->whereNull('DOCNO')
+                    ->first();
+    
+                if (!empty($cekIncoming)) {
+                    ITINVIncoming::where("BCDOCNO", $cekTempData['NO_DAFTAR'])
+                        ->where('BCTYPE', $cekTempData['TYPE_BC'])
+                        ->where('BCDOCDT', $cekTempData["TGL_DAFTAR"])
+                        ->update([
+                            'DOCNO' => $row['nomor_dokumen']
+                        ]);
+                }
+            }
+        }
+
+        if ($row['kode_dokumen'] == 640) {
+            $cekTempData = ITINVUploadTemp::where('NO_AJU', $row['nomor_aju'])->first();
+            if ($this->incout == 'INC') {
+                $cekIncoming = ITINVOutgoing::where('BCDOCNO', $cekTempData['NO_DAFTAR'])
+                    ->where('BCTYPE', $cekTempData['TYPE_BC'])
+                    ->where('BCDOCDT', $cekTempData['TGL_DAFTAR'])
+                    ->whereNull('DOCNO')
+                    ->first();
+    
+                if (!empty($cekIncoming)) {
+                    ITINVIncoming::where("BCDOCNO", $cekTempData['NO_DAFTAR'])
+                        ->where('BCTYPE', $cekTempData['TYPE_BC'])
+                        ->where('BCDOCDT', $cekTempData["TGL_DAFTAR"])
+                        ->update([
+                            'DOCNO' => $row['nomor_dokumen']
                         ]);
                 }
             }

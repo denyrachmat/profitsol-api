@@ -45,7 +45,7 @@ class ImportHeader implements ToModel, WithHeadingRow
                     $kodeDokumen = 'BC3.3';
                     break;
                 case 27:
-                    $kodeDokumen = 'BC2.7I';
+                    $kodeDokumen = 'BC2.7';
                     break;
                 default:
                     $kodeDokumen = 'P3BET';
@@ -80,6 +80,20 @@ class ImportHeader implements ToModel, WithHeadingRow
                     'CURR' => $row['kode_valuta'],
                     'STATE_FLG' => $this->incout
                 ]);
+            } else {
+                ITINVUploadTemp::updateOrCreate([
+                    'NO_AJU' => $row['nomor_aju'],
+                    'NO_DAFTAR' => $row["nomor_daftar"],
+                    'TYPE_BC' => $kodeDokumen,
+                    'STATE_FLG' => $this->incout
+                ], [
+                    'NO_AJU' => $row['nomor_aju'],
+                    'NO_DAFTAR' => $row["nomor_daftar"],
+                    'TGL_DAFTAR' => $row['tanggal_daftar'],
+                    'TYPE_BC' => $kodeDokumen,
+                    'CURR' => $row['kode_valuta'],
+                    'STATE_FLG' => $this->incout
+                ]);
             }
         } else {
             $cekData = ITINVOutgoing::where("BCDOCNO", $row["nomor_daftar"])
@@ -106,6 +120,20 @@ class ImportHeader implements ToModel, WithHeadingRow
                     'TGL_DAFTAR' => $row['tanggal_daftar'],
                     'TYPE_BC' => $kodeDokumen,
                     'CURR' => empty($row['kode_valuta']) ? $row['kode_valuta'] : 'USD',
+                    'STATE_FLG' => $this->incout
+                ]);
+            } else {
+                ITINVUploadTemp::updateOrCreate([
+                    'NO_AJU' => $row['nomor_aju'],
+                    'NO_DAFTAR' => $row["nomor_daftar"],
+                    'TYPE_BC' => $kodeDokumen,
+                    'STATE_FLG' => $this->incout
+                ], [
+                    'NO_AJU' => $row['nomor_aju'],
+                    'NO_DAFTAR' => $row["nomor_daftar"],
+                    'TGL_DAFTAR' => $row['tanggal_daftar'],
+                    'TYPE_BC' => $kodeDokumen,
+                    'CURR' => $row['kode_valuta'],
                     'STATE_FLG' => $this->incout
                 ]);
             }

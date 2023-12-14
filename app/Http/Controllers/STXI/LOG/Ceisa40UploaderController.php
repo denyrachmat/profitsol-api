@@ -4,6 +4,8 @@ namespace App\Http\Controllers\STXI\LOG;
 
 use App\Http\Controllers\API\PORTAL\BaseController;
 use App\Models\STXI\CEISA40\CEISARESPON;
+use App\Models\STXI\LOG\EntitasMaster;
+use App\Models\STXI\LOG\EntitasSkepDetail;
 use Illuminate\Http\Request;
 use Excel;
 use Illuminate\Http\File;
@@ -37,7 +39,7 @@ class Ceisa40UploaderController extends BaseController
         }
 
 
-        if (str_contains($realFileName, '1.6') || str_contains($realFileName, '2.7I') || str_contains($realFileName, 'BC 4.0')) {
+        if (str_contains($realFileName, '1.6') || str_contains($realFileName, '2.7I') || str_contains($realFileName, '4.0')) {
             logger('ini incoming !!');
             $state = 'INC';
         } else {
@@ -56,7 +58,8 @@ class Ceisa40UploaderController extends BaseController
         $method,
         $paramBody = [],
         $source = 'nle',
-        $useToken = false
+        $useToken = false,
+        $useAuthX = false
     ) {
         $endpoint = $source === 'nle'
             ? /* 'https://nlehub.kemenkeu.go.id/' */'https://apis-gw.beacukai.go.id/' . $url
@@ -79,13 +82,24 @@ class Ceisa40UploaderController extends BaseController
                 $getToken = $this->cekToken();
 
                 if (!empty($getToken)) {
-                    $res = $guzz->request($method, $endpoint, [
-                        'verify' => false,
-                        'headers' => [
+                    if ($useAuthX) {
+                        $headers = [
+                            'Content-Type' => 'application/json',
+                            'Accept' => 'application/json',
+                            'Authorization' => 'Bearer ' . $getToken,
+                            'Authorizationx' => 'Bearer ' . $getToken
+                        ];
+                    } else {
+                        $headers = [
                             'Content-Type' => 'application/json',
                             'Accept' => 'application/json',
                             'Authorization' => 'Bearer ' . $getToken
-                        ],
+                        ];
+                    }
+
+                    $res = $guzz->request($method, $endpoint, [
+                        'verify' => false,
+                        'headers' => $headers,
                         'body' => json_encode($paramBody),
                     ]);
                 } else {
@@ -109,9 +123,10 @@ class Ceisa40UploaderController extends BaseController
                 ]);
             }
             // return 'masuk sini';
+
             $content['PARAM'] = $paramBody;
             $content['CURL'] = json_decode($res->getBody(), true);
-            return $content['CURL'];
+            return $content;
         } catch (\GuzzleHttp\Exception\ClientException $e) {
             // return $endpoint;
             $response = $e->getResponse();
@@ -313,5 +328,69 @@ class Ceisa40UploaderController extends BaseController
             ];
             //throw $th;
         }
+    }
+
+    public function getDetPerusahaan(Request $request) : Array {
+        $hasil = [];
+        foreach ($request->data as $key => $value) {    
+            $getDetilPerusahanPenerima = $this->apiPointData(
+                'profil/perusahaan/data-perusahaan-by-npwp/?npwp=' . $value,
+                'GET',
+                [],
+                'sce',
+                true
+            );
+
+            $hasil[] = $getDetilPerusahanPenerima;
+
+            if (isset($getDetilPerusahanPenerima['namaPerusahaan'])) {
+                EntitasMaster::where('NPWP', $value)->delete();
+                EntitasMaster::create([
+                    'NPWP' => $value,
+                    'NAMA' => $getDetilPerusahanPenerima['namaPerusahaan'],
+                    'ALMT' => $getDetilPerusahanPenerima['alamatPerusahaan'].', '.$getDetilPerusahanPenerima['rtRw'].', '.$getDetilPerusahanPenerima['kelurahan'],
+                    'KODEKTR' => '050900',
+                    'NIB' => $getDetilPerusahanPenerima['nib'],
+                ]);
+    
+                $getSkepPerusahaan = $this->apiPointData(
+                    'GudangPlb/perusahanSkepFasilitas?idPerusahaanPajak=' . $value,
+                    'GET',
+                    [],
+                    'parser',
+                    true
+                );
+                
+                if (!empty($getSkepPerusahaan)) {
+                    foreach ($getSkepPerusahaan['data'] as $keySkep => $valueSkep) {
+                        EntitasSkepDetail::where('NPWP', $value)->where('NOSKEP', $valueSkep['nomorSkep'])->delete();
+                        EntitasSkepDetail::create([
+                            'NPWP' => $value,
+                            'NOSKEP' => $valueSkep['nomorSkep'],
+                            'EFFDT' => $valueSkep['awalBerlaku'],
+                        ]);
+                    }
+                }
+            }
+        }
+
+        return $hasil;
+    }
+
+    public function downloadExcel($noAju) {
+        $getDetilPerusahanPenerima = $this->apiPointData(
+            'ekspor-xml/Xlsx?nomorAju='.$noAju.'&idUser=adf9ea0f-de99-444d-b502-e4a474670624',
+            'GET',
+            [],
+            'parser',
+            true,
+            true
+        );
+
+        if (!empty($getDetilPerusahanPenerima)) {
+            return $getDetilPerusahanPenerima;
+        }
+        // https://apis-gw.beacukai.go.id/v2/parser/v1/ekspor-xml/Xlsx?nomorAju=00002701558220231211000593&idUser=adf9ea0f-de99-444d-b502-e4a474670624
+        // https://apis-gw.beacukai.go.id/v2/parser/v1/ekspor-xml/Xlsx?nomorAju=00002701558220231212000618&idUser=adf9ea0f-de99-444d-b502-e4a474670624
     }
 }

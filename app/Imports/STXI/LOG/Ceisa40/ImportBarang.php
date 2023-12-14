@@ -12,6 +12,12 @@ use App\Models\STXI\LOG\ITINVUploadTemp;
 
 class ImportBarang implements ToModel, WithHeadingRow
 {
+    private $incout;
+
+    public function __construct($incout)
+    {
+        $this->incout = $incout;
+    }
     /**
     * @param Collection $collection
     */
@@ -20,7 +26,7 @@ class ImportBarang implements ToModel, WithHeadingRow
         ini_set("memory_limit","3G");
         $cekTempData = ITINVUploadTemp::where('NO_AJU', $row['nomor_aju'])->first();
         if (!empty($cekTempData)) {
-            if ($cekTempData->STATE_FLG == 'INC') {
+            if ($this->incout == 'INC') {
                 $cekIncoming = ITINVIncoming::where('BCDOCNO', 'LIKE', $cekTempData['NO_DAFTAR'].'%')
                     ->where('BCTYPE', $cekTempData['TYPE_BC'])
                     ->where('BCDOCDT', $cekTempData['TGL_DAFTAR'])

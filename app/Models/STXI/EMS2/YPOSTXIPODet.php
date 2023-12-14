@@ -15,6 +15,7 @@ class YPOSTXIPODet extends Model
         'YSPDT_PONO',
         'YSPDT_INVNO',
         'YSPDT_POQT', //GIT Qty
-        'YSPDT_POQTY' //PO Qty
+        'YSPDT_POQTY', //PO Qty
+        'YSPDT_HSCD'
     ];
 }
