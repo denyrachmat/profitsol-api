@@ -19,5 +19,6 @@ class CEISARESPON extends Model
         'RES_NO',
         'TYPE_DOC',
         'TGL_DAFTAR',
+        'ID_HEADER',
     ];
 }

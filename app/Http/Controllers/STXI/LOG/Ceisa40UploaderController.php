@@ -9,6 +9,7 @@ use App\Models\STXI\LOG\EntitasSkepDetail;
 use Illuminate\Http\Request;
 use Excel;
 use Illuminate\Http\File;
+use Illuminate\Support\Facades\Storage;
 
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 use App\Imports\STXI\LOG\ImportCeisa40;
@@ -59,7 +60,8 @@ class Ceisa40UploaderController extends BaseController
         $paramBody = [],
         $source = 'nle',
         $useToken = false,
-        $useAuthX = false
+        $useAuthX = false,
+        $isFile = false
     ) {
         $endpoint = $source === 'nle'
             ? /* 'https://nlehub.kemenkeu.go.id/' */'https://apis-gw.beacukai.go.id/' . $url
@@ -125,8 +127,14 @@ class Ceisa40UploaderController extends BaseController
             // return 'masuk sini';
 
             $content['PARAM'] = $paramBody;
-            $content['CURL'] = json_decode($res->getBody(), true);
-            return $content;
+            $content['CODE'] = $res->getStatusCode();
+            // $content['CURL'] = json_decode($res->getBody(), true);
+
+            if ($isFile) {
+                return $res->getBody();
+            }
+
+            return json_decode($res->getBody(), true);
         } catch (\GuzzleHttp\Exception\ClientException $e) {
             // return $endpoint;
             $response = $e->getResponse();
@@ -287,10 +295,12 @@ class Ceisa40UploaderController extends BaseController
                                 'RES_NO' => $value['nomorRespon'],
                                 'TYPE_DOC' => $value['kodeDokumen'],
                                 'TGL_DAFTAR' => date('Y-m-d H:i:s', strtotime($value['tanggalDaftar'])),
+                                'ID_HEADER' => $value['idHeader']
                             ]);
                         }
 
                         $dataHasil[] = [
+                            'id' => $value['idHeader'],
                             'nopen' => $value['nomorDaftar'],
                             'noaju' => $value['nomorAju'],
                             'tglpen' => $value['tanggalDaftar'],
@@ -377,20 +387,49 @@ class Ceisa40UploaderController extends BaseController
         return $hasil;
     }
 
-    public function downloadExcel($noAju) {
+    public function getEntitas($idHeader) {
+        $getEntitas = $this->apiPointData(
+            'TdEntitas/findByIdHeader?idHeader='.$idHeader,
+            'GET',
+            [],
+            'parser',
+            true
+        );
+
+        if (!empty($getEntitas)) {
+            return $getEntitas;
+        }
+    }
+
+    public function downloadExcel($noAju, $bc, $isStore = false) {
         $getDetilPerusahanPenerima = $this->apiPointData(
             'ekspor-xml/Xlsx?nomorAju='.$noAju.'&idUser=adf9ea0f-de99-444d-b502-e4a474670624',
             'GET',
             [],
             'parser',
             true,
+            true,
             true
         );
 
         if (!empty($getDetilPerusahanPenerima)) {
-            return $getDetilPerusahanPenerima;
+            switch ($bc) {
+                case '27':
+                    # code...
+                    break;
+                
+                default:
+                    $splitStr = str_split($bc);
+                    $bcComp = implode($splitStr, '.');
+
+                    break;
+            }
+
+            $fileName = $bc.' '.$noAju.'.xlsx';
+            Storage::put('ceisa40storage/'.$fileName, base64_decode($getDetilPerusahanPenerima));
+            return 'storage/app/public/ceisa40storage/'.$fileName;
+        } else {
+            return $this->handleError('Failed fetching data from Portal Ceisa 4.0 !!');
         }
-        // https://apis-gw.beacukai.go.id/v2/parser/v1/ekspor-xml/Xlsx?nomorAju=00002701558220231211000593&idUser=adf9ea0f-de99-444d-b502-e4a474670624
-        // https://apis-gw.beacukai.go.id/v2/parser/v1/ekspor-xml/Xlsx?nomorAju=00002701558220231212000618&idUser=adf9ea0f-de99-444d-b502-e4a474670624
     }
 }
