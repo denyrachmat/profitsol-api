@@ -208,6 +208,19 @@ return [
             'prefix_indexes' => true,
         ],
 
+        'sqlsrv_mega_ska' => [
+            'driver' => 'sqlsrv',
+            'url' => env('DATABASE_URL'),
+            'host' => env('DB_MEGA_SKA_HOST', 'localhost'),
+            'port' => env('DB_MEGA_SKA_PORT', '1433'),
+            'database' => env('DB_MEGA_SKA_DATABASE', 'forge'),
+            'username' => env('DB_MEGA_SKA_USERNAME', 'forge'),
+            'password' => env('DB_MEGA_SKA_PASSWORD', ''),
+            'charset' => 'utf8',
+            'prefix' => '',
+            'prefix_indexes' => true,
+        ],
+
         'sqlsrv_mega_tyo' => [
             'driver' => 'sqlsrv',
             'url' => env('DATABASE_URL'),

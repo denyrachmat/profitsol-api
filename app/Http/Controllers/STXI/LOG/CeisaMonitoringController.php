@@ -17,7 +17,7 @@ class CeisaMonitoringController extends BaseController
      */
     public function index()
     {
-        $data = viewCeisaRespon::get();
+        $data = viewCeisaRespon::orderBy('TGL_DAFTAR', 'DESC')->get();
 
         return $this->handleResponse($data, 'Data fetched ');
     }
@@ -49,9 +49,14 @@ class CeisaMonitoringController extends BaseController
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function show($id)
+    public function show($id, $daftar)
     {
-        //
+        $data = CEISARESPON::where('NOMOR_AJU', $id)
+            ->where('NOMOR_DAFTAR', $daftar)
+            ->orderBy('TGL_DAFTAR', 'DESC')
+            ->get();
+
+        return $this->handleResponse($data, 'Data fetched ');
     }
 
     /**
@@ -86,5 +91,9 @@ class CeisaMonitoringController extends BaseController
     public function destroy($id)
     {
         //
+    }
+
+    public function resyncITInventory(){
+        
     }
 }
