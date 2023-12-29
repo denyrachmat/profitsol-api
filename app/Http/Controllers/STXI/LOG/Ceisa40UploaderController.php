@@ -3,17 +3,15 @@
 namespace App\Http\Controllers\STXI\LOG;
 
 use App\Http\Controllers\API\PORTAL\BaseController;
-use App\Models\STXI\CEISA40\CEISARESPON;
-use App\Models\STXI\LOG\EntitasMaster;
-use App\Models\STXI\LOG\EntitasSkepDetail;
 use Illuminate\Http\Request;
 use Excel;
 use Illuminate\Http\File;
-use Illuminate\Support\Facades\Storage;
-
+use Illuminate\Support\Facades\Redis;
+use Illuminate\Support\Facades\DB;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
+
 use App\Imports\STXI\LOG\ImportCeisa40;
-use App\Models\STXI\LOG\CeisaToken;
+use App\Jobs\STXI\LOG\SyncITInventoryQueue;
 
 use App\Traits\STXI\LOG\Ceisa40Traits;
 
@@ -55,5 +53,40 @@ class Ceisa40UploaderController extends BaseController
         Excel::import($importer, public_path('/storage/upload_ceisa40/' . $nama_file));
 
         return $this->handleResponse([], 'Upload Sukses ' . $nama_file);
+    }
+
+    public function syncCeisaToWebBased($noAju, $bc, $id){
+        try {
+            $downloadExcel = $this->downloadExcel($noAju, $bc, $id, false);
+            
+            if (str_contains($downloadExcel, '1.6') || str_contains($downloadExcel, '2.7I') || str_contains($downloadExcel, '4.0')) {
+                logger('ini incoming !!');
+                $state = 'INC';
+            } else {
+                $state = 'OUT';
+            }
+    
+            $importer = new ImportCeisa40($state);
+    
+            Excel::import($importer, public_path($downloadExcel));
+    
+            return $this->handleResponse([], 'Sync data sukses !!');
+        } catch (\Throwable $th) {
+            return $this->handleError($th->getMessage());
+        }
+    }
+
+    public function test($db, $data) {
+        Redis::set($db, $data);
+    }
+
+    public function autoSyncCeisa40() {
+        $getNGData = DB::connection('sqlsrv_itinv')->table('v_empty_cols')->get();
+
+        foreach ($getNGData as $key => $value) {
+            SyncITInventoryQueue::dispatch($value)->onQueue('syncCeisa40ITInventory');
+        }
+
+        return $this->handleResponse($getNGData, 'Sync data queued !!');
     }
 }

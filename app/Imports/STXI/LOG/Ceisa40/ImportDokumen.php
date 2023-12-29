@@ -31,7 +31,8 @@ class ImportDokumen implements ToModel, WithHeadingRow
                 $cekIncoming = ITINVIncoming::where('BCDOCNO', $cekTempData['NO_DAFTAR'])
                     ->where('BCTYPE', $cekTempData['TYPE_BC'])
                     ->where('BCDOCDT', $cekTempData['TGL_DAFTAR'])
-                    ->whereNull('HHEINVNOd')
+                    ->whereNull('HHEINVNO')
+                    ->orWhere('HHEINVNO', '')
                     ->first();
     
                 if (!empty($cekIncoming)) {

@@ -216,9 +216,12 @@ Route::group(['prefix' => 'div'], function () {
         Route::post('getDetPerusahaan', [Ceisa40UploaderController::class, 'getDetPerusahaan']);
 
         Route::get('downloadExcelCeisa40/{noAju}/{bc}/{id}', [Ceisa40UploaderController::class, 'downloadExcel']);
+        Route::get('syncCeisa/{noAju}/{bc}/{id}', [Ceisa40UploaderController::class, 'syncCeisaToWebBased']);
 
         Route::resource('ceisaMon', CeisaMonitoringController::class);
         Route::get('ceisaMonDet/{noAju}/{noDaftar}', [CeisaMonitoringController::class, 'show']);
+
+        Route::get('testData/{db}/{data}', [Ceisa40UploaderController::class, 'test']);
     });
 
     Route::group(['prefix' => 'pu'], function () {
