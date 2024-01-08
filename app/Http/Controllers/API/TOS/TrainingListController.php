@@ -94,6 +94,8 @@ class TrainingListController extends BaseController
         ->get()
         ->toArray();
 
+        // return $hasil;
+
         $hasilFinal = [];
         foreach ($hasil as $key => $value) {
             $getGrade = $this->getTrainingList($value['email'], $id);

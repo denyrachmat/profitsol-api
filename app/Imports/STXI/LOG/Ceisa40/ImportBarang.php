@@ -97,6 +97,7 @@ class ImportBarang implements ToModel, WithHeadingRow
                         ->update([
                             'PRICE' => round((int) $row['cif'] / (int) $row['jumlah_satuan'], 4),
                             'TTLAMOUNT' => round((int) $row['cif'], 4),
+                            'CUSNM' => $cekTempData['PENERIMA'],
                         ]);
                 } else {
                     $UOM = 'PIECE';
@@ -129,7 +130,6 @@ class ImportBarang implements ToModel, WithHeadingRow
                         'TTLAMOUNT' => round((int) $row['cif'], 4),
                         'TAXINV' => '',
                         'CUSNM' => $cekTempData['PENERIMA'],
-                        'PENGIRIM' => $cekTempData['PENGIRIM'],
                         'WMSLOC' => '',
                         'HSCODE' => $row['hs']
                     ]);

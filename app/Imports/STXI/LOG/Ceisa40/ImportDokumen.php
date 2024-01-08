@@ -79,13 +79,27 @@ class ImportDokumen implements ToModel, WithHeadingRow
                             'DOCNO' => $row['nomor_dokumen']
                         ]);
                 }
+            } else {
+                $cekIncoming = ITINVOutgoing::where('BCDOCNO', $cekTempData['NO_DAFTAR'])
+                    ->where('BCTYPE', $cekTempData['TYPE_BC'])
+                    ->where('BCDOCDT', $cekTempData['TGL_DAFTAR'])
+                    ->first();
+    
+                if (!empty($cekIncoming)) {
+                    ITINVOutgoing::where("BCDOCNO", $cekTempData['NO_DAFTAR'])
+                        ->where('BCTYPE', $cekTempData['TYPE_BC'])
+                        ->where('BCDOCDT', $cekTempData["TGL_DAFTAR"])
+                        ->update([
+                            'DOCNO' => $row['nomor_dokumen']
+                        ]);
+                }
             }
         }
 
         if ($row['kode_dokumen'] == 640) {
             $cekTempData = ITINVUploadTemp::where('NO_AJU', $row['nomor_aju'])->first();
             if ($this->incout == 'INC') {
-                $cekIncoming = ITINVOutgoing::where('BCDOCNO', $cekTempData['NO_DAFTAR'])
+                $cekIncoming = ITINVIncoming::where('BCDOCNO', $cekTempData['NO_DAFTAR'])
                     ->where('BCTYPE', $cekTempData['TYPE_BC'])
                     ->where('BCDOCDT', $cekTempData['TGL_DAFTAR'])
                     ->whereNull('DOCNO')

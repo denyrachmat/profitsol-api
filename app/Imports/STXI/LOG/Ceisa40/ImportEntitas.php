@@ -48,7 +48,7 @@ class ImportEntitas implements ToModel, WithHeadingRow
                 ]);
             }
         } else {
-            if ($row['kode_entitas'] == 8 && !empty($cekTempData['NO_DAFTAR'])) {
+            if (($row['kode_entitas'] == 8 || $row['kode_entitas'] == 7) && !empty($cekTempData['NO_DAFTAR'])) {
                 ITINVUploadTemp::updateOrCreate([
                     'NO_AJU' => $row['nomor_aju'],
                     'NO_DAFTAR' => $cekTempData['NO_DAFTAR']

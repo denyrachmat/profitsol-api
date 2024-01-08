@@ -21,7 +21,7 @@ trait FormsTraits
             $answerID = [];
             foreach ($value['form_master'] as $key => $valueAns) {
                 $cekAnswer = FormAnswerDet::where('cfmd_id', $valueAns['id'])->first();
-                if (isset($cekAnswer['cfm_exp']) && !empty($cekAnswer['cfm_exp'])) {
+                if (!empty($cekAnswer)) {
                     $answer[] = is_array(json_decode($cekAnswer['cfm_val'])) ? json_decode($cekAnswer['cfm_val']) : $cekAnswer['cfm_val'];
                     $exp[] = $cekAnswer['cfm_exp'];
                     $answerID[] = $valueAns['id'];
@@ -29,12 +29,12 @@ trait FormsTraits
             }
 
             $shared = FormShareDet::where('cfmt_id', $value['id'])
-                ->join('STX_PORTAL.dbo.portal_app_mstr', 'am_app_url', DB::raw("CONCAT('forms/', cfsd_gen_link)"))
+                ->leftjoin('STX_PORTAL.dbo.portal_app_mstr', 'am_app_url', DB::raw("CONCAT('forms/', cfsd_gen_link)"))
                 ->get();
 
             $roleList = [];
             foreach ((clone $shared)->toArray() as $key => $value2) {
-                $roleList[$value2['cfsd_role_id']] = (int)$value2['cfsd_role_id'];
+                $roleList[$value2['cfsd_role_id']] = (int) $value2['cfsd_role_id'];
             }
 
             $hasil[] = [
@@ -42,28 +42,29 @@ trait FormsTraits
                 'title' => $value['cfmt_title'],
                 'isQuiz' => $value['cfmt_quiz_flag'],
                 'forms' => $this->convertToFE($value['form_master']),
+                // 'checkFormMaster' => $value['form_master'],
                 'ans' => $answer,
                 'exp' => $exp,
                 'ans_id' => $answerID,
                 'share' => (clone $shared)->pluck('cfsd_to'),
                 'setupTraining' => !empty($value['quiz_setup'])
-                ? [
-                    'defaultNumberOfChoice' => 1,
-                    'defaultTypeChoice' => "multiple-radio",
-                    'hourTimer' => (int) $value['quiz_setup']['cfsd_hours'],
-                    'minTimer' => (int) $value['quiz_setup']['cfsd_min'],
-                    'randomizeQuestion' => (boolean) $value['quiz_setup']['cfsd_rand_quest'],
-                    'secTimer' => (int) $value['quiz_setup']['cfsd_sec'],
-                    'setUpTimer' => (boolean) $value['quiz_setup']['cfsd_timer'],
-                    'showResult' => (boolean) $value['quiz_setup']['cfsd_res_show'],
-                    'showRightKeysAnswer' => (boolean) $value['quiz_setup']['cfsd_ans_show'],
-                    'showRightKeysAnswerLocation' => $value['quiz_setup']['cfsd_ans_loc'],
-                    'timerEveryQuestion' => (boolean) $value['quiz_setup']['cfsd_timer_quest'],
-                    'minPass' => $value['quiz_setup']['cfsd_min_pass'],
-                    'startQuiz' => $value['quiz_setup']['cfsd_start_quiz'],
-                    'endQuiz' => $value['quiz_setup']['cfsd_end_quiz'],
-                ]
-                : null,
+                    ? [
+                        'defaultNumberOfChoice' => 1,
+                        'defaultTypeChoice' => "multiple-radio",
+                        'hourTimer' => (int) $value['quiz_setup']['cfsd_hours'],
+                        'minTimer' => (int) $value['quiz_setup']['cfsd_min'],
+                        'randomizeQuestion' => (boolean) $value['quiz_setup']['cfsd_rand_quest'],
+                        'secTimer' => (int) $value['quiz_setup']['cfsd_sec'],
+                        'setUpTimer' => (boolean) $value['quiz_setup']['cfsd_timer'],
+                        'showResult' => (boolean) $value['quiz_setup']['cfsd_res_show'],
+                        'showRightKeysAnswer' => (boolean) $value['quiz_setup']['cfsd_ans_show'],
+                        'showRightKeysAnswerLocation' => $value['quiz_setup']['cfsd_ans_loc'],
+                        'timerEveryQuestion' => (boolean) $value['quiz_setup']['cfsd_timer_quest'],
+                        'minPass' => $value['quiz_setup']['cfsd_min_pass'],
+                        'startQuiz' => $value['quiz_setup']['cfsd_start_quiz'],
+                        'endQuiz' => $value['quiz_setup']['cfsd_end_quiz'],
+                    ]
+                    : null,
                 'shareFormsIsMainMenu' => count((clone $shared)) > 0 && (clone $shared)[0]->cfsd_is_menu == 1 ? true : false,
                 'shareFormsIsRoles' => count((clone $shared)) > 0 && !empty((clone $shared)[0]->cfsd_role_id) ? true : false,
                 'selectedSharedMenu' => count((clone $shared)) > 0 && !empty((clone $shared)[0]->cfsd_role_id) ? (clone $shared)[0]->am_app_parent : '',
@@ -97,12 +98,12 @@ trait FormsTraits
                 'required' => $value['cfm_type'] === 'form' ? ($value['cfm_required'] == 1) : false,
                 'seq_name' => $value['cfm_seq_name'],
                 'content' => $value['cfm_type'] === 'row'
-                ? $this->convertToFE($value['all_children_content'])
-                : (
-                    $value['cfm_type'] === 'html'
-                    ? $value['cfm_content']
-                    : array_merge(json_decode($value['cfm_content'], true), ['detail_data' => $hasilDetail])
-                ),
+                    ? $this->convertToFE($value['all_children_content'])
+                    : (
+                        $value['cfm_type'] === 'html'
+                        ? $value['cfm_content']
+                        : array_merge(json_decode($value['cfm_content'], true), ['detail_data' => $hasilDetail])
+                    ),
             ];
         }
 
@@ -192,8 +193,8 @@ trait FormsTraits
                                 'p_u_username' => $uname,
                                 'cfm_id' => $idTitle,
                                 'cfmd_id' => $insert->id,
-                                'cfm_val' => is_array($valueAns) ? (string)json_encode($valueAns) : (string)$valueAns,
-                                'cfm_exp' => (string)$keyExp[$keyAns],
+                                'cfm_val' => is_array($valueAns) ? (string) json_encode($valueAns) : (string) $valueAns,
+                                'cfm_exp' => (string) $keyExp[$keyAns],
                             ]);
                         }
                     }

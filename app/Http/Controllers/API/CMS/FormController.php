@@ -67,8 +67,12 @@ class FormController extends BaseController
         }
 
         if (isset($request->setupTraining) && !empty($request->idRef)) {
-            FormSetupDet::where('cfmt_id', $request->idRef)->delete();
-            FormSetupDet::create([
+            // FormSetupDet::where('cfmt_id', $request->idRef)->delete();
+            $cekSetup = FormSetupDet::where('cfmt_id', $request->idRef)->first();
+
+            FormSetupDet::updateOrCreate([
+                'cfmt_id' => $request->idRef,
+            ],[
                 'cfmt_id' => $request->idRef,
                 'cfsd_res_show' => $request->setupTraining['showResult'],
                 'cfsd_ans_show' => $request->setupTraining['showRightKeysAnswer'],
@@ -82,9 +86,9 @@ class FormController extends BaseController
                 'cfsd_min_pass' => $request->setupTraining['minPass'],
                 'cfsd_start_quiz' => $request->setupTraining['startQuiz'],
                 'cfsd_end_quiz' => $request->setupTraining['endQuiz'],
+                'cfsd_real_start_quiz' => empty($cekSetup) ? $request->setupTraining['startQuiz']: $cekSetup->cfsd_real_start_quiz,
+                'cfsd_real_end_quiz' => empty($cekSetup) ? $request->setupTraining['endQuiz']: $cekSetup->cfsd_real_end_quiz,
             ]);
-
-
         }
 
         if (isset($request->shareForms) && !empty($request->idRef)) {
@@ -100,8 +104,8 @@ class FormController extends BaseController
                     'p_u_username' => $request->header('username'),
                     'cfsd_to' => $valueShare,
                     'cfsd_gen_link' => $randomString,
-                    'cfsd_role_id' => isset($request->shareFormsIsRoles) ? $cekIDRoles->rm_role_id : '',
-                    'cfsd_is_menu' => isset($request->shareFormsIsMainMenu) ? $request->shareFormsIsMainMenu : 0
+                    'cfsd_role_id' => isset($request->shareFormsIsRoles) && $request->shareFormsIsRoles ? $cekIDRoles->rm_role_id : '',
+                    'cfsd_is_menu' => isset($request->shareFormsIsMainMenu) && $request->shareFormsIsMainMenu ? $request->shareFormsIsMainMenu : 0
                 ]);
 
                 // If Form Added to information
@@ -159,8 +163,7 @@ class FormController extends BaseController
             }
         }
 
-        FormAnswerDet::where('cfm_id', $insertMaster->id)
-            ->delete();
+        FormAnswerDet::where('cfm_id', $insertMaster->id)->delete();
 
         $hasil = [];
         foreach ($data as $key => $value) {

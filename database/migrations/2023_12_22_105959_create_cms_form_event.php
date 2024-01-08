@@ -19,7 +19,6 @@ class CreateCmsFormEvent extends Migration
             $table->integer('cfmt_id');
             $table->string('cfe_type');
             $table->string('cfe_opr');
-            $table->string('cfe_opr');
             $table->timestamps();
         });
     }

@@ -25,5 +25,7 @@ class FormSetupDet extends Model
         'cfsd_min_pass',
         'cfsd_start_quiz',
         'cfsd_end_quiz',
+        'cfsd_real_start_quiz',
+        'cfsd_real_end_quiz',
     ];
 }
