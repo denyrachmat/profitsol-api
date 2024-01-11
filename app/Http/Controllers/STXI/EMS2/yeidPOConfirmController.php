@@ -8,6 +8,8 @@ use App\Http\Controllers\API\PORTAL\BaseController;
 use App\Models\STXI\EMS2\YPOMaster;
 use App\Models\STXI\EMS2\YPOSTXIPODet;
 use App\Exports\STXI\ExportYPOManual;
+use App\Exports\STXI\EMS2\YPOManual\ExportYPOManualHeader;
+
 use Excel;
 use Illuminate\Http\File;
 
@@ -62,6 +64,7 @@ class yeidPOConfirmController extends BaseController
                     'YPO_PODUEDT' => $value['YPO_PODUEDT'],
                     'YPO_POQTY' => $value['YPO_POQTY'],
                     'YPO_TXID' => $id,
+                    'YPO_TYPE' => $request->tipe,
                 ]);
             }
 
@@ -201,10 +204,12 @@ class yeidPOConfirmController extends BaseController
                 SELECT SUM(YSPDT_POQT) FROM YPO_STXI_PO_DET_TBL
                 WHERE YMT_ID = YPO_MSTR_TBL.id
             ), 0) as REG_PO_QTY"),
+            // DB::raw("0 as REG_PO_QTY"),
             DB::raw("COALESCE((
                 SELECT COUNT(*) FROM YPO_STXI_PO_DET_TBL
                 WHERE YMT_ID = YPO_MSTR_TBL.id
             ), 0) as INV_QTY"),
+            // DB::raw("0 as INV_QTY"),
             'mt.MITM_ITMD1',
             'mt.MITM_SPTNO',
             'mt2.MSUP_ABBRV',
@@ -249,10 +254,23 @@ class yeidPOConfirmController extends BaseController
             }
         }
 
-        $data = $data->get();
+        $data = $data->where('YPO_TYPE', 'new')->get();
+
+        $dataReg = $this->getDataYpo();
+
+        if ($req->has('filter')) {
+            foreach ($req->filter as $key => $value) {
+                $dataReg->where($value['cols'], 'LIKE', $value['value'] . '%');
+            }
+        }
+
+        $dataReg = $dataReg->where('YPO_TYPE', 'reg')->get();
 
         // return $data;
-        Excel::store(new ExportYPOManual($data), 'export_ypo_manual.xlsx', 'public');
+        Excel::store(new ExportYPOManualHeader([
+            'new' => $data,
+            'reg' => $dataReg
+        ]), 'export_ypo_manual.xlsx', 'public');
 
         return 'storage/app/public/export_ypo_manual.xlsx';
     }
@@ -357,10 +375,15 @@ class yeidPOConfirmController extends BaseController
                 $nama_file = $fileHash . '.xlsx';
                 $writer->save('/public/upload_manual_ymi_po/' . $nama_file);
             }
+            
+            $getData = YPOMaster::where('YPO_TYPE',  $req->type)->get();
+            foreach ($getData as $key => $value) {
+                YPOSTXIPODet::where('YMT_ID', $value->id)->delete();
+            }
 
-            YPOMaster::truncate();
-            YPOSTXIPODet::truncate();
-            $importer = new ImportSTXIYEIDPOConfirmation('new');
+            YPOMaster::where('YPO_TYPE',  $req->type)->delete();
+
+            $importer = new ImportSTXIYEIDPOConfirmation($req->type);
 
             Excel::import($importer, public_path('/storage/upload_manual_ymi_po/' . $nama_file));
 

@@ -39,6 +39,7 @@ class ImportSTXIYEIDPOConfirmation implements ToModel, WithStartRow, WithCalcula
                 ->where('YPO_TYPE', 'new')
                 ->orderBy('id', 'desc')
                 ->first();
+                
             if (empty($cekLatestReceive)) {
                 $this->isStart = true;
             } else {

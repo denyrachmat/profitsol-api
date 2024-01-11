@@ -10,16 +10,26 @@ use Maatwebsite\Excel\Concerns\Exportable;
 use Maatwebsite\Excel\Concerns\WithEvents;
 use PhpOffice\PhpSpreadsheet\Style\NumberFormat;
 use \PhpOffice\PhpSpreadsheet\Shared\Date;
+use Maatwebsite\Excel\Concerns\WithTitle;
 
-class ExportYPOManual implements FromCollection, WithEvents, WithHeadings
+class ExportYPOManual implements FromCollection, WithEvents, WithHeadings, WithTitle
 {
     use RegistersEventListeners, Exportable;
     private $data;
-    public function __construct($data)
+    private $tipe;
+
+    public function __construct($data, $tipe)
     {
         $this->data = $data;
+        $this->tipe = $tipe;
         $this->hasil = [];
     }
+
+    public function title(): string
+    {
+        return $this->tipe == 'reg' ? 'REGULAR' : 'NEW MODEL';
+    }
+
     /**
     * @return \Illuminate\Support\Collection
     */
