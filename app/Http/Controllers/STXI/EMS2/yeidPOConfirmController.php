@@ -198,6 +198,8 @@ class yeidPOConfirmController extends BaseController
 
     public function getDataPagination(Request $req)
     {
+        set_time_limit(3000);
+        
         $data = YPOMaster::select(
             'YPO_MSTR_TBL.*',
             DB::raw("COALESCE((
@@ -230,7 +232,7 @@ class yeidPOConfirmController extends BaseController
                 $data->orderBy($req->pagination['sortBy'], $req->pagination['descending'] ? 'DESC' : 'ASC');
             }
 
-            $data = $data->paginate($req->pagination['rowsPerPage'], [], 'page', $req->pagination['page']);
+            $data = $data->paginate(null, [], 'page', $req->pagination['page']);
         } else {
             $data = $data->get();
         }

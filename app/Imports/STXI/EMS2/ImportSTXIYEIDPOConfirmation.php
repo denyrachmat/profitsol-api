@@ -12,6 +12,8 @@ use App\Models\STXI\EMS2\YPOMaster;
 use App\Models\STXI\EMS2\YPOSTXIPODet;
 use Illuminate\Support\Facades\DB;
 
+use App\Jobs\STXI\EMS2\updateInvoiceYPOManualQueue;
+
 class ImportSTXIYEIDPOConfirmation implements ToModel, WithStartRow, WithCalculatedFormulas
 {
     protected $type;
@@ -76,6 +78,10 @@ class ImportSTXIYEIDPOConfirmation implements ToModel, WithStartRow, WithCalcula
 
                 $idMaster = $insertMaster->id;
             } else {
+                YPOMaster::where('YPO_TXID', $this->id)->where('YPO_ITMCD', trim($row[1]))->where('YPO_PONO', trim($row[11]))->update([
+                    'YPO_POQTY' => $cekData->YPO_POQTY + (is_numeric($row[13]) ? $row[13] : 0),
+                ]);
+
                 $idMaster = $cekData->id;
             }
             
@@ -97,6 +103,8 @@ class ImportSTXIYEIDPOConfirmation implements ToModel, WithStartRow, WithCalcula
         } else {
             logger('masuk sini space kosong');
             $this->isStart = true;
+
+            updateInvoiceYPOManualQueue::dispatch()->onQueue('updateInvoiceYPOManualQueue');
         }
     }
 
