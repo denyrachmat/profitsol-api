@@ -49,6 +49,7 @@ class updateInvoiceYPOManualQueue implements ShouldQueue
                 if (!empty($dataView)) {
                     YPOSTXIPODet::where('YMT_ID', $value->YMT_ID)
                         ->where('YSPDT_PONO', $value->YSPDT_PONO)
+                        ->where('YSPDT_POQT', '>', 0)
                         ->update([
                             'YSPDT_INVNO' => $dataView->PGIT_SUPNO,
                             'YSPDT_POQT' => (int)$dataView->PGIT_RCVQT
