@@ -27,6 +27,7 @@ class ImportBarang implements ToModel, WithHeadingRow
         ini_set("memory_limit", "3G");
         $cekTempData = ITINVUploadTemp::where('NO_AJU', $row['nomor_aju'])->first();
         if (!empty($cekTempData)) {
+            $getHSCode = DB::connection('sqlsrv_itinv')->table('VIEW_MITM_TBL')->where('MITM_ITMCD', $row['kode_barang'])->first();
             if ($this->incout == 'INC') {
                 $cekIncoming = ITINVIncoming::where('BCDOCNO', 'LIKE', $cekTempData['NO_DAFTAR'] . '%')
                     ->where('BCTYPE', $cekTempData['TYPE_BC'])
@@ -34,9 +35,7 @@ class ImportBarang implements ToModel, WithHeadingRow
                     ->where('ITMCD', trim($row['kode_barang']))
                     ->first();
 
-                $getHSCode = DB::connection('sqlsrv_log')->table('V_HSCODE')->where('ITEM_CODE', $row['kode_barang'])->first();
                 if (!empty($cekIncoming)) {
-
                     ITINVIncoming::where("BCDOCNO", 'LIKE', $cekTempData['NO_DAFTAR'] . '%')
                         ->where('BCTYPE', $cekTempData['TYPE_BC'])
                         ->where('BCDOCDT', $cekTempData["TGL_DAFTAR"])
@@ -44,7 +43,9 @@ class ImportBarang implements ToModel, WithHeadingRow
                         ->update([
                             'PRICE' => round((int) $row['cif'] / (int) $row['jumlah_satuan'], 4),
                             'TTLAMOUNT' => round((int) $row['cif'], 4),
-                            'HSCODE' => $row['hs']
+                            'HSCODE' => $row['hs'],
+                            'ITMD1' => $getHSCode->MITM_ITMD1,
+                            'SPTNO' => $getHSCode->MITM_SPTNO
                         ]);
                 } else {
                     $UOM = 'PIECE';
@@ -98,6 +99,8 @@ class ImportBarang implements ToModel, WithHeadingRow
                             'PRICE' => round((int) $row['cif'] / (int) $row['jumlah_satuan'], 4),
                             'TTLAMOUNT' => round((int) $row['cif'], 4),
                             'CUSNM' => $cekTempData['PENERIMA'],
+                            'ITMD1' => $getHSCode->MITM_ITMD1,
+                            'SPTNO' => $getHSCode->MITM_SPTNO
                         ]);
                 } else {
                     $UOM = 'PIECE';

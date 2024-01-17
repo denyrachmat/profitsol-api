@@ -63,7 +63,7 @@ class FormController extends BaseController
         ]);
 
         if (isset($request->idRef) && !empty($request->idRef)) {
-            FormMaster::where('cfmt_id', $request->idRef)->delete();
+            // FormMaster::where('cfmt_id', $request->idRef)->delete();
         }
 
         if (isset($request->setupTraining) && !empty($request->idRef)) {
@@ -166,7 +166,9 @@ class FormController extends BaseController
         FormAnswerDet::where('cfm_id', $insertMaster->id)->delete();
 
         $hasil = [];
+        $listPage = [];
         foreach ($data as $key => $value) {
+            $listPage[] = $value['seq_name'];
             $hasil[] = $this->storingForms(
                 $value,
                 $request->header('username'),
@@ -177,6 +179,10 @@ class FormController extends BaseController
                 $key
             );
         }
+
+        // FormMaster::where('cfmt_id', $request->idRef)
+        //     ->whereNotIn('cfm_seq_name', $listPage)
+        //     ->delete();
 
         return $this->handleResponse([
             'insert' => $hasil,

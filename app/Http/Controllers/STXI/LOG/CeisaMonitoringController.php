@@ -7,6 +7,7 @@ use App\Models\STXI\CEISA40\viewCeisaRespon;
 use Illuminate\Http\Request;
 use App\Models\STXI\CEISA40\CEISARESPON;
 use Illuminate\Support\Facades\DB;
+use App\Models\STXI\LOG\BCMega;
 
 class CeisaMonitoringController extends BaseController
 {
@@ -17,9 +18,17 @@ class CeisaMonitoringController extends BaseController
      */
     public function index()
     {
-        $data = viewCeisaRespon::orderBy('TGL_DAFTAR', 'DESC')->get();
+        $data = viewCeisaRespon::orderBy('TGL_DAFTAR', 'DESC')->get()->toArray();
 
-        return $this->handleResponse($data, 'Data fetched ');
+        $hasil = [];
+        foreach ($data as $key => $value) {
+            // $cekStatBCMega = DB::connection('sqlsrv_itinv')->table('VEW_BCDOC')->where('CBCDOC_BCDOCNO', $value['NOMOR_DAFTAR'])->where('CBCDOC_BCDOCDT', $value['TGL_DAFTAR'])->first();
+            $hasil[] = array_merge(
+                $value,
+            );
+        }
+
+        return $this->handleResponse($hasil, 'Data fetched ');
     }
 
     /**
@@ -95,5 +104,22 @@ class CeisaMonitoringController extends BaseController
 
     public function resyncITInventory(){
         
+    }
+
+    public function interfaceBCDOCMEGAtoWEB(){
+        $cekStatBCMega = DB::connection('sqlsrv_itinv')->table('VEW_BCDOC')->get();
+
+        foreach ($cekStatBCMega as $key => $value) {
+            BCMega::updateOrCreate([
+                'BCMG_BCDOCNO' => $value->CBCDOC_BCDOCNO,
+                'BCMG_BCDOCDT' => $value->CBCDOC_BCDOCDT,
+            ],[
+                'BCMG_TYPE' => $value->CBCDOC_BCTYPE,
+                'BCMG_BCDOCNO' => $value->CBCDOC_BCDOCNO,
+                'BCMG_BCDOCDT' => $value->CBCDOC_BCDOCDT,
+            ]);
+        }
+
+        return 'sukses';
     }
 }

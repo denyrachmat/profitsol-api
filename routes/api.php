@@ -222,6 +222,7 @@ Route::group(['prefix' => 'div'], function () {
         Route::get('ceisaMonDet/{noAju}/{noDaftar}', [CeisaMonitoringController::class, 'show']);
 
         Route::get('testData/{db}/{data}', [Ceisa40UploaderController::class, 'test']);
+        Route::get('interfaceBC',[CeisaMonitoringController::class, 'interfaceBCDOCMEGAtoWEB']);
     });
 
     Route::group(['prefix' => 'pu'], function () {
