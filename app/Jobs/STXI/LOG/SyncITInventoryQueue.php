@@ -9,6 +9,7 @@ use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Excel;
+use Illuminate\Support\Facades\DB;
 
 use App\Traits\STXI\LOG\Ceisa40Traits;
 use App\Models\STXI\CEISA40\viewCeisaRespon;
@@ -40,11 +41,15 @@ class SyncITInventoryQueue implements ShouldQueue
         // Update un-sync data in this month first 
         $dataUnsync = viewCeisaRespon::whereBetween('TGL_DAFTAR', [$this->fdate ? $this->fdate : date('Y-m-01'), $this->ldate ? $this->ldate : date('Y-m-t')])
             ->whereNull('TYPE_DOC')
-            ->where('STAT_MEGABCDOC', 1)
+            // ->where('STAT_MEGABCDOC', 1)
             ->orderBy('TGL_DAFTAR', 'DESC')
             ->get();
 
         foreach ($dataUnsync as $key => $value) {
+            if ($value->STAT_MEGABCDOC == 0 && $this->fdate) {
+                DB::connection('sqlsrv_itinv')->select("exec IF_CR_ALL_BYDAY('".$this->fdate."', 1)");
+            }
+
             $downloadExcel = $this->downloadExcel($value->NOMOR_AJU, $value->CEISA_TYPE, $value->ID_HEADER, false);
             
             if (str_contains($downloadExcel, '1.6') || str_contains($downloadExcel, '2.7I') || str_contains($downloadExcel, '4.0')) {

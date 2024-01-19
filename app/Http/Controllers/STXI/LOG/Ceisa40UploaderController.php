@@ -91,8 +91,18 @@ class Ceisa40UploaderController extends BaseController
     }
 
     public function syncByDate($fdate, $ldate){
-        $sync = SyncITInventoryQueue::dispatch($fdate, $ldate)->onQueue('syncCeisa40ITInventory');
+        $begin = new \DateTime($fdate);
+        $end = new \DateTime($ldate);
+        $interval = \DateInterval::createFromDateString('1 day');
+        $period = new \DatePeriod($begin, $interval, $end);
 
-        return $this->handleResponse([], 'Sync data queued !!');
+        $sync = [];
+        foreach ($period as $key => $value) {
+            $sync[] = $value;
+            
+            SyncITInventoryQueue::dispatch($fdate, $ldate)->onQueue('syncCeisa40ITInventory');
+        }
+
+        return $this->handleResponse($sync, 'Sync data queued !!');
     }
 }
