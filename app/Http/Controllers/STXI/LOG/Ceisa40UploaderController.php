@@ -84,9 +84,15 @@ class Ceisa40UploaderController extends BaseController
         $getNGData = DB::connection('sqlsrv_itinv')->table('v_empty_cols')->get();
 
         foreach ($getNGData as $key => $value) {
-            SyncITInventoryQueue::dispatch($value)->onQueue('syncCeisa40ITInventory');
+            SyncITInventoryQueue::dispatch(date('Y-m-01'), date('Y-m-t'))->onQueue('syncCeisa40ITInventory');
         }
 
         return $this->handleResponse($getNGData, 'Sync data queued !!');
+    }
+
+    public function syncByDate($fdate, $ldate){
+        $sync = SyncITInventoryQueue::dispatch($fdate, $ldate)->onQueue('syncCeisa40ITInventory');
+
+        return $this->handleResponse([], 'Sync data queued !!');
     }
 }

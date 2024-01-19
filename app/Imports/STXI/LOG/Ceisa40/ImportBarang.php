@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\DB;
 use App\Models\STXI\LOG\ITINVIncoming;
 use App\Models\STXI\LOG\ITINVOutgoing;
 use App\Models\STXI\LOG\ITINVUploadTemp;
+use App\Models\STXI\CEISA40\viewCeisaRespon;
 
 class ImportBarang implements ToModel, WithHeadingRow
 {
@@ -53,35 +54,41 @@ class ImportBarang implements ToModel, WithHeadingRow
                         $UOM = $row['kode_satuan'];
                     }
 
-                    ITINVIncoming::updateOrCreate([
-                        'BCTYPE' => $cekTempData['TYPE_BC'],
-                        'BCDOCNO' => $cekTempData['NO_DAFTAR'],
-                        'BCDOCDT' => $cekTempData['TGL_DAFTAR'],
-                        'ITMCD' => trim($row['kode_barang']),
-                    ], [
-                        'LOCCD' => 'STX-I',
-                        'BCTYPE' => $cekTempData['TYPE_BC'],
-                        'BCDOCNO' => $cekTempData['NO_DAFTAR'],
-                        'BCDOCDT' => $cekTempData['TGL_DAFTAR'],
-                        'BSGRP' => 'LAIN NYA',
-                        'DOCCD' => '',
-                        'DOCNO' => '',
-                        'HHEINVNO' => '',
-                        'ISUDT' => $cekTempData['TGL_DAFTAR'],
-                        'ITMCD' => trim($row['kode_barang']),
-                        'ITMD1' => $row['uraian'],
-                        'SPTNO' => $row['tipe'],
-                        'UOM' => $UOM,
-                        'TTLQTY' => $row['jumlah_satuan'],
-                        'CURCD' => $cekTempData['CURR'],
-                        'PRICE' => round((int) $row['cif'] / (int) $row['jumlah_satuan'], 4),
-                        'TTLAMOUNT' => round((int) $row['cif'], 4),
-                        'TAXINV' => '',
-                        'SUPNM' => $cekTempData['SUPPL'],
-                        'PENGIRIM' => $cekTempData['PENGIRIM'],
-                        'WMSLOC' => '',
-                        'HSCODE' => $row['hs']
-                    ]);
+                    $cekBCStatus = viewCeisaRespon::where('NOMOR_DAFTAR', $cekTempData['NO_DAFTAR'])->where('TGL_DAFTAR', $cekTempData['TGL_DAFTAR'])->first();
+
+                    if ($cekBCStatus->STAT_MEGABCDOC == 1) {
+                        $cekItemMega = DB::connection('sqlsrv_itinv')->table('VIEW_MITM_TBL')->where('MITM_ITMCD', $row['kode_barang'])->first();
+    
+                        ITINVIncoming::updateOrCreate([
+                            'BCTYPE' => $cekTempData['TYPE_BC'],
+                            'BCDOCNO' => $cekTempData['NO_DAFTAR'],
+                            'BCDOCDT' => $cekTempData['TGL_DAFTAR'],
+                            'ITMCD' => trim($row['kode_barang']),
+                        ], [
+                            'LOCCD' => empty($cekItemMega) ? 'STX-I' : '',
+                            'BCTYPE' => $cekTempData['TYPE_BC'],
+                            'BCDOCNO' => $cekTempData['NO_DAFTAR'],
+                            'BCDOCDT' => $cekTempData['TGL_DAFTAR'],
+                            'BSGRP' => 'LAIN NYA',
+                            'DOCCD' => '',
+                            'DOCNO' => '',
+                            'HHEINVNO' => '',
+                            'ISUDT' => $cekTempData['TGL_DAFTAR'],
+                            'ITMCD' => trim($row['kode_barang']),
+                            'ITMD1' => $row['uraian'],
+                            'SPTNO' => $row['tipe'],
+                            'UOM' => $UOM,
+                            'TTLQTY' => $row['jumlah_satuan'],
+                            'CURCD' => $cekTempData['CURR'],
+                            'PRICE' => round((int) $row['cif'] / (int) $row['jumlah_satuan'], 4),
+                            'TTLAMOUNT' => round((int) $row['cif'], 4),
+                            'TAXINV' => '',
+                            'SUPNM' => $cekTempData['SUPPL'],
+                            'PENGIRIM' => $cekTempData['PENGIRIM'],
+                            'WMSLOC' => '',
+                            'HSCODE' => $row['hs']
+                        ]);
+                    }
                 }
             } else {
                 $cekOutgoing = ITINVOutgoing::where('BCDOCNO', 'LIKE', $cekTempData['NO_DAFTAR'] . '%')

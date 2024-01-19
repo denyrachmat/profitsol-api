@@ -223,6 +223,7 @@ Route::group(['prefix' => 'div'], function () {
 
         Route::get('testData/{db}/{data}', [Ceisa40UploaderController::class, 'test']);
         Route::get('interfaceBC',[CeisaMonitoringController::class, 'interfaceBCDOCMEGAtoWEB']);
+        Route::get('interfaceByDate/{fdate}/{ldate}', [CeisaMonitoringController::class, 'syncByDate']);
     });
 
     Route::group(['prefix' => 'pu'], function () {

@@ -23,9 +23,11 @@ class SyncITInventoryQueue implements ShouldQueue
      *
      * @return void
      */
-    public function __construct($data)
+    private $fdate, $ldate;
+    public function __construct($fdate = '', $ldate = '')
     {
-        $this->data = $data;
+        $this->fdate = $fdate;
+        $this->ldate = $ldate;
     }
 
     /**
@@ -36,8 +38,9 @@ class SyncITInventoryQueue implements ShouldQueue
     public function handle()
     {
         // Update un-sync data in this month first 
-        $dataUnsync = viewCeisaRespon::whereBetween('TGL_DAFTAR', [date('Y-m-01'), date('Y-m-t')])
+        $dataUnsync = viewCeisaRespon::whereBetween('TGL_DAFTAR', [$this->fdate ? $this->fdate : date('Y-m-01'), $this->ldate ? $this->ldate : date('Y-m-t')])
             ->whereNull('TYPE_DOC')
+            ->where('STAT_MEGABCDOC', 1)
             ->orderBy('TGL_DAFTAR', 'DESC')
             ->get();
 
