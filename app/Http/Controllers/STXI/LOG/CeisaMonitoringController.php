@@ -107,6 +107,8 @@ class CeisaMonitoringController extends BaseController
     }
 
     public function interfaceBCDOCMEGAtoWEB(){
+        set_time_limit(3600);
+
         $cekStatBCMega = DB::connection('sqlsrv_itinv')->table('VEW_BCDOC')->get();
 
         foreach ($cekStatBCMega as $key => $value) {
