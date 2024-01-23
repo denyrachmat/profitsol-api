@@ -31,7 +31,6 @@ use App\Http\Controllers\API\PORTAL\ProfilesController;
 use App\Http\Controllers\API\PORTAL\UsersController;
 use App\Http\Controllers\API\PORTAL\AppController;
 use App\Http\Controllers\API\PORTAL\RoleController;
-
 /*
 |--------------------------------------------------------------------------
 | API Routes
@@ -259,3 +258,12 @@ Route::post('register', [AuthController::class, 'register']);
 Route::get('countryList', [ProfileController::class, 'getCountryList']);
 
 Route::post('forgot-password', [AuthController::class, 'forgot_password']);
+
+Route::get('redis', function () {
+    try{
+        $redis=\Redis::connect('192.168.100.32',6379);
+        return response('redis working');
+    }catch(\Predis\Connection\ConnectionException $e){
+        return response('error connection redis');
+    }
+});

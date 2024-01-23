@@ -37,6 +37,7 @@ class CircullarTenController extends BaseController
     {
         ini_set('max_execution_time', '300');
         $data = Storage::disk('local')->allDirectories('public/circular_ten');
+        
         $hasil = [];
         foreach ($data as $key => $value) {
             $path = $value;
