@@ -27,7 +27,7 @@ class ImportHeader implements ToModel, WithHeadingRow
     {
         ini_set("memory_limit", "3G");
 
-        $redis = Redis::connection();
+        // $redis = Redis::connection();
 
         $kodeDokumen = '';
 
@@ -103,12 +103,12 @@ class ImportHeader implements ToModel, WithHeadingRow
                 ]);
             }
 
-            $redis->publish('message', json_encode([
-                'app' => 'log',
-                'status' => 'positive',
-                'message' => 'Incoming on progress added',
-                'data' => $row
-            ]));
+            // $redis->publish('message', json_encode([
+            //     'app' => 'log',
+            //     'status' => 'positive',
+            //     'message' => 'Incoming on progress added',
+            //     'data' => $row
+            // ]));
         } else {
             logger([$row['kode_dokumen'], $kodeDokumen]);
             $cekData = ITINVOutgoing::where("BCDOCNO", $row["nomor_daftar"])
@@ -153,12 +153,12 @@ class ImportHeader implements ToModel, WithHeadingRow
                 ]);
             }
 
-            $redis->publish('message', json_encode([
-                'app' => 'log',
-                'status' => 'positive',
-                'message' => 'Outgoing on progress added',
-                'data' => $row
-            ]));
+            // $redis->publish('message', json_encode([
+            //     'app' => 'log',
+            //     'status' => 'positive',
+            //     'message' => 'Outgoing on progress added',
+            //     'data' => $row
+            // ]));
         }
     }
 }

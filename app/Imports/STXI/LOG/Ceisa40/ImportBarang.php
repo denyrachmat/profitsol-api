@@ -45,8 +45,8 @@ class ImportBarang implements ToModel, WithHeadingRow
                             'PRICE' => round((int) $row['cif'] / (int) $row['jumlah_satuan'], 4),
                             'TTLAMOUNT' => round((int) $row['cif'], 4),
                             'HSCODE' => $row['hs'],
-                            'ITMD1' => $getHSCode->MITM_ITMD1,
-                            'SPTNO' => $getHSCode->MITM_SPTNO
+                            'ITMD1' => !empty($getHSCode) ? $getHSCode->MITM_ITMD1 : trim($row['uraian']),
+                            'SPTNO' => !empty($getHSCode) ? $getHSCode->MITM_SPTNO : ''
                         ]);
                 } else {
                     $UOM = 'PIECE';
@@ -106,8 +106,8 @@ class ImportBarang implements ToModel, WithHeadingRow
                             'PRICE' => round((int) $row['cif'] / (int) $row['jumlah_satuan'], 4),
                             'TTLAMOUNT' => round((int) $row['cif'], 4),
                             'CUSNM' => $cekTempData['PENERIMA'],
-                            'ITMD1' => $getHSCode->MITM_ITMD1,
-                            'SPTNO' => $getHSCode->MITM_SPTNO
+                            'ITMD1' => !empty($getHSCode) ? $getHSCode->MITM_ITMD1 : trim($row['uraian']),
+                            'SPTNO' => !empty($getHSCode) ? $getHSCode->MITM_SPTNO : ''
                         ]);
                 } else {
                     $UOM = 'PIECE';
