@@ -57,6 +57,7 @@ class Ceisa40UploaderController extends BaseController
 
     public function syncCeisaToWebBased($noAju, $bc, $id){
         try {
+            ini_set('max_execution_time', '3200');
             $downloadExcel = $this->downloadExcel($noAju, $bc, $id, false);
             
             if (str_contains($downloadExcel, '1.6') || str_contains($downloadExcel, '2.7I') || str_contains($downloadExcel, '4.0')) {
