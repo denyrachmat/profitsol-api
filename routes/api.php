@@ -264,6 +264,7 @@ Route::get('redis', function () {
         $redis=\Redis::connect('192.168.100.32',6379);
         return response('redis working');
     }catch(\Predis\Connection\ConnectionException $e){
+        return $e;
         return response('error connection redis');
     }
 });
