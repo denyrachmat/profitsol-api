@@ -278,10 +278,10 @@ Route::get('testredis', function () {
     //     'data' => []
     // ]));
 
-    Redis::publish('message', 'a test message');
+    Redis::publish('test-channel', 'a test message');
 
     $prefix = config('database.redis.options.prefix');
-    $channel = 'message';
+    $channel = $prefix . 'test-channel';
 
     return "Done. (published on $channel)";
 });
