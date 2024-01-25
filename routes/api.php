@@ -270,11 +270,18 @@ Route::get('redis', function () {
 });
 
 Route::get('testredis', function () {
-    $redis = Redis::connection();
-    $redis->publish('message', json_encode([
-        'app' => 'log',
-        'status' => 'positive',
-        'message' => 'Incoming on progress added',
-        'data' => []
-    ]));
+    // $redis = Redis::connection();
+    // $redis->publish('message', json_encode([
+    //     'app' => 'log',
+    //     'status' => 'positive',
+    //     'message' => 'Incoming on progress added',
+    //     'data' => []
+    // ]));
+
+    Redis::publish('test-channel', 'a test message');
+
+    $prefix = config('database.redis.options.prefix');
+    $channel = $prefix . 'test-channel';
+
+    return "Done. (published on $channel)";
 });
