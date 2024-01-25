@@ -268,3 +268,13 @@ Route::get('redis', function () {
         return response('error connection redis');
     }
 });
+
+Route::get('testredis', function () {
+    $redis = Redis::connection();
+    $redis->publish('message', json_encode([
+        'app' => 'log',
+        'status' => 'positive',
+        'message' => 'Incoming on progress added',
+        'data' => []
+    ]));
+});
