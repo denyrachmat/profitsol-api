@@ -93,7 +93,7 @@ class Ceisa40UploaderController extends BaseController
 
     public function syncByDate($fdate, $ldate){
         $begin = new \DateTime($fdate);
-        $end = new \DateTime($ldate);
+        $end = new \DateTime(date('Y-m-d H:i:s', strtotime($ldate . ' +1 day')));
         $interval = new \DateInterval('P1D');
         $period = new \DatePeriod($begin, $interval, $end);
 
