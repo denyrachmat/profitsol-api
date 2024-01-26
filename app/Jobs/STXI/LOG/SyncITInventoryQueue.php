@@ -17,6 +17,8 @@ use App\Imports\STXI\LOG\ImportCeisa40;
 use Maatwebsite\Excel\Concerns\ToArray;
 use Redis;
 
+use App\Jobs\STXI\LOG\SyncITInventoryByBCNo;
+
 class SyncITInventoryQueue implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels, Ceisa40Traits;
@@ -26,11 +28,12 @@ class SyncITInventoryQueue implements ShouldQueue
      *
      * @return void
      */
-    private $fdate, $ldate;
-    public function __construct($fdate = '', $ldate = '')
+    private $fdate, $ldate, $isSyncMega;
+    public function __construct($fdate = '', $ldate = '', $isSyncMega = false)
     {
         $this->fdate = $fdate;
         $this->ldate = $ldate;
+        $this->isSyncMega = $isSyncMega;
     }
 
     /**
@@ -40,12 +43,11 @@ class SyncITInventoryQueue implements ShouldQueue
      */
     public function handle()
     {
+        set_time_limit(17600);
         // $redis = Redis::connection();
         
         // Update un-sync data in this month first 
         $dataUnsync = viewCeisaRespon::whereBetween('TGL_DAFTAR', [$this->fdate ? $this->fdate : date('Y-m-01'), $this->ldate ? $this->ldate : date('Y-m-t')])
-            // ->whereNull('TYPE_DOC')
-            // ->where('STAT_MEGABCDOC', 1)
             ->orderBy('TGL_DAFTAR', 'DESC')
             ->get();
 
@@ -65,16 +67,20 @@ class SyncITInventoryQueue implements ShouldQueue
             $sync[] = $this->fdate;
         }
 
-        $cekMEGAUnsync = array_filter((clone $dataUnsync)->ToArray(), function($f){
-            return $f['STAT_MEGABCDOC'] == 0;
-        }); 
+        Redis::publish('portalv2', json_encode([
+            'app' => 'it_inv_checker',
+            'message' => 'List bc no will be synchronized !',
+            'type' => 'success',
+            'data' => $dataUnsync 
+        ]));
 
-        if (count($cekMEGAUnsync) > 0) {
+        if ($this->isSyncMega) {
             foreach ($sync as $keyDate => $valueDate) {            
                 Redis::publish('portalv2', json_encode([
                     'app' => 'it_inv_checker',
                     'message' => $valueDate. ' data not sync !, start sync now...',
-                    'type' => 'info'
+                    'type' => 'info',
+                    'data' => $valueDate 
                 ]));
 
                 DB::connection('sqlsrv_itinv')->select("exec IF_CR_ALL_BYDAY('".$valueDate."', 1)");
@@ -82,44 +88,14 @@ class SyncITInventoryQueue implements ShouldQueue
                 Redis::publish('portalv2', json_encode([
                     'app' => 'it_inv_checker',
                     'message' => $valueDate. ' data sync !! please check on IT Inventory',
-                    'type' => 'success'
+                    'type' => 'success',
+                    'data' => $valueDate 
                 ]));
             }
         }
 
-        Redis::publish('portalv2', json_encode([
-            'app' => 'it_inv_checker',
-            'message' => $this->fdate. ' - '. $this->ldate .' sync data start',
-            'type' => 'info',
-            'data' => (clone $dataUnsync)->toArray()
-        ]));
-
-        $commRedis = [];
         foreach ($dataUnsync as $key => $value) {
-
-            Redis::publish('portalv2', json_encode([
-                'app' => 'it_inv_checker',
-                'message' => $value->NOMOR_DAFTAR. ' - sync from portal ceisa 40 data now...',
-                'type' => 'info'
-            ]));
-            
-            $downloadExcel = $this->downloadExcel($value->NOMOR_AJU, $value->CEISA_TYPE, $value->ID_HEADER, false);
-            
-            if (str_contains($downloadExcel, '1.6') || str_contains($downloadExcel, '2.7I') || str_contains($downloadExcel, '4.0')) {
-                $state = 'INC';
-            } else {
-                $state = 'OUT';
-            }
-    
-            $importer = new ImportCeisa40($state);
-    
-            Excel::import($importer, public_path($downloadExcel));
-
-            Redis::publish('portalv2', json_encode([
-                'app' => 'it_inv_checker',
-                'message' => $value->TGL_DAFTAR. ' sync, portal ceisa 40 done !',
-                'type' => 'success'
-            ]));
+            SyncITInventoryByBCNo::dispatch($value->NOMOR_DAFTAR, $value->TGL_DAFTAR)->onQueue('SyncITInventoryByBCNo');
         }
     }
 }
