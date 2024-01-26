@@ -48,28 +48,30 @@ class SyncITInventoryQueue implements ShouldQueue
             ->orderBy('TGL_DAFTAR', 'DESC')
             ->get();
 
+        $commRedis = [];
         foreach ($dataUnsync as $key => $value) {
             if ($value->STAT_MEGABCDOC == 0 && $value->TGL_DAFTAR) {
-                $redis->publish('portalv2', [
+
+                $redis->publish('portalv2', json_encode([
                     'app' => 'it_inv_checker',
                     'message' => $value->TGL_DAFTAR. ' data not sync !, start sync now...',
                     'type' => 'info'
-                ]);
+                ]));
 
                 DB::connection('sqlsrv_itinv')->select("exec IF_CR_ALL_BYDAY('".$value->TGL_DAFTAR."', 1)");
 
-                $redis->publish('portalv2', [
+                $redis->publish('portalv2', json_encode([
                     'app' => 'it_inv_checker',
                     'message' => $value->TGL_DAFTAR. ' data sync !! please check on IT Inventory',
                     'type' => 'success'
-                ]);
+                ]));
             }
 
-            $redis->publish('portalv2', [
+            $redis->publish('portalv2', json_encode([
                 'app' => 'it_inv_checker',
                 'message' => $value->TGL_DAFTAR. ' sync, portal ceisa 40 data now...',
                 'type' => 'info'
-            ]);
+            ]));
             
             $downloadExcel = $this->downloadExcel($value->NOMOR_AJU, $value->CEISA_TYPE, $value->ID_HEADER, false);
             
@@ -83,11 +85,11 @@ class SyncITInventoryQueue implements ShouldQueue
     
             Excel::import($importer, public_path($downloadExcel));
 
-            $redis->publish('portalv2', [
+            $redis->publish('portalv2', json_encode([
                 'app' => 'it_inv_checker',
                 'message' => $value->TGL_DAFTAR. ' sync, portal ceisa 40 done !',
                 'type' => 'success'
-            ]);
+            ]));
         }
     }
 }
