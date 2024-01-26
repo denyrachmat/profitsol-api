@@ -39,7 +39,7 @@ class SyncITInventoryQueue implements ShouldQueue
      */
     public function handle()
     {
-        $redis = Redis::connection();
+        // $redis = Redis::connection();
         
         // Update un-sync data in this month first 
         $dataUnsync = viewCeisaRespon::whereBetween('TGL_DAFTAR', [$this->fdate ? $this->fdate : date('Y-m-01'), $this->ldate ? $this->ldate : date('Y-m-t')])
@@ -47,6 +47,13 @@ class SyncITInventoryQueue implements ShouldQueue
             // ->where('STAT_MEGABCDOC', 1)
             ->orderBy('TGL_DAFTAR', 'DESC')
             ->get();
+
+        Redis::publish('portalv2', json_encode([
+            'app' => 'it_inv_checker',
+            'message' => $this->fdate. ' - '. $this->ldate .' sync data start',
+            'type' => 'info',
+            'data' => (clone $dataUnsync)->toArray()
+        ]));
 
         $commRedis = [];
         foreach ($dataUnsync as $key => $value) {
