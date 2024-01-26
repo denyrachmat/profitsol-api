@@ -101,7 +101,7 @@ class Ceisa40UploaderController extends BaseController
         foreach ($period as $key => $value) {
             $sync[] = $value;
             
-            SyncITInventoryQueue::dispatch($fdate, $ldate)->onQueue('syncCeisa40ITInventory');
+            SyncITInventoryQueue::dispatch($fdate, $ldate)->onQueue('SyncITInventoryQueue');
         }
 
         return $this->handleResponse($sync, 'Sync data queued !!');

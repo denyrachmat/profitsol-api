@@ -6,8 +6,6 @@ use Illuminate\Support\Collection;
 use Maatwebsite\Excel\Concerns\ToModel;
 use Maatwebsite\Excel\Concerns\WithHeadingRow;
 
-use Redis;
-
 use App\Models\STXI\LOG\ITINVIncoming;
 use App\Models\STXI\LOG\ITINVOutgoing;
 use App\Models\STXI\LOG\ITINVUploadTemp;
@@ -26,8 +24,6 @@ class ImportHeader implements ToModel, WithHeadingRow
     public function model(array $row)
     {
         ini_set("memory_limit", "3G");
-
-        $redis = Redis::connection();
 
         $kodeDokumen = '';
 
@@ -102,13 +98,6 @@ class ImportHeader implements ToModel, WithHeadingRow
                     'STATE_FLG' => $this->incout
                 ]);
             }
-
-            $redis->publish('message', json_encode([
-                'app' => 'log',
-                'status' => 'positive',
-                'message' => 'Incoming on progress added',
-                'data' => $row
-            ]));
         } else {
             logger([$row['kode_dokumen'], $kodeDokumen]);
             $cekData = ITINVOutgoing::where("BCDOCNO", $row["nomor_daftar"])
