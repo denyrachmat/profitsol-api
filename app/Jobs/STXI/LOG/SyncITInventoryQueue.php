@@ -43,10 +43,48 @@ class SyncITInventoryQueue implements ShouldQueue
         
         // Update un-sync data in this month first 
         $dataUnsync = viewCeisaRespon::whereBetween('TGL_DAFTAR', [$this->fdate ? $this->fdate : date('Y-m-01'), $this->ldate ? $this->ldate : date('Y-m-t')])
-            ->whereNull('TYPE_DOC')
+            // ->whereNull('TYPE_DOC')
             // ->where('STAT_MEGABCDOC', 1)
             ->orderBy('TGL_DAFTAR', 'DESC')
             ->get();
+
+        $begin = new \DateTime($this->fdate);
+        $end = new \DateTime(date('Y-m-d H:i:s', strtotime($this->ldate . ' +1 day')));
+        $interval = new \DateInterval('P1D');
+        $period = new \DatePeriod($begin, $interval, $end);
+
+        // return $this->handleResponse($period, 'Sync data queued !!');
+        $sync = [];
+
+        if ($this->fdate !== $this->ldate) {
+            foreach ($period as $key => $value) {
+                $sync[] = $value->format("Y-m-d");
+            }
+        } else {
+            $sync[] = $this->fdate;
+        }
+
+        $cekMEGAUnsync = array_filter($dataUnsync, function($f){
+            return $f->STAT_MEGABCDOC == 0;
+        }); 
+
+        if (count($cekMEGAUnsync) > 0) {
+            foreach ($sync as $keyDate => $valueDate) {            
+                Redis::publish('portalv2', json_encode([
+                    'app' => 'it_inv_checker',
+                    'message' => $valueDate. ' data not sync !, start sync now...',
+                    'type' => 'info'
+                ]));
+
+                DB::connection('sqlsrv_itinv')->select("exec IF_CR_ALL_BYDAY('".$valueDate."', 1)");
+
+                Redis::publish('portalv2', json_encode([
+                    'app' => 'it_inv_checker',
+                    'message' => $valueDate. ' data sync !! please check on IT Inventory',
+                    'type' => 'success'
+                ]));
+            }
+        }
 
         Redis::publish('portalv2', json_encode([
             'app' => 'it_inv_checker',
@@ -57,26 +95,10 @@ class SyncITInventoryQueue implements ShouldQueue
 
         $commRedis = [];
         foreach ($dataUnsync as $key => $value) {
-            if ($value->STAT_MEGABCDOC == 0 && $value->TGL_DAFTAR) {
-
-                Redis::publish('portalv2', json_encode([
-                    'app' => 'it_inv_checker',
-                    'message' => $value->TGL_DAFTAR. ' data not sync !, start sync now...',
-                    'type' => 'info'
-                ]));
-
-                DB::connection('sqlsrv_itinv')->select("exec IF_CR_ALL_BYDAY('".$value->TGL_DAFTAR."', 1)");
-
-                Redis::publish('portalv2', json_encode([
-                    'app' => 'it_inv_checker',
-                    'message' => $value->TGL_DAFTAR. ' data sync !! please check on IT Inventory',
-                    'type' => 'success'
-                ]));
-            }
 
             Redis::publish('portalv2', json_encode([
                 'app' => 'it_inv_checker',
-                'message' => $value->TGL_DAFTAR. ' sync, portal ceisa 40 data now...',
+                'message' => $value->NOMOR_DAFTAR. ' - sync from portal ceisa 40 data now...',
                 'type' => 'info'
             ]));
             
