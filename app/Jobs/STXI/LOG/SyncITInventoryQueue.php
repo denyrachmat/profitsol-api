@@ -14,6 +14,7 @@ use Illuminate\Support\Facades\DB;
 use App\Traits\STXI\LOG\Ceisa40Traits;
 use App\Models\STXI\CEISA40\viewCeisaRespon;
 use App\Imports\STXI\LOG\ImportCeisa40;
+use Maatwebsite\Excel\Concerns\ToArray;
 use Redis;
 
 class SyncITInventoryQueue implements ShouldQueue
@@ -64,8 +65,8 @@ class SyncITInventoryQueue implements ShouldQueue
             $sync[] = $this->fdate;
         }
 
-        $cekMEGAUnsync = array_filter($dataUnsync, function($f){
-            return $f->STAT_MEGABCDOC == 0;
+        $cekMEGAUnsync = array_filter((clone $dataUnsync)->ToArray(), function($f){
+            return $f['STAT_MEGABCDOC'] == 0;
         }); 
 
         if (count($cekMEGAUnsync) > 0) {
