@@ -85,7 +85,7 @@ class SyncITInventoryQueue implements ShouldQueue
                     'data' => $valueDate 
                 ]));
 
-                DB::connection('sqlsrv_itinv')->select(DB::raw("SET NOCOUNT ON;EXEC IF_CR_ALL_BYDAY @IFDT_Str='".$valueDate."', @SUMFLG=1"));
+                DB::connection('sqlsrv_itinv')->update("SET NOCOUNT ON;EXEC IF_CR_ALL_BYDAY @IFDT_Str='".$valueDate."', @SUMFLG=1");
 
                 Redis::publish('portalv2', json_encode([
                     'app' => 'it_inv_checker',
