@@ -69,6 +69,7 @@ class SyncITInventoryQueue implements ShouldQueue
 
         Redis::publish('portalv2', json_encode([
             'app' => 'it_inv_checker',
+            'tipe_notif' => 'start',
             'message' => 'List bc no will be synchronized !',
             'type' => 'success',
             'data' => $dataUnsync 

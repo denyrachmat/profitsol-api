@@ -92,26 +92,8 @@ class Ceisa40UploaderController extends BaseController
     }
 
     public function syncByDate($fdate, $ldate, $isSyncMega = false){
-        $begin = new \DateTime($fdate);
-        $end = new \DateTime(date('Y-m-d H:i:s', strtotime($ldate . ' +1 day')));
-        $interval = new \DateInterval('P1D');
-        $period = new \DatePeriod($begin, $interval, $end);
+        SyncITInventoryQueue::dispatch($fdate, $fdate, $isSyncMega)->onQueue('SyncITInventoryQueue');
 
-        // return $this->handleResponse($period, 'Sync data queued !!');
-        $sync = [];
-
-        if ($fdate !== $ldate) {
-            foreach ($period as $key => $value) {
-                $sync[] = $value->format("Y-m-d");
-                
-                SyncITInventoryQueue::dispatch($value->format("Y-m-d"), $value->format("Y-m-d"), $isSyncMega)->onQueue('SyncITInventoryQueue');
-            }
-        } else {
-            $sync[] = $fdate;
-                
-            SyncITInventoryQueue::dispatch($fdate, $fdate, $isSyncMega)->onQueue('SyncITInventoryQueue');
-        }
-
-        return $this->handleResponse($sync, 'Sync data queued !!');
+        return $this->handleResponse([$fdate, $ldate, $isSyncMega], 'Sync data queued !!');
     }
 }
