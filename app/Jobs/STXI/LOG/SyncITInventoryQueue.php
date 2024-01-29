@@ -71,7 +71,7 @@ class SyncITInventoryQueue implements ShouldQueue
             'app' => 'it_inv_checker',
             'tipe_notif' => 'start',
             'message' => 'List bc no will be synchronized !',
-            'type' => 'success',
+            'type' => 'info',
             'data' => $dataUnsync 
         ]));
 
@@ -89,12 +89,18 @@ class SyncITInventoryQueue implements ShouldQueue
                 Redis::publish('portalv2', json_encode([
                     'app' => 'it_inv_checker',
                     'message' => $valueDate. ' data sync !! please check on IT Inventory',
-                    'type' => 'success',
+                    'type' => 'green',
                     'data' => $valueDate 
                 ]));
             }
         }
 
+        Redis::publish('portalv2', json_encode([
+            'app' => 'it_inv_checker',
+            'message' => 'sync from portal ceisa 40 data will be start.',
+            'type' => 'info',
+            'data' => $dataUnsync
+        ]));
         foreach ($dataUnsync as $key => $valueData) {
             SyncITInventoryByBCNo::dispatch($valueData->NOMOR_DAFTAR, $valueData->TGL_DAFTAR)->onQueue('SyncITInventoryByBCNo');
         }
