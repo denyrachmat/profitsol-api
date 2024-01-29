@@ -49,7 +49,7 @@ class SyncITInventoryByBCNo implements ShouldQueue
                 'app' => 'it_inv_checker',
                 'message' => $this->nodaftar. ' on date bc : '. $this->tgldaftar .' - sync from portal ceisa 40 data now...',
                 'type' => 'info',
-                'status' => 'progress',
+                'status' => 'start_bc_sync',
                 'data' => [
                     'nodaftar' => $this->nodaftar,
                     'tgldaftar' => $this->tgldaftar
@@ -72,7 +72,7 @@ class SyncITInventoryByBCNo implements ShouldQueue
                 'app' => 'it_inv_checker',
                 'message' => $this->nodaftar. ' on date bc : '. $this->tgldaftar .' sync from portal ceisa 40 done !',
                 'type' => 'green',
-                'status' => 'success',
+                'status' => 'success_bc_sync',
                 'data' => [
                     'nodaftar' => $this->nodaftar,
                     'tgldaftar' => $this->tgldaftar
@@ -83,7 +83,7 @@ class SyncITInventoryByBCNo implements ShouldQueue
                 'app' => 'it_inv_checker',
                 'message' => $this->nodaftar. ' on date bc : '. $this->tgldaftar .' sync failed, data not found on ceisa 40 !',
                 'type' => 'red',
-                'status' => 'failed',
+                'status' => 'failed_bc_sync',
                 'data' => [
                     'nodaftar' => $this->nodaftar,
                     'tgldaftar' => $this->tgldaftar

@@ -79,9 +79,9 @@ class SyncITInventoryQueue implements ShouldQueue
             foreach ($sync as $keyDate => $valueDate) {            
                 Redis::publish('portalv2', json_encode([
                     'app' => 'it_inv_checker',
-                    'message' => $valueDate. ' data not sync !, start sync now...',
+                    'message' => $valueDate. ' start mega sync to it inventory now...',
                     'type' => 'info',
-                    'status' => 'start',
+                    'status' => 'start_mega_resync',
                     'data' => $valueDate 
                 ]));
 
@@ -91,7 +91,7 @@ class SyncITInventoryQueue implements ShouldQueue
                     'app' => 'it_inv_checker',
                     'message' => $valueDate. ' data sync !! please check on IT Inventory',
                     'type' => 'green',
-                    'status' => 'success',
+                    'status' => 'success_mega_resync',
                     'data' => $valueDate 
                 ]));
             }
