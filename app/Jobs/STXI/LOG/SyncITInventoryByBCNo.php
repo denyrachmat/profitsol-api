@@ -15,6 +15,7 @@ use App\Models\STXI\CEISA40\viewCeisaRespon;
 
 use App\Traits\STXI\LOG\Ceisa40Traits;
 use App\Imports\STXI\LOG\ImportCeisa40;
+
 class SyncITInventoryByBCNo implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels, Ceisa40Traits;
@@ -44,33 +45,34 @@ class SyncITInventoryByBCNo implements ShouldQueue
             ->orderBy('TGL_DAFTAR', 'DESC')
             ->first();
 
+        Redis::publish('portalv2', json_encode([
+            'app' => 'it_inv_checker',
+            'message' => $this->nodaftar . ' on date bc : ' . $this->tgldaftar . ' - sync from portal ceisa 40 data now...',
+            'type' => 'info',
+            'status' => 'start_bc_sync',
+            'data' => [
+                'nodaftar' => $this->nodaftar,
+                'tgldaftar' => $this->tgldaftar
+            ]
+        ]));
+
+
         if (!empty($dataUnsync)) {
-            Redis::publish('portalv2', json_encode([
-                'app' => 'it_inv_checker',
-                'message' => $this->nodaftar. ' on date bc : '. $this->tgldaftar .' - sync from portal ceisa 40 data now...',
-                'type' => 'info',
-                'status' => 'start_bc_sync',
-                'data' => [
-                    'nodaftar' => $this->nodaftar,
-                    'tgldaftar' => $this->tgldaftar
-                ]
-            ]));
-            
             $downloadExcel = $this->downloadExcel($dataUnsync->NOMOR_AJU, $dataUnsync->CEISA_TYPE, $dataUnsync->ID_HEADER, false);
-            
+
             if (str_contains($downloadExcel, '1.6') || str_contains($downloadExcel, '2.7I') || str_contains($downloadExcel, '4.0')) {
                 $state = 'INC';
             } else {
                 $state = 'OUT';
             }
-    
+
             $importer = new ImportCeisa40($state);
-    
+
             Excel::import($importer, public_path($downloadExcel));
-    
+
             Redis::publish('portalv2', json_encode([
                 'app' => 'it_inv_checker',
-                'message' => $this->nodaftar. ' on date bc : '. $this->tgldaftar .' sync from portal ceisa 40 done !',
+                'message' => $this->nodaftar . ' on date bc : ' . $this->tgldaftar . ' sync from portal ceisa 40 done !',
                 'type' => 'green',
                 'status' => 'success_bc_sync',
                 'data' => [
@@ -81,7 +83,7 @@ class SyncITInventoryByBCNo implements ShouldQueue
         } else {
             Redis::publish('portalv2', json_encode([
                 'app' => 'it_inv_checker',
-                'message' => $this->nodaftar. ' on date bc : '. $this->tgldaftar .' sync failed, data not found on ceisa 40 !',
+                'message' => $this->nodaftar . ' on date bc : ' . $this->tgldaftar . ' sync failed, data not found on ceisa 40 !',
                 'type' => 'red',
                 'status' => 'failed_bc_sync',
                 'data' => [
