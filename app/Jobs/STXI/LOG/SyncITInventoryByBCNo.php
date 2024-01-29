@@ -49,6 +49,7 @@ class SyncITInventoryByBCNo implements ShouldQueue
                 'app' => 'it_inv_checker',
                 'message' => $this->nodaftar. ' on date bc : '. $this->tgldaftar .' - sync from portal ceisa 40 data now...',
                 'type' => 'info',
+                'status' => 'progress',
                 'data' => [
                     'nodaftar' => $this->nodaftar,
                     'tgldaftar' => $this->tgldaftar
@@ -70,7 +71,8 @@ class SyncITInventoryByBCNo implements ShouldQueue
             Redis::publish('portalv2', json_encode([
                 'app' => 'it_inv_checker',
                 'message' => $this->nodaftar. ' on date bc : '. $this->tgldaftar .' sync from portal ceisa 40 done !',
-                'type' => 'success',
+                'type' => 'green',
+                'status' => 'success',
                 'data' => [
                     'nodaftar' => $this->nodaftar,
                     'tgldaftar' => $this->tgldaftar
@@ -80,7 +82,8 @@ class SyncITInventoryByBCNo implements ShouldQueue
             Redis::publish('portalv2', json_encode([
                 'app' => 'it_inv_checker',
                 'message' => $this->nodaftar. ' on date bc : '. $this->tgldaftar .' sync failed, data not found on ceisa 40 !',
-                'type' => 'success',
+                'type' => 'red',
+                'status' => 'failed',
                 'data' => [
                     'nodaftar' => $this->nodaftar,
                     'tgldaftar' => $this->tgldaftar

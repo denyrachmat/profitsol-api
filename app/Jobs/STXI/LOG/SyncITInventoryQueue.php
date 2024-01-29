@@ -69,7 +69,7 @@ class SyncITInventoryQueue implements ShouldQueue
 
         Redis::publish('portalv2', json_encode([
             'app' => 'it_inv_checker',
-            'tipe_notif' => 'start',
+            'status' => 'start',
             'message' => 'List bc no will be synchronized !',
             'type' => 'info',
             'data' => $dataUnsync 
@@ -81,6 +81,7 @@ class SyncITInventoryQueue implements ShouldQueue
                     'app' => 'it_inv_checker',
                     'message' => $valueDate. ' data not sync !, start sync now...',
                     'type' => 'info',
+                    'status' => 'start',
                     'data' => $valueDate 
                 ]));
 
@@ -90,6 +91,7 @@ class SyncITInventoryQueue implements ShouldQueue
                     'app' => 'it_inv_checker',
                     'message' => $valueDate. ' data sync !! please check on IT Inventory',
                     'type' => 'green',
+                    'status' => 'success',
                     'data' => $valueDate 
                 ]));
             }
