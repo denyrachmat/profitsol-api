@@ -101,6 +101,7 @@ class SyncITInventoryQueue implements ShouldQueue
             'type' => 'info',
             'data' => $dataUnsync
         ]));
+
         foreach ($dataUnsync as $key => $valueData) {
             SyncITInventoryByBCNo::dispatch($valueData->NOMOR_DAFTAR, $valueData->TGL_DAFTAR)->onQueue('SyncITInventoryByBCNo');
         }
