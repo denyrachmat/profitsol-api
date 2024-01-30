@@ -18,6 +18,7 @@ use Maatwebsite\Excel\Concerns\ToArray;
 use Redis;
 
 use App\Jobs\STXI\LOG\SyncITInventoryByBCNo;
+use App\Jobs\STXI\LOG\SyncITInventoryFromMega;
 
 class SyncITInventoryQueue implements ShouldQueue
 {
@@ -76,24 +77,8 @@ class SyncITInventoryQueue implements ShouldQueue
         ]));
 
         if ($this->isSyncMega) {
-            foreach ($sync as $keyDate => $valueDate) {            
-                Redis::publish('portalv2', json_encode([
-                    'app' => 'it_inv_checker',
-                    'message' => $valueDate. ' start mega sync to it inventory now...',
-                    'type' => 'info',
-                    'status' => 'start_mega_resync',
-                    'data' => $valueDate 
-                ]));
-
-                DB::connection('sqlsrv_itinv')->update("SET NOCOUNT ON;EXEC IF_CR_ALL_BYDAY @IFDT_Str='".$valueDate."', @SUMFLG=1");
-
-                Redis::publish('portalv2', json_encode([
-                    'app' => 'it_inv_checker',
-                    'message' => $valueDate. ' data sync !! please check on IT Inventory',
-                    'type' => 'green',
-                    'status' => 'success_mega_resync',
-                    'data' => $valueDate 
-                ]));
+            foreach ($sync as $keyDate => $valueDate) {
+                SyncITInventoryFromMega::dispatch($valueDate)->onQueue('SyncITInventoryFromMega');
             }
         }
 
