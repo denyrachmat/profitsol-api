@@ -50,6 +50,10 @@ use App\Http\Controllers\API\PORTAL\RoleController;
 //     // });
 // });
 
+Route::get('phpinfo', function() {
+    return phpinfo();
+});
+
 Route::group(['prefix' => 'portal', 'middleware' => 'auth:sanctum', 'verify' => true], function () {
 
     // Settings Menu
