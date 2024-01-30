@@ -120,7 +120,7 @@ Route::group(['prefix' => 'mrs'], function () {
     Route::resource('reportCols', ReportColsController::class);
 });
 
-Route::group(['prefix' => 'div'], function () {
+Route::group(['prefix' => 'div', 'middleware' => 'cors'], function () {
     Route::group(['prefix' => 'ems2'], function () {
         // Start DLV TYO
         Route::get('itemSearch/{filter}', [deliveryMethodToPSIController::class, 'searchItemMaster']);
