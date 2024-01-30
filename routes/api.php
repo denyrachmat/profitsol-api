@@ -54,7 +54,7 @@ Route::get('phpinfo', function() {
     return phpinfo();
 });
 
-Route::group(['prefix' => 'portal', 'verify' => true], function () {
+Route::group(['prefix' => 'portal', 'middleware' => 'auth:sanctum', 'verify' => true], function () {
 
     // Settings Menu
     Route::resource('users', UsersController::class);
