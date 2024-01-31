@@ -122,7 +122,7 @@ class QuizController extends Controller
             $getLabel = $getLabelCek->pluck('cfmd_label');
 
             $hasil[$key] = [
-                'status' => $answers === $answersUser,
+                'status' => is_array($answers) ? sort($answers) : $answers === $answersUser,
                 'users' => $answersUser,
                 'ans' => $answers,
                 'ans_value' => $getLabel,
