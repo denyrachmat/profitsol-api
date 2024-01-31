@@ -92,7 +92,7 @@ class Ceisa40UploaderController extends BaseController
     }
 
     public function syncByDate($fdate, $ldate, $isSyncMega = false, $isSyncCeisa = false){
-        SyncITInventoryQueue::dispatch($fdate, $fdate, $isSyncMega)->onQueue('SyncITInventoryQueue');
+        SyncITInventoryQueue::dispatch($fdate, $ldate, $isSyncMega, $isSyncCeisa)->onQueue('SyncITInventoryQueue');
 
         return $this->handleResponse([$fdate, $ldate, $isSyncMega, $isSyncCeisa], 'Sync data queued !!');
     }
