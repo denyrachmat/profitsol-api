@@ -29,12 +29,13 @@ class SyncITInventoryQueue implements ShouldQueue
      *
      * @return void
      */
-    private $fdate, $ldate, $isSyncMega;
-    public function __construct($fdate = '', $ldate = '', $isSyncMega = false)
+    private $fdate, $ldate, $isSyncMega, $isIfaceCeisa;
+    public function __construct($fdate = '', $ldate = '', $isSyncMega = false, $isIfaceCeisa = true)
     {
         $this->fdate = $fdate;
         $this->ldate = $ldate;
         $this->isSyncMega = $isSyncMega;
+        $this->isIfaceCeisa = $isIfaceCeisa;
     }
 
     /**
@@ -78,7 +79,7 @@ class SyncITInventoryQueue implements ShouldQueue
 
         if ($this->isSyncMega) {
             foreach ($sync as $keyDate => $valueDate) {
-                SyncITInventoryFromMega::dispatch($valueDate)->onQueue('SyncITInventoryFromMega');
+                SyncITInventoryFromMega::dispatch($valueDate, $this->isSyncMega, $this->isIfaceCeisa)->onQueue('SyncITInventoryFromMega');
             }
         }
 
@@ -88,9 +89,5 @@ class SyncITInventoryQueue implements ShouldQueue
             'type' => 'info',
             'data' => $dataUnsync
         ]));
-
-        foreach ($dataUnsync as $key => $valueData) {
-            SyncITInventoryByBCNo::dispatch($valueData->NOMOR_DAFTAR, $valueData->TGL_DAFTAR)->onQueue('SyncITInventoryByBCNo');
-        }
     }
 }
