@@ -78,8 +78,8 @@ class SyncITInventoryQueue implements ShouldQueue
         ]));
 
         if ($this->isSyncMega) {
-            foreach ($period as $keyDate => $valueDate) {
-                SyncITInventoryFromMega::dispatch($valueDate->format("Y-m-d"), $this->isSyncMega, $this->isIfaceCeisa)->onQueue('SyncITInventoryFromMega');
+            foreach ($sync as $keyDate => $valueDate) {
+                SyncITInventoryFromMega::dispatch($valueDate, $this->isSyncMega, $this->isIfaceCeisa)->onQueue('SyncITInventoryFromMega');
             }
         }
 
