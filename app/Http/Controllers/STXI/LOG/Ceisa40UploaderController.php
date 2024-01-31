@@ -91,9 +91,9 @@ class Ceisa40UploaderController extends BaseController
         return $this->handleResponse($getNGData, 'Sync data queued !!');
     }
 
-    public function syncByDate($fdate, $ldate, $isSyncMega = false){
+    public function syncByDate($fdate, $ldate, $isSyncMega = false, $isSyncCeisa = false){
         SyncITInventoryQueue::dispatch($fdate, $fdate, $isSyncMega)->onQueue('SyncITInventoryQueue');
 
-        return $this->handleResponse([$fdate, $ldate, $isSyncMega], 'Sync data queued !!');
+        return $this->handleResponse([$fdate, $ldate, $isSyncMega, $isSyncCeisa], 'Sync data queued !!');
     }
 }
