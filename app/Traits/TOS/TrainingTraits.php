@@ -237,9 +237,9 @@ trait TrainingTraits
 
             $hasil[$key] = [
                 'id' => (int)$value['cfmd_id'],
-                'status' => $answers === $answersUser,
+                'status' => (is_array($answers) ? sort($answers) : $answers) === $answersUser,
                 'users' => $answersUser,
-                'ans' => $answers,
+                'ans' => (is_array($answers) ? sort($answers) : $answers),
                 'ans_value' => $getLabel,
                 'exp' => $value['cfm_exp'],
                 'batch' => isset($data->cfaud_batch) ? $data->cfaud_batch : 0
