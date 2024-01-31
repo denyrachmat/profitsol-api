@@ -39,7 +39,7 @@ class SyncITInventoryFromMega implements ShouldQueue
     public function handle()
     {
         try {
-            if ($this->isIfaceMega) {
+            if ($this->isIfaceMega || $this->isIfaceMega != 0) {
                 Redis::publish('portalv2', json_encode([
                     'app' => 'it_inv_checker',
                     'message' => $this->date. ' start mega sync to it inventory now...',
@@ -66,7 +66,7 @@ class SyncITInventoryFromMega implements ShouldQueue
                 ]));
             }
     
-            if ($this->isIfaceCeisa) {
+            if ($this->isIfaceCeisa || $this->isIfaceCeisa != 0) {
                 Redis::publish('portalv2', json_encode([
                     'app' => 'it_inv_checker',
                     'message' => 'date : '.$this->date . ' sync data from ceisa 4.0',
