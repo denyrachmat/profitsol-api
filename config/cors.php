@@ -23,7 +23,7 @@ return [
 
     'allowed_origins_patterns' => [],
 
-    'allowed_headers' => [':authority:', ':method:', ':path:', ':scheme:'], // this is the line i needed to update to solve the issue.
+    'allowed_headers' => ['*'], // this is the line i needed to update to solve the issue.
 
     'exposed_headers' => [],
 
