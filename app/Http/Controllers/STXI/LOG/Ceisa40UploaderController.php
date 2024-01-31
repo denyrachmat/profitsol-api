@@ -12,6 +12,7 @@ use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 
 use App\Imports\STXI\LOG\ImportCeisa40;
 use App\Jobs\STXI\LOG\SyncITInventoryQueue;
+use App\Jobs\STXI\LOG\SyncITInventoryByBCNo;
 
 use App\Traits\STXI\LOG\Ceisa40Traits;
 
@@ -95,5 +96,10 @@ class Ceisa40UploaderController extends BaseController
         SyncITInventoryQueue::dispatch($fdate, $ldate, $isSyncMega, $isSyncCeisa)->onQueue('SyncITInventoryQueue');
 
         return $this->handleResponse([$fdate, $ldate, $isSyncMega, $isSyncCeisa], 'Sync data queued !!');
+    }
+
+    public function syncBCNo($bcNo, $tglNo) {
+        SyncITInventoryByBCNo::dispatch($bcNo, $tglNo);
+        return $this->handleResponse([$bcNo, $tglNo], 'Sync data queued !!');
     }
 }
