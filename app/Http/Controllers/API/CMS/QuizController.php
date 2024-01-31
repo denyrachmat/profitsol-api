@@ -73,7 +73,7 @@ class QuizController extends Controller
                 'cfaud_batch' => $nextID,
                 'cfm_id' => $request->id,
                 'cfmd_id' => $request->questId[$key],
-                'cfm_val' => is_array($value) ? json_encode($value) : $value,
+                'cfm_val' => is_array($value) ? json_encode(sort($value)) : $value,
             ]);
         }
 
