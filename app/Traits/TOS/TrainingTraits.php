@@ -121,6 +121,10 @@ trait TrainingTraits
         $hasil = [];
         foreach ($dataAnswers as $key => $value) {
             $answers = is_array(json_decode($value['cfm_val'])) ? json_decode($value['cfm_val']) : $value['cfm_val'];
+            
+            if (is_array($answers)) {
+                sort($answers);
+            }
 
             $data = FormAnswerUserDet::where('p_u_username', $username)->where('cfm_id', (int)$id)->where('cfmd_id', (int)$value['cfmd_id'])->first();
 
@@ -139,9 +143,9 @@ trait TrainingTraits
             $getLabel = $getLabelCek->pluck('cfmd_label');
 
             $hasil[$key] = [
-                'status' => (is_array($answers) ? sort($answers) : $answers) === $answersUser,
+                'status' => $answers === $answersUser,
                 'users' => $answersUser,
-                'ans' => is_array($answers) ? sort($answers) : $answers,
+                'ans' => $answers,
                 'ans_value' => $getLabel,
                 'exp' => $value['cfm_exp']
             ];
@@ -213,6 +217,10 @@ trait TrainingTraits
         foreach ($dataAnswers as $key => $value) {
             $answers = is_array(json_decode($value['cfm_val'])) ? json_decode($value['cfm_val']) : $value['cfm_val'];
 
+            if (is_array($answers)) {
+                sort($answers);
+            }
+
             $dataCheck = FormAnswerUserDet::withTrashed()->where('p_u_username',$username)->where('cfm_id', (int)$id)->where('cfmd_id', (int)$value['cfmd_id']);
             
             if (!empty($batch)) {
@@ -237,9 +245,9 @@ trait TrainingTraits
 
             $hasil[$key] = [
                 'id' => (int)$value['cfmd_id'],
-                'status' => (is_array($answers) ? sort($answers) : $answers) === $answersUser,
+                'status' => $answers == $answersUser,
                 'users' => $answersUser,
-                'ans' => (is_array($answers) ? sort($answers) : $answers),
+                'ans' => $answers,
                 'ans_value' => $getLabel,
                 'exp' => $value['cfm_exp'],
                 'batch' => isset($data->cfaud_batch) ? $data->cfaud_batch : 0

@@ -68,12 +68,16 @@ class QuizController extends Controller
                 $nextID = $getID['cfaud_batch'];
             }
 
+            if (is_array($value)) {
+                sort($value);
+            }
+
             $created[] = FormAnswerUserDet::create([
                 'p_u_username' => $request->header('username'),
                 'cfaud_batch' => $nextID,
                 'cfm_id' => $request->id,
                 'cfmd_id' => $request->questId[$key],
-                'cfm_val' => is_array($value) ? json_encode(sort($value)) : $value,
+                'cfm_val' => is_array($value) ? json_encode($value) : $value,
             ]);
         }
 
@@ -104,7 +108,9 @@ class QuizController extends Controller
         $hasil = [];
         foreach ($dataAnswers as $key => $value) {
             $answers = is_array(json_decode($value['cfm_val'])) ? json_decode($value['cfm_val']) : $value['cfm_val'];
-
+            if (is_array($answers)) {
+                sort($answers);
+            }
             $data = FormAnswerUserDet::where('p_u_username', $request->header('username'))->where('cfm_id', (int)$id)->where('cfmd_id', (int)$value['cfmd_id'])->first();
 
             $answersUser = !empty($data)
@@ -122,9 +128,9 @@ class QuizController extends Controller
             $getLabel = $getLabelCek->pluck('cfmd_label');
 
             $hasil[$key] = [
-                'status' => (is_array($answers) ? sort($answers) : $answers) === $answersUser,
+                'status' => $answers === $answersUser,
                 'users' => $answersUser,
-                'ans' => is_array($answers) ? sort($answers) : $answers,
+                'ans' => $answers,
                 'ans_value' => $getLabel,
                 'exp' => $value['cfm_exp']
             ];
