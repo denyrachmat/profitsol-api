@@ -45,49 +45,59 @@ class SyncITInventoryQueue implements ShouldQueue
      */
     public function handle()
     {
-        set_time_limit(17600);
-        // $redis = Redis::connection();
-        
-        // Update un-sync data in this month first 
-        $dataUnsync = viewCeisaRespon::whereBetween('TGL_DAFTAR', [$this->fdate ? $this->fdate : date('Y-m-01'), $this->ldate ? $this->ldate : date('Y-m-t')])
-            ->orderBy('TGL_DAFTAR', 'DESC')
-            ->get();
+        try {
+            set_time_limit(17600);
+            // $redis = Redis::connection();
 
-        $begin = new \DateTime($this->fdate);
-        $end = new \DateTime(date('Y-m-d H:i:s', strtotime($this->ldate . ' +1 day')));
-        $interval = new \DateInterval('P1D');
-        $period = new \DatePeriod($begin, $interval, $end);
+            // Update un-sync data in this month first 
+            $dataUnsync = viewCeisaRespon::whereBetween('TGL_DAFTAR', [$this->fdate ? $this->fdate : date('Y-m-01'), $this->ldate ? $this->ldate : date('Y-m-t')])
+                ->orderBy('TGL_DAFTAR', 'DESC')
+                ->get();
 
-        // return $this->handleResponse($period, 'Sync data queued !!');
-        $sync = [];
+            $begin = new \DateTime($this->fdate);
+            $end = new \DateTime(date('Y-m-d H:i:s', strtotime($this->ldate . ' +1 day')));
+            $interval = new \DateInterval('P1D');
+            $period = new \DatePeriod($begin, $interval, $end);
 
-        if ($this->fdate !== $this->ldate) {
-            foreach ($period as $key => $value) {
-                $sync[] = $value->format("Y-m-d");
+            // return $this->handleResponse($period, 'Sync data queued !!');
+            $sync = [];
+
+            if ($this->fdate !== $this->ldate) {
+                foreach ($period as $key => $value) {
+                    $sync[] = $value->format("Y-m-d");
+                }
+            } else {
+                $sync[] = $this->fdate;
             }
-        } else {
-            $sync[] = $this->fdate;
-        }
 
-        Redis::publish('portalv2', json_encode([
-            'app' => 'it_inv_checker',
-            'status' => 'start',
-            'message' => 'List bc no will be synchronized !',
-            'type' => 'info',
-            'data' => $dataUnsync 
-        ]));
+            Redis::publish('portalv2', json_encode([
+                'app' => 'it_inv_checker',
+                'status' => 'start',
+                'message' => 'List bc no will be synchronized !',
+                'type' => 'info',
+                'data' => $dataUnsync
+            ]));
 
-        if ($this->isSyncMega) {
-            foreach ($sync as $keyDate => $valueDate) {
-                SyncITInventoryFromMega::dispatch($valueDate, $this->isSyncMega, $this->isIfaceCeisa)->onQueue('SyncITInventoryFromMega');
+            if ($this->isSyncMega) {
+                foreach ($sync as $keyDate => $valueDate) {
+                    SyncITInventoryFromMega::dispatch($valueDate, $this->isSyncMega, $this->isIfaceCeisa)->onQueue('SyncITInventoryFromMega');
+                }
             }
-        }
 
-        Redis::publish('portalv2', json_encode([
-            'app' => 'it_inv_checker',
-            'message' => 'sync from portal ceisa 40 data will be start.',
-            'type' => 'info',
-            'data' => $dataUnsync
-        ]));
+            Redis::publish('portalv2', json_encode([
+                'app' => 'it_inv_checker',
+                'message' => 'sync from portal ceisa 40 data will be start.',
+                'type' => 'info',
+                'data' => $dataUnsync
+            ]));
+
+        } catch (\Throwable $th) {
+            Redis::publish('portalv2', json_encode([
+                'app' => 'it_inv_checker',
+                'message' => 'sync failed server : '.$th->getMessage(),
+                'type' => 'red',
+                'status' => 'failed',
+            ]));
+        }
     }
 }
