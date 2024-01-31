@@ -67,7 +67,7 @@ class SyncITInventoryQueue implements ShouldQueue
                     $sync[] = $value->format("Y-m-d");
                 }
             } else {
-                $sync[] = $this->fdate;
+                $sync = [$this->fdate];
             }
 
             Redis::publish('portalv2', json_encode([
@@ -75,7 +75,8 @@ class SyncITInventoryQueue implements ShouldQueue
                 'status' => 'start',
                 'message' => 'List bc no will be synchronized !',
                 'type' => 'info',
-                'data' => $dataUnsync
+                'data' => $dataUnsync,
+                'tgl' => $sync
             ]));
 
             if ($this->isSyncMega) {
