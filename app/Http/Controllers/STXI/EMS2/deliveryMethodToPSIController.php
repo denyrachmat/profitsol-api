@@ -309,12 +309,12 @@ class deliveryMethodToPSIController extends BaseController
             $date_to = date('d', strtotime($req->date)) == 1 ? date('Y-m-d') : date('Y-m-d', strtotime($req->date . "-1 days"));
             $query = "SET NOCOUNT ON;EXEC Z_STXI_GET_CPO_DLV_STXI_ITEC @model = '" . $value . "', @date_start = '" . date('Y-m-01', strtotime($req->date)) . "', @date_to = '" . $date_to . "'";
 
+            if (!is_string($query)) {
+                return $query;
+            }
+
             $dataCPO = collect(
-                DB::connection('sqlsrv_mega_tyo')->select(
-                    DB::raw(
-                        $query
-                    )
-                )
+                DB::connection('sqlsrv_mega_tyo')->select($query)
             )[0];
 
             $getSPQDataPersheet = $this->SPQIndex($value)->original['data'] ? $this->SPQIndex($value)->original['data']['MITM_SPQ_CHECK'] : false;

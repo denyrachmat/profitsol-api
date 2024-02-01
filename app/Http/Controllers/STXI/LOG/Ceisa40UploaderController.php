@@ -99,7 +99,7 @@ class Ceisa40UploaderController extends BaseController
     }
 
     public function syncBCNo($bcNo, $tglNo) {
-        SyncITInventoryByBCNo::dispatch($bcNo, $tglNo);
+        SyncITInventoryByBCNo::dispatch($bcNo, $tglNo)->onQueue('SyncITInventoryByBCNo');
         return $this->handleResponse([$bcNo, $tglNo], 'Sync data queued !!');
     }
 }
