@@ -58,7 +58,7 @@ class ImportBarang implements ToModel, WithHeadingRow
 
                     if ($cekBCStatus->STAT_MEGABCDOC == 1) {
                         $cekItemMega = DB::connection('sqlsrv_itinv')->table('VIEW_MITM_TBL')->where('MITM_ITMCD', $row['kode_barang'])->first();
-    
+                        
                         ITINVIncoming::updateOrCreate([
                             'BCTYPE' => $cekTempData['TYPE_BC'],
                             'BCDOCNO' => $cekTempData['NO_DAFTAR'],
@@ -88,6 +88,40 @@ class ImportBarang implements ToModel, WithHeadingRow
                             'WMSLOC' => '',
                             'HSCODE' => $row['hs']
                         ]);
+                    } else {
+                        $cekItemMega = DB::connection('sqlsrv_itinv')->table('VIEW_MITM_TBL')->where('MITM_ITMCD', $row['kode_barang'])->first();
+                        
+                        if (empty($cekItemMega)) {
+                            ITINVIncoming::updateOrCreate([
+                                'BCTYPE' => $cekTempData['TYPE_BC'],
+                                'BCDOCNO' => $cekTempData['NO_DAFTAR'],
+                                'BCDOCDT' => $cekTempData['TGL_DAFTAR'],
+                                'ITMCD' => trim($row['kode_barang']),
+                            ], [
+                                'LOCCD' => empty($cekItemMega) ? 'STX-I' : '',
+                                'BCTYPE' => $cekTempData['TYPE_BC'],
+                                'BCDOCNO' => $cekTempData['NO_DAFTAR'],
+                                'BCDOCDT' => $cekTempData['TGL_DAFTAR'],
+                                'BSGRP' => 'LAIN NYA',
+                                'DOCCD' => '',
+                                'DOCNO' => '',
+                                'HHEINVNO' => '',
+                                'ISUDT' => $cekTempData['TGL_DAFTAR'],
+                                'ITMCD' => trim($row['kode_barang']),
+                                'ITMD1' => $row['uraian'],
+                                'SPTNO' => $row['tipe'],
+                                'UOM' => $UOM,
+                                'TTLQTY' => $row['jumlah_satuan'],
+                                'CURCD' => $cekTempData['CURR'],
+                                'PRICE' => round((int) $row['cif'] / (int) $row['jumlah_satuan'], 4),
+                                'TTLAMOUNT' => round((int) $row['cif'], 4),
+                                'TAXINV' => '',
+                                'SUPNM' => $cekTempData['SUPPL'],
+                                'PENGIRIM' => $cekTempData['PENGIRIM'],
+                                'WMSLOC' => '',
+                                'HSCODE' => $row['hs']
+                            ]);
+                        }
                     }
                 }
             } else {
