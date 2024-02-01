@@ -79,7 +79,7 @@ class SyncITInventoryFromMega implements ShouldQueue
                 ->get();
         
                 foreach ($dataUnsync as $key => $valueData) {
-                    SyncITInventoryByBCNo::dispatch($valueData->NOMOR_DAFTAR, $valueData->TGL_DAFTAR)->onQueue('SyncITInventoryByBCNo');
+                    SyncITInventoryByBCNo::dispatch($valueData->NOMOR_DAFTAR, $valueData->TGL_DAFTAR)->onQueue('SyncITInventoryFromMega'); //->onQueue('SyncITInventoryByBCNo');
                 }
             } else {
                 Redis::publish('portalv2', json_encode([
