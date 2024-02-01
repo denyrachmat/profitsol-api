@@ -75,7 +75,7 @@ class SyncITInventoryQueue implements ShouldQueue
                 'status' => 'start',
                 'message' => 'List bc no will be synchronized !',
                 'type' => 'info',
-                'data' => $dataUnsync,
+                'data' => $this->isIfaceCeisa ? $dataUnsync : [],
                 'tgl' => $sync
             ]));
 
@@ -85,12 +85,12 @@ class SyncITInventoryQueue implements ShouldQueue
                 }
             }
 
-            Redis::publish('portalv2', json_encode([
-                'app' => 'it_inv_checker',
-                'message' => 'sync from portal ceisa 40 data will be start.',
-                'type' => 'info',
-                'data' => $dataUnsync
-            ]));
+            // Redis::publish('portalv2', json_encode([
+            //     'app' => 'it_inv_checker',
+            //     'message' => 'sync from portal ceisa 40 data will be start.',
+            //     'type' => 'info',
+            //     'data' => $dataUnsync
+            // ]));
 
         } catch (\Throwable $th) {
             Redis::publish('portalv2', json_encode([
