@@ -29,7 +29,10 @@ trait Ceisa40Traits
                     ? 'https://apis-gw.beacukai.go.id/v2/browse-service/v1/' . $url
                     : ($source === 'parser'
                         ? 'https://apis-gw.beacukai.go.id/v2/parser/v1/' . $url
-                        : $url
+                        : ($source === 'excel-service'
+                            ? 'https://apis-gw.beacukai.go.id/excel-service/v1/' . $url
+                            : $url
+                        )
                     )
                 )
             );
@@ -364,7 +367,7 @@ trait Ceisa40Traits
             'ekspor-xml/Xlsx?nomorAju='.$noAju.'&idUser=adf9ea0f-de99-444d-b502-e4a474670624',
             'GET',
             [],
-            'parser',
+            'excel-service',
             true,
             true,
             true
