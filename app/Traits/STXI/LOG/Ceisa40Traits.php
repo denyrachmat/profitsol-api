@@ -274,6 +274,37 @@ trait Ceisa40Traits
                             'statInsert' => $request->has('isSaved') && $request->isSaved == 1 ? $insertCeisa : 'Not Saved',
                             'dataOri' => $value
                         ];
+                    } else {
+                        if($request->has('isSaved') && $request->isSaved == 1) {
+                            $insertCeisa = CEISARESPON::updateOrCreate([
+                                'NOMOR_AJU' => $value['nomorAju'],
+                                'RES_TYPE' => $value['namaRespon'],
+                            ], [
+                                'NOMOR_AJU' => $value['nomorAju'],
+                                'NOMOR_DAFTAR' => $value['nomorDaftar'],
+                                'RES_DATE' => date('Y-m-d H:i:s', strtotime($value['tanggalRespon'])),
+                                'RES_TYPE' => $value['namaRespon'],
+                                'RES_NO' => $value['nomorRespon'],
+                                'TYPE_DOC' => $value['kodeDokumen'],
+                                'TGL_DAFTAR' => date('Y-m-d H:i:s', strtotime($value['tanggalDaftar'])),
+                                'ID_HEADER' => $value['idHeader']
+                            ]);
+                        }
+
+                        $dataHasil[] = [
+                            'id' => $value['idHeader'],
+                            'nopen' => $value['nomorDaftar'],
+                            'noaju' => $value['nomorAju'],
+                            'tglpen' => $value['tanggalDaftar'],
+                            'respon' => [
+                                'tipe' => $value['namaRespon'],
+                                'no' => $value['nomorRespon'],
+                                'tgl' => $value['tanggalRespon']
+                            ],
+                            'param'=>$request->all(),
+                            'statInsert' => $request->has('isSaved') && $request->isSaved == 1 ? $insertCeisa : 'Not Saved',
+                            'dataOri' => $value
+                        ];
                     }
                 }
 
