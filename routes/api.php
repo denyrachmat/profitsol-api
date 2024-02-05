@@ -16,6 +16,7 @@ use App\Http\Controllers\API\TOS\TrainingController;
 use App\Http\Controllers\API\TOS\TrainingListController;
 use App\Http\Controllers\Scheduller\EMS2\WEBEdiTYOExtractor;
 use App\Http\Controllers\STXI\BIM\CircullarTenController;
+use App\Http\Controllers\STXI\BIM\CirtenUpdateController;
 use App\Http\Controllers\STXI\EMS2\ForcastDOTYOController;
 use App\Http\Controllers\STXI\EMS2\yeidPOConfirmController;
 use App\Http\Controllers\STXI\EMS2\YMICDCUController;
@@ -245,6 +246,9 @@ Route::group(['prefix' => 'div'], function () {
         Route::get('findModelCode/{item}', [CircullarTenController::class, 'findItem']);
         Route::get('addModelDetail/{ten}/{item}', [CircullarTenController::class, 'addModelDetail']);
 
+        Route::resource('cirtenUpdate', CirtenUpdateController::class);
+        Route::get('tenList/{date}', [CirtenUpdateController::class, 'showByDateTen']);
+        // CirtenUpdateController
     });
 });
 
@@ -291,3 +295,6 @@ Route::get('testredis', function () {
 
     return "Done. (published on $channel)";
 });
+
+Route::get('local/temp/{path}', function (string $path){
+    return Storage::disk('local')->download($path);})->name('local.temp');
