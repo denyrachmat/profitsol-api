@@ -3,7 +3,7 @@
 </div>
 
 <div style="padding-top: 2em">
-    <h3>Date : {{date('d M Y', strtotime($mail_date->CIRTEN_MAILDT))}}</h3>
+    <h3>Date : {{date('d M Y', strtotime($mail_date))}}</h3>
 </div>
 <div>
     <h3>Subject: {{$subject}}</h3>

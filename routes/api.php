@@ -248,6 +248,9 @@ Route::group(['prefix' => 'div'], function () {
 
         Route::resource('cirtenUpdate', CirtenUpdateController::class);
         Route::get('tenList/{date}', [CirtenUpdateController::class, 'showByDateTen']);
+        Route::get('syncTenList/{date}', [CirtenUpdateController::class, 'syncTenList']);
+        Route::get('generateDocumentUp/{ten}', [CirtenUpdateController::class, 'generateDocument']);
+        
         // CirtenUpdateController
     });
 });

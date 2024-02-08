@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers\STXI\BIM;
 
-use App\Http\Controllers\Controller;
+use App\Http\Controllers\API\PORTAL\BaseController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Excel;
@@ -13,15 +13,29 @@ use App\Models\STXI\BIM\CircularTenModelDet;
 use App\Models\STXI\BIM\CircularTenPathHtm;
 
 use App\Imports\STXI\BIM\ImportCircularTen;
+use App\Imports\STXI\BIM\ImportTENList;
 
-class CirtenUpdateController extends Controller
+class CirtenUpdateController extends BaseController
 {
     /**
      * Display a listing of the resource.
      */
     public function index()
     {
-        //
+        $data = CircularTenMstr::get();
+
+        $hasil = [];
+        foreach ($data as $key => $value) {
+            $hasil[] = [
+                'ten_no' => $value->CIRTEN_NO,
+                'DMS_DOC_ID' => $value->CIRTEN_DMS_DOC_ID,
+                'statusflg' => $value->CIRTEN_STATUSFLG,
+                'status' => $value->CIRTEN_STATUS,
+                'created_at' => $value->created_at
+            ];
+        }
+
+        return $this->handleResponse($hasil, 'Data found !');
     }
 
     /**
@@ -40,15 +54,20 @@ class CirtenUpdateController extends Controller
         $hasil = [];
 
         foreach ($request->data as $key => $value) {
-            $file = $value['path'].'/'.$value['tenNum'].'.xlsx';
+            $file = $value['path'] . '/' . $value['tenNum'] . '.xlsx';
+            $filehtm = $value['path'] . '/' . $value['tenNumEpson'] . '.htm';
 
-            if (Storage::disk('ten_bim')->exists($file)) {
+            if (!Storage::disk('ten_bim')->exists($filehtm)) {
+                $filehtm = $value['path'] . '/' . $value['tenNumEpson'] . '.html';
+            }
+
+            if (Storage::disk('ten_bim')->exists($file) && Storage::disk('ten_bim')->exists($filehtm)) {
                 // $files = mb_convert_encoding( Storage::disk('ten_bim')->get($file), 'UTF-8', 'UTF-8');
 
-                $importer = new ImportCircularTen();
+                $importer = new ImportCircularTen($value['tenNum'], $filehtm, $value['tenNumEpson'], 2, $file);
 
                 Excel::import($importer, $file, 'ten_bim');
-                
+
                 $hasil[] = [
                     'status' => true,
                     'files' => $importer->data
@@ -96,10 +115,11 @@ class CirtenUpdateController extends Controller
         //
     }
 
-    public function showByDateTen($date){
+    public function showByDateTen($date)
+    {
         $getYear = date('Y', strtotime($date));
         $getMonth = date('m', strtotime($date));
-        $listData = Storage::disk('ten_bim')->directories($getYear.'/'.$getMonth);
+        $listData = Storage::disk('ten_bim')->directories($getYear . '/' . $getMonth);
 
         $hasil = [];
         foreach ($listData as $key => $value) {
@@ -109,14 +129,46 @@ class CirtenUpdateController extends Controller
             $getFolderName = $getListFolderName[count($getListFolderName) - 1];
 
             if (isset($tenNum[1])) {
-                $hasil[] = [
-                    'foldername' => $getFolderName,
-                    'tenNum' => $tenNum[1],
-                    'path' => $value,
-                ];
+                $cekData = CircularTenMstr::where('CIRTEN_NO', $tenNum[1])->orwhere('CIRTEN_NO', explode(' ', $getFolderName)[0])->whereNotNull('CIRTEN_DMS_DOC_ID')->first();
+                if (empty($cekData)) {
+                    $hasil[] = [
+                        'foldername' => $getFolderName,
+                        'tenNum' => $tenNum[1],
+                        'tenNumEpson' => explode(' ', $getFolderName)[0],
+                        'path' => $value,
+                    ];
+                }
             }
         }
 
         return $hasil;
+    }
+
+    public function syncTenList($year)
+    {
+        $importer1 = new ImportTENList($year);
+
+        Excel::import($importer1, 'ten list/TEN LIST - PRINTER IEI.xlsx', 'ten_bim');
+
+        return 'Sync !!';
+    }
+
+    public function generateDocument($ten)
+    {
+        $getData = CircularTenMstr::where('CIRTEN_NO', $ten)
+            ->whereNotNull('CIRTEN_HTMFILEPATH')
+            ->whereNotNull('CIRTEN_FILEPATH')
+            ->whereNotNull('CIRTEN_TENIEI')
+            ->first();
+
+        if (!empty($getData)) {
+            $importer = new ImportCircularTen($ten, $getData->CIRTEN_HTMFILEPATH, $getData->CIRTEN_TENIEI, 1, $getData->CIRTEN_FILEPATH);
+
+            Excel::import($importer, $getData->CIRTEN_FILEPATH, 'ten_bim');
+
+            return $importer->pdf;
+        } else {
+            return $this->handleError('Data not found !', []);
+        }
     }
 }
