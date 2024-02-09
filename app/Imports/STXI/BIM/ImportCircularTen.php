@@ -251,12 +251,14 @@ class ImportCircularTen implements ToModel
 
         if (count($getDataItem) > 0) {
             $listSubcon = [];
+            $items = [];
             foreach ($getDataItem as $keyItem => $value) {
+                $items[] = $value->MITM_ITMCD;
                 $listSubcon[(empty($value->MITM_SUPCD) ? substr($value->MITM_ITMTY, 0, 3) : substr($value->MITM_SUPCD, 0, 3))] = (empty($value->MITM_SUPCD) ? substr($value->MITM_ITMTY, 0, 3) : substr($value->MITM_SUPCD, 0, 3));
             }
 
             return [
-                'model' => $getDataItem[0]->MITM_ITMCD,
+                'model' => $items[0],
                 'valmodel' => $item,
                 'listSub' => $listSubcon
             ];
