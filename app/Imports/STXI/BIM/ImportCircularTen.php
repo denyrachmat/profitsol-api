@@ -96,6 +96,7 @@ class ImportCircularTen implements ToModel
                             $this->data['model'][] = count($getDataItem) > 0 ? $getDataItem['model'] : [];
                             $this->data['supp_cd'] = count($getDataItem) > 0 ? $getDataItem['listSub'] : '';
                             $this->data['valmodel'][] = count($getDataItem) > 0 ? $getDataItem['valmodel'] : [];
+                            $this->data['cekItem'][] = $getDataItem['cekItem']
                         }
                     }
                 } else {
@@ -261,6 +262,7 @@ class ImportCircularTen implements ToModel
             return [
                 'model' => $items[0],
                 'valmodel' => $item,
+                'cekItem' => $getDataItem,
                 'listSub' => $listSubcon
             ];
         } else {
