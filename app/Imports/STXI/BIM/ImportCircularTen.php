@@ -247,6 +247,7 @@ class ImportCircularTen implements ToModel
                 'MITM_ITMTY'
             )
             ->where('MITM_ITMCD', 'like', $item . '%')
+            ->whereNotNull('MITM_ITMTY')
             ->get();
 
         if (count($getDataItem) > 0) {
