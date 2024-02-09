@@ -35,7 +35,16 @@ class SyncCirTentoOldDMS implements ShouldQueue
      */
     public function handle(): void
     {
-        $this->sendToDMS($this->data['ten'], $this->data['mail_date']);
+        try {
+            $this->sendToDMS($this->data['ten'], $this->data['mail_date']);
+        } catch (ClientException $e) {
+            Redis::publish('portalv2', json_encode([
+                'app' => 'cirten',
+                'message' => 'TEN ' . $this->data['ten'] . ' : sync failed server (' . $e->getMessage() . ')',
+                'type' => 'red',
+                'status' => 'failed',
+            ]));
+        }
     }
 
     
