@@ -88,7 +88,7 @@ class ImportCircularTen implements ToModel
                 if (!empty($row[$this->getColsForStart])) {
                     foreach ($row as $keyModel => $valueModel) {
                         $cekItem = str_contains($valueModel, '-') ? explode('-', $valueModel)[0] : $valueModel;
-                        $getDataItem = $this->getItemMaster($cekItem);
+                        $getDataItem = $this->getItemMaster(implode('', $cekItem), $cekItem);
 
                         if (!empty($valueModel) && strlen($valueModel) > 4 && count($getDataItem) > 0) {
 
@@ -236,35 +236,43 @@ class ImportCircularTen implements ToModel
         return $datas;
     }
 
-    function getItemMaster($item)
+    function getItemMaster($item, $itemAlt)
     {
-        $getDataItem = DB::connection('sqlsrv_mega_sme')->table('MITM_TBL')
-            ->select(
-                'MITM_ITMCD',
-                'MITM_ITMD1',
-                'MITM_STKUOM',
-                'MITM_SPTNO',
-                'MITM_SUPCD',
-                'MITM_ITMTY'
-            )
-            ->where('MITM_ITMCD', 'like', $item . '%')
-            ->whereNotNull('MITM_ITMTY')
-            ->get();
-
-        if (count($getDataItem) > 0) {
-            $listSubcon = [];
-            $items = [];
-            foreach ($getDataItem as $keyItem => $value) {
-                $items[] = $value->MITM_ITMCD;
-                $listSubcon[(empty($value->MITM_SUPCD) ? substr($value->MITM_ITMTY, 0, 3) : substr($value->MITM_SUPCD, 0, 3))] = (empty($value->MITM_SUPCD) ? substr($value->MITM_ITMTY, 0, 3) : substr($value->MITM_SUPCD, 0, 3));
+        if (!empty($item)) {
+            $getDataItem = DB::connection('sqlsrv_mega_sme')->table('MITM_TBL')
+                ->select(
+                    'MITM_ITMCD',
+                    'MITM_ITMD1',
+                    'MITM_STKUOM',
+                    'MITM_SPTNO',
+                    'MITM_SUPCD',
+                    'MITM_ITMTY'
+                )
+                ->where('MITM_ITMCD', 'like', $item . '%')
+                ->whereNotNull('MITM_ITMTY')
+                ->get();
+    
+            if (count($getDataItem) > 0) {
+                $listSubcon = [];
+                $items = [];
+                foreach ($getDataItem as $keyItem => $value) {
+                    $items[] = $value->MITM_ITMCD;
+                    $listSubcon[(empty($value->MITM_SUPCD) ? substr($value->MITM_ITMTY, 0, 3) : substr($value->MITM_SUPCD, 0, 3))] = (empty($value->MITM_SUPCD) ? substr($value->MITM_ITMTY, 0, 3) : substr($value->MITM_SUPCD, 0, 3));
+                }
+    
+                return [
+                    'model' => $items[0],
+                    'valmodel' => $item,
+                    'cekItem' => $getDataItem,
+                    'listSub' => $listSubcon
+                ];
+            } else {
+                if (!empty($itemAlt)) {
+                    return $this->getItemMaster($itemAlt, '');
+                } else {
+                    return [];
+                }
             }
-
-            return [
-                'model' => $items[0],
-                'valmodel' => $item,
-                'cekItem' => $getDataItem,
-                'listSub' => $listSubcon
-            ];
         } else {
             return [];
         }
