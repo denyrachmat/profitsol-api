@@ -88,7 +88,7 @@ class ImportCircularTen implements ToModel
                 if (!empty($row[$this->getColsForStart])) {
                     foreach ($row as $keyModel => $valueModel) {
                         $cekItem = str_contains($valueModel, '-') ? explode('-', $valueModel)[0] : $valueModel;
-                        $getDataItem = $this->getItemMaster(implode('', $cekItem), $cekItem);
+                        $getDataItem = $this->getItemMaster(implode('', explode('-', $valueModel)), $cekItem);
 
                         if (!empty($valueModel) && strlen($valueModel) > 4 && count($getDataItem) > 0) {
 
