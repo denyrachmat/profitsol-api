@@ -22,7 +22,7 @@ class CirtenUpdateController extends BaseController
      */
     public function index()
     {
-        $data = CircularTenMstr::get();
+        $data = CircularTenMstr::orderby('created_at', 'desc')->get();
 
         $hasil = [];
         foreach ($data as $key => $value) {
@@ -88,15 +88,32 @@ class CirtenUpdateController extends BaseController
      */
     public function show(string $id)
     {
-        //
+        return 'show';
     }
 
     /**
      * Show the form for editing the specified resource.
+     * For Resubmit Data
      */
-    public function edit(string $id)
+    public function resubmitCirten(string $id)
     {
-        //
+        $cirtenMstr = CircularTenMstr::where('CIRTEN_NO', $id)->first();
+
+        if (!empty($cirtenMstr)) {
+            $importer = new ImportCircularTen($id, $cirtenMstr->CIRTEN_HTMFILEPATH, $cirtenMstr->CIRTEN_TENIEI, 2, $cirtenMstr->CIRTEN_FILEPATH);
+
+            Excel::import($importer, $cirtenMstr->CIRTEN_FILEPATH, 'ten_bim');
+
+            return [
+                'status' => true,
+                'files' => $importer->data
+            ];
+        } else {
+            return [
+                'status' => false,
+                'files' => []
+            ];
+        }
     }
 
     /**

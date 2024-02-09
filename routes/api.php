@@ -247,6 +247,8 @@ Route::group(['prefix' => 'div'], function () {
         Route::get('addModelDetail/{ten}/{item}', [CircullarTenController::class, 'addModelDetail']);
 
         Route::resource('cirtenUpdate', CirtenUpdateController::class);
+
+        Route::get('resubmitCirten/{ten}', [CirtenUpdateController::class, 'resubmitCirten']);
         Route::get('tenList/{date}', [CirtenUpdateController::class, 'showByDateTen']);
         Route::get('syncTenList/{date}', [CirtenUpdateController::class, 'syncTenList']);
         Route::get('generateDocumentUp/{ten}', [CirtenUpdateController::class, 'generateDocument']);
