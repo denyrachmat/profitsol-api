@@ -96,7 +96,7 @@ class ImportCircularTen implements ToModel
                             $this->data['model'][] = count($getDataItem) > 0 ? $getDataItem['model'] : [];
                             $this->data['supp_cd'] = count($getDataItem) > 0 ? $getDataItem['listSub'] : '';
                             $this->data['valmodel'][] = count($getDataItem) > 0 ? $getDataItem['valmodel'] : [];
-                            $this->data['cekItem'][] = $getDataItem['cekItem'];
+                            $this->data['cekItem'] = $getDataItem;
                         }
                     }
                 } else {
@@ -199,6 +199,7 @@ class ImportCircularTen implements ToModel
                         'message' => 'TEN ' . $this->tenNo . ' : ' . $status,
                         'type' => 'red',
                         'status' => 'failed',
+                        'data' => $row
                     ]));
                 } else {
                     $datas = [
@@ -256,7 +257,7 @@ class ImportCircularTen implements ToModel
                 $listSubcon = [];
                 $items = [];
                 foreach ($getDataItem as $keyItem => $value) {
-                    $items[] = $value->MITM_ITMCD;
+                    $items[] = trim($value->MITM_ITMCD);
                     $listSubcon[(empty($value->MITM_SUPCD) ? substr($value->MITM_ITMTY, 0, 3) : substr($value->MITM_SUPCD, 0, 3))] = (empty($value->MITM_SUPCD) ? substr($value->MITM_ITMTY, 0, 3) : substr($value->MITM_SUPCD, 0, 3));
                 }
     
