@@ -17,8 +17,6 @@ use App\Models\STXI\BIM\CircularTenList;
 use App\Models\STXI\BIM\CircularTenMstr;
 use App\Models\STXI\BIM\CircularTenModelDet;
 
-use App\Jobs\STXI\BIM\SyncCirTentoOldDMS;
-
 class ImportCircularTen implements ToModel
 {
     public $data, $pdf, $tenNo, $tenEpsonNo, $options, $filepathExcel;
@@ -70,15 +68,21 @@ class ImportCircularTen implements ToModel
                         $this->getColsForStart = $key;
                         $this->getRowsForModel = $this->nowRows + 1;
                     }
+
+                    if (str_contains(strtolower($value), 'revised')) {
+                        $this->statusGetData = 'getRevised';
+                        $this->getColsForStart = $key;
+                        $this->getRowsForModel = $this->nowRows + 1;
+                    }
                 }
             }
 
             // If model not found check databases
             $cekTenSudahInput = CircularTenMstr::where('CIRTEN_NO', $this->tenNo)->first();
             if (!empty($cekTenSudahInput) && empty($this->data['model'])) {
-                $cekModel = CircularTenModelDet::where('CM_ID', $cekTenSudahInput->id)->get();
+                $cekModel = CircularTenModelDet::where('CM_ID', $cekTenSudahInput->id)->whereIn('CIM_ITMCD',array_values($this->data['model']))->get();
 
-                if (!empty($cekModel)) {
+                if (empty($cekModel)) {
                     $this->data['model'] = $cekModel->pluck('CIM_ITMCD');
                 }
             }
@@ -88,15 +92,24 @@ class ImportCircularTen implements ToModel
                 if (!empty($row[$this->getColsForStart])) {
                     foreach ($row as $keyModel => $valueModel) {
                         $cekItem = str_contains($valueModel, '-') ? explode('-', $valueModel)[0] : $valueModel;
-                        $getDataItem = $this->getItemMaster(implode('', explode('-', $valueModel)), $cekItem);
+                        $implodeItem = implode('', explode('-', $valueModel));
+                        $cekItemExists = array_filter($this->data['model'], function($f) use ($cekItem, $implodeItem){
+                            if ($f == $cekItem || str_contains(strtolower($implodeItem), $f)) {
+                                return $f;
+                            }
+                        });
 
-                        if (!empty($valueModel) && strlen($valueModel) > 4 && count($getDataItem) > 0) {
-
-                            $this->data['ten'] = $this->tenNo;
-                            $this->data['model'][] = $getDataItem['model'];
-                            $this->data['supp_cd'] = count($getDataItem) > 0 ? $getDataItem['listSub'] : '';
-                            $this->data['valmodel'][] = count($getDataItem) > 0 ? $getDataItem['valmodel'] : [];
-                            $this->data['cekItem'] = $getDataItem;
+                        if (count($cekItemExists) === 0) {
+                            $getDataItem = $this->getItemMaster($implodeItem, $cekItem);
+    
+                            if (!empty($valueModel) && strlen($valueModel) > 4 && count($getDataItem) > 0) {
+    
+                                $this->data['ten'] = $this->tenNo;
+                                $this->data['model'][$getDataItem['model']] = $getDataItem['model'];
+                                $this->data['supp_cd'] = count($getDataItem) > 0 ? $getDataItem['listSub'] : '';
+                                $this->data['valmodel'][] = count($getDataItem) > 0 ? $getDataItem['valmodel'] : [];
+                                // $this->data['cekItem'] = $getDataItem;
+                            }
                         }
                     }
                 } else {
@@ -112,24 +125,28 @@ class ImportCircularTen implements ToModel
                         $hasilCekKosong[] = $valueKosongModel;
                     }
                 }
+                $this->data['contentCek'][] = $hasilCekKosong;
 
                 if (count($hasilCekKosong) > 0) {
                     $this->contentArray[] = $row;
                 } else {
-                    foreach ($this->contentArray as $keyRow => $valueRow) {
-                        $this->tableBuild .= "<tr>";
-
-                        foreach ($valueRow as $keyCol => $valueCol) {
-                            $this->tableBuild .= "<td style='padding: 5px'>" . $valueCol . "</td>";
-                        }
-
-                        $this->tableBuild .= "</tr>";
-                    }
-                    $this->tableBuild .= "</tbody></table>";
-
-                    $this->data['content'] = $this->tableBuild;
-                    $this->statusGetData = '';
                 }
+            }
+
+            if ($this->nowRows >= $this->getRowsForModel && $this->statusGetData == 'getRevised') {
+                foreach ($this->contentArray as $keyRow => $valueRow) {
+                    $this->tableBuild .= "<tr>";
+
+                    foreach ($valueRow as $keyCol => $valueCol) {
+                        $this->tableBuild .= "<td style='padding: 5px'>" . $valueCol . "</td>";
+                    }
+
+                    $this->tableBuild .= "</tr>";
+                }
+                $this->tableBuild .= "</tbody></table>";
+
+                $this->data['content'] = $this->tableBuild;
+                $this->statusGetData = '';
             }
 
             // For Exec Content
@@ -194,13 +211,13 @@ class ImportCircularTen implements ToModel
                         'CIRTEN_STATUSFLG' => 1
                     ]);
 
-                    Redis::publish('portalv2', json_encode([
-                        'app' => 'cirten',
-                        'message' => 'TEN ' . $this->tenNo . ' : ' . $status,
-                        'type' => 'red',
-                        'status' => 'failed',
-                        'data' => $row
-                    ]));
+                    // Redis::publish('portalv2', json_encode([
+                    //     'app' => 'cirten',
+                    //     'message' => 'TEN ' . $this->tenNo . ' : ' . $status,
+                    //     'type' => 'red',
+                    //     'status' => 'failed',
+                    //     'data' => $row
+                    // ]));
                 } else {
                     $datas = [
                         'ten' => $this->tenNo,
@@ -208,19 +225,22 @@ class ImportCircularTen implements ToModel
                         'subject' => $this->data['subject'],
                         'model' => $this->data['model'],
                         'content' => $this->data['content'],
-                        'list_file' => [$this->data['tenEpsonNo'] . '.html'],
+                        'list_files' => [$this->tenEpsonNo . '.html'],
                         'exec_sch' => $this->data['exec'],
                         'reason' => $this->data['reason'],
                     ];
+
                     foreach ($this->data['model'] as $keyMdl => $valueMdl) {
-                        CircularTenModelDet::create([
+                        CircularTenModelDet::updateOrCreate([
                             'CM_ID' => $storedTen->id,
-                            'CIM_ITMCD' => $valueMdl['MDLCD'],
+                            'CIM_ITMCD' => $valueMdl,
+                        ],[
+                            'CM_ID' => $storedTen->id,
+                            'CIM_ITMCD' => $valueMdl,
                         ]);
                     }
 
-                    // Send to DMS
-                    SyncCirTentoOldDMS::dispatch($datas)->onQueue('SyncCirTentoOldDMS');
+                    $this->data['send_data'] = $datas;
                 }
             }
         }

@@ -15,6 +15,8 @@ use App\Models\STXI\BIM\CircularTenPathHtm;
 use App\Imports\STXI\BIM\ImportCircularTen;
 use App\Imports\STXI\BIM\ImportTENList;
 
+use App\Jobs\STXI\BIM\SyncCirTentoOldDMS;
+
 class CirtenUpdateController extends BaseController
 {
     /**
@@ -67,6 +69,8 @@ class CirtenUpdateController extends BaseController
                 $importer = new ImportCircularTen($value['tenNum'], $filehtm, $value['tenNumEpson'], 2, $file);
 
                 Excel::import($importer, $file, 'ten_bim');
+                // Send To DMS
+                SyncCirTentoOldDMS::dispatch($importer->data['sendData'])->onQueue('SyncCirTentoOldDMS');
 
                 $hasil[] = [
                     'status' => true,
@@ -103,10 +107,12 @@ class CirtenUpdateController extends BaseController
             $importer = new ImportCircularTen($id, $cirtenMstr->CIRTEN_HTMFILEPATH, $cirtenMstr->CIRTEN_TENIEI, 2, $cirtenMstr->CIRTEN_FILEPATH);
 
             Excel::import($importer, $cirtenMstr->CIRTEN_FILEPATH, 'ten_bim');
+            
+            SyncCirTentoOldDMS::dispatch($importer->data['send_data'])->onQueue('SyncCirTentoOldDMS');
 
             return [
                 'status' => true,
-                'files' => $importer->data
+                'files' => $importer->data['send_data']
             ];
         } else {
             return [
