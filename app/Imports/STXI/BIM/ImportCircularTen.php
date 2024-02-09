@@ -19,7 +19,7 @@ use App\Models\STXI\BIM\CircularTenModelDet;
 
 class ImportCircularTen implements ToModel
 {
-    public $data, $pdf, $tenNo, $tenEpsonNo, $options, $filepathExcel;
+    public $data, $pdf, $dataForPDF, $tenNo, $tenEpsonNo, $options, $filepathExcel;
     /**
      * @param Collection $collection
      */
@@ -175,7 +175,7 @@ class ImportCircularTen implements ToModel
                     'subject' => $this->data['subject'],
                     'model' => $this->data['model'],
                     'content' => $this->data['content'],
-                    'list_file' => [$this->data['tenEpsonNo'] . '.html'],
+                    'list_files' => [$this->tenEpsonNo . '.html'],
                     'exec_sch' => $this->data['exec'],
                     'reason' => $this->data['reason'],
                 ];
@@ -243,6 +243,20 @@ class ImportCircularTen implements ToModel
                     $this->data['send_data'] = $datas;
                 }
             }
+
+            if ($this->options === 3) {
+                $datas = [
+                    'ten' => $this->tenNo,
+                    'mail_date' => $this->data['mail_date'],
+                    'subject' => $this->data['subject'],
+                    'model' => $this->data['model'],
+                    'content' => $this->data['content'],
+                    'list_files' => [$this->tenEpsonNo . '.html'],
+                    'exec_sch' => $this->data['exec'],
+                    'reason' => $this->data['reason'],
+                ];
+                $this->dataForPDF = $datas;
+            }
         }
     }
 
@@ -251,7 +265,7 @@ class ImportCircularTen implements ToModel
         if ($isExport) {
             $pdf = Pdf::loadView('STXI/BIM/circularTenLayout', $datas);
 
-            return $pdf->download($this->data['ten'] . '.pdf');
+            return $pdf->download($this->tenNo . '.pdf');
         }
 
         return $datas;

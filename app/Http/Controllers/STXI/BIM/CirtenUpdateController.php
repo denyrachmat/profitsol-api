@@ -107,18 +107,12 @@ class CirtenUpdateController extends BaseController
             $importer = new ImportCircularTen($id, $cirtenMstr->CIRTEN_HTMFILEPATH, $cirtenMstr->CIRTEN_TENIEI, 2, $cirtenMstr->CIRTEN_FILEPATH);
 
             Excel::import($importer, $cirtenMstr->CIRTEN_FILEPATH, 'ten_bim');
-            
+
             SyncCirTentoOldDMS::dispatch($importer->data['send_data'])->onQueue('SyncCirTentoOldDMS');
 
-            return [
-                'status' => true,
-                'files' => $importer->data['send_data']
-            ];
+            return $this->handleResponse([], 'Sync TEN ' . $id . ' On progress');
         } else {
-            return [
-                'status' => false,
-                'files' => []
-            ];
+            return $this->handleError('TEN ' . $id . ' not found !!!', []);
         }
     }
 
@@ -190,6 +184,25 @@ class CirtenUpdateController extends BaseController
             Excel::import($importer, $getData->CIRTEN_FILEPATH, 'ten_bim');
 
             return $importer->pdf;
+        } else {
+            return $this->handleError('Data not found !', []);
+        }
+    }
+
+    public function cekViewPrint($ten)
+    {
+        $getData = CircularTenMstr::where('CIRTEN_NO', $ten)
+            ->whereNotNull('CIRTEN_HTMFILEPATH')
+            ->whereNotNull('CIRTEN_FILEPATH')
+            ->whereNotNull('CIRTEN_TENIEI')
+            ->first();
+
+        if (!empty($getData)) {
+            $importer = new ImportCircularTen($ten, $getData->CIRTEN_HTMFILEPATH, $getData->CIRTEN_TENIEI, 3, $getData->CIRTEN_FILEPATH);
+
+            Excel::import($importer, $getData->CIRTEN_FILEPATH, 'ten_bim');
+
+            return View('STXI/BIM/circularTenLayout', $importer->dataForPDF);
         } else {
             return $this->handleError('Data not found !', []);
         }
