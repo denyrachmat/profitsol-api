@@ -93,7 +93,7 @@ class ImportCircularTen implements ToModel
                         if (!empty($valueModel) && strlen($valueModel) > 4 && count($getDataItem) > 0) {
 
                             $this->data['ten'] = $this->tenNo;
-                            $this->data['model'][] = count($getDataItem) > 0 ? $getDataItem['model'] : [];
+                            $this->data['model'][] = $getDataItem['model'];
                             $this->data['supp_cd'] = count($getDataItem) > 0 ? $getDataItem['listSub'] : '';
                             $this->data['valmodel'][] = count($getDataItem) > 0 ? $getDataItem['valmodel'] : [];
                             $this->data['cekItem'] = $getDataItem;
