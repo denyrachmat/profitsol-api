@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Excel;
 use Carbon\Carbon;
+use PDF;
 
 use App\Models\STXI\BIM\CircularTenMstr;
 use App\Models\STXI\BIM\CircularTenModelDet;
@@ -179,11 +180,13 @@ class CirtenUpdateController extends BaseController
             ->first();
 
         if (!empty($getData)) {
-            $importer = new ImportCircularTen($ten, $getData->CIRTEN_HTMFILEPATH, $getData->CIRTEN_TENIEI, 1, $getData->CIRTEN_FILEPATH);
+            $importer = new ImportCircularTen($ten, $getData->CIRTEN_HTMFILEPATH, $getData->CIRTEN_TENIEI, 3, $getData->CIRTEN_FILEPATH);
 
             Excel::import($importer, $getData->CIRTEN_FILEPATH, 'ten_bim');
 
-            return $importer->pdf;
+            $pdf = Pdf::loadView('STXI/BIM/circularTenLayout', $importer->dataForPDF);
+
+            return $pdf->download($this->tenNo . '.pdf');
         } else {
             return $this->handleError('Data not found !', []);
         }
