@@ -46,153 +46,111 @@ class ImportCircularTen implements ToModel
 
     public function model(array $row)
     {
-        $this->nowRows = $this->nowRows + 1;
-
-        foreach ($row as $key => $value) {
-            if (!empty($value)) {
-                // $this->titleData = $value;
-
-                if (str_contains(strtolower($value), 'applicable')) {
-                    $this->statusGetData = 'getModel';
-                    $this->getColsForStart = $key;
-                    $this->getRowsForModel = $this->nowRows + 2;
-                }
-
-                if (str_contains(strtolower($value), 'contents')) {
-                    $this->statusGetData = 'getContent';
-                    $this->getColsForStart = $key;
-                    $this->getRowsForModel = $this->nowRows + 1;
-                }
+        $cekKosong = array_filter($row, function ($f) {
+            if (!empty($f)) {
+                return $f;
             }
-        }
+        });
 
-        // If model not found check databases
-        $cekTenSudahInput = CircularTenMstr::where('CIRTEN_NO', $this->tenNo)->first();
-        if (!empty($cekTenSudahInput)) {
-            $cekModel = CircularTenModelDet::where('CM_ID', $cekTenSudahInput->id)->get();
+        if (count($cekKosong) > 0) {
+            $this->nowRows = $this->nowRows + 1;
 
-            if (!empty($cekModel)) {
-                $this->data['model'] = $cekModel->pluck('CIM_ITMCD');
-            }
-        }
+            foreach ($row as $key => $value) {
+                if (!empty($value)) {
+                    // $this->titleData = $value;
 
-        // For get List model & Subcon Code
-        if ($this->nowRows >= $this->getRowsForModel && $this->statusGetData == 'getModel') {
-            if (!empty($row[$this->getColsForStart])) {
-                foreach ($row as $keyModel => $valueModel) {
-                    $cekItem = str_contains($valueModel, '-') ? explode('-', $valueModel)[0] : $valueModel;
-                    $getDataItem = $this->getItemMaster($cekItem);
-
-                    if (!empty($valueModel) && strlen($valueModel) > 4 && count($getDataItem) > 0) {
-
-                        $this->data['ten'] = $this->tenNo;
-                        $this->data['model'][] =  count($getDataItem) > 0 ? $getDataItem['model'] : [];
-                        $this->data['supp_cd'] =  count($getDataItem) > 0 ? $getDataItem['listSub'] : '';
-                        $this->data['valmodel'][] = count($getDataItem) > 0 ? $getDataItem['valmodel'] : [];
-                    }
-                }
-            } else {
-                $this->statusGetData = '';
-            }
-        }
-
-        // For get Content
-        if ($this->nowRows >= $this->getRowsForModel && $this->statusGetData == 'getContent') {
-            $hasilCekKosong = [];
-            foreach ($row as $keyCekKosongModel => $valueKosongModel) {
-                if (!empty($valueKosongModel)) {
-                    $hasilCekKosong[] = $valueKosongModel;
-                }
-            }
-
-            if (count($hasilCekKosong) > 0) {
-                $this->contentArray[] = $row;
-            } else {
-                foreach ($this->contentArray as $keyRow => $valueRow) {
-                    $this->tableBuild .= "<tr>";
-
-                    foreach ($valueRow as $keyCol => $valueCol) {
-                        $this->tableBuild .= "<td style='padding: 5px'>" . $valueCol . "</td>";
+                    if (str_contains(strtolower($value), 'applicable')) {
+                        $this->statusGetData = 'getModel';
+                        $this->getColsForStart = $key;
+                        $this->getRowsForModel = $this->nowRows + 2;
                     }
 
-                    $this->tableBuild .= "</tr>";
+                    if (str_contains(strtolower($value), 'contents')) {
+                        $this->statusGetData = 'getContent';
+                        $this->getColsForStart = $key;
+                        $this->getRowsForModel = $this->nowRows + 1;
+                    }
                 }
-                $this->tableBuild .= "</tbody></table>";
-
-                $this->data['content'] = $this->tableBuild;
-                $this->statusGetData = '';
             }
-        }
 
-        // For Exec Content
-        $filenya = Storage::disk('ten_bim')->get($this->htmlEpson);
-        $crawler = new Crawler($filenya);
+            // If model not found check databases
+            $cekTenSudahInput = CircularTenMstr::where('CIRTEN_NO', $this->tenNo)->first();
+            if (!empty($cekTenSudahInput)) {
+                $cekModel = CircularTenModelDet::where('CM_ID', $cekTenSudahInput->id)->get();
 
-        $listItem = $crawler->filterXPath('//*[@style="word-wrap: break-word;"]')->extract(['_text']);
-        $this->data['exec'] = empty($listItem[5]) ? $listItem[3] : $listItem[5];
-        $this->data['reason'] = empty($listItem[25]) ? $listItem[24] : $listItem[25];
+                if (!empty($cekModel)) {
+                    $this->data['model'] = $cekModel->pluck('CIM_ITMCD');
+                }
+            }
 
-        $listSubject = $crawler->filterXPath('//*[@class="comment-box"]')->extract(['_text']);
-        $this->data['subject'] = $listSubject[1];
-        $cekTen = CircularTenList::where('CTT_SECTENNO', $this->tenNo)->first();
+            // For get List model & Subcon Code
+            if ($this->nowRows >= $this->getRowsForModel && $this->statusGetData == 'getModel') {
+                if (!empty($row[$this->getColsForStart])) {
+                    foreach ($row as $keyModel => $valueModel) {
+                        $cekItem = str_contains($valueModel, '-') ? explode('-', $valueModel)[0] : $valueModel;
+                        $getDataItem = $this->getItemMaster($cekItem);
 
-        $this->data['mail_date'] = $cekTen->CTT_EMLDT;
+                        if (!empty($valueModel) && strlen($valueModel) > 4 && count($getDataItem) > 0) {
 
-        // Copy to local storage laravel
-        Storage::writeStream('/public/circular_ten/' . $this->tenNo . '/' . $this->tenEpsonNo . '.html', Storage::disk('ten_bim')->readStream($this->htmlEpson));
+                            $this->data['ten'] = $this->tenNo;
+                            $this->data['model'][] = count($getDataItem) > 0 ? $getDataItem['model'] : [];
+                            $this->data['supp_cd'] = count($getDataItem) > 0 ? $getDataItem['listSub'] : '';
+                            $this->data['valmodel'][] = count($getDataItem) > 0 ? $getDataItem['valmodel'] : [];
+                        }
+                    }
+                } else {
+                    $this->statusGetData = '';
+                }
+            }
 
-        $datas = [];
-        
-        if ($this->options === 1) {
-            $datas = [
-                'ten' => $this->tenNo,
-                'mail_date' => $this->data['mail_date'],
-                'subject' => $this->data['subject'],
-                'model' => $this->data['model'],
-                'content' => $this->data['content'],
-                'list_file' => [$this->data['tenEpsonNo'] . '.html'],
-                'exec_sch' => $this->data['exec'],
-                'reason' => $this->data['reason'],
-            ];
-            $this->pdf = $this->generateDocument($this->data['mail_date'], $datas, true);
-        }
-
-        if ($this->options === 2) {
-            // Save to Cirten Master Table
-            $storedTen = CircularTenMstr::updateOrCreate([
-                'CIRTEN_NO' => $this->tenNo
-            ], [
-                'CIRTEN_NO' => $this->tenNo,
-                'CIRTEN_MAILDT' => $this->data['mail_date'],
-                'CIRTEN_TENIEI' => $this->tenEpsonNo,
-                'CIRTEN_FILEPATH' => $this->filepathExcel,
-                'CIRTEN_HTMFILEPATH' => $this->htmlEpson,
-            ]);
-
-            $status = '';
-            if (count($this->data['model']) === 0 || empty($this->data['content'])) {
-                $status .= 'Model not found on Excel of Ten, please add it manually !!';
-
-                if (empty($this->data['content'])) {
-                    $status .= '<br>Content not found, please check the excel !!';
+            // For get Content
+            if ($this->nowRows >= $this->getRowsForModel && $this->statusGetData == 'getContent') {
+                $hasilCekKosong = [];
+                foreach ($row as $keyCekKosongModel => $valueKosongModel) {
+                    if (!empty($valueKosongModel)) {
+                        $hasilCekKosong[] = $valueKosongModel;
+                    }
                 }
 
-                $storedTen = CircularTenMstr::updateOrCreate([
-                    'CIRTEN_NO' => $this->tenNo
-                ], [
-                    'CIRTEN_NO' => $this->tenNo,
-                    'CIRTEN_MAILDT' => $this->data['mail_date'],
-                    'CIRTEN_STATUS' => $status,
-                    'CIRTEN_STATUSFLG' => 1
-                ]);
+                if (count($hasilCekKosong) > 0) {
+                    $this->contentArray[] = $row;
+                } else {
+                    foreach ($this->contentArray as $keyRow => $valueRow) {
+                        $this->tableBuild .= "<tr>";
 
-                Redis::publish('portalv2', json_encode([
-                    'app' => 'cirten',
-                    'message' => 'TEN ' . $this->tenNo . ' : ' . $status,
-                    'type' => 'red',
-                    'status' => 'failed',
-                ]));
-            } else {
+                        foreach ($valueRow as $keyCol => $valueCol) {
+                            $this->tableBuild .= "<td style='padding: 5px'>" . $valueCol . "</td>";
+                        }
+
+                        $this->tableBuild .= "</tr>";
+                    }
+                    $this->tableBuild .= "</tbody></table>";
+
+                    $this->data['content'] = $this->tableBuild;
+                    $this->statusGetData = '';
+                }
+            }
+
+            // For Exec Content
+            $filenya = Storage::disk('ten_bim')->get($this->htmlEpson);
+            $crawler = new Crawler($filenya);
+
+            $listItem = $crawler->filterXPath('//*[@style="word-wrap: break-word;"]')->extract(['_text']);
+            $this->data['exec'] = empty($listItem[5]) ? $listItem[3] : $listItem[5];
+            $this->data['reason'] = empty($listItem[25]) ? $listItem[24] : $listItem[25];
+
+            $listSubject = $crawler->filterXPath('//*[@class="comment-box"]')->extract(['_text']);
+            $this->data['subject'] = $listSubject[1];
+            $cekTen = CircularTenList::where('CTT_SECTENNO', $this->tenNo)->first();
+
+            $this->data['mail_date'] = $cekTen->CTT_EMLDT;
+
+            // Copy to local storage laravel
+            Storage::writeStream('/public/circular_ten/' . $this->tenNo . '/' . $this->tenEpsonNo . '.html', Storage::disk('ten_bim')->readStream($this->htmlEpson));
+
+            $datas = [];
+
+            if ($this->options === 1) {
                 $datas = [
                     'ten' => $this->tenNo,
                     'mail_date' => $this->data['mail_date'],
@@ -203,15 +161,65 @@ class ImportCircularTen implements ToModel
                     'exec_sch' => $this->data['exec'],
                     'reason' => $this->data['reason'],
                 ];
-                foreach ($this->data['model'] as $keyMdl => $valueMdl) {
-                    CircularTenModelDet::create([
-                        'CM_ID' => $storedTen->id,
-                        'CIM_ITMCD' => $valueMdl['MDLCD'],
-                    ]);
-                }
+                $this->pdf = $this->generateDocument($this->data['mail_date'], $datas, true);
+            }
 
-                // Send to DMS
-                SyncCirTentoOldDMS::dispatch($datas)->onQueue('SyncCirTentoOldDMS');
+            if ($this->options === 2) {
+                // Save to Cirten Master Table
+                $storedTen = CircularTenMstr::updateOrCreate([
+                    'CIRTEN_NO' => $this->tenNo
+                ], [
+                    'CIRTEN_NO' => $this->tenNo,
+                    'CIRTEN_MAILDT' => $this->data['mail_date'],
+                    'CIRTEN_TENIEI' => $this->tenEpsonNo,
+                    'CIRTEN_FILEPATH' => $this->filepathExcel,
+                    'CIRTEN_HTMFILEPATH' => $this->htmlEpson,
+                ]);
+
+                $status = '';
+                if (count($this->data['model']) === 0 || empty($this->data['content'])) {
+                    $status .= 'Model not found on Excel of Ten, please add it manually !!';
+
+                    if (empty($this->data['content'])) {
+                        $status .= '<br>Content not found, please check the excel !!';
+                    }
+
+                    $storedTen = CircularTenMstr::updateOrCreate([
+                        'CIRTEN_NO' => $this->tenNo
+                    ], [
+                        'CIRTEN_NO' => $this->tenNo,
+                        'CIRTEN_MAILDT' => $this->data['mail_date'],
+                        'CIRTEN_STATUS' => $status,
+                        'CIRTEN_STATUSFLG' => 1
+                    ]);
+
+                    Redis::publish('portalv2', json_encode([
+                        'app' => 'cirten',
+                        'message' => 'TEN ' . $this->tenNo . ' : ' . $status,
+                        'type' => 'red',
+                        'status' => 'failed',
+                    ]));
+                } else {
+                    $datas = [
+                        'ten' => $this->tenNo,
+                        'mail_date' => $this->data['mail_date'],
+                        'subject' => $this->data['subject'],
+                        'model' => $this->data['model'],
+                        'content' => $this->data['content'],
+                        'list_file' => [$this->data['tenEpsonNo'] . '.html'],
+                        'exec_sch' => $this->data['exec'],
+                        'reason' => $this->data['reason'],
+                    ];
+                    foreach ($this->data['model'] as $keyMdl => $valueMdl) {
+                        CircularTenModelDet::create([
+                            'CM_ID' => $storedTen->id,
+                            'CIM_ITMCD' => $valueMdl['MDLCD'],
+                        ]);
+                    }
+
+                    // Send to DMS
+                    SyncCirTentoOldDMS::dispatch($datas)->onQueue('SyncCirTentoOldDMS');
+                }
             }
         }
     }
@@ -227,18 +235,19 @@ class ImportCircularTen implements ToModel
         return $datas;
     }
 
-    function getItemMaster($item) {        
+    function getItemMaster($item)
+    {
         $getDataItem = DB::connection('sqlsrv_mega_sme')->table('MITM_TBL')
-        ->select(
-            'MITM_ITMCD',
-            'MITM_ITMD1',
-            'MITM_STKUOM',
-            'MITM_SPTNO',
-            'MITM_SUPCD',
-            'MITM_ITMTY'
-        )
-        ->where('MITM_ITMCD', 'like', $item . '%')
-        ->get();
+            ->select(
+                'MITM_ITMCD',
+                'MITM_ITMD1',
+                'MITM_STKUOM',
+                'MITM_SPTNO',
+                'MITM_SUPCD',
+                'MITM_ITMTY'
+            )
+            ->where('MITM_ITMCD', 'like', $item . '%')
+            ->get();
 
         if (count($getDataItem) > 0) {
             $listSubcon = [];
