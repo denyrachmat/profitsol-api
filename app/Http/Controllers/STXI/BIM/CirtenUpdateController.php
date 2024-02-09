@@ -186,7 +186,7 @@ class CirtenUpdateController extends BaseController
 
             $pdf = Pdf::loadView('STXI/BIM/circularTenLayout', $importer->dataForPDF);
 
-            return $pdf->download($this->tenNo . '.pdf');
+            return $pdf->download($ten . '.pdf');
         } else {
             return $this->handleError('Data not found !', []);
         }
