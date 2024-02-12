@@ -253,6 +253,7 @@ Route::group(['prefix' => 'div'], function () {
         Route::get('syncTenList/{date}', [CirtenUpdateController::class, 'syncTenList']);
         Route::get('generateDocumentUp/{ten}', [CirtenUpdateController::class, 'generateDocument']);
         Route::get('cekViewPrint/{ten}', [CirtenUpdateController::class, 'cekViewPrint']);
+        Route::get('cekFilePDF/{ten}', [CirtenUpdateController::class, 'cekFilePDF']);
         
         // CirtenUpdateController
     });

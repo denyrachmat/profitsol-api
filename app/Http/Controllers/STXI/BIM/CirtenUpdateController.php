@@ -210,4 +210,8 @@ class CirtenUpdateController extends BaseController
             return $this->handleError('Data not found !', []);
         }
     }
+
+    public function cekFilePDF($ten){
+        return Storage::url('circular_ten/' . $ten . '/' . $ten . '.pdf');
+    }
 }
