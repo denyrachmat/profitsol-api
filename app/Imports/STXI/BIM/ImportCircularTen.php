@@ -81,7 +81,7 @@ class ImportCircularTen implements ToModel
             // If model not found check databases
             $cekTenSudahInput = CircularTenMstr::where('CIRTEN_NO', $this->tenNo)->first();
             if (!empty($cekTenSudahInput) && empty($this->data['model'])) {
-                $cekModel = CircularTenModelDet::where('CM_ID', $cekTenSudahInput->id)->whereIn('CIM_ITMCD',array_values($this->data['model']))->get();
+                $cekModel = CircularTenModelDet::where('CM_ID', $cekTenSudahInput->id)->whereIn('CIM_ITMCD', array_values($this->data['model']))->get();
 
                 if (empty($cekModel)) {
                     $this->data['model'] = $cekModel->pluck('CIM_ITMCD');
@@ -94,7 +94,7 @@ class ImportCircularTen implements ToModel
                     foreach ($row as $keyModel => $valueModel) {
                         $cekItem = str_contains($valueModel, '-') ? explode('-', $valueModel)[0] : $valueModel;
                         $implodeItem = implode('', explode('-', $valueModel));
-                        $cekItemExists = array_filter($this->data['model'], function($f) use ($cekItem, $implodeItem){
+                        $cekItemExists = array_filter($this->data['model'], function ($f) use ($cekItem, $implodeItem) {
                             if ($f == $cekItem || str_contains(strtolower($implodeItem), $f)) {
                                 return $f;
                             }
@@ -102,9 +102,9 @@ class ImportCircularTen implements ToModel
 
                         if (count($cekItemExists) === 0) {
                             $getDataItem = $this->getItemMaster($implodeItem, $cekItem);
-    
+
                             if (!empty($valueModel) && strlen($valueModel) > 4 && count($getDataItem) > 0) {
-    
+
                                 $this->data['ten'] = $this->tenNo;
                                 $this->data['model'][$getDataItem['model']] = $getDataItem['model'];
                                 $this->data['supp_cd'] = count($getDataItem) > 0 ? $getDataItem['listSub'] : '';
@@ -196,7 +196,7 @@ class ImportCircularTen implements ToModel
                 ]);
 
                 $status = '';
-                if (count($this->data['model']) === 0 || empty($this->data['content'])) {
+                if (count($this->data['model']) === 0) {
                     $status .= 'Model not found on Excel of Ten, please add it manually !!';
 
                     if (empty($this->data['content'])) {
@@ -219,6 +219,17 @@ class ImportCircularTen implements ToModel
                     //     'status' => 'failed',
                     //     'data' => $row
                     // ]));
+                } elseif (empty($this->data['content'])) {
+                    $status .= '<br>Content not found, please check the excel !!';
+
+                    $storedTen = CircularTenMstr::updateOrCreate([
+                        'CIRTEN_NO' => $this->tenNo
+                    ], [
+                        'CIRTEN_NO' => $this->tenNo,
+                        'CIRTEN_MAILDT' => $this->data['mail_date'],
+                        'CIRTEN_STATUS' => $status,
+                        'CIRTEN_STATUSFLG' => 1
+                    ]);
                 } else {
                     $datas = [
                         'ten' => $this->tenNo,
@@ -235,7 +246,7 @@ class ImportCircularTen implements ToModel
                         CircularTenModelDet::updateOrCreate([
                             'CM_ID' => $storedTen->id,
                             'CIM_ITMCD' => $valueMdl,
-                        ],[
+                        ], [
                             'CM_ID' => $storedTen->id,
                             'CIM_ITMCD' => $valueMdl,
                         ]);
@@ -287,7 +298,7 @@ class ImportCircularTen implements ToModel
                 ->where('MITM_ITMCD', 'like', $item . '%')
                 ->whereNotNull('MITM_ITMTY')
                 ->get();
-    
+
             if (count($getDataItem) > 0) {
                 $listSubcon = [];
                 $items = [];
@@ -295,7 +306,7 @@ class ImportCircularTen implements ToModel
                     $items[] = trim($value->MITM_ITMCD);
                     $listSubcon[(empty($value->MITM_SUPCD) ? substr($value->MITM_ITMTY, 0, 3) : substr($value->MITM_SUPCD, 0, 3))] = (empty($value->MITM_SUPCD) ? substr($value->MITM_ITMTY, 0, 3) : substr($value->MITM_SUPCD, 0, 3));
                 }
-    
+
                 return [
                     'model' => $items[0],
                     'valmodel' => $item,
