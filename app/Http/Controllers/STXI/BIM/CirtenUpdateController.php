@@ -77,13 +77,46 @@ class CirtenUpdateController extends BaseController
                 Excel::import($importer, $file, 'ten_bim');
 
                 // Send To DMS
-                SyncCirTentoOldDMS::dispatch($importer->data['sendData'])->onQueue('SyncCirTentoOldDMS');
+                if (!empty($importer->data) && isset($importer->data) && isset($importer->data['send_data']) && !empty($importer->data['send_data'])) {
+                    SyncCirTentoOldDMS::dispatch($importer->data['send_data'])->onQueue('SyncCirTentoOldDMS');
 
+                    Redis::publish('portalv2', json_encode([
+                        'app' => 'cirten',
+                        'message' => 'TEN ' . $value['tenNum'] . ' : Upload on progress !',
+                        'type' => 'green',
+                        'status' => 'start',
+                        'data' => [
+                            'secTenNo' => $value['tenNum'],
+                            'epsTenNo' => $value['tenNumEpson'],
+                            'HTMLPath' => $filehtm,
+                            'excelPath' => $file
+                        ]
+                    ]));
+
+                    $hasil[] = [
+                        'status' => true,
+                        'files' => $importer
+                    ];
+                } else {
+                    Redis::publish('portalv2', json_encode([
+                        'app' => 'cirten',
+                        'message' => 'TEN ' . $value['tenNum'] . ' : Excel data of ten not found, please check it !',
+                        'type' => 'red',
+                        'status' => 'failed',
+                        'data' => [
+                            'secTenNo' => $value['tenNum'],
+                            'epsTenNo' => $value['tenNumEpson'],
+                            'HTMLPath' => $filehtm,
+                            'excelPath' => $file
+                        ]
+                    ]));
+                }
+            } else {
                 Redis::publish('portalv2', json_encode([
                     'app' => 'cirten',
-                    'message' => 'TEN ' . $value['tenNum'] . ' : Upload on progress !',
-                    'type' => 'green',
-                    'status' => 'start',
+                    'message' => 'TEN ' . $value['tenNum'] . ' : Failed to get data !',
+                    'type' => 'red',
+                    'status' => 'failed',
                     'data' => [
                         'secTenNo' => $value['tenNum'],
                         'epsTenNo' => $value['tenNumEpson'],
@@ -92,11 +125,6 @@ class CirtenUpdateController extends BaseController
                     ]
                 ]));
 
-                $hasil[] = [
-                    'status' => true,
-                    'files' => $importer
-                ];
-            } else {
                 $hasil[] = [
                     'status' => false,
                     'files' => null
@@ -130,21 +158,23 @@ class CirtenUpdateController extends BaseController
 
             Excel::import($importer, $cirtenMstr->CIRTEN_FILEPATH, 'ten_bim');
 
-            SyncCirTentoOldDMS::dispatch($importer->data['send_data'])->onQueue('SyncCirTentoOldDMS');
+            if (!empty($importer->data) && isset($importer->data) && isset($importer->data['send_data']) && !empty($importer->data['send_data'])) {
 
+                SyncCirTentoOldDMS::dispatch($importer->data['send_data'])->onQueue('SyncCirTentoOldDMS');
 
-            Redis::publish('portalv2', json_encode([
-                'app' => 'cirten',
-                'message' => 'TEN ' . $id . ' : Upload on progress !',
-                'type' => 'green',
-                'status' => 'start',
-                'data' => [
-                    'secTenNo' => $id,
-                    'epsTenNo' => $cirtenMstr->CIRTEN_TENIEI,
-                    'HTMLPath' => $cirtenMstr->CIRTEN_HTMFILEPATH,
-                    'excelPath' => $cirtenMstr->CIRTEN_FILEPATH
-                ]
-            ]));
+                Redis::publish('portalv2', json_encode([
+                    'app' => 'cirten',
+                    'message' => 'TEN ' . $id . ' : Upload on progress !',
+                    'type' => 'green',
+                    'status' => 'start',
+                    'data' => [
+                        'secTenNo' => $id,
+                        'epsTenNo' => $cirtenMstr->CIRTEN_TENIEI,
+                        'HTMLPath' => $cirtenMstr->CIRTEN_HTMFILEPATH,
+                        'excelPath' => $cirtenMstr->CIRTEN_FILEPATH
+                    ]
+                ]));
+            }
 
             return $this->handleResponse([], 'Re-sync TEN ' . $id . ' On progress');
         } else {
