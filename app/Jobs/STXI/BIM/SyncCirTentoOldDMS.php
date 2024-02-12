@@ -138,19 +138,19 @@ class SyncCirTentoOldDMS implements ShouldQueue
                         $initMsg = 'TEN ' . $this->data['ten'] . ' : Some data for ten is not recognized yet !!!';
 
                         if (empty($model)) {
-                            $initMsg .= ' ( Model not found !! )';
+                            $initMsg .= '<br>Model not found !!';
                         }
                         
                         if (empty($sch)) {
-                            $initMsg .= ' ( Schedule section not found !! )';
+                            $initMsg .= '<br>Schedule section not found !!';
                         }
 
                         if (empty($reason)) {
-                            $initMsg .= ' ( Reason section not found !! )';
+                            $initMsg .= '<br>Reason section not found !!';
                         }
 
                         if (empty($content)) {
-                            $initMsg .= ' ( Content on Excel not found !! )';
+                            $initMsg .= '<br>Content on Excel not found !!';
                         }
                         
                         Redis::publish('portalv2', json_encode([
