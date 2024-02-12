@@ -131,10 +131,23 @@ class ImportCircularTen implements ToModel
                 if (count($hasilCekKosong) > 0) {
                     $this->contentArray[] = $row;
                 } else {
+                    foreach ($this->contentArray as $keyRow => $valueRow) {
+                        $this->tableBuild .= "<tr>";
+    
+                        foreach ($valueRow as $keyCol => $valueCol) {
+                            $this->tableBuild .= "<td style='padding: 5px'>" . $valueCol . "</td>";
+                        }
+    
+                        $this->tableBuild .= "</tr>";
+                    }
+                    $this->tableBuild .= "</tbody></table>";
+    
+                    $this->data['content'] = $this->tableBuild;
+                    $this->statusGetData = '';
                 }
             }
 
-            if ($this->nowRows >= $this->getRowsForModel && $this->statusGetData == 'getRevised') {
+            if ($this->nowRows >= $this->getRowsForModel && $this->statusGetData == 'getRevised' && empty($this->tableBuild)) {
                 foreach ($this->contentArray as $keyRow => $valueRow) {
                     $this->tableBuild .= "<tr>";
 
