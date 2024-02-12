@@ -34,23 +34,32 @@ class SyncActionCirten implements ShouldQueue
      */
     public function handle(): void
     {
-        Redis::publish('portalv2', json_encode([
-            'app' => 'cirten',
-            'message' => 'TEN ' . $this->secTenNo . ' : Upload on progress !',
-            'type' => 'green',
-            'status' => 'start',
-            'data' => [
-                'secTenNo' => $this->secTenNo,
-                'epsTenNo' => $this->epsTenNo,
-                'HTMLPath' => $this->HTMLPath,
-                'excelPath' => $this->excelPath,
-            ]
-        ]));
-        
-        $importer = new ImportCircularTen($this->secTenNo, $this->HTMLPath, $this->epsTenNo, 2, $this->excelPath);
-
-        $cek = Excel::import($importer, $this->excelPath, 'ten_bim');
-        // Send To DMS
-        SyncCirTentoOldDMS::dispatch($importer->data['sendData'])->onQueue('SyncCirTentoOldDMS');
+        try {
+            Redis::publish('portalv2', json_encode([
+                'app' => 'cirten',
+                'message' => 'TEN ' . $this->secTenNo . ' : Upload on progress !',
+                'type' => 'green',
+                'status' => 'start',
+                'data' => [
+                    'secTenNo' => $this->secTenNo,
+                    'epsTenNo' => $this->epsTenNo,
+                    'HTMLPath' => $this->HTMLPath,
+                    'excelPath' => $this->excelPath,
+                ]
+            ]));
+    
+            $importer = new ImportCircularTen($this->secTenNo, $this->HTMLPath, $this->epsTenNo, 2, $this->excelPath);
+    
+            $cek = Excel::import($importer, $this->excelPath, 'ten_bim');
+            // Send To DMS
+            SyncCirTentoOldDMS::dispatch($importer->data['sendData'])->onQueue('SyncCirTentoOldDMS');
+        } catch (\Throwable $e) {
+            Redis::publish('portalv2', json_encode([
+                'app' => 'cirten',
+                'message' => 'TEN ' . $this->secTenNo . ' : sync failed server (' . $e->getMessage() . ')',
+                'type' => 'red',
+                'status' => 'failed',
+            ]));
+        }
     }
 }
