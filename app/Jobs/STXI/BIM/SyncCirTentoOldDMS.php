@@ -135,9 +135,27 @@ class SyncCirTentoOldDMS implements ShouldQueue
                             ]
                         ]));
                     } else {
+                        $initMsg = 'TEN ' . $this->data['ten'] . ' : Some data for ten is not recognized yet !!!';
+
+                        if (empty($model)) {
+                            $initMsg .= '<br>Model not found !!';
+                        }
+                        
+                        if (empty($sch)) {
+                            $initMsg .= '<br>Schedule section not found !!';
+                        }
+
+                        if (empty($reason)) {
+                            $initMsg .= '<br>Reason section not found !!';
+                        }
+
+                        if (empty($content)) {
+                            $initMsg .= '<br>Content on Excel not found !!';
+                        }
+                        
                         Redis::publish('portalv2', json_encode([
                             'app' => 'cirten',
-                            'message' => 'TEN ' . $this->data['ten'] . ' : Some data for ten is not recognized yet !!!',
+                            'message' => $initMsg,
                             'data' => [
                                 'secTenNo' => $this->data['ten'],
                                 'model' => $model,
