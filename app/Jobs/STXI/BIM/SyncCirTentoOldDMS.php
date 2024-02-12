@@ -43,7 +43,9 @@ class SyncCirTentoOldDMS implements ShouldQueue
                 'app' => 'cirten',
                 'message' => 'TEN ' . $this->data['ten'] . ' : sync failed server (' . $e->getMessage() . ')',
                 'type' => 'red',
-                'status' => 'failed',
+                'status' => 'failed','data' => [
+                    'secTenNo' => $this->data['ten'],
+                ]
             ]));
         }
     }
@@ -126,19 +128,23 @@ class SyncCirTentoOldDMS implements ShouldQueue
                         'message' => 'TEN ' . $this->data['ten'] . ' : has been uploaded to DMS, please check DMS Apps !',
                         'type' => 'green',
                         'status' => 'success',
+                        'data' => [
+                            'secTenNo' => $this->data['ten'],
+                        ]
                     ]));
                 } else {
                     Redis::publish('portalv2', json_encode([
                         'app' => 'cirten',
                         'message' => 'TEN ' . $this->data['ten'] . ' : Some data for ten is not recognized yet !!!',
                         'data' => [
+                            'secTenNo' => $this->data['ten'],
                             'model' => $model,
                             'sch' => $sch,
                             'reason' => $reason,
                             'content' => $content,
                         ],
-                        'type' => 'green',
-                        'status' => 'success',
+                        'type' => 'red',
+                        'status' => 'failed',
                     ]));
                 }
             } catch (ClientException $e) {
@@ -147,6 +153,9 @@ class SyncCirTentoOldDMS implements ShouldQueue
                     'message' => 'TEN ' . $this->data['ten'] . ' : sync failed server (' . $e->getMessage() . ')',
                     'type' => 'red',
                     'status' => 'failed',
+                    'data' => [
+                        'secTenNo' => $this->data['ten'],
+                    ]
                 ]));
             }
         } else {
@@ -161,6 +170,9 @@ class SyncCirTentoOldDMS implements ShouldQueue
                 'message' => 'TEN ' . $this->data['ten'] . ' : already uploaded to DMS, please check to DMS App!',
                 'type' => 'green',
                 'status' => 'success',
+                'data' => [
+                    'secTenNo' => $this->data['ten'],
+                ]
             ]));
         }
     }
