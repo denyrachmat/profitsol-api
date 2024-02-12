@@ -174,9 +174,22 @@ class CirtenUpdateController extends BaseController
                         'excelPath' => $cirtenMstr->CIRTEN_FILEPATH
                     ]
                 ]));
-            }
 
-            return $this->handleResponse([], 'Re-sync TEN ' . $id . ' On progress');
+                return $this->handleResponse([], 'Re-sync TEN ' . $id . ' On progress');
+            } else {
+                Redis::publish('portalv2', json_encode([
+                    'app' => 'cirten',
+                    'message' => 'TEN ' . $id . ' : Excel data of ten not found, please check it !',
+                    'type' => 'red',
+                    'status' => 'failed',
+                    'data' => [
+                        'secTenNo' => $id,
+                        'epsTenNo' => $cirtenMstr->CIRTEN_TENIEI,
+                        'HTMLPath' => $cirtenMstr->CIRTEN_HTMFILEPATH,
+                        'excelPath' => $cirtenMstr->CIRTEN_FILEPATH
+                    ]
+                ]));
+            }
         } else {
             return $this->handleError('TEN ' . $id . ' not found !!!', []);
         }
