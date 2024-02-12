@@ -18,6 +18,7 @@ use App\Imports\STXI\BIM\ImportCircularTen;
 use App\Imports\STXI\BIM\ImportTENList;
 
 use App\Jobs\STXI\BIM\SyncCirTentoOldDMS;
+use App\Jobs\STXI\BIM\SyncActionCirten;
 
 class CirtenUpdateController extends BaseController
 {
@@ -68,15 +69,17 @@ class CirtenUpdateController extends BaseController
             if (Storage::disk('ten_bim')->exists($file) && Storage::disk('ten_bim')->exists($filehtm)) {
                 // $files = mb_convert_encoding( Storage::disk('ten_bim')->get($file), 'UTF-8', 'UTF-8');
 
-                $importer = new ImportCircularTen($value['tenNum'], $filehtm, $value['tenNumEpson'], 2, $file);
+                $submit = SyncActionCirten::dispatch($value['tenNum'], $value['tenNumEpson'], $filehtm, $file);
 
-                Excel::import($importer, $file, 'ten_bim');
+                // $importer = new ImportCircularTen($value['tenNum'], $filehtm, $value['tenNumEpson'], 2, $file);
+
+                // Excel::import($importer, $file, 'ten_bim');
                 // Send To DMS
-                SyncCirTentoOldDMS::dispatch($importer->data['sendData'])->onQueue('SyncCirTentoOldDMS');
+                // SyncCirTentoOldDMS::dispatch($importer->data['sendData'])->onQueue('SyncCirTentoOldDMS');
 
                 $hasil[] = [
                     'status' => true,
-                    'files' => $importer->data
+                    'files' => $submit
                 ];
             } else {
                 $hasil[] = [

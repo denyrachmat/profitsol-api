@@ -16,7 +16,8 @@ use App\Jobs\STXI\BIM\SyncCirTentoOldDMS;
 class SyncActionCirten implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
-
+    
+    private $secTenNo, $epsTenNo, $HTMLPath, $excelPath;
     /**
      * Create a new job instance.
      */
@@ -39,7 +40,7 @@ class SyncActionCirten implements ShouldQueue
             'app' => 'cirten',
             'message' => 'TEN ' . $this->secTenNo . ' : Upload on progress !',
             'type' => 'green',
-            'status' => 'info',
+            'status' => 'start',
             'data' => $this
         ]));
 
