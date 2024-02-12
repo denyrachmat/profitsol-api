@@ -77,8 +77,8 @@ class CirtenUpdateController extends BaseController
                 Excel::import($importer, $file, 'ten_bim');
 
                 // Send To DMS
-                if (!empty($importer->data) && isset($importer->data) && isset($importer->data['send_data']) && !empty($importer->data['send_data'])) {
-                    SyncCirTentoOldDMS::dispatch($importer->data['send_data'])->onQueue('SyncCirTentoOldDMS');
+                if (!empty($importer->data) && isset($importer->data) && isset($importer->data['data']) && !empty($importer->data['data'])) {
+                    SyncCirTentoOldDMS::dispatch($importer->data['data'])->onQueue('SyncCirTentoOldDMS');
 
                     Redis::publish('portalv2', json_encode([
                         'app' => 'cirten',
@@ -160,9 +160,9 @@ class CirtenUpdateController extends BaseController
 
             Excel::import($importer, $cirtenMstr->CIRTEN_FILEPATH, 'ten_bim');
 
-            if (!empty($importer->data) && isset($importer->data) && isset($importer->data['send_data']) && !empty($importer->data['send_data'])) {
+            if (!empty($importer->data) && isset($importer->data) && isset($importer->data['data']) && !empty($importer->data['data'])) {
 
-                SyncCirTentoOldDMS::dispatch($importer->data['send_data'])->onQueue('SyncCirTentoOldDMS');
+                SyncCirTentoOldDMS::dispatch($importer->data['data'])->onQueue('SyncCirTentoOldDMS');
 
                 Redis::publish('portalv2', json_encode([
                     'app' => 'cirten',
