@@ -104,6 +104,19 @@ return [
             'prefix_indexes' => true,
         ],
 
+        'sqlsrv_dms_old' => [
+            'driver' => 'sqlsrv',
+            'url' => env('DATABASE_URL'),
+            'host' => env('DB_DMS_OLD_HOST', 'localhost'),
+            'port' => env('DB_DMS_OLD_PORT', '1433'),
+            'database' => env('DB_DMS_OLD_DATABASE', 'forge'),
+            'username' => env('DB_DMS_OLD_USERNAME', 'forge'),
+            'password' => env('DB_DMS_OLD_PASSWORD', ''),
+            'charset' => 'utf8',
+            'prefix' => '',
+            'prefix_indexes' => true,
+        ],
+
         'sqlsrv_cms' => [
             'driver' => 'sqlsrv',
             'url' => env('DATABASE_URL'),

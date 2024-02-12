@@ -13,6 +13,7 @@ use GuzzleHttp\Client;
 use GuzzleHttp\Psr7;
 use GuzzleHttp\Exception\ClientException;
 use Barryvdh\Snappy\Facades\SnappyPdf as PDF;
+use Illuminate\Support\Facades\DB;
 
 use App\Models\STXI\BIM\CircularTenMstr;
 use App\Models\STXI\BIM\CircularTenModelDet;
@@ -69,80 +70,95 @@ class SyncCirTentoOldDMS implements ShouldQueue
         // $pathFile = '../storage/app/public/circular_ten/' . $ten . '/' . $ten . '.pdf';
         // $pathFile = Storage::url('circular_ten/' . $ten . '/' . $ten . '.pdf');
         $pathFile = 'http://192.168.100.32/public/storage/circular_ten/' . $ten . '/' . $ten . '.pdf';
+        
+        $cekData = DB::connection('sqlsrv_dms_old')->table('dms_doc_mstr')->where('doc_real_name', $ten . '.pdf')->first();
 
-        $client = new Client([
-            // Base URI is used with relative requests
-            'base_uri' => $target_url,
-            // You can set any number of default request options.
-            'timeout' => 2.0,
-        ]);
-
-        try {
-            $getModelList = $this->generateDocument($emailDate);
-            $model = $getModelList['model'];
-            $sch = $getModelList['exec_sch'];
-            $reason = $getModelList['reason'];
-            $content = $getModelList['content'];
-
-            if (!empty($model) && !empty($sch) && !empty($reason) && !empty($content)) {
-                $res = $client->request('POST', 'dms/docsupload', [
-                    'multipart' => [
-                        [
-                            'name' => 'username',
-                            'contents' => 'susi',
-                            'headers' => ['Content-Type' => 'application/json']
+        if (empty($cekData)) {
+            $client = new Client([
+                // Base URI is used with relative requests
+                'base_uri' => $target_url,
+                // You can set any number of default request options.
+                'timeout' => 2.0,
+            ]);
+    
+            try {
+                $getModelList = $this->generateDocument($emailDate);
+                $model = $getModelList['model'];
+                $sch = $getModelList['exec_sch'];
+                $reason = $getModelList['reason'];
+                $content = $getModelList['content'];
+    
+                if (!empty($model) && !empty($sch) && !empty($reason) && !empty($content)) {
+                    $res = $client->request('POST', 'dms/docsupload', [
+                        'multipart' => [
+                            [
+                                'name' => 'username',
+                                'contents' => 'susi',
+                                'headers' => ['Content-Type' => 'application/json']
+                            ],
+                            [
+                                'name' => 'folder_id',
+                                'contents' => '2vxtcJxq4YDBmS5v23cKaWRU4o01LXsUtBPtU9jWm2x9NklzyD',
+                                'headers' => ['Content-Type' => 'application/json']
+                            ],
+                            [
+                                'name' => 'folder_name',
+                                'contents' => "New System Cirten (Don't Delete)",
+                                'headers' => ['Content-Type' => 'application/json']
+                            ],
+                            [
+                                'name' => 'file',
+                                'contents' => Psr7\Utils::tryFopen($pathFile, 'r'),
+                                'headers' => ['Content-Type' => 'application/pdf']
+                            ],
                         ],
-                        [
-                            'name' => 'folder_id',
-                            'contents' => '2vxtcJxq4YDBmS5v23cKaWRU4o01LXsUtBPtU9jWm2x9NklzyD',
-                            'headers' => ['Content-Type' => 'application/json']
+                    ]);
+    
+                    $uploadResult = $res->getBody();
+                    $resApproveDoc = $client->request('GET', 'dms/toggleapprovedocflag/' . $uploadResult . '/1');
+    
+                    CircularTenMstr::where('CIRTEN_NO', $ten)->update([
+                        'CIRTEN_DMS_DOC_ID' => $uploadResult
+                    ]);
+    
+                    Redis::publish('portalv2', json_encode([
+                        'app' => 'cirten',
+                        'message' => 'TEN ' . $this->data['ten'] . ' : has been uploaded to DMS, please check DMS Apps !',
+                        'type' => 'green',
+                        'status' => 'success',
+                    ]));
+                } else {
+                    Redis::publish('portalv2', json_encode([
+                        'app' => 'cirten',
+                        'message' => 'TEN ' . $this->data['ten'] . ' : Some data for ten is not recognized yet !!!',
+                        'data' => [
+                            'model' => $model,
+                            'sch' => $sch,
+                            'reason' => $reason,
+                            'content' => $content,
                         ],
-                        [
-                            'name' => 'folder_name',
-                            'contents' => "New System Cirten (Don't Delete)",
-                            'headers' => ['Content-Type' => 'application/json']
-                        ],
-                        [
-                            'name' => 'file',
-                            'contents' => Psr7\Utils::tryFopen($pathFile, 'r'),
-                            'headers' => ['Content-Type' => 'application/pdf']
-                        ],
-                    ],
-                ]);
-
-                $uploadResult = $res->getBody();
-                $resApproveDoc = $client->request('GET', 'dms/toggleapprovedocflag/' . $uploadResult . '/1');
-
-                CircularTenMstr::where('CIRTEN_NO', $ten)->update([
-                    'CIRTEN_DMS_DOC_ID' => $uploadResult
-                ]);
-
+                        'type' => 'green',
+                        'status' => 'success',
+                    ]));
+                }
+            } catch (ClientException $e) {
                 Redis::publish('portalv2', json_encode([
                     'app' => 'cirten',
-                    'message' => 'TEN ' . $this->data['ten'] . ' : has been uploaded to DMS, please check DMS Apps !',
-                    'type' => 'green',
-                    'status' => 'success',
-                ]));
-            } else {
-                Redis::publish('portalv2', json_encode([
-                    'app' => 'cirten',
-                    'message' => 'TEN ' . $this->data['ten'] . ' : Some data for ten is not recognized yet !!!',
-                    'data' => [
-                        'model' => $model,
-                        'sch' => $sch,
-                        'reason' => $reason,
-                        'content' => $content,
-                    ],
-                    'type' => 'green',
-                    'status' => 'success',
+                    'message' => 'TEN ' . $this->data['ten'] . ' : sync failed server (' . $e->getMessage() . ')',
+                    'type' => 'red',
+                    'status' => 'failed',
                 ]));
             }
-        } catch (ClientException $e) {
+        } else {
+            CircularTenMstr::where('CIRTEN_NO', $ten)->update([
+                'CIRTEN_DMS_DOC_ID' => $cekData->doc_id
+            ]);
+
             Redis::publish('portalv2', json_encode([
                 'app' => 'cirten',
-                'message' => 'TEN ' . $this->data['ten'] . ' : sync failed server (' . $e->getMessage() . ')',
-                'type' => 'red',
-                'status' => 'failed',
+                'message' => 'TEN ' . $this->data['ten'] . ' : already uploaded to DMS, please check to DMS App!',
+                'type' => 'green',
+                'status' => 'success',
             ]));
         }
     }
