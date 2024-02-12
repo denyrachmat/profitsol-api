@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Storage;
 use Excel;
 use Carbon\Carbon;
 use PDF;
+use GuzzleHttp\Psr7;
 
 use App\Models\STXI\BIM\CircularTenMstr;
 use App\Models\STXI\BIM\CircularTenModelDet;
@@ -212,6 +213,8 @@ class CirtenUpdateController extends BaseController
     }
 
     public function cekFilePDF($ten){
-        return Storage::url('circular_ten/' . $ten . '/' . $ten . '.pdf');
+        $url = Storage::url('circular_ten/' . $ten . '/' . $ten . '.pdf');
+
+        return Psr7\Utils::tryFopen($url, 'r');
     }
 }
