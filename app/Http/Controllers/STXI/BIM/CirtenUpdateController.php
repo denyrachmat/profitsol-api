@@ -90,7 +90,8 @@ class CirtenUpdateController extends BaseController
                             'epsTenNo' => $value['tenNumEpson'],
                             'HTMLPath' => $filehtm,
                             'excelPath' => $file
-                        ]
+                        ],
+                        'cek' => $importer
                     ]));
 
                     $hasil[] = [
@@ -108,7 +109,8 @@ class CirtenUpdateController extends BaseController
                             'epsTenNo' => $value['tenNumEpson'],
                             'HTMLPath' => $filehtm,
                             'excelPath' => $file
-                        ]
+                        ],
+                        'cek' => $importer
                     ]));
                 }
             } else {
@@ -172,7 +174,8 @@ class CirtenUpdateController extends BaseController
                         'epsTenNo' => $cirtenMstr->CIRTEN_TENIEI,
                         'HTMLPath' => $cirtenMstr->CIRTEN_HTMFILEPATH,
                         'excelPath' => $cirtenMstr->CIRTEN_FILEPATH
-                    ]
+                    ],
+                    'cek' => $importer
                 ]));
 
                 return $this->handleResponse([], 'Re-sync TEN ' . $id . ' On progress');
@@ -187,7 +190,8 @@ class CirtenUpdateController extends BaseController
                         'epsTenNo' => $cirtenMstr->CIRTEN_TENIEI,
                         'HTMLPath' => $cirtenMstr->CIRTEN_HTMFILEPATH,
                         'excelPath' => $cirtenMstr->CIRTEN_FILEPATH
-                    ]
+                    ],
+                    'cek' => $importer
                 ]));
             }
         } else {
