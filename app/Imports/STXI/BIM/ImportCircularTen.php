@@ -248,6 +248,17 @@ class ImportCircularTen implements ToModel
                     'CIRTEN_STATUSFLG' => 1
                 ]);
             } else {
+                $status = '';
+
+                $storedTen = CircularTenMstr::updateOrCreate([
+                    'CIRTEN_NO' => $this->tenNo
+                ], [
+                    'CIRTEN_NO' => $this->tenNo,
+                    'CIRTEN_MAILDT' => $this->data['mail_date'],
+                    'CIRTEN_STATUS' => $status,
+                    'CIRTEN_STATUSFLG' => 1
+                ]);
+                
                 $datas = [
                     'ten' => $this->tenNo,
                     'mail_date' => $this->data['mail_date'],
