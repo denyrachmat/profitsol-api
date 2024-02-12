@@ -19,6 +19,7 @@ use App\Imports\STXI\BIM\ImportTENList;
 
 use App\Jobs\STXI\BIM\SyncCirTentoOldDMS;
 use App\Jobs\STXI\BIM\SyncActionCirten;
+use Redis;
 
 class CirtenUpdateController extends BaseController
 {
@@ -74,9 +75,22 @@ class CirtenUpdateController extends BaseController
                 $importer = new ImportCircularTen($value['tenNum'], $filehtm, $value['tenNumEpson'], 2, $file);
 
                 Excel::import($importer, $file, 'ten_bim');
-                
+
                 // Send To DMS
                 SyncCirTentoOldDMS::dispatch($importer->data['sendData'])->onQueue('SyncCirTentoOldDMS');
+
+                Redis::publish('portalv2', json_encode([
+                    'app' => 'cirten',
+                    'message' => 'TEN ' . $value['tenNum'] . ' : Upload on progress !',
+                    'type' => 'green',
+                    'status' => 'start',
+                    'data' => [
+                        'secTenNo' => $value['tenNum'],
+                        'epsTenNo' => $value['tenNumEpson'],
+                        'HTMLPath' => $filehtm,
+                        'excelPath' => $file
+                    ]
+                ]));
 
                 $hasil[] = [
                     'status' => true,
@@ -117,6 +131,20 @@ class CirtenUpdateController extends BaseController
             Excel::import($importer, $cirtenMstr->CIRTEN_FILEPATH, 'ten_bim');
 
             SyncCirTentoOldDMS::dispatch($importer->data['send_data'])->onQueue('SyncCirTentoOldDMS');
+
+
+            Redis::publish('portalv2', json_encode([
+                'app' => 'cirten',
+                'message' => 'TEN ' . $id . ' : Upload on progress !',
+                'type' => 'green',
+                'status' => 'start',
+                'data' => [
+                    'secTenNo' => $id,
+                    'epsTenNo' => $cirtenMstr->CIRTEN_TENIEI,
+                    'HTMLPath' => $cirtenMstr->CIRTEN_HTMFILEPATH,
+                    'excelPath' => $cirtenMstr->CIRTEN_FILEPATH
+                ]
+            ]));
 
             return $this->handleResponse([], 'Re-sync TEN ' . $id . ' On progress');
         } else {
@@ -218,7 +246,8 @@ class CirtenUpdateController extends BaseController
         }
     }
 
-    public function cekFilePDF($ten){
+    public function cekFilePDF($ten)
+    {
         $url = 'http://192.168.100.32/public/storage/circular_ten/' . $ten . '/' . $ten . '.pdf';
 
         return Psr7\Utils::tryFopen($url, 'r');
