@@ -151,7 +151,9 @@ class SyncCirTentoOldDMS implements ShouldQueue
             }
         } else {
             CircularTenMstr::where('CIRTEN_NO', $ten)->update([
-                'CIRTEN_DMS_DOC_ID' => $cekData->doc_id
+                'CIRTEN_DMS_DOC_ID' => $cekData->doc_id,
+                'CIRTEN_STATUS' => '',
+                'CIRTEN_STATUSFLG' => 0
             ]);
 
             Redis::publish('portalv2', json_encode([
