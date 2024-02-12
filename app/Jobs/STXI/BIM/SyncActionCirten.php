@@ -34,8 +34,6 @@ class SyncActionCirten implements ShouldQueue
      */
     public function handle(): void
     {
-        $importer = new ImportCircularTen($this->secTenNo, $this->HTMLPath, $this->epsTenNo, 2, $this->excelPath);
-
         Redis::publish('portalv2', json_encode([
             'app' => 'cirten',
             'message' => 'TEN ' . $this->secTenNo . ' : Upload on progress !',
@@ -48,6 +46,8 @@ class SyncActionCirten implements ShouldQueue
                 'excelPath' => $this->excelPath,
             ]
         ]));
+        
+        $importer = new ImportCircularTen($this->secTenNo, $this->HTMLPath, $this->epsTenNo, 2, $this->excelPath);
 
         $cek = Excel::import($importer, $this->excelPath, 'ten_bim');
         // Send To DMS
