@@ -213,7 +213,7 @@ class CirtenUpdateController extends BaseController
     }
 
     public function cekFilePDF($ten){
-        $url = 'storage/app/public/circular_ten/' . $ten . '/' . $ten . '.pdf';
+        $url = 'http://192.168.100.32/public/storage/circular_ten/' . $ten . '/' . $ten . '.pdf';
 
         return Psr7\Utils::tryFopen($url, 'r');
     }

@@ -67,7 +67,8 @@ class SyncCirTentoOldDMS implements ShouldQueue
         $storepdf = Storage::disk('local')->put('/public/circular_ten/' . $ten . '/' . $ten . '.pdf', $pdf);
         $target_url = 'http://192.168.100.32:8081/stx_api/public/api/'; // Write your URL here
         // $pathFile = '../storage/app/public/circular_ten/' . $ten . '/' . $ten . '.pdf';
-        $pathFile = Storage::url('circular_ten/' . $ten . '/' . $ten . '.pdf');
+        // $pathFile = Storage::url('circular_ten/' . $ten . '/' . $ten . '.pdf');
+        $pathFile = 'http://192.168.100.32/public/storage/circular_ten/' . $ten . '/' . $ten . '.pdf';
 
         $client = new Client([
             // Base URI is used with relative requests
