@@ -31,7 +31,8 @@ class ImportCircularTen implements ToModel
         $this->getRowsForModel = 0;
         $this->data = [
             'model' => [],
-            'content' => ''
+            'content' => '',
+            'send_data' => []
         ];
         $this->tenNo = $tenNo;
         $this->tenEpsonNo = $tenEpsonNo;
