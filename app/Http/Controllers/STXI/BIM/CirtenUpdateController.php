@@ -69,7 +69,7 @@ class CirtenUpdateController extends BaseController
             if (Storage::disk('ten_bim')->exists($file) && Storage::disk('ten_bim')->exists($filehtm)) {
                 // $files = mb_convert_encoding( Storage::disk('ten_bim')->get($file), 'UTF-8', 'UTF-8');
 
-                $submit = SyncActionCirten::dispatch($value['tenNum'], $value['tenNumEpson'], $filehtm, $file);
+                $submit = SyncActionCirten::dispatch($value['tenNum'], $value['tenNumEpson'], $filehtm, $file)->onQueue('SyncCirTentoOldDMS');
 
                 // $importer = new ImportCircularTen($value['tenNum'], $filehtm, $value['tenNumEpson'], 2, $file);
 
@@ -109,13 +109,15 @@ class CirtenUpdateController extends BaseController
         $cirtenMstr = CircularTenMstr::where('CIRTEN_NO', $id)->first();
 
         if (!empty($cirtenMstr)) {
-            $importer = new ImportCircularTen($id, $cirtenMstr->CIRTEN_HTMFILEPATH, $cirtenMstr->CIRTEN_TENIEI, 2, $cirtenMstr->CIRTEN_FILEPATH);
+            $submit = SyncActionCirten::dispatch($id, $cirtenMstr->CIRTEN_TENIEI, $cirtenMstr->CIRTEN_HTMFILEPATH, $cirtenMstr->CIRTEN_FILEPATH)->onQueue('SyncCirTentoOldDMS');
 
-            Excel::import($importer, $cirtenMstr->CIRTEN_FILEPATH, 'ten_bim');
+            // $importer = new ImportCircularTen($id, $cirtenMstr->CIRTEN_HTMFILEPATH, $cirtenMstr->CIRTEN_TENIEI, 2, $cirtenMstr->CIRTEN_FILEPATH);
 
-            SyncCirTentoOldDMS::dispatch($importer->data['send_data'])->onQueue('SyncCirTentoOldDMS');
+            // Excel::import($importer, $cirtenMstr->CIRTEN_FILEPATH, 'ten_bim');
 
-            return $this->handleResponse([], 'Sync TEN ' . $id . ' On progress');
+            // SyncCirTentoOldDMS::dispatch($importer->data['send_data'])->onQueue('SyncCirTentoOldDMS');
+
+            return $this->handleResponse([], 'Re-sync TEN ' . $id . ' On progress');
         } else {
             return $this->handleError('TEN ' . $id . ' not found !!!', []);
         }

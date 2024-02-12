@@ -41,7 +41,12 @@ class SyncActionCirten implements ShouldQueue
             'message' => 'TEN ' . $this->secTenNo . ' : Upload on progress !',
             'type' => 'green',
             'status' => 'start',
-            'data' => $this
+            'data' => [
+                'secTenNo' => $this->secTenNo,
+                'epsTenNo' => $this->epsTenNo,
+                'HTMLPath' => $this->HTMLPath,
+                'excelPath' => $this->excelPath,
+            ]
         ]));
 
         $cek = Excel::import($importer, $this->excelPath, 'ten_bim');
