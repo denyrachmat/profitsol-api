@@ -93,11 +93,6 @@ class CirtenUpdateController extends BaseController
                         ],
                         'cek' => $importer
                     ]));
-
-                    $hasil[] = [
-                        'status' => true,
-                        'files' => $importer
-                    ];
                 } else {
                     Redis::publish('portalv2', json_encode([
                         'app' => 'cirten',
@@ -113,6 +108,11 @@ class CirtenUpdateController extends BaseController
                         'cek' => $importer
                     ]));
                 }
+
+                $hasil[] = [
+                    'status' => true,
+                    'files' => $importer
+                ];
             } else {
                 Redis::publish('portalv2', json_encode([
                     'app' => 'cirten',
@@ -178,7 +178,7 @@ class CirtenUpdateController extends BaseController
                     'cek' => $importer
                 ]));
 
-                return $this->handleResponse([], 'Re-sync TEN ' . $id . ' On progress');
+                return $this->handleResponse($importer, 'Re-sync TEN ' . $id . ' On progress');
             } else {
                 Redis::publish('portalv2', json_encode([
                     'app' => 'cirten',
@@ -193,6 +193,8 @@ class CirtenUpdateController extends BaseController
                     ],
                     'cek' => $importer
                 ]));
+
+                return $this->handleError('Re-sync TEN ' . $id . ' Failed', $importer);
             }
         } else {
             return $this->handleError('TEN ' . $id . ' not found !!!', []);
