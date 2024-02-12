@@ -69,17 +69,18 @@ class CirtenUpdateController extends BaseController
             if (Storage::disk('ten_bim')->exists($file) && Storage::disk('ten_bim')->exists($filehtm)) {
                 // $files = mb_convert_encoding( Storage::disk('ten_bim')->get($file), 'UTF-8', 'UTF-8');
 
-                $submit = SyncActionCirten::dispatch($value['tenNum'], $value['tenNumEpson'], $filehtm, $file)->onQueue('SyncCirTentoOldDMS');
+                // $submit = SyncActionCirten::dispatch($value['tenNum'], $value['tenNumEpson'], $filehtm, $file)->onQueue('SyncCirTentoOldDMS');
 
-                // $importer = new ImportCircularTen($value['tenNum'], $filehtm, $value['tenNumEpson'], 2, $file);
+                $importer = new ImportCircularTen($value['tenNum'], $filehtm, $value['tenNumEpson'], 2, $file);
 
-                // Excel::import($importer, $file, 'ten_bim');
+                Excel::import($importer, $file, 'ten_bim');
+                
                 // Send To DMS
-                // SyncCirTentoOldDMS::dispatch($importer->data['sendData'])->onQueue('SyncCirTentoOldDMS');
+                SyncCirTentoOldDMS::dispatch($importer->data['sendData'])->onQueue('SyncCirTentoOldDMS');
 
                 $hasil[] = [
                     'status' => true,
-                    'files' => $submit
+                    'files' => $importer
                 ];
             } else {
                 $hasil[] = [
@@ -109,13 +110,13 @@ class CirtenUpdateController extends BaseController
         $cirtenMstr = CircularTenMstr::where('CIRTEN_NO', $id)->first();
 
         if (!empty($cirtenMstr)) {
-            $submit = SyncActionCirten::dispatch($id, $cirtenMstr->CIRTEN_TENIEI, $cirtenMstr->CIRTEN_HTMFILEPATH, $cirtenMstr->CIRTEN_FILEPATH)->onQueue('SyncCirTentoOldDMS');
+            // $submit = SyncActionCirten::dispatch($id, $cirtenMstr->CIRTEN_TENIEI, $cirtenMstr->CIRTEN_HTMFILEPATH, $cirtenMstr->CIRTEN_FILEPATH)->onQueue('SyncCirTentoOldDMS');
 
-            // $importer = new ImportCircularTen($id, $cirtenMstr->CIRTEN_HTMFILEPATH, $cirtenMstr->CIRTEN_TENIEI, 2, $cirtenMstr->CIRTEN_FILEPATH);
+            $importer = new ImportCircularTen($id, $cirtenMstr->CIRTEN_HTMFILEPATH, $cirtenMstr->CIRTEN_TENIEI, 2, $cirtenMstr->CIRTEN_FILEPATH);
 
-            // Excel::import($importer, $cirtenMstr->CIRTEN_FILEPATH, 'ten_bim');
+            Excel::import($importer, $cirtenMstr->CIRTEN_FILEPATH, 'ten_bim');
 
-            // SyncCirTentoOldDMS::dispatch($importer->data['send_data'])->onQueue('SyncCirTentoOldDMS');
+            SyncCirTentoOldDMS::dispatch($importer->data['send_data'])->onQueue('SyncCirTentoOldDMS');
 
             return $this->handleResponse([], 'Re-sync TEN ' . $id . ' On progress');
         } else {
