@@ -77,13 +77,14 @@ class SyncCirTentoOldDMS implements ShouldQueue
 
             $cekData = DB::connection('sqlsrv_dms_old')->table('dms_doc_mstr')->where('doc_real_name', $ten . '.pdf')->first();
 
+            $client = new Client([
+                // Base URI is used with relative requests
+                'base_uri' => $target_url,
+                // You can set any number of default request options.
+                'timeout' => 2.0,
+            ]);
+            
             if (empty($cekData)) {
-                $client = new Client([
-                    // Base URI is used with relative requests
-                    'base_uri' => $target_url,
-                    // You can set any number of default request options.
-                    'timeout' => 2.0,
-                ]);
 
                 try {
                     $getModelList = $this->generateDocument($emailDate);
@@ -180,6 +181,8 @@ class SyncCirTentoOldDMS implements ShouldQueue
                     ]));
                 }
             } else {
+                $resApproveDoc = $client->request('GET', 'dms/toggleapprovedocflag/' . $cekData->doc_id . '/1');
+
                 CircularTenMstr::where('CIRTEN_NO', $ten)->update([
                     'CIRTEN_DMS_DOC_ID' => $cekData->doc_id,
                     'CIRTEN_STATUS' => '',
