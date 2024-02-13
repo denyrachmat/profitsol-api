@@ -130,6 +130,7 @@ class SyncCirTentoOldDMS implements ShouldQueue
                             'message' => 'TEN ' . $this->data['ten'] . ' : has been uploaded to DMS, please check DMS Apps !',
                             'type' => 'green',
                             'status' => 'success',
+                            'check' => $resApproveDoc,
                             'data' => [
                                 'secTenNo' => $this->data['ten'],
                             ]
