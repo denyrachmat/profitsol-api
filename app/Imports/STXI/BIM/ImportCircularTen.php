@@ -106,18 +106,16 @@ class ImportCircularTen implements ToModel
                         }
                     }
                 }
-            } else {
+            } else {                // If model not found check databases
+                $cekTenSudahInput = CircularTenMstr::where('CIRTEN_NO', $this->tenNo)->first();
+                if (!empty($cekTenSudahInput) && empty($this->data['model'])) {
+                    $cekModel = CircularTenModelDet::where('CM_ID', $cekTenSudahInput->id)->whereIn('CIM_ITMCD', array_values($this->data['model']))->get();
+        
+                    if (empty($cekModel)) {
+                        $this->data['model'] = $cekModel->pluck('CIM_ITMCD');
+                    }
+                }
                 $this->statusGetData = '';
-            }
-        }
-
-        // If model not found check databases
-        $cekTenSudahInput = CircularTenMstr::where('CIRTEN_NO', $this->tenNo)->first();
-        if (!empty($cekTenSudahInput) && empty($this->data['model'])) {
-            $cekModel = CircularTenModelDet::where('CM_ID', $cekTenSudahInput->id)->whereIn('CIM_ITMCD', array_values($this->data['model']))->get();
-
-            if (empty($cekModel)) {
-                $this->data['model'] = $cekModel->pluck('CIM_ITMCD');
             }
         }
 
