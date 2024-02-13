@@ -9,6 +9,7 @@ use Excel;
 use Carbon\Carbon;
 use PDF;
 use GuzzleHttp\Psr7;
+use DB;
 
 use App\Models\STXI\BIM\CircularTenMstr;
 use App\Models\STXI\BIM\CircularTenModelDet;
@@ -300,5 +301,24 @@ class CirtenUpdateController extends BaseController
         $url = 'http://192.168.100.32/public/storage/circular_ten/' . $ten . '/' . $ten . '.pdf';
 
         return Psr7\Utils::tryFopen($url, 'r');
+    }
+
+    public function viewListItemDesc($ten)
+    {
+        $data = CircularTenMstr::select(
+            DB::raw('CIM_ITMCD as MDLCD'),
+            DB::raw('MITM_ITMD1 as DESC'),
+            'MITM_ITMD2',
+            'MITM_STKUOM',
+            DB::raw('MITM_SPTNO as PARTNO')
+        )
+            ->where('CIRTEN_NO', base64_decode($ten))
+            ->join('CIRTEN_ITM_DET', 'CIRTEN_ITM_DET.CM_ID', 'CIRTEN_MSTR.id')
+            ->join('MGSVR.VMI_SME.dbo.MITM_TBL', 'MITM_ITMCD', 'CIM_ITMCD')
+            ->orderby('created_at', 'desc')
+            ->get();
+        
+        
+        return $data;
     }
 }
