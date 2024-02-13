@@ -310,7 +310,9 @@ class CirtenUpdateController extends BaseController
             DB::raw('MITM_ITMD1 as [DESC]'),
             DB::raw('MITM_ITMD2'),
             DB::raw('MITM_STKUOM'),
-            DB::raw('MITM_SPTNO as PARTNO')
+            DB::raw('MITM_SPTNO as PARTNO'),
+            'MITM_ITMTY',
+            'MITM_SUPCD'
         )
             ->where('CIRTEN_NO', base64_decode($ten))
             ->join('CIRTEN_ITM_DET', 'CIRTEN_ITM_DET.CM_ID', 'CIRTEN_MSTR.id')

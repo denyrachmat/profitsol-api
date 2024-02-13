@@ -110,9 +110,16 @@ class ImportCircularTen implements ToModel
                 $cekTenSudahInput = CircularTenMstr::where('CIRTEN_NO', $this->tenNo)->first();
                 if (!empty($cekTenSudahInput) && empty($this->data['model'])) {
                     $cekModel = CircularTenModelDet::where('CM_ID', $cekTenSudahInput->id)->whereIn('CIM_ITMCD', array_values($this->data['model']))->get();
-        
+                    
+                    $hasilSupp = [];
+                    foreach ($cekModel->pluck('CIM_ITMCD') as $key => $value) {
+                        $cekSupp = $this->getItemMaster($value, '');
+
+                        $hasilSupp[] = count($cekSupp) > 0 ? array_merge($hasilSupp, array_values($cekSupp['listSub'])) : '';
+                    }
                     if (empty($cekModel)) {
-                        $this->data['model'] = $cekModel->pluck('CIM_ITMCD');
+                        $this->data['model_cek'] = $cekModel->pluck('CIM_ITMCD');
+                        $this->data['model'] = $hasilSupp;
                     }
                 }
                 $this->statusGetData = '';
@@ -268,7 +275,7 @@ class ImportCircularTen implements ToModel
                     'reason' => $this->data['reason'],
                 ];
 
-                foreach ($this->data['model'] as $keyMdl => $valueMdl) {
+                foreach ($this->data['model_cek'] as $keyMdl => $valueMdl) {
                     CircularTenModelDet::updateOrCreate([
                         'CM_ID' => $storedTen->id,
                         'CIM_ITMCD' => $valueMdl,
