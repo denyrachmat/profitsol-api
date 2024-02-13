@@ -81,16 +81,6 @@ class ImportCircularTen implements ToModel
             }
         }
 
-        // If model not found check databases
-        $cekTenSudahInput = CircularTenMstr::where('CIRTEN_NO', $this->tenNo)->first();
-        if (!empty($cekTenSudahInput) && empty($this->data['model'])) {
-            $cekModel = CircularTenModelDet::where('CM_ID', $cekTenSudahInput->id)->whereIn('CIM_ITMCD', array_values($this->data['model']))->get();
-
-            if (empty($cekModel)) {
-                $this->data['model'] = $cekModel->pluck('CIM_ITMCD');
-            }
-        }
-
         // For get List model & Subcon Code
         if ($this->nowRows >= $this->getRowsForModel && $this->statusGetData == 'getModel') {
             if (!empty($row[$this->getColsForStart])) {
@@ -118,6 +108,16 @@ class ImportCircularTen implements ToModel
                 }
             } else {
                 $this->statusGetData = '';
+            }
+        }
+
+        // If model not found check databases
+        $cekTenSudahInput = CircularTenMstr::where('CIRTEN_NO', $this->tenNo)->first();
+        if (!empty($cekTenSudahInput) && empty($this->data['model'])) {
+            $cekModel = CircularTenModelDet::where('CM_ID', $cekTenSudahInput->id)->whereIn('CIM_ITMCD', array_values($this->data['model']))->get();
+
+            if (empty($cekModel)) {
+                $this->data['model'] = $cekModel->pluck('CIM_ITMCD');
             }
         }
 
@@ -258,7 +258,7 @@ class ImportCircularTen implements ToModel
                     'CIRTEN_STATUS' => $status,
                     'CIRTEN_STATUSFLG' => 1
                 ]);
-                
+
                 $datas = [
                     'ten' => $this->tenNo,
                     'mail_date' => $this->data['mail_date'],
