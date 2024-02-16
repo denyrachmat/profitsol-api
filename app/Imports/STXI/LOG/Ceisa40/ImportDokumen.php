@@ -48,22 +48,27 @@ class ImportDokumen implements ToModel, WithHeadingRow
         // Invoice
         if ($row['kode_dokumen'] == 380 && $jumlahInv === 0) {
             if ($this->incout == 'INC') {
-                $cekIncoming = (clone $baseDoc)->whereNull(DB::raw('rtrim(HHEINVNO)'))
+                $cekIncoming = (clone $baseDoc)
+                    ->whereNull(DB::raw('rtrim(HHEINVNO)'))
                     ->orWhere('HHEINVNO', '')
-                    ->first();
+                    ->get();
 
-                if (!empty($cekIncoming)) {
+                if (count($cekIncoming) > 0) {
                     (clone $baseDoc)
+                        ->whereIn('ITMCD', $cekIncoming->pluck('ITMCD'))
                         ->update([
                             'HHEINVNO' => $row['nomor_dokumen']
                         ]);
                 }
             } else {
-                $cekOutgoing = (clone $baseDoc)->whereNull('INVNO')
+                $cekOutgoing = (clone $baseDoc)
+                    ->whereNull('INVNO')
+                    ->orWhere('INVNO', '')
                     ->first();
 
-                if (!empty($cekOutgoing)) {
+                if (count($cekOutgoing) > 0) {
                     (clone $baseDoc)
+                        ->whereIn('ITMCD', $cekOutgoing->pluck('ITMCD'))
                         ->update([
                             'INVNO' => $row['nomor_dokumen']
                         ]);
@@ -72,55 +77,34 @@ class ImportDokumen implements ToModel, WithHeadingRow
         }
 
         // sj
-        if ($row['kode_dokumen'] == 640 && $jumlahDoc === 0) {
-            if ($this->incout == 'INC') {
-                $cekIncoming = (clone $baseDoc)->whereNull('DOCNO')
-                    ->first();
-
-                if (!empty($cekIncoming)) {
-                    (clone $baseDoc)->whereNull('DOCNO')
-                        ->update([
-                            'DOCNO' => $row['nomor_dokumen']
-                        ]);
-                }
-            } else {
-                $cekOutgoing =(clone $baseDoc)->whereNull('DOCNO')
-                    ->first();
-
-                if (!empty($cekOutgoing)) {
-                    (clone $baseDoc)
-                        ->update([
-                            'DOCNO' => $row['nomor_dokumen']
-                        ]);
-                }
-            }
-        }
-
-        if ($row['kode_dokumen'] == 630 && $jumlahDoc === 0) {
+        if (($row['kode_dokumen'] == 640 || $row['kode_dokumen'] == 630) && $jumlahDoc === 0) {
             if ($this->incout == 'INC') {
                 $cekIncoming = (clone $baseDoc)
                     ->whereNull('DOCNO')
-                    ->first();
+                    ->orWhere('DOCNO', '')
+                    ->get();
 
-                if (!empty($cekIncoming)) {
+                if (count($cekIncoming) > 0) {
                     (clone $baseDoc)
+                        ->whereIn('ITMCD', $cekIncoming->pluck('ITMCD'))
                         ->update([
                             'DOCNO' => $row['nomor_dokumen']
                         ]);
                 }
             } else {
-                $cekOutgoing = (clone $baseDoc)
+                $cekOutgoing =(clone $baseDoc)
                     ->whereNull('DOCNO')
-                    ->first();
+                    ->orWhere('DOCNO', '')
+                    ->get();
 
-                if (!empty($cekOutgoing)) {
+                if (count($cekOutgoing) > 0) {
                     (clone $baseDoc)
+                        ->whereIn('ITMCD', $cekOutgoing->pluck('ITMCD'))
                         ->update([
                             'DOCNO' => $row['nomor_dokumen']
                         ]);
                 }
             }
         }
-
     }
 }
