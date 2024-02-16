@@ -5,6 +5,7 @@ namespace App\Imports\STXI\LOG\Ceisa40;
 use Illuminate\Support\Collection;
 use Maatwebsite\Excel\Concerns\ToModel;
 use Maatwebsite\Excel\Concerns\WithHeadingRow;
+use DB;
 
 use App\Models\STXI\LOG\ITINVIncoming;
 use App\Models\STXI\LOG\ITINVOutgoing;
@@ -31,7 +32,7 @@ class ImportDokumen implements ToModel, WithHeadingRow
                 $cekIncoming = ITINVIncoming::where('BCDOCNO', $cekTempData['NO_DAFTAR'])
                     ->where('BCTYPE', $cekTempData['TYPE_BC'])
                     ->where('BCDOCDT', $cekTempData['TGL_DAFTAR'])
-                    ->whereNull('HHEINVNO')
+                    ->whereNull(DB::raw('rtrim(HHEINVNO)'))
                     ->orWhere('HHEINVNO', '')
                     ->first();
     
