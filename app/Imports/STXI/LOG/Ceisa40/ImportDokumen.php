@@ -26,36 +26,44 @@ class ImportDokumen implements ToModel, WithHeadingRow
     public function model(array $row)
     {
         ini_set("memory_limit", "3G");
-        if ($row['kode_dokumen'] == 380) {
-            $cekTempData = ITINVUploadTemp::where('NO_AJU', $row['nomor_aju'])->first();
+        $cekTempData = ITINVUploadTemp::where('NO_AJU', $row['nomor_aju'])->first();
+
+        $jumlahInv = $jumlahDoc = 0;
+        if ($this->incout == 'INC') {
+            $baseDoc = ITINVIncoming::where('BCDOCNO', $cekTempData['NO_DAFTAR'])
+                ->where('BCTYPE', $cekTempData['TYPE_BC'])
+                ->where('BCDOCDT', $cekTempData['TGL_DAFTAR']);
+
+            $jumlahInv = (clone $baseDoc)->where('HHEINVNO', $row['nomor_dokumen'])->count();
+            $jumlahDoc = (clone $baseDoc)->where('DOCNO', $row['nomor_dokumen'])->count();
+        } else {
+            $baseDoc = ITINVOutgoing::where('BCDOCNO', $cekTempData['NO_DAFTAR'])
+                ->where('BCTYPE', $cekTempData['TYPE_BC'])
+                ->where('BCDOCDT', $cekTempData['TGL_DAFTAR']);
+
+            $jumlahInv = (clone $baseDoc)->where('INVNO', $row['nomor_dokumen'])->count();
+            $jumlahDoc = (clone $baseDoc)->where('DOCNO', $row['nomor_dokumen'])->count();
+        }
+
+        // Invoice
+        if ($row['kode_dokumen'] == 380 && $jumlahInv === 0) {
             if ($this->incout == 'INC') {
-                $cekIncoming = ITINVIncoming::where('BCDOCNO', $cekTempData['NO_DAFTAR'])
-                    ->where('BCTYPE', $cekTempData['TYPE_BC'])
-                    ->where('BCDOCDT', $cekTempData['TGL_DAFTAR'])
-                    ->whereNull(DB::raw('rtrim(HHEINVNO)'))
+                $cekIncoming = (clone $baseDoc)->whereNull(DB::raw('rtrim(HHEINVNO)'))
                     ->orWhere('HHEINVNO', '')
                     ->first();
-    
+
                 if (!empty($cekIncoming)) {
-                    ITINVIncoming::where("BCDOCNO", $cekTempData['NO_DAFTAR'])
-                        ->where('BCTYPE', $cekTempData['TYPE_BC'])
-                        ->where('BCDOCDT', $cekTempData["TGL_DAFTAR"])
+                    (clone $baseDoc)
                         ->update([
                             'HHEINVNO' => $row['nomor_dokumen']
                         ]);
                 }
             } else {
-                $cekOutgoing = ITINVOutgoing::where('BCDOCNO', $cekTempData['NO_DAFTAR'])
-                ->where('BCTYPE', $cekTempData['TYPE_BC'])
-                ->where('BCDOCDT', $cekTempData['TGL_DAFTAR'])
-                ->whereNull('INVNO')
-                // ->where('ITMCD', trim($row['kode_barang']))
-                ->first();
+                $cekOutgoing = (clone $baseDoc)->whereNull('INVNO')
+                    ->first();
 
                 if (!empty($cekOutgoing)) {
-                    ITINVOutgoing::where("BCDOCNO", $cekTempData['NO_DAFTAR'])
-                        ->where('BCTYPE', $cekTempData['TYPE_BC'])
-                        ->where('BCDOCDT', $cekTempData["TGL_DAFTAR"])
+                    (clone $baseDoc)
                         ->update([
                             'INVNO' => $row['nomor_dokumen']
                         ]);
@@ -63,33 +71,24 @@ class ImportDokumen implements ToModel, WithHeadingRow
             }
         }
 
-        if ($row['kode_dokumen'] == 630) {
-            $cekTempData = ITINVUploadTemp::where('NO_AJU', $row['nomor_aju'])->first();
+        // sj
+        if ($row['kode_dokumen'] == 640 && $jumlahDoc === 0) {
             if ($this->incout == 'INC') {
-                $cekIncoming = ITINVIncoming::where('BCDOCNO', $cekTempData['NO_DAFTAR'])
-                    ->where('BCTYPE', $cekTempData['TYPE_BC'])
-                    ->where('BCDOCDT', $cekTempData['TGL_DAFTAR'])
-                    ->whereNull('DOCNO')
+                $cekIncoming = (clone $baseDoc)->whereNull('DOCNO')
                     ->first();
-    
+
                 if (!empty($cekIncoming)) {
-                    ITINVIncoming::where("BCDOCNO", $cekTempData['NO_DAFTAR'])
-                        ->where('BCTYPE', $cekTempData['TYPE_BC'])
-                        ->where('BCDOCDT', $cekTempData["TGL_DAFTAR"])
+                    (clone $baseDoc)->whereNull('DOCNO')
                         ->update([
                             'DOCNO' => $row['nomor_dokumen']
                         ]);
                 }
             } else {
-                $cekIncoming = ITINVOutgoing::where('BCDOCNO', $cekTempData['NO_DAFTAR'])
-                    ->where('BCTYPE', $cekTempData['TYPE_BC'])
-                    ->where('BCDOCDT', $cekTempData['TGL_DAFTAR'])
+                $cekOutgoing =(clone $baseDoc)->whereNull('DOCNO')
                     ->first();
-    
-                if (!empty($cekIncoming)) {
-                    ITINVOutgoing::where("BCDOCNO", $cekTempData['NO_DAFTAR'])
-                        ->where('BCTYPE', $cekTempData['TYPE_BC'])
-                        ->where('BCDOCDT', $cekTempData["TGL_DAFTAR"])
+
+                if (!empty($cekOutgoing)) {
+                    (clone $baseDoc)
                         ->update([
                             'DOCNO' => $row['nomor_dokumen']
                         ]);
@@ -97,24 +96,31 @@ class ImportDokumen implements ToModel, WithHeadingRow
             }
         }
 
-        if ($row['kode_dokumen'] == 640) {
-            $cekTempData = ITINVUploadTemp::where('NO_AJU', $row['nomor_aju'])->first();
+        if ($row['kode_dokumen'] == 630 && $jumlahDoc === 0) {
             if ($this->incout == 'INC') {
-                $cekIncoming = ITINVIncoming::where('BCDOCNO', $cekTempData['NO_DAFTAR'])
-                    ->where('BCTYPE', $cekTempData['TYPE_BC'])
-                    ->where('BCDOCDT', $cekTempData['TGL_DAFTAR'])
+                $cekIncoming = (clone $baseDoc)
                     ->whereNull('DOCNO')
                     ->first();
-    
+
                 if (!empty($cekIncoming)) {
-                    ITINVIncoming::where("BCDOCNO", $cekTempData['NO_DAFTAR'])
-                        ->where('BCTYPE', $cekTempData['TYPE_BC'])
-                        ->where('BCDOCDT', $cekTempData["TGL_DAFTAR"])
+                    (clone $baseDoc)
+                        ->update([
+                            'DOCNO' => $row['nomor_dokumen']
+                        ]);
+                }
+            } else {
+                $cekOutgoing = (clone $baseDoc)
+                    ->whereNull('DOCNO')
+                    ->first();
+
+                if (!empty($cekOutgoing)) {
+                    (clone $baseDoc)
                         ->update([
                             'DOCNO' => $row['nomor_dokumen']
                         ]);
                 }
             }
         }
+
     }
 }
