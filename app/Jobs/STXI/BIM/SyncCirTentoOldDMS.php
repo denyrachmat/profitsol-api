@@ -183,7 +183,7 @@ class SyncCirTentoOldDMS implements ShouldQueue
             } else {
                 $resApproveDoc = $client->request('GET', 'dms/toggleapprovedocflag/' . $cekData->doc_id . '/1');
 
-                CircularTenMstr::where('CIRTEN_NO', $ten)->update([
+                CircularTenMstr::where('CIRTEN_TENIEI', $ten)->update([
                     'CIRTEN_DMS_DOC_ID' => $cekData->doc_id,
                     'CIRTEN_STATUS' => '',
                     'CIRTEN_STATUSFLG' => 0

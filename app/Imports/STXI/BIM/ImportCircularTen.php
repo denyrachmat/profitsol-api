@@ -211,12 +211,12 @@ class ImportCircularTen implements ToModel
                 foreach ($cekModel->pluck('CIM_ITMCD') as $key => $value) {
                     $cekSupp = $this->getItemMaster($value, '');
 
-                    $hasilSupp[] = count($cekSupp) > 0 ? array_merge($hasilSupp, array_values($cekSupp['listSub']))[0] : '';
+                    $hasilSupp[count($cekSupp) > 0 ? array_merge($hasilSupp, array_values($cekSupp['listSub']))[0] : ''] = count($cekSupp) > 0 ? array_merge($hasilSupp, array_values($cekSupp['listSub']))[0] : '';
                 }
 
                 if (count($hasilSupp) > 0) {
                     $this->data['model_cek'] = $cekModel->pluck('CIM_ITMCD');
-                    $this->data['model'] = $hasilSupp;
+                    $this->data['model'] = array_values($hasilSupp);
                 }
             }
 
@@ -338,7 +338,7 @@ class ImportCircularTen implements ToModel
                     if ($getSubcon !== 'SMT' || $getSubcon !== 'VST' || $getSubcon !== 'KAI') {
                         $getSubcons = $value->MITM_SUPCD;
                     } else {
-                        $getSubcons = $getSubcon;
+                        $getSubcons = trim($getSubcon);
                     }
 
                     $listSubcon[$getSubcons] = $getSubcons;
