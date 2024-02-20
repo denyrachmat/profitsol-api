@@ -260,7 +260,7 @@ class ImportCircularTen implements ToModel
                 ]);
 
                 $datas = [
-                    'ten' => $this->tenNo,
+                    'ten' => $this->tenEpsonNo,
                     'mail_date' => $this->data['mail_date'],
                     'subject' => $this->data['subject'],
                     'model' => $this->data['model'],
@@ -341,7 +341,7 @@ class ImportCircularTen implements ToModel
                         $getSubcons = $getSubcon;
                     }
 
-                    $listSubcon[$getSubcon] = $getSubcons;
+                    $listSubcon[$getSubcons] = $getSubcons;
                 }
 
                 return [
