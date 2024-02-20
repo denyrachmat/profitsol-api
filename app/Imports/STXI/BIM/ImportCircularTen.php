@@ -205,7 +205,7 @@ class ImportCircularTen implements ToModel
             // Cek model kalo kosong ambil dari database
             $cekTenSudahInput = CircularTenMstr::where('CIRTEN_NO', $this->tenNo)->first();
             if (!empty($cekTenSudahInput) && empty($this->data['model'])) {
-                $cekModel = CircularTenModelDet::where('CM_ID', $cekTenSudahInput->id)->whereIn('CIM_ITMCD', array_values($this->data['model']))->get();
+                $cekModel = CircularTenModelDet::where('CM_ID', $cekTenSudahInput->id)->get();
 
                 $hasilSupp = [];
                 foreach ($cekModel->pluck('CIM_ITMCD') as $key => $value) {
