@@ -202,6 +202,23 @@ class ImportCircularTen implements ToModel
                 'CIRTEN_HTMFILEPATH' => $this->htmlEpson,
             ]);
 
+            // Cek model kalo kosong ambil dari database
+            $cekTenSudahInput = CircularTenMstr::where('CIRTEN_NO', $this->tenNo)->first();
+            if (!empty($cekTenSudahInput) && empty($this->data['model'])) {
+                $cekModel = CircularTenModelDet::where('CM_ID', $cekTenSudahInput->id)->whereIn('CIM_ITMCD', array_values($this->data['model']))->get();
+
+                $hasilSupp = [];
+                foreach ($cekModel->pluck('CIM_ITMCD') as $key => $value) {
+                    $cekSupp = $this->getItemMaster($value, '');
+
+                    $hasilSupp[] = count($cekSupp) > 0 ? array_merge($hasilSupp, array_values($cekSupp['listSub'])) : '';
+                }
+                if (empty($cekModel)) {
+                    $this->data['model_cek'] = $cekModel->pluck('CIM_ITMCD');
+                    $this->data['model'] = $hasilSupp;
+                }
+            }
+
             $status = '';
             if (count($this->data['model']) === 0) {
                 $status .= 'Model not found on Excel of Ten, please add it manually !!';
@@ -218,23 +235,6 @@ class ImportCircularTen implements ToModel
                     'CIRTEN_STATUS' => $status,
                     'CIRTEN_STATUSFLG' => 1
                 ]);
-
-                // Cek model kalo kosong ambil dari database
-                $cekTenSudahInput = CircularTenMstr::where('CIRTEN_NO', $this->tenNo)->first();
-                if (!empty($cekTenSudahInput) && empty($this->data['model'])) {
-                    $cekModel = CircularTenModelDet::where('CM_ID', $cekTenSudahInput->id)->whereIn('CIM_ITMCD', array_values($this->data['model']))->get();
-                    
-                    $hasilSupp = [];
-                    foreach ($cekModel->pluck('CIM_ITMCD') as $key => $value) {
-                        $cekSupp = $this->getItemMaster($value, '');
-
-                        $hasilSupp[] = count($cekSupp) > 0 ? array_merge($hasilSupp, array_values($cekSupp['listSub'])) : '';
-                    }
-                    if (empty($cekModel)) {
-                        $this->data['model_cek'] = $cekModel->pluck('CIM_ITMCD');
-                        $this->data['model'] = $hasilSupp;
-                    }
-                }
             } elseif (empty($this->data['content'])) {
                 $status .= '<br>Content not found, please check the excel !!';
 
