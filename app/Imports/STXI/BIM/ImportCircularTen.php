@@ -213,7 +213,8 @@ class ImportCircularTen implements ToModel
 
                     $hasilSupp[] = count($cekSupp) > 0 ? array_merge($hasilSupp, array_values($cekSupp['listSub'])) : '';
                 }
-                if (empty($cekModel)) {
+
+                if (count($hasilSupp) > 0) {
                     $this->data['model_cek'] = $cekModel->pluck('CIM_ITMCD');
                     $this->data['model'] = $hasilSupp;
                 }
