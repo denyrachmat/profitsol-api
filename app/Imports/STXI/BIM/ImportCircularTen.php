@@ -106,22 +106,7 @@ class ImportCircularTen implements ToModel
                         }
                     }
                 }
-            } else {                // If model not found check databases
-                $cekTenSudahInput = CircularTenMstr::where('CIRTEN_NO', $this->tenNo)->first();
-                if (!empty($cekTenSudahInput) && empty($this->data['model'])) {
-                    $cekModel = CircularTenModelDet::where('CM_ID', $cekTenSudahInput->id)->whereIn('CIM_ITMCD', array_values($this->data['model']))->get();
-                    
-                    $hasilSupp = [];
-                    foreach ($cekModel->pluck('CIM_ITMCD') as $key => $value) {
-                        $cekSupp = $this->getItemMaster($value, '');
-
-                        $hasilSupp[] = count($cekSupp) > 0 ? array_merge($hasilSupp, array_values($cekSupp['listSub'])) : '';
-                    }
-                    if (empty($cekModel)) {
-                        $this->data['model_cek'] = $cekModel->pluck('CIM_ITMCD');
-                        $this->data['model'] = $hasilSupp;
-                    }
-                }
+            } else {
                 $this->statusGetData = '';
             }
         }
@@ -234,13 +219,22 @@ class ImportCircularTen implements ToModel
                     'CIRTEN_STATUSFLG' => 1
                 ]);
 
-                // Redis::publish('portalv2', json_encode([
-                //     'app' => 'cirten',
-                //     'message' => 'TEN ' . $this->tenNo . ' : ' . $status,
-                //     'type' => 'red',
-                //     'status' => 'failed',
-                //     'data' => $row
-                // ]));
+                // Cek model kalo kosong ambil dari database
+                $cekTenSudahInput = CircularTenMstr::where('CIRTEN_NO', $this->tenNo)->first();
+                if (!empty($cekTenSudahInput) && empty($this->data['model'])) {
+                    $cekModel = CircularTenModelDet::where('CM_ID', $cekTenSudahInput->id)->whereIn('CIM_ITMCD', array_values($this->data['model']))->get();
+                    
+                    $hasilSupp = [];
+                    foreach ($cekModel->pluck('CIM_ITMCD') as $key => $value) {
+                        $cekSupp = $this->getItemMaster($value, '');
+
+                        $hasilSupp[] = count($cekSupp) > 0 ? array_merge($hasilSupp, array_values($cekSupp['listSub'])) : '';
+                    }
+                    if (empty($cekModel)) {
+                        $this->data['model_cek'] = $cekModel->pluck('CIM_ITMCD');
+                        $this->data['model'] = $hasilSupp;
+                    }
+                }
             } elseif (empty($this->data['content'])) {
                 $status .= '<br>Content not found, please check the excel !!';
 
