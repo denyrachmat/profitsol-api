@@ -93,12 +93,12 @@ class SyncITInventoryByBCNo implements ShouldQueue
                     ]
                 ]));
             }
-        } catch (\Exception $th) {
+        } catch (\Throwable $th) {
             Redis::publish('portalv2', json_encode([
                 'app' => 'it_inv_checker',
                 'message' => $this->nodaftar . ' on date bc : ' . $this->tgldaftar . ' sync failed server : '.$th->getMessage(),
                 'type' => 'red',
-                'detail_err' => $th,
+                'detail_err' => $th->getCode(),
                 'status' => 'failed_bc_sync',
                 'data' => [
                     'nodaftar' => $this->nodaftar,
