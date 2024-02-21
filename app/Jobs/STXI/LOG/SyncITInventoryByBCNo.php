@@ -79,7 +79,8 @@ class SyncITInventoryByBCNo implements ShouldQueue
                     'data' => [
                         'nodaftar' => $this->nodaftar,
                         'tgldaftar' => $this->tgldaftar
-                    ]
+                    ],
+                    'data_importer' => $importer
                 ]));
             } else {
                 Redis::publish('portalv2', json_encode([
