@@ -79,11 +79,13 @@ class ImportDokumen implements ToModel, WithHeadingRow
                         ->get();
 
                     if (count($cekOutgoing) > 0) {
-                        (clone $baseDoc)
-                            ->whereIn('ITMCD', $cekOutgoing->pluck('ITMCD'))
-                            ->update([
-                                'INVNO' => $row['nomor_dokumen']
-                            ]);
+                        foreach ($cekOutgoing->pluck('ITMCD') as $key => $valueItm) {
+                            (clone $baseDoc)
+                                ->whereIn('ITMCD', $valueItm)
+                                ->update([
+                                    'INVNO' => $row['nomor_dokumen']
+                                ]);
+                        }
                     }
                 }
             }
