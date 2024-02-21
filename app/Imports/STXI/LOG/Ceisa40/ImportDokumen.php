@@ -34,16 +34,19 @@ class ImportDokumen implements ToModel, WithHeadingRow
                 ->where('BCTYPE', $cekTempData['TYPE_BC'])
                 ->where('BCDOCDT', $cekTempData['TGL_DAFTAR']);
 
-            $jumlahInv = (clone $baseDoc)->where('HHEINVNO', $row['nomor_dokumen'])->get()->count();
-            $jumlahDoc = (clone $baseDoc)->where('DOCNO', $row['nomor_dokumen'])->get()->count();
+            $jumlahInv = (clone $baseDoc)->where('HHEINVNO', $row['nomor_dokumen'])->count();
+            $jumlahDoc = (clone $baseDoc)->where('DOCNO', $row['nomor_dokumen'])->count();
         } else {
             $baseDoc = ITINVOutgoing::where('BCDOCNO', $cekTempData['NO_DAFTAR'])
                 ->where('BCTYPE', $cekTempData['TYPE_BC'])
                 ->where('BCDOCDT', $cekTempData['TGL_DAFTAR']);
 
-            $jumlahInv = (clone $baseDoc)->where('INVNO', $row['nomor_dokumen'])->get()->count();
-            $jumlahDoc = (clone $baseDoc)->where('DOCNO', $row['nomor_dokumen'])->get()->count();
+            $jumlahInv = (clone $baseDoc)->where('INVNO', $row['nomor_dokumen'])->count();
+            $jumlahDoc = (clone $baseDoc)->where('DOCNO', $row['nomor_dokumen'])->count();
         }
+
+        logger('Jumlah Inv' . $jumlahInv);
+        logger('Jumlah Doc' . $jumlahDoc);
 
         // Invoice
         if ($row['kode_dokumen'] == 380 && $jumlahInv === 0) {
