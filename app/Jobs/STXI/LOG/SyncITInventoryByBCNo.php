@@ -25,7 +25,7 @@ class SyncITInventoryByBCNo implements ShouldQueue
      *
      * @return void
      */
-    private $nodaftar, $tgldaftar;
+    public $nodaftar, $tgldaftar;
     public function __construct($nodaftar, $tgldaftar)
     {
         $this->nodaftar = $nodaftar;
@@ -98,6 +98,7 @@ class SyncITInventoryByBCNo implements ShouldQueue
                 'app' => 'it_inv_checker',
                 'message' => $this->nodaftar . ' on date bc : ' . $this->tgldaftar . ' sync failed server : '.$th->getMessage(),
                 'type' => 'red',
+                'detail_err' => $th,
                 'status' => 'failed_bc_sync',
                 'data' => [
                     'nodaftar' => $this->nodaftar,
