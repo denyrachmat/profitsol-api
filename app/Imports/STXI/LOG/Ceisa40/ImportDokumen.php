@@ -66,11 +66,13 @@ class ImportDokumen implements ToModel, WithHeadingRow
                         ->get();
 
                     if (count($cekIncoming) > 0) {
-                        (clone $baseDoc)
-                            ->whereIn('ITMCD', $cekIncoming->pluck('ITMCD'))
-                            ->update([
-                                'HHEINVNO' => $row['nomor_dokumen']
-                            ]);
+                        foreach ($cekIncoming->pluck('ITMCD') as $key => $valueItm) {
+                            (clone $baseDoc)
+                                ->where('ITMCD', $valueItm)
+                                ->update([
+                                    'HHEINVNO' => $row['nomor_dokumen']
+                                ]);
+                        }
                     }
                 } else {
                     $cekOutgoing = (clone $baseDoc)
@@ -81,7 +83,7 @@ class ImportDokumen implements ToModel, WithHeadingRow
                     if (count($cekOutgoing) > 0) {
                         foreach ($cekOutgoing->pluck('ITMCD') as $key => $valueItm) {
                             (clone $baseDoc)
-                                ->whereIn('ITMCD', $valueItm)
+                                ->where('ITMCD', $valueItm)
                                 ->update([
                                     'INVNO' => $row['nomor_dokumen']
                                 ]);
