@@ -432,7 +432,7 @@ trait Ceisa40Traits
                 Storage::put('public/ceisa40storage/'.$fileName, $getDetilPerusahanPenerima);
                 return 'storage/app/public/ceisa40storage/'.$fileName;
             } else {
-                Storage::put('public/upload_ceisa40/'.$fileName, $getDetilPerusahanPenerima);
+                // Storage::put('public/upload_ceisa40/'.$fileName, $getDetilPerusahanPenerima);
                 return 'storage/upload_ceisa40/'.$fileName;
             }
         } else {
