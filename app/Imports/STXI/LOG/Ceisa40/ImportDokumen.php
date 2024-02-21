@@ -76,7 +76,7 @@ class ImportDokumen implements ToModel, WithHeadingRow
                     $cekOutgoing = (clone $baseDoc)
                         ->whereNull('INVNO')
                         ->orWhere('INVNO', '')
-                        ->first();
+                        ->get();
 
                     if (count($cekOutgoing) > 0) {
                         (clone $baseDoc)
