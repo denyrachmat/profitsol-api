@@ -99,7 +99,7 @@ class SyncITInventoryByBCNo implements ShouldQueue
                 'app' => 'it_inv_checker',
                 'message' => $this->nodaftar . ' on date bc : ' . $this->tgldaftar . ' sync failed server : '.$th->getMessage(),
                 'type' => 'red',
-                'detail_err' => $th->getCode(),
+                'detail_err' => $th->getTrace(),
                 'status' => 'failed_bc_sync',
                 'data' => [
                     'nodaftar' => $this->nodaftar,
