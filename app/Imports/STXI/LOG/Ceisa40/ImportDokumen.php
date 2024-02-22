@@ -54,17 +54,17 @@ class ImportDokumen implements ToModel, WithHeadingRow
                 $jumlahDoc = (clone $baseDoc)->where('DOCNO', $row['nomor_dokumen'])->count();
             }
 
-            // logger('Jumlah Inv' . $jumlahInv);
-            // logger('Jumlah Doc' . $jumlahDoc);
-
             // Invoice
             if ($row['kode_dokumen'] == 380 && $jumlahInv === 0) {
+                logger('Inv ' . $row['nomor_dokumen']);
+                logger('Jumlah Inv ' . $jumlahInv);
                 if ($this->incout == 'INC') {
                     $cekIncoming = (clone $baseDoc)
                         ->whereNull(DB::raw('rtrim(HHEINVNO)'))
                         ->orWhere('HHEINVNO', '')
                         ->get();
 
+                    logger(json_encode($cekIncoming));
                     if (count($cekIncoming) > 0) {
                         foreach ($cekIncoming->pluck('ITMCD') as $key => $valueItm) {
                             (clone $baseDoc)
@@ -93,7 +93,9 @@ class ImportDokumen implements ToModel, WithHeadingRow
             }
 
             // sj
-            if (($row['kode_dokumen'] == 640 || $row['kode_dokumen'] == 630) && $jumlahDoc === 0) {
+            if (($row['kode_dokumen'] == 640 || $row['kode_dokumen'] == 630) && $jumlahDoc === 0) {                
+                logger('Inv ' . $row['nomor_dokumen']);
+                logger('Jumlah Doc ' . $jumlahDoc);
                 if ($this->incout == 'INC') {
                     $cekIncoming = (clone $baseDoc)
                         ->whereNull('DOCNO')
