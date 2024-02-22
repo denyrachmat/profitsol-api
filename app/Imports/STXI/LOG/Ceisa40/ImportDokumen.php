@@ -39,14 +39,14 @@ class ImportDokumen implements ToModel, WithHeadingRow
 
             $jumlahInv = $jumlahDoc = 0;
             if ($this->incout == 'INC') {
-                $baseDoc = ITINVIncoming::where('BCDOCNO', substr($cekTempData['NO_DAFTAR'], 0, 6))
+                $baseDoc = ITINVIncoming::where(DB::raw('LEFT(BCDOCNO, 6)'), substr($cekTempData['NO_DAFTAR'], 0, 6))
                     ->where('BCTYPE', $cekTempData['TYPE_BC'])
                     ->where('BCDOCDT', $cekTempData['TGL_DAFTAR']);
 
                 $jumlahInv = (clone $baseDoc)->where('HHEINVNO', $row['nomor_dokumen'])->count();
                 $jumlahDoc = (clone $baseDoc)->where('DOCNO', $row['nomor_dokumen'])->count();
             } else {
-                $baseDoc = ITINVOutgoing::where('BCDOCNO', substr($cekTempData['NO_DAFTAR'], 0, 6))
+                $baseDoc = ITINVOutgoing::where(DB::raw('LEFT(BCDOCNO, 6)'), substr($cekTempData['NO_DAFTAR'], 0, 6))
                     ->where('BCTYPE', $cekTempData['TYPE_BC'])
                     ->where('BCDOCDT', $cekTempData['TGL_DAFTAR']);
 
