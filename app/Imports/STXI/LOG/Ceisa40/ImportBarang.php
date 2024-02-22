@@ -28,16 +28,17 @@ class ImportBarang implements ToModel, WithHeadingRow
         ini_set("memory_limit", "3G");
         $cekTempData = ITINVUploadTemp::where('NO_AJU', $row['nomor_aju'])->first();
         if (!empty($cekTempData)) {
+            $noDaftar = substr($cekTempData['NO_DAFTAR'], 0, 6);
             $getHSCode = DB::connection('sqlsrv_itinv')->table('VIEW_MITM_TBL')->where('MITM_ITMCD', $row['kode_barang'])->first();
             if ($this->incout == 'INC') {
-                $cekIncoming = ITINVIncoming::where('BCDOCNO', 'LIKE', $cekTempData['NO_DAFTAR'] . '%')
+                $cekIncoming = ITINVIncoming::where('BCDOCNO', 'LIKE', $noDaftar . '%')
                     ->where('BCTYPE', $cekTempData['TYPE_BC'])
                     ->where('BCDOCDT', $cekTempData['TGL_DAFTAR'])
                     ->where('ITMCD', trim($row['kode_barang']))
                     ->first();
 
                 if (!empty($cekIncoming)) {
-                    ITINVIncoming::where("BCDOCNO", 'LIKE', $cekTempData['NO_DAFTAR'] . '%')
+                    ITINVIncoming::where("BCDOCNO", 'LIKE', $noDaftar . '%')
                         ->where('BCTYPE', $cekTempData['TYPE_BC'])
                         ->where('BCDOCDT', $cekTempData["TGL_DAFTAR"])
                         ->where('ITMCD', trim($row['kode_barang']))
@@ -54,20 +55,20 @@ class ImportBarang implements ToModel, WithHeadingRow
                         $UOM = $row['kode_satuan'];
                     }
 
-                    $cekBCStatus = viewCeisaRespon::where('NOMOR_DAFTAR', $cekTempData['NO_DAFTAR'])->where('TGL_DAFTAR', $cekTempData['TGL_DAFTAR'])->first();
+                    $cekBCStatus = viewCeisaRespon::where('NOMOR_DAFTAR', $noDaftar)->where('TGL_DAFTAR', $cekTempData['TGL_DAFTAR'])->first();
 
                     if ($cekBCStatus->STAT_MEGABCDOC == 1) {
                         $cekItemMega = DB::connection('sqlsrv_itinv')->table('VIEW_MITM_TBL')->where('MITM_ITMCD', $row['kode_barang'])->first();
                         
                         ITINVIncoming::updateOrCreate([
                             'BCTYPE' => $cekTempData['TYPE_BC'],
-                            'BCDOCNO' => $cekTempData['NO_DAFTAR'],
+                            'BCDOCNO' => $noDaftar,
                             'BCDOCDT' => $cekTempData['TGL_DAFTAR'],
                             'ITMCD' => trim($row['kode_barang']),
                         ], [
                             'LOCCD' => empty($cekItemMega) ? 'STX-I' : '',
                             'BCTYPE' => $cekTempData['TYPE_BC'],
-                            'BCDOCNO' => $cekTempData['NO_DAFTAR'],
+                            'BCDOCNO' => $noDaftar,
                             'BCDOCDT' => $cekTempData['TGL_DAFTAR'],
                             'BSGRP' => 'LAIN NYA',
                             'DOCCD' => '',
@@ -94,13 +95,13 @@ class ImportBarang implements ToModel, WithHeadingRow
                         if (empty($cekItemMega)) {
                             ITINVIncoming::updateOrCreate([
                                 'BCTYPE' => $cekTempData['TYPE_BC'],
-                                'BCDOCNO' => $cekTempData['NO_DAFTAR'],
+                                'BCDOCNO' => $noDaftar,
                                 'BCDOCDT' => $cekTempData['TGL_DAFTAR'],
                                 'ITMCD' => trim($row['kode_barang']),
                             ], [
                                 'LOCCD' => empty($cekItemMega) ? 'STX-I' : '',
                                 'BCTYPE' => $cekTempData['TYPE_BC'],
-                                'BCDOCNO' => $cekTempData['NO_DAFTAR'],
+                                'BCDOCNO' => $noDaftar,
                                 'BCDOCDT' => $cekTempData['TGL_DAFTAR'],
                                 'BSGRP' => 'LAIN NYA',
                                 'DOCCD' => '',
@@ -125,14 +126,14 @@ class ImportBarang implements ToModel, WithHeadingRow
                     }
                 }
             } else {
-                $cekOutgoing = ITINVOutgoing::where('BCDOCNO', 'LIKE', $cekTempData['NO_DAFTAR'] . '%')
+                $cekOutgoing = ITINVOutgoing::where('BCDOCNO', 'LIKE', $noDaftar . '%')
                     ->where('BCTYPE', $cekTempData['TYPE_BC'])
                     ->where('BCDOCDT', $cekTempData['TGL_DAFTAR'])
                     ->where('ITMCD', trim($row['kode_barang']))
                     ->first();
 
                 if (!empty($cekOutgoing)) {
-                    ITINVOutgoing::where("BCDOCNO", 'LIKE', $cekTempData['NO_DAFTAR'] . '%')
+                    ITINVOutgoing::where("BCDOCNO", 'LIKE', $noDaftar . '%')
                         ->where('BCTYPE', $cekTempData['TYPE_BC'])
                         ->where('BCDOCDT', $cekTempData["TGL_DAFTAR"])
                         ->where('ITMCD', trim($row['kode_barang']))
@@ -151,13 +152,13 @@ class ImportBarang implements ToModel, WithHeadingRow
 
                     ITINVOutgoing::updateOrCreate([
                         'BCTYPE' => $cekTempData['TYPE_BC'],
-                        'BCDOCNO' => $cekTempData['NO_DAFTAR'],
+                        'BCDOCNO' => $noDaftar,
                         'BCDOCDT' => $cekTempData['TGL_DAFTAR'],
                         'ITMCD' => trim($row['kode_barang']),
                     ], [
                         'LOCCD' => 'STX-I',
                         'BCTYPE' => $cekTempData['TYPE_BC'],
-                        'BCDOCNO' => $cekTempData['NO_DAFTAR'],
+                        'BCDOCNO' => $noDaftar,
                         'BCDOCDT' => $cekTempData['TGL_DAFTAR'],
                         'BSGRP' => 'LAIN NYA',
                         'DOCCD' => '',
