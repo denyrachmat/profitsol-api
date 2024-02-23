@@ -251,7 +251,7 @@ class CirtenUpdateController extends BaseController
     {
         $importer1 = new ImportTENList($year);
 
-        Excel::import($importer1, 'ten list/TEN LIST - PRINTER IEI.xlsx', 'ten_bim');
+        Excel::import($importer1, 'Technical Notice List/TEN LIST - PRINTER IEI.xlsx', 'ten_bim');
 
         return 'Sync !!';
     }
