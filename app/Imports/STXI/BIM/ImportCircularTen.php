@@ -163,7 +163,7 @@ class ImportCircularTen implements ToModel
 
         $listItem = $crawler->filterXPath('//*[@style="word-wrap: break-word;"]')->extract(['_text']);
         $this->data['exec'] = empty($listItem[5]) ? $listItem[3] : $listItem[5];
-        $this->data['reason'] = empty($listItem[25]) ? $listItem[24] : $listItem[25];
+        $this->data['reason'] = empty($listItem[24]) ? (empty($listItem[25]) ? $listItem[26] : $listItem[25]) : $listItem[24];
         $this->data['cekhtml'] = $listItem;
 
         $listSubject = $crawler->filterXPath('//*[@class="comment-box"]')->extract(['_text']);
