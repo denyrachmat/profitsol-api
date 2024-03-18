@@ -194,6 +194,7 @@ Route::group(['prefix' => 'div'], function () {
         Route::post('YPOExportExcel', [yeidPOConfirmController::class, 'exportExcel']);
         Route::get('updateData', [yeidPOConfirmController::class, 'cekData']);
         Route::post('uploadPOManual', [yeidPOConfirmController::class, 'uploadManualPO']);
+        Route::post('uploadFC', [yeidPOConfirmController::class, 'uploadFC']);
 
         // End YEID PO Confirmation
 

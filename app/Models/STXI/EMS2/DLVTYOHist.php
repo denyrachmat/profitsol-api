@@ -20,6 +20,7 @@ class DLVTYOHist extends Model
         'IO_REMARK',
         'IPP_REMARK',
         'RANK_REMARK',
-        'DEL_DATE'
+        'DEL_DATE',
+        'DRST_JOBNO'
     ];
 }

@@ -457,6 +457,7 @@ class deliveryMethodToPSIController extends BaseController
                     'IPP_REMARK' => $value['ipp'],
                     'RANK_REMARK' => $value['rank'],
                     'DEL_DATE' => $req->date,
+                    'DRST_JOBNO' => $value['job'],
                 ]);
 
                 $this->fifoUpdateDLV($req->date, $value['model'], true, false);

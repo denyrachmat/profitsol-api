@@ -11,6 +11,9 @@ use Maatwebsite\Excel\Concerns\WithEvents;
 use PhpOffice\PhpSpreadsheet\Style\NumberFormat;
 use \PhpOffice\PhpSpreadsheet\Shared\Date;
 use Maatwebsite\Excel\Concerns\WithTitle;
+use Illuminate\Support\Facades\DB;
+
+use App\Models\STXI\EMS2\YPOForcast;
 
 class ExportYPOManual implements FromCollection, WithEvents, WithHeadings, WithTitle
 {
@@ -23,6 +26,7 @@ class ExportYPOManual implements FromCollection, WithEvents, WithHeadings, WithT
         $this->data = $data;
         $this->tipe = $tipe;
         $this->hasil = [];
+        $this->getYearData = YPOForcast::select('YFDD_YEAR', 'YFDD_MONTH', DB::raw("CONCAT(YFDD_YEAR, '-',YFDD_MONTH) AS YM"))->groupBy('YFDD_YEAR', 'YFDD_MONTH')->orderBy('YFDD_YEAR')->orderBy('YFDD_MONTH');
     }
 
     public function title(): string
@@ -30,11 +34,22 @@ class ExportYPOManual implements FromCollection, WithEvents, WithHeadings, WithT
         return $this->tipe == 'reg' ? 'REGULAR' : 'NEW MODEL';
     }
 
+    public function columnFormats(): array
+    {
+        return [
+            'H' => NumberFormat::FORMAT_DATE_DDMMYYYY,
+            'I' => NumberFormat::FORMAT_DATE_DDMMYYYY,
+            'J' => NumberFormat::FORMAT_DATE_DDMMYYYY,
+            'L' => NumberFormat::FORMAT_DATE_DDMMYYYY,
+        ];
+    }
+
     /**
-    * @return \Illuminate\Support\Collection
-    */
+     * @return \Illuminate\Support\Collection
+     */
     public function collection()
     {
+        date_default_timezone_set('Asia/Jakarta');
         $hasil = [];
         $nomor = 0;
         foreach ($this->data as $key => $value) {
@@ -56,34 +71,42 @@ class ExportYPOManual implements FromCollection, WithEvents, WithHeadings, WithT
                 ];
             }
 
-            $hasil[] = [
-                'NO' =>  $key > 0 && $value['id'] === $this->data[$key - 1]['id'] ? '' : $nomor,
+            $combData = [
+                'NO' => $key > 0 && $value['id'] === $this->data[$key - 1]['id'] ? '' : $nomor,
                 'YPO_ITMCD' => $key > 0 && $value['id'] === $this->data[$key - 1]['id'] ? '' : $value['YPO_ITMCD'],
                 'MITM_ITMD1' => $key > 0 && $value['id'] === $this->data[$key - 1]['id'] ? '' : $value['MITM_ITMD1'],
                 'MITM_SPTNO' => $key > 0 && $value['id'] === $this->data[$key - 1]['id'] ? '' : $value['MITM_SPTNO'],
                 'MSUP_ABBRV' => $key > 0 && $value['id'] === $this->data[$key - 1]['id'] ? '' : $value['MSUP_ABBRV'],
                 'MSUP_SUPNM' => $key > 0 && $value['id'] === $this->data[$key - 1]['id'] ? '' : $value['MSUP_SUPNM'],
                 'YPO_REMARKS' => $key > 0 && $value['id'] === $this->data[$key - 1]['id'] ? '' : $value['YPO_REMARKS'],
-                'YPO_MRPDT' => $key > 0 && $value['id'] === $this->data[$key - 1]['id'] || empty($value['YPO_MRPDT']) ? '' : date('Y-m-d',(Date::excelToTimestamp(strtotime($value['YPO_MRPDT'])) + 14400))/**Date::PHPToExcel(strtotime($value['YPO_MRPDT']) + 14400)**/,
-                'YPO_MAILDT' => $key > 0 && $value['id'] === $this->data[$key - 1]['id'] || empty($value['YPO_MAILDT']) ? '' : Date::PHPToExcel(strtotime($value['YPO_MAILDT']) + 14400),
-                'YPO_RCVDT' => $key > 0 && $value['id'] === $this->data[$key - 1]['id'] || empty($value['YPO_RCVDT']) ? '' : Date::PHPToExcel(strtotime($value['YPO_RCVDT']) + 14400),
+                'YPO_MRPDT' => $key > 0 && $value['id'] === $this->data[$key - 1]['id'] || empty($value['YPO_MRPDT']) ? '' : Date::PHPToExcel(date('Y-m-d', strtotime($value['YPO_MRPDT'])))/**Date::PHPToExcel(strtotime($value['YPO_MRPDT']) + 14400)**/ ,
+                'YPO_MAILDT' => $key > 0 && $value['id'] === $this->data[$key - 1]['id'] || empty($value['YPO_MAILDT']) ? '' : Date::PHPToExcel(date('Y-m-d', strtotime($value['YPO_MAILDT']))),
+                'YPO_RCVDT' => $key > 0 && $value['id'] === $this->data[$key - 1]['id'] || empty($value['YPO_RCVDT']) ? '' : Date::PHPToExcel(date('Y-m-d', strtotime($value['YPO_RCVDT']))),
                 'YPO_PONO' => $key > 0 && $value['id'] === $this->data[$key - 1]['id'] ? '' : $value['YPO_PONO'],
                 'YPO_PODUEDT' => $key > 0 && $value['id'] === $this->data[$key - 1]['id'] ? '' : $value['YPO_PODUEDT'],
-                'YPO_POQTY' => $key > 0 && $value['id'] === $this->data[$key - 1]['id'] ? '' : ($value['YPO_POQTY'] == 0 ? '-' : $value['YPO_POQTY']),
+                'YSPDT_POQT' => $value['YSPDT_POQT'],
                 '1' => '',
                 'YSPDT_PONO' => $value['YSPDT_PONO'],
                 'PPO1_ISUDT' => $value['PPO1_ISUDT'],
-                'YSPDT_POQT' => $value['YSPDT_POQT'],
+                'YPO_POQTY' => $key > 0 && $value['id'] === $this->data[$key - 1]['id'] ? '' : ($value['YPO_POQTY'] == 0 ? '-' : $value['YPO_POQTY']),
                 'YSPDT_INVNO' => $value['YSPDT_INVNO'],
                 'PGIT_RCVDT' => $value['PGIT_RCVDT'],
                 'PGRN_RCVDT' => $value['PGRN_RCVDT'],
                 'ORI_PGIT_RCVQT' => $value['ORI_PGIT_RCVQT'],
                 'PIB_FINISH' => $value['PIB_FINISH'],
                 '2' => '',
-                'SHP_STAT' => empty($value['PGRN_RCVDT']) 
+                'SHP_STAT' => empty($value['PGRN_RCVDT'])
                     ? $value['TOT_QT']
                     : ($value['TOT_QT'] == 0 ? 'CLOSE' : $value['ORI_PGIT_RCVQT'] - $value['SHP_QT']),
+                'OS_QTY' => $value['TOT_QT'] == 0 ? '-' : $value['TOT_QT'],
             ];
+
+            $hasil[] = array_merge(
+                $combData,
+                $this->getData($combData['YPO_ITMCD'], ($key > 0 && $value['id'] === $this->data[$key - 1]['id']))
+            );
+
+            // logger($hasil);
         }
 
         $this->hasil = $hasil;
@@ -92,65 +115,73 @@ class ExportYPOManual implements FromCollection, WithEvents, WithHeadings, WithT
 
     public function headings(): array
     {
+
         return [
             [
                 'STXI - YEID PO CONFIRMATION',
             ],
             [],
             [],
-            [
-                '',
-                '',
-                '',
-                '',
-                '',
-                '',
-                '',
-                '',
-                '',
-                '',
-                '',
-                '',
-                '',
-                '',
-                '',
-                '',
-                '',
-                'SUPP INV NO',
-                'GIT DATE',
-                'GRN DATE',
-                'GIT QTY',
-                '',
-                '',
-                'STOCK LEDGER'
-            ],
-            [
-                'NO',
-                'YEID PN',
-                'MAKER PN',
-                'DESCRIPTION',
-                'MAKER NAME',
-                'SUPPLIER NAME',
-                'REMARKS',
-                'YEID PO MRP DATE',
-                'STXI SEND EMAIL TO YEID',
-                'RECEIVE YEID PO',
-                'YEID PO NO',
-                'YEID PO DUE DATE',
-                'YEID PO QTY',
-                '',
-                'STXI PO NO TO SUPPLIER',
-                'STXI ISSUE DATE',
-                'STXI PO QTY',
-                'SUPPLIER INVOICE NO',
-                'SUPPLIER DLV SCHEDULE',
-                'ETA SGL DATE',
-                'SUPPLIER INCOMING QTY',
-                'FINISH PIB',
-                '',
-                'PO SYSTEM YEID',
-                'YEID NO PO SYSTEM',
-            ]
+            array_merge(
+                [
+                    '',
+                    '',
+                    '',
+                    '',
+                    '',
+                    '',
+                    '',
+                    '',
+                    '',
+                    '',
+                    '',
+                    '',
+                    '',
+                    '',
+                    '',
+                    '',
+                    '',
+                    'SUPP INV NO',
+                    'GIT DATE',
+                    'GRN DATE',
+                    'GIT QTY',
+                    '',
+                    '',
+                    'STOCK LEDGER',
+                    '',
+                    'YEID FORECAST'
+                ],
+            ),
+            array_merge(
+                [
+                    'NO',
+                    'YEID PN',
+                    'MAKER PN',
+                    'DESCRIPTION',
+                    'MAKER NAME',
+                    'SUPPLIER NAME',
+                    'REMARKS',
+                    'YEID PO MRP DATE',
+                    'STXI SEND EMAIL TO YEID',
+                    'RECEIVE YEID PO',
+                    'YEID PO NO',
+                    'YEID PO DUE DATE',
+                    'YEID PO QTY',
+                    '',
+                    'STXI PO NO TO SUPPLIER',
+                    'STXI ISSUE DATE',
+                    'STXI PO QTY',
+                    'SUPPLIER INVOICE NO',
+                    'SUPPLIER DLV SCHEDULE',
+                    'ETA SGL DATE',
+                    'SUPPLIER INCOMING QTY',
+                    'SHIP DATE',
+                    '',
+                    'PO SYSTEM YEID',
+                    'OS QTY',
+                ],
+                (clone $this->getYearData)->get()->pluck('YM')->toArray()
+            )
         ];
     }
 
@@ -172,7 +203,7 @@ class ExportYPOManual implements FromCollection, WithEvents, WithHeadings, WithT
                     ]
                 ]);
 
-                $event->sheet->getStyle('A5:'.$highestColumn.'2')->applyFromArray([
+                $event->sheet->getStyle('A5:' . $highestColumn . '2')->applyFromArray([
                     'font' => [
                         'size' => '11',
                         'bold' => true
@@ -191,7 +222,7 @@ class ExportYPOManual implements FromCollection, WithEvents, WithHeadings, WithT
                 );
 
                 $event->sheet->styleCells(
-                    'A5:M'.$highestRow,
+                    'A5:M' . $highestRow,
                     [
                         'borders' => [
                             'allBorders' => [
@@ -202,7 +233,7 @@ class ExportYPOManual implements FromCollection, WithEvents, WithHeadings, WithT
                 );
 
                 $event->sheet->styleCells(
-                    'O5:V'.$highestRow,
+                    'O5:V' . $highestRow,
                     [
                         'borders' => [
                             'allBorders' => [
@@ -213,7 +244,7 @@ class ExportYPOManual implements FromCollection, WithEvents, WithHeadings, WithT
                 );
 
                 $event->sheet->styleCells(
-                    'X5:Y'.$highestRow,
+                    'X5:'.$highestColumn . $highestRow,
                     [
                         'borders' => [
                             'allBorders' => [
@@ -223,16 +254,17 @@ class ExportYPOManual implements FromCollection, WithEvents, WithHeadings, WithT
                     ]
                 );
 
-                $event->sheet->getStyle('A5:M5')->getFill()->applyFromArray(['fillType' => 'solid','rotation' => 0, 'color' => ['rgb' => '90EE90'],]);
-                $event->sheet->getStyle('O5:V5')->getFill()->applyFromArray(['fillType' => 'solid','rotation' => 0, 'color' => ['rgb' => 'FFAOAO'],]);
+                $event->sheet->getStyle('A5:M5')->getFill()->applyFromArray(['fillType' => 'solid', 'rotation' => 0, 'color' => ['rgb' => '90EE90'],]);
+                $event->sheet->getStyle('O5:V5')->getFill()->applyFromArray(['fillType' => 'solid', 'rotation' => 0, 'color' => ['rgb' => 'FFAOAO'],]);
 
-                $event->sheet->getStyle('A4:'.$highestColumn.'5')->getAlignment()->setWrapText(true);
-                $event->sheet->getStyle('A4:'.$highestColumn.'5')->getAlignment()->setHorizontal('center');
+                $event->sheet->getStyle('A4:' . $highestColumn . '5')->getAlignment()->setWrapText(true);
+                $event->sheet->getStyle('A4:' . $highestColumn . '5')->getAlignment()->setHorizontal('center');
 
                 // $event->sheet->getStyle('G')->getAlignment()->setWrapText(true);
-
-                $event->sheet->getDelegate()->mergeCells('A1:'.$highestColumn.'1');
+    
+                $event->sheet->getDelegate()->mergeCells('A1:' . $highestColumn . '1');
                 $event->sheet->getDelegate()->mergeCells('X4:Y4');
+                $event->sheet->getDelegate()->mergeCells('Z4:'.$highestColumn.'4');
 
                 $event->sheet->getStyle('H')
                     ->getNumberFormat()
@@ -241,29 +273,54 @@ class ExportYPOManual implements FromCollection, WithEvents, WithHeadings, WithT
                 $event->sheet->getStyle('I')
                     ->getNumberFormat()
                     ->setFormatCode(\PhpOffice\PhpSpreadsheet\Style\NumberFormat::FORMAT_DATE_XLSX15);
-                
+
                 $event->sheet->getStyle('J')
                     ->getNumberFormat()
                     ->setFormatCode(\PhpOffice\PhpSpreadsheet\Style\NumberFormat::FORMAT_DATE_XLSX15);
-                
+
                 $startRow = 6;
                 foreach ($this->hasil as $key => $value) {
                     if (str_contains($value['NO'], 'YPO-')) {
                         // Merge first table
-                        $event->sheet->getDelegate()->mergeCells('A'.$startRow.':M'.$startRow);
-                        $event->sheet->getStyle('A'.$startRow.':M'.$startRow)->getFill()->applyFromArray(['fillType' => 'solid','rotation' => 0, 'color' => ['rgb' => '73D2F5'],]);
+                        $event->sheet->getDelegate()->mergeCells('A' . $startRow . ':M' . $startRow);
+                        $event->sheet->getStyle('A' . $startRow . ':M' . $startRow)->getFill()->applyFromArray(['fillType' => 'solid', 'rotation' => 0, 'color' => ['rgb' => '73D2F5'],]);
 
                         // Merge second table
-                        $event->sheet->getDelegate()->mergeCells('O'.$startRow.':V'.$startRow);
-                        $event->sheet->getStyle('O'.$startRow.':V'.$startRow)->getFill()->applyFromArray(['fillType' => 'solid','rotation' => 0, 'color' => ['rgb' => '73D2F5'],]);
-                        
+                        $event->sheet->getDelegate()->mergeCells('O' . $startRow . ':V' . $startRow);
+                        $event->sheet->getStyle('O' . $startRow . ':V' . $startRow)->getFill()->applyFromArray(['fillType' => 'solid', 'rotation' => 0, 'color' => ['rgb' => '73D2F5'],]);
+
                         // Merge third table
-                        $event->sheet->getDelegate()->mergeCells('X'.$startRow.':Y'.$startRow);
-                        $event->sheet->getStyle('X'.$startRow.':Y'.$startRow)->getFill()->applyFromArray(['fillType' => 'solid','rotation' => 0, 'color' => ['rgb' => '73D2F5'],]);
+                        $event->sheet->getDelegate()->mergeCells('X' . $startRow . ':'.$highestColumn . $startRow);
+                        $event->sheet->getStyle('X' . $startRow . ':Y' . $startRow)->getFill()->applyFromArray(['fillType' => 'solid', 'rotation' => 0, 'color' => ['rgb' => '73D2F5'],]);
                     }
 
                     $startRow++;
                 }
-        }];
+            }
+        ];
+    }
+
+    public function getData($item, $isNull = false): array
+    {
+        $listFC = [];
+        foreach ((clone $this->getYearData)->get() as $key => $value) {
+            if ($isNull) {
+                $listFC[$value['YFDD_YEAR'] . '-' . $value['YFDD_MONTH']] = 0;
+            } else {
+
+                $cekData = YPOForcast::where('YFDD_ITMCD', $item)
+                    ->where('YFDD_YEAR', $value['YFDD_YEAR'])
+                    ->where('YFDD_MONTH', $value['YFDD_MONTH'])
+                    ->first();
+
+                if (!empty($cekData)) {
+                    $listFC[$value['YFDD_YEAR'] . '-' . $value['YFDD_MONTH']] = $cekData->YFDD_FCQT;
+                } else {
+                    $listFC[$value['YFDD_YEAR'] . '-' . $value['YFDD_MONTH']] = 0;
+                }
+            }
+        }
+
+        return $listFC;
     }
 }

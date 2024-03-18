@@ -16,6 +16,8 @@ use Illuminate\Http\File;
 use App\Jobs\STXI\EMS2\updateInvoiceYPOManualQueue;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 use App\Imports\STXI\EMS2\ImportSTXIYEIDPOConfirmation;
+use App\Imports\STXI\EMS2\ImportFCMRI;
+use App\Models\STXI\EMS2\YPOForcast;
 
 class yeidPOConfirmController extends BaseController
 {
@@ -268,7 +270,6 @@ class yeidPOConfirmController extends BaseController
 
         $dataReg = $dataReg->where('YPO_TYPE', 'reg')->get();
 
-        // return $data;
         Excel::store(new ExportYPOManualHeader([
             'new' => $data,
             'reg' => $dataReg
@@ -281,7 +282,7 @@ class yeidPOConfirmController extends BaseController
     {
         $data = YPOMaster::select(
             'YPO_MSTR_TBL.*',
-            'YSPDT_PONO',
+            DB::raw('RTRIM(YSPDT_PONO) YSPDT_PONO'),
             'YSPDT_INVNO',
             'YSPDT_POQT',
             DB::raw('CAST(PPO1_ISUDT AS DATE) PPO1_ISUDT'),
@@ -298,8 +299,8 @@ class yeidPOConfirmController extends BaseController
             ->leftjoin('YPO_STXI_PO_DET_TBL', 'YPO_MSTR_TBL.id', 'YMT_ID')
             ->leftjoin('V_YPO_OS_GIT', function($f) {
                 $f->on('PPO1_PONO', 'YSPDT_PONO');
-                $f->on('YSPDT_INVNO', 'PGIT_SUPNO');
-                $f->on('YPO_ITMCD', 'PGIT_ITMCD');
+                // $f->on('YSPDT_INVNO', 'PGIT_SUPNO');
+                $f->on('YPO_ITMCD', 'PPO2_ITMCD');
             })
             ->join(DB::raw('MGSVR.VMI_EXIM.DBO.MITM_TBL as mt'), 'mt.MITM_ITMCD', 'YPO_ITMCD')
             ->join(DB::raw('MGSVR.VMI_EXIM.DBO.MSUP_TBL as mt2'), 'mt2.MSUP_SUPCD', 'mt.MITM_SUPCD')
@@ -368,7 +369,6 @@ class yeidPOConfirmController extends BaseController
         if ($extNya == 'xls' || $extNya == 'xlsx') {
             $splitString = intval(preg_replace('/[^0-9]+/', '', $oriFileName), 10);
 
-
             $req->file->storeAs('/public/upload_manual_ymi_po/', $nama_file);
 
             if ($extNya == 'xls') {
@@ -377,6 +377,8 @@ class yeidPOConfirmController extends BaseController
                 $nama_file = $fileHash . '.xlsx';
                 $writer->save('/public/upload_manual_ymi_po/' . $nama_file);
             }
+
+            // return  public_path('/storage/upload_manual_ymi_po/' . $nama_file);
             
             $getData = YPOMaster::where('YPO_TYPE',  $req->type)->get();
             foreach ($getData as $key => $value) {
@@ -392,6 +394,55 @@ class yeidPOConfirmController extends BaseController
             // $this->cekData();
 
             return $this->handleResponse([], 'Upload Sukses ' . $nama_file);
+        } else {
+            return $this->handleError("File name doesn't right! please check again !");
+        }
+    }
+
+    public function uploadFC(Request $req)
+    {
+        ini_set('max_execution_time', '1200');
+        // $nama_file = $req->file->hashName();
+        $file = new File($req->file);
+        $extNya = $req->file('file')->getClientOriginalExtension();
+
+        $fileHash = str_replace('.' . $file->extension(), '', $file->hashName());
+        $nama_file = $fileHash . '.' . $extNya;
+
+        // return $nama_file;
+        $oriFileName = $req->file('file')->getClientOriginalName();
+
+        if ($extNya == 'xls' || $extNya == 'xlsx') {
+            $splitString = intval(preg_replace('/[^0-9]+/', '', $oriFileName), 10);
+
+            $req->file->storeAs('/public/upload_ypo_fc/', $nama_file);
+
+            if ($extNya == 'xls') {
+                $spreadsheet = \PhpOffice\PhpSpreadsheet\IOFactory::load($file);
+                $writer = new Xlsx($spreadsheet);
+                $nama_file = $fileHash . '.xlsx';
+                $writer->save('/public/upload_ypo_fc/' . $nama_file);
+            }
+
+            $importer = new ImportFCMRI();
+
+            Excel::import($importer, public_path('/storage/upload_ypo_fc/' . $nama_file));
+
+            $updateFC = [];
+            foreach ($importer->data as $key => $valueImp) {
+                $updateFC[] = YPOForcast::updateOrCreate([
+                    'YFDD_ITMCD' => $valueImp['item'],
+                    'YFDD_YEAR' =>  $valueImp['year'],
+                    'YFDD_MONTH' =>  $valueImp['month'],
+                ],[
+                    'YFDD_ITMCD' => $valueImp['item'],
+                    'YFDD_YEAR' => $valueImp['year'],
+                    'YFDD_MONTH' => $valueImp['month'],
+                    'YFDD_FCQT' => $valueImp['qty'], 
+                ]);
+            }
+
+            return $this->handleResponse($importer->data, 'Upload Sukses ' . $nama_file);
         } else {
             return $this->handleError("File name doesn't right! please check again !");
         }

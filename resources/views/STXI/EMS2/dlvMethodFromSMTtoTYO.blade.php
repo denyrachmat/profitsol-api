@@ -20,8 +20,9 @@
                 <th style="background-color:#fff;border-color:inherit;border-style:solid;border-width:1px;color:#000;font-family:Arial, sans-serif;font-size:14px;font-weight:normal;overflow:hidden;padding:10px 5px;text-align:center;vertical-align:top;word-break:normal"><b>STXI SPQ <br>/ Box Data</b></th>
                 <th style="background-color:#fff;border-color:inherit;border-style:solid;border-width:1px;color:#000;font-family:Arial, sans-serif;font-size:14px;font-weight:normal;overflow:hidden;padding:10px 5px;text-align:center;vertical-align:top;word-break:normal"><b>Without Barcode</b></th>
                 <th style="background-color:yellow;border-color:inherit;border-style:solid;border-width:1px;color:#000;font-family:Arial, sans-serif;font-size:14px;font-weight:normal;overflow:hidden;padding:10px 5px;text-align:center;vertical-align:top;word-break:normal"><b>SMT Delivery</b></th>
-                <th style="background-color:#fff;border-color:inherit;border-style:solid;border-width:1px;color:#000;font-family:Arial, sans-serif;font-size:14px;font-weight:normal;overflow:hidden;padding:10px 5px;text-align:center;vertical-align:top;word-break:normal"></th>
-                <th style="background-color:#fff;border-color:inherit;border-style:solid;border-width:1px;color:#000;font-family:Arial, sans-serif;font-size:14px;font-weight:normal;overflow:hidden;padding:10px 5px;text-align:center;vertical-align:top;word-break:normal"></th>
+                <th style="background-color:#fff;border-color:inherit;border-style:solid;border-width:1px;color:#000;font-family:Arial, sans-serif;font-size:14px;font-weight:normal;overflow:hidden;padding:10px 5px;text-align:center;vertical-align:top;word-break:normal">Rank</th>
+                <th style="background-color:#fff;border-color:inherit;border-style:solid;border-width:1px;color:#000;font-family:Arial, sans-serif;font-size:14px;font-weight:normal;overflow:hidden;padding:10px 5px;text-align:center;vertical-align:top;word-break:normal">IPP</th>
+                <th style="background-color:#fff;border-color:inherit;border-style:solid;border-width:1px;color:#000;font-family:Arial, sans-serif;font-size:14px;font-weight:normal;overflow:hidden;padding:10px 5px;text-align:center;vertical-align:top;word-break:normal">Job No</th>
             </tr>
         </thead>
         <tbody>
@@ -43,8 +44,9 @@
                     </td>
                     <td style="background-color:#fff;border-color:inherit;border-style:solid;border-width:1px;color:#333;font-family:Arial, sans-serif;font-size:14px;overflow:hidden;padding:10px 5px;text-align:right;vertical-align:top;word-break:normal">{{$value['TOT_OUT_WOBC_DLV']}}</td>
                     <td style="background-color:#fff;border-color:inherit;border-style:solid;border-width:1px;color:#333;font-family:Arial, sans-serif;font-size:14px;overflow:hidden;padding:10px 5px;text-align:right;vertical-align:top;word-break:normal">{{$value['TOT_SMT_DLV']}}</td>
-                    <td style="background-color:#fff;border-color:inherit;border-style:solid;border-width:1px;color:#333;font-family:Arial, sans-serif;font-size:14px;overflow:hidden;padding:10px 5px;text-align:left;vertical-align:top;word-break:normal">{{$value['IPP_REMARK']}}</td>
                     <td style="background-color:#fff;border-color:inherit;border-style:solid;border-width:1px;color:#333;font-family:Arial, sans-serif;font-size:14px;overflow:hidden;padding:10px 5px;text-align:left;vertical-align:top;word-break:normal">{{$value['RANK_REMARK']}}</td>
+                    <td style="background-color:#fff;border-color:inherit;border-style:solid;border-width:1px;color:#333;font-family:Arial, sans-serif;font-size:14px;overflow:hidden;padding:10px 5px;text-align:left;vertical-align:top;word-break:normal">{{$value['IPP_REMARK']}}</td>
+                    <td style="background-color:#fff;border-color:inherit;border-style:solid;border-width:1px;color:#333;font-family:Arial, sans-serif;font-size:14px;overflow:hidden;padding:10px 5px;text-align:left;vertical-align:top;word-break:normal">{{$value['DRST_JOBNO']}}</td>
                 </tr>
             @endforeach
             <tr>
