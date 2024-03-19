@@ -47,6 +47,9 @@
                     <td style="background-color:{{$value['DRST_SPLITDOC'] == 1 ? '#e9f507': '#fff'}};border-color:inherit;border-style:solid;border-width:1px;color:#333;font-family:Arial, sans-serif;font-size:14px;overflow:hidden;padding:10px 5px;text-align:left;vertical-align:top;word-break:normal">{{$value['RANK_REMARK']}}</td>
                     <td style="background-color:{{$value['DRST_SPLITDOC'] == 1 ? '#e9f507': '#fff'}};border-color:inherit;border-style:solid;border-width:1px;color:#333;font-family:Arial, sans-serif;font-size:14px;overflow:hidden;padding:10px 5px;text-align:left;vertical-align:top;word-break:normal">{{$value['IPP_REMARK']}}</td>
                     <td style="background-color:{{$value['DRST_SPLITDOC'] == 1 ? '#e9f507': '#fff'}};border-color:inherit;border-style:solid;border-width:1px;color:#333;font-family:Arial, sans-serif;font-size:14px;overflow:hidden;padding:10px 5px;text-align:left;vertical-align:top;word-break:normal">{{$value['DRST_JOBNO']}}</td>
+                    @if($value['DRST_SPLITDOC'] == 1)
+                        <td style="background-color:{{$value['DRST_SPLITDOC'] == 1 ? '#e9f507': '#fff'}};border-color:inherit;border-style:solid;border-width:1px;color:#333;font-family:Arial, sans-serif;font-size:14px;overflow:hidden;padding:10px 5px;text-align:left;vertical-align:top;word-break:normal">{{$value['DRST_SPLITDOCRMK']}}</td>
+                    @endif
                 </tr>
             @endforeach
             <tr>

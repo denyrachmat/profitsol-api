@@ -459,7 +459,8 @@ class deliveryMethodToPSIController extends BaseController
                     'RANK_REMARK' => $value['rank'],
                     'DEL_DATE' => $req->date,
                     'DRST_JOBNO' => $value['job'],
-                    'DRST_SPLITDOC' => empty($value['split_doc']) ? false : $value['split_doc']
+                    'DRST_SPLITDOC' => empty($value['split_doc']) ? false : $value['split_doc'],
+                    'DRST_SPLITDOCRMK' => $value['split_doc'] == true ? $value['split_doc_remark'] : ''
                 ]);
 
                 $this->fifoUpdateDLV($req->date, $value['model'], true, false);
@@ -474,7 +475,8 @@ class deliveryMethodToPSIController extends BaseController
                     'RANK_REMARK' => $value['rank'],
                     'DEL_DATE' => $req->date,
                     'DRST_JOBNO' => $value['job'],
-                    'DRST_SPLITDOC' => empty($value['split_doc']) ? false : $value['split_doc']
+                    'DRST_SPLITDOC' => empty($value['split_doc']) ? false : $value['split_doc'],
+                    'DRST_SPLITDOCRMK' => $value['split_doc'] == true ? $value['split_doc_remark'] : ''
                 ]);
             }
 
@@ -487,7 +489,8 @@ class deliveryMethodToPSIController extends BaseController
                     'RANK_REMARK' => $value['rank'],
                     'DEL_DATE' => $req->date,
                     'DRST_JOBNO' => $value['job'],
-                    'DRST_SPLITDOC' => empty($value['split_doc']) ? false : $value['split_doc']
+                    'DRST_SPLITDOC' => empty($value['split_doc']) ? false : $value['split_doc'],
+                    'DRST_SPLITDOCRMK' => $value['split_doc'] == true ? $value['split_doc_remark'] : ''
                 ]);
             }
         }

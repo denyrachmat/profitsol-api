@@ -22,6 +22,7 @@ class DLVTYOHist extends Model
         'RANK_REMARK',
         'DEL_DATE',
         'DRST_JOBNO',
-        'DRST_SPLITDOC'
+        'DRST_SPLITDOC',
+        'DRST_SPLITDOCRMK'
     ];
 }
