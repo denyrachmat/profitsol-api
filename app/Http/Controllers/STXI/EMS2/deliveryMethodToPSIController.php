@@ -507,7 +507,8 @@ class deliveryMethodToPSIController extends BaseController
             'IPP_REMARK',
             'RANK_REMARK',
             'DRST_JOBNO',
-            'DRST_SPLITDOC'
+            'DRST_SPLITDOC',
+            'DRST_SPLITDOCRMK'
         ]);
 
         // return $data;
