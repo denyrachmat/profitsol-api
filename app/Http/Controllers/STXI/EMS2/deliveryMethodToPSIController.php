@@ -497,7 +497,7 @@ class deliveryMethodToPSIController extends BaseController
 
     public function DLVSendEmail($date)
     {
-        $data = $this->DLVGetData($date, [
+        $data = DLVTYOHist::select(
             'MITM_MODELCD',
             'MITM_ITMD1',
             'DEL_DATE',
@@ -505,7 +505,15 @@ class deliveryMethodToPSIController extends BaseController
             'RANK_REMARK',
             'DRST_JOBNO',
             'DRST_SPLITDOC'
-        ]);
+        )
+        ->join(
+            DB::raw('[MGSVR].[VMI_TYO].[dbo].[MITM_TBL]'),
+            'MITM_ITMCD',
+            'MITM_MODELCD'
+        )
+        ->where('DEL_DATE', $date)
+        ->get()
+        ->toArray();
 
         // return $data;
 
