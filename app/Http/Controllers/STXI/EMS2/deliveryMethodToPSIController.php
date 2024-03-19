@@ -264,7 +264,8 @@ class deliveryMethodToPSIController extends BaseController
                         ['no' => $key + 1],
                         $value,
                         [
-                            'TOTAL_FIFO' => $hasilFIFO
+                            'TOTAL_FIFO' => $hasilFIFO,
+                            'cekFIFOData' => $dataFIFO
                         ]
                     );
                 } else {
@@ -447,9 +448,9 @@ class deliveryMethodToPSIController extends BaseController
         ini_set('max_execution_time', '300');
         $hasil = [];
 
+        DLVTYOHist::where('DEL_DATE', $req->date)->delete();
         foreach ($req->data as $key => $value) {
             if (!empty($value['withBarcode'])) {
-                DLVTYOHist::where('DEL_DATE', $req->date)->where('MITM_MODELCD', $value['model'])->where('IO_REMARK', $req->dlvStoc ? 'TO_ITEC_STOCKDLV' : 'TO_ITEC')->delete();
                 $hasil[] = DLVTYOHist::create([
                     'MITM_MODELCD' => $value['model'],
                     'IO_QTY' => $value['withBarcode'] * -1,
@@ -458,13 +459,13 @@ class deliveryMethodToPSIController extends BaseController
                     'RANK_REMARK' => $value['rank'],
                     'DEL_DATE' => $req->date,
                     'DRST_JOBNO' => $value['job'],
+                    'DRST_SPLITDOC' => empty($value['split_doc']) ? false : $value['split_doc']
                 ]);
 
                 $this->fifoUpdateDLV($req->date, $value['model'], true, false);
             }
 
             if (!empty($value['delivery'])) {
-                DLVTYOHist::where('DEL_DATE', $req->date)->where('MITM_MODELCD', $value['model'])->where('IO_REMARK', $req->dlvStoc ? 'FROM_STOCK' : 'FROM_SMT')->delete();
                 $hasil[] = DLVTYOHist::create([
                     'MITM_MODELCD' => $value['model'],
                     'IO_QTY' => $value['delivery'],
@@ -472,11 +473,12 @@ class deliveryMethodToPSIController extends BaseController
                     'IPP_REMARK' => $value['ipp'],
                     'RANK_REMARK' => $value['rank'],
                     'DEL_DATE' => $req->date,
+                    'DRST_JOBNO' => $value['job'],
+                    'DRST_SPLITDOC' => empty($value['split_doc']) ? false : $value['split_doc']
                 ]);
             }
 
             if (!empty($value['withoutBarcode'])) {
-                DLVTYOHist::where('DEL_DATE', $req->date)->where('MITM_MODELCD', $value['model'])->where('IO_REMARK', 'TO_ITEC_WB')->delete();
                 $hasil[] = DLVTYOHist::create([
                     'MITM_MODELCD' => $value['model'],
                     'IO_QTY' => $value['withoutBarcode'] * -1,
@@ -484,6 +486,8 @@ class deliveryMethodToPSIController extends BaseController
                     'IPP_REMARK' => $value['ipp'],
                     'RANK_REMARK' => $value['rank'],
                     'DEL_DATE' => $req->date,
+                    'DRST_JOBNO' => $value['job'],
+                    'DRST_SPLITDOC' => empty($value['split_doc']) ? false : $value['split_doc']
                 ]);
             }
         }
@@ -498,7 +502,9 @@ class deliveryMethodToPSIController extends BaseController
             'MITM_ITMD1',
             'DEL_DATE',
             'IPP_REMARK',
-            'RANK_REMARK'
+            'RANK_REMARK',
+            'DRST_JOBNO',
+            'DRST_SPLITDOC'
         ]);
 
         // return $data;
@@ -591,6 +597,7 @@ class deliveryMethodToPSIController extends BaseController
     public function fifoUpdateDLV($date = null, $item = '', $isSave = false, $byItemOnly = false, $dateFifoStart = 0, $do = 0, $qty = 0)
     {
         $data = $this->DLVGetData($date, [
+            // 'id',
             'MITM_MODELCD',
             'MITM_ITMD1',
             'DEL_DATE',
@@ -604,18 +611,12 @@ class deliveryMethodToPSIController extends BaseController
         foreach ($data as $key => $value) {
             if ($value['TOT_OUT_BC_DLV'] > 0 || $value['TOT_OUT_STOCK_DLV'] > 0) {
                 // $ttlDlv = $value['TOT_OUT_BC_DLV'] + $value['TOT_OUT_STOCK_DLV'];
-                $getID = DLVTYOHist::select('id', 'IO_REMARK')
+                $getID = DLVTYOHist::select('id', 'IO_REMARK', DB::raw('(IO_QTY * -1) as IO_QTY'))
                     ->where('MITM_MODELCD', $value['MITM_MODELCD'])
                     ->where('DEL_DATE', $value['DEL_DATE'])
                     ->whereIn('IO_REMARK', ['TO_ITEC', 'TO_ITEC_STOCKDLV'])
                     ->get()
                     ->toArray();
-
-                // return $getID;
-
-                // if ($value['MITM_MODELCD'] == 'F65929-09V') {
-                //     return $getID;
-                // }
 
                 if (!$byItemOnly) {
                     $hasil[$value['MITM_MODELCD']]['MODELCD'] = $value['MITM_MODELCD'];
@@ -625,12 +626,14 @@ class deliveryMethodToPSIController extends BaseController
                     if ($isSave) {
                         DLVTYODet::where('DRST_ID', $valueID['id'])->forceDelete();
                         if ($valueID['IO_REMARK'] == 'TO_ITEC') {
-                            $valFifo = "'" . $value['MITM_MODELCD'] . "', " . $value['TOT_OUT_BC_DLV'] . ", '" . date($dateFifoStart === 0 ? 'Y-m-01' : 'Y-m-d', $dateFifoStart === 0 ? strtotime('-1 month', strtotime($date)) : strtotime($dateFifoStart)) . "', '" . date('Y-m-01', strtotime($date)) . "', '" . ($do == 0 ? '' : $do) . "'";
-                            $hasil[$value['MITM_MODELCD']]['DATA_DATE'][$value['DEL_DATE']][$keyID]['DLVQT'] = $value['TOT_OUT_BC_DLV'];
+                            $valFifo = "'" . $value['MITM_MODELCD'] . "', " . $valueID['IO_QTY'] . ", '" . date($dateFifoStart === 0 ? 'Y-m-01' : 'Y-m-d', $dateFifoStart === 0 ? strtotime('-1 month', strtotime($date)) : strtotime($dateFifoStart)) . "', '" . date('Y-m-01', strtotime($date)) . "', '" . ($do == 0 ? '' : $do) . "'";
+                            // $hasil[$value['MITM_MODELCD']]['DATA_DATE'][$value['DEL_DATE']][$keyID]['DLVQT'] = $value['TOT_OUT_BC_DLV'];
+                            $hasil[$value['MITM_MODELCD']]['DATA_DATE'][$value['DEL_DATE']][$keyID]['DLVQT'] = $valueID['IO_QTY'];
                             $hasil[$value['MITM_MODELCD']]['DATA_DATE'][$value['DEL_DATE']][$keyID]['CEK'] = $valFifo;
                         } else {
-                            $valFifo = "'" . $value['MITM_MODELCD'] . "', " . $value['TOT_OUT_STOCK_DLV'] . ", '" . date($dateFifoStart === 0 ? 'Y-m-01' : 'Y-m-d', $dateFifoStart === 0 ? strtotime('-1 month', strtotime($date)) : strtotime($dateFifoStart)) . "', '" . date('Y-m-01', strtotime($date)) . "', '" . ($do === 0 ? '' : $do) . "'";
-                            $hasil[$value['MITM_MODELCD']]['DATA_DATE'][$value['DEL_DATE']][$keyID]['DLVQT'] = $value['TOT_OUT_STOCK_DLV'];
+                            $valFifo = "'" . $value['MITM_MODELCD'] . "', " . $valueID['IO_QTY'] . ", '" . date($dateFifoStart === 0 ? 'Y-m-01' : 'Y-m-d', $dateFifoStart === 0 ? strtotime('-1 month', strtotime($date)) : strtotime($dateFifoStart)) . "', '" . date('Y-m-01', strtotime($date)) . "', '" . ($do === 0 ? '' : $do) . "'";
+                            // $hasil[$value['MITM_MODELCD']]['DATA_DATE'][$value['DEL_DATE']][$keyID]['DLVQT'] = $value['TOT_OUT_STOCK_DLV'];
+                            $hasil[$value['MITM_MODELCD']]['DATA_DATE'][$value['DEL_DATE']][$keyID]['DLVQT'] = $valueID['IO_QTY'];
                             $hasil[$value['MITM_MODELCD']]['DATA_DATE'][$value['DEL_DATE']][$keyID]['CEK'] = $valFifo;
                         }
 
@@ -661,6 +664,7 @@ class deliveryMethodToPSIController extends BaseController
                                 'DLV_REQ_DET.id',
                                 'MITM_MODELCD',
                                 'IO_REMARK',
+                                'DRST_ID',
                                 'DRD_DELNO',
                                 'DRD_PRICE',
                                 'DRD_QTY',
