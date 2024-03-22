@@ -1,4 +1,5 @@
 <?php
+use App\Http\Controllers\STXI\EMS2\YPODailyConfController;
 use App\Http\Controllers\STXI\LOG\CeisaMonitoringController;
 use Illuminate\Support\Facades\Route;
 
@@ -209,6 +210,7 @@ Route::group(['prefix' => 'div'], function () {
         Route::post('ymiQuoList', [YMIQuotantionController::class, 'getData']);
         Route::post('exportPriceList', [YMIQuotantionController::class, 'exportPriceList']);
         
+        Route::resource('ypoDailyConf', YPODailyConfController::class);
         // End CD/CU Price MRI
     });
 

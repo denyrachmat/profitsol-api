@@ -19,16 +19,17 @@ class ImportTENList implements ToModel, WithEvents, WithStartRow, WithMultipleSh
 {
     use Importable, RegistersEventListeners;
 
-    public $data, $year;
-    public function __construct($year) {
+    public $data, $year, $sheetPos;
+    public function __construct($year, $sheetPos) {
         $this->year = $year;
         $this->sheetsKeys = [];
+        $this->sheetPos = $sheetPos;
     }
 
     public function sheets(): array
     {
         return [
-            1 => $this,
+            $this->sheetPos => $this,
             // 1 => new ImportTENListByYear
         ];
     }
