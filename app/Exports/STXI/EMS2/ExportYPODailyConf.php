@@ -246,13 +246,13 @@ class ExportYPODailyConf implements FromCollection, WithHeadings, WithEvents
             ->where('KSHP_SHPDT', $date);
 
         if (!empty ($item)) {
-            $data = $dataPrep->where('KSHP_ITMCD', $item);
+            $dataPrep->where('KSHP_ITMCD', $item);
         }
 
         if (count($itemException) > 0) {
-            $data = $dataPrep->whereNotIn('KSHP_ITMCD', $itemException);
+            $dataPrep->whereNotIn('KSHP_ITMCD', $itemException);
         }
 
-        return $data->get();
+        return $dataPrep->get();
     }
 }
