@@ -115,7 +115,10 @@ class ExportYPODailyConf implements FromCollection, WithHeadings, WithEvents
                     ];
                 }
             } else {
+                // First Date Based data
+                $listItem = [];
                 foreach ($hasil as $keyFirst => $valueFirst) {
+                    $listItem[] = $valueFirst['part'];
                     $cekItem = $this->getData($valuePeriod->format('Y-m-d'), $valueFirst['part']);
 
                     logger($cekItem);
@@ -143,6 +146,21 @@ class ExportYPODailyConf implements FromCollection, WithHeadings, WithEvents
                     }
                 }
 
+                // Outside of first date data
+                $getListDataO = $this->getData($valuePeriod->format('Y-m-d'), '', $listItem);
+
+                foreach ($getListDataO as $keyO => $valueO) {
+                    $hasil[] = [
+                        'no' => count($hasil) + 1,
+                        'part' => $valueO->KSHP_ITMCD,
+                        'name' => $valueO->MITM_SPTNO,
+                        'dlv'. $keyO => $valueO->KSHP_DELQT,
+                        'stock'. $keyO => $valueO->OPN_QT,
+                        'tot'. $keyO => $valueO->OPN_QT - $valueO->KSHP_DELQT,
+                        '1' => '11.00  - 13.00  AM',
+                        '2' => 'AM'
+                    ];
+                }
             }
         }
 
@@ -221,18 +239,20 @@ class ExportYPODailyConf implements FromCollection, WithHeadings, WithEvents
         return $r;
     }
 
-    function getData($date, $item = '')
+    function getData($date, $item = '', $itemException = [])
     {
         $dataPrep = DB::connection('sqlsrv_mega_exim')->table('Z_STXI_YPO_DAILY_CONF')
             ->where('KSHP_BSGRP', 'SME3IIZMRI')
             ->where('KSHP_SHPDT', $date);
 
         if (!empty ($item)) {
-            $data = $dataPrep->where('KSHP_ITMCD', $item)->get();
-        } else {
-            $data = $dataPrep->get();
+            $data = $dataPrep->where('KSHP_ITMCD', $item);
         }
 
-        return $data;
+        if (count($itemException) > 0) {
+            $data = $dataPrep->whereNotIn('KSHP_ITMCD', $itemException);
+        }
+
+        return $data->get();
     }
 }
