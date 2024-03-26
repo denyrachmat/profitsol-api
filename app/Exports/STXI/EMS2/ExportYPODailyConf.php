@@ -157,9 +157,9 @@ class ExportYPODailyConf implements FromCollection, WithHeadings, WithEvents
                             $setCols = array_merge(
                                 $setCols,
                                 [
-                                    'dlv'. $i => 0,
-                                    'stock'. $i => 0,
-                                    'tot'. $i => 0,
+                                    'dlv'. $i => '0',
+                                    'stock'. $i => '0',
+                                    'tot'. $i => '0',
                                     '1'. $i => '11.00  - 13.00  AM',
                                     '2'. $i => 'AM'
                                 ]
