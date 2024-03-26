@@ -200,7 +200,7 @@ class ExportYPODailyConf implements FromCollection, WithHeadings, WithEvents
                 $startCol = 3;
                 foreach ($this->getArrPeriod() as $key => $valuePeriod) {
                     $event->sheet->getDelegate()->mergeCells($this->toAlpha($startCol).'3:'.$this->toAlpha($startCol + 2).'3');
-                    $event->sheet->getStyle($this->toAlpha($startCol))->getNumberFormat()->setFormatCode(NumberFormat::FORMAT_NUMBER_00);
+                    $event->sheet->getStyle($this->toAlpha($startCol).'5:'.$this->toAlpha($startCol + 2).$highestRow)->getNumberFormat()->setFormatCode('#,##0');
 
                     if ($key !== count($this->getArrPeriod()) - 1) {
                         $event->sheet->getDelegate()->mergeCells($this->toAlpha($startCol + 3).'3:'.$this->toAlpha($startCol + 3).'4');
