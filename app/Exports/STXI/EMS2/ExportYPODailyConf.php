@@ -121,16 +121,14 @@ class ExportYPODailyConf implements FromCollection, WithHeadings, WithEvents
                     $listItem[] = $valueFirst['part'];
                     $cekItem = $this->getData($valuePeriod->format('Y-m-d'), $valueFirst['part']);
 
-                    logger($cekItem);
-
                     if (count($cekItem) > 0) {
                         foreach ($this->getData($valuePeriod->format('Y-m-d'), $valueFirst['part']) as $keyData => $valData) {
                             $hasil[$keyFirst] = array_merge(
                                 $hasil[$keyFirst],
                                 [
-                                    'dlv'. $key => $valData->KSHP_DELQT,
-                                    'stock'. $key => $valData->OPN_QT,
-                                    'tot'. $key => $valData->OPN_QT - $valData->KSHP_DELQT
+                                    'dlv'. $key => (string)$valData->KSHP_DELQT,
+                                    'stock'. $key => (string)$valData->OPN_QT,
+                                    'tot'. $key => (string)$valData->OPN_QT - $valData->KSHP_DELQT
                                 ]
                             );
                         }
