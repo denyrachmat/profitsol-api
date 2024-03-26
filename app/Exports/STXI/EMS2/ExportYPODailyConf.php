@@ -110,8 +110,8 @@ class ExportYPODailyConf implements FromCollection, WithHeadings, WithEvents
                         'dlv'. $key => $valData->KSHP_DELQT,
                         'stock'. $key => $valData->OPN_QT,
                         'tot'. $key => $valData->OPN_QT - $valData->KSHP_DELQT,
-                        '1' => '11.00  - 13.00  AM',
-                        '2' => 'AM'
+                        '1'. $key => '11.00  - 13.00  AM',
+                        '2'. $key => 'AM'
                     ];
                 }
             } else {
@@ -148,18 +148,39 @@ class ExportYPODailyConf implements FromCollection, WithHeadings, WithEvents
 
                 // Outside of first date data
                 $getListDataO = $this->getData($valuePeriod->format('Y-m-d'), '', $listItem);
-
+                
+                $startCol = 4;
                 foreach ($getListDataO as $keyO => $valueO) {
-                    $hasil[] = [
+                    $setCols = [];
+                    for ($i=0; $i <= $key; $i++) { 
+                        if ($i !== $key) {
+                            $setCols = array_merge(
+                                $setCols,
+                                [
+                                    'dlv'. $i => 0,
+                                    'stock'. $i => 0,
+                                    'tot'. $i => 0,
+                                    '1'. $i => '11.00  - 13.00  AM',
+                                    '2'. $i => 'AM'
+                                ]
+                            );
+                        } else {
+                            $setCols = array_merge(
+                                $setCols,
+                                [
+                                    'dlv'. $i => $valueO->KSHP_DELQT,
+                                    'stock'. $i => $valueO->OPN_QT,
+                                    'tot'. $i => $valueO->OPN_QT - $valueO->KSHP_DELQT,
+                                ]
+                            );
+                        }
+                    }
+
+                    $hasil[] = array_merge([
                         'no' => count($hasil) + 1,
                         'part' => $valueO->KSHP_ITMCD,
                         'name' => $valueO->MITM_SPTNO,
-                        'dlv'. $keyO => $valueO->KSHP_DELQT,
-                        'stock'. $keyO => $valueO->OPN_QT,
-                        'tot'. $keyO => $valueO->OPN_QT - $valueO->KSHP_DELQT,
-                        '1' => '11.00  - 13.00  AM',
-                        '2' => 'AM'
-                    ];
+                    ], $setCols);
                 }
             }
         }
