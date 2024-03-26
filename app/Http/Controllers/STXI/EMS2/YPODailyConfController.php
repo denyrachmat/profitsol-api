@@ -6,6 +6,9 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
+use Excel;
+use App\Exports\STXI\EMS2\ExportYPODailyConf;
+
 class YPODailyConfController extends Controller
 {
     public function index() {
@@ -18,6 +21,8 @@ class YPODailyConfController extends Controller
     }
 
     public function store(Request $request) {
+        Excel::store(new ExportYPODailyConf($request->fdate, $request->ldate), 'export_ypo_daily_conf.xlsx', 'public');
         
+        return 'storage/app/public/export_ypo_daily_conf.xlsx';
     }
 }
