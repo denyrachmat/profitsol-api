@@ -50,7 +50,7 @@ class ExportForcastDLVTYOSummary implements FromCollection, WithHeadings, WithEv
 
         $series = new DataSeries(
             DataSeries::TYPE_LINECHART, 
-            DataSeries::GROUPING_STACKED,
+            DataSeries::GROUPING_CLUSTERED,
             range(0, \count($values) - 1), 
             $label, 
             $categories, 
