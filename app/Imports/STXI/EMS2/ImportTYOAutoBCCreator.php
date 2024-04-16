@@ -36,25 +36,21 @@ class ImportTYOAutoBCCreator implements ToModel, WithStartRow
         ini_set("memory_limit", "4G");
         if (!empty($row[0]) && !empty($row[1])) {
             $DLVDT = \PhpOffice\PhpSpreadsheet\Shared\Date::excelToDateTimeObject($row[7])->format('Y-m-d');
-            Storage::disk('public')->put('data_forpy.json', json_encode([
+            Storage::disk('public')->put('data_forpy.json', json_encode([[
                 'po_no' => $row[1],
                 'date' => $DLVDT,
                 'qty' => $row[2],
                 'job_no' => $row[6],
-            ]));
+            ]]));
 
             $url = Storage::disk('public')->url('data_forpy.json');
 
-            // $process = Process::pipe(function(Pipe $pipe) use ($url){
-            //     $pipe->command('D:');
-            //     $pipe->command('cd D:\Project\Automation\robot-tyo-barcode-creator');
-            //     // $pipe->command('py -m robocorp.tasks run tasks.py -- --data "'.$url.'"');
-            // });
-
-            $process = Process::path('D:\Project\Automation\robot-tyo-barcode-creator')->run('py -m robocorp.tasks run tasks.py -- --data "'.$url.'"');
+            $process = Process::path('D:\Project\Automation\robot-tyo-barcode-creator')
+                ->run('C:\Python311\python.exe -m robocorp.tasks run tasks.py -- --data "'.$url.'"');
+                // ->run('rcc run');
             
-            logger($process->output());            
-            logger($process->errorOutput());
+            // logger($process->output());            
+            // logger($process->errorOutput());
 
             TYOA_BC_MSTR::updateorcreate([
                 'TYOAM_PONO' => $row[1],

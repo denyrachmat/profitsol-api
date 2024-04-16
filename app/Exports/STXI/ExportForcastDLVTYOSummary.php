@@ -40,7 +40,7 @@ class ExportForcastDLVTYOSummary implements FromCollection, WithHeadings, WithEv
         foreach ($this->data as $key => $value) {
             if ($key === 0 || $value['year_ret'] !== $this->data[$key - 1]['year_ret']) {
                 $label[] = new DataSeriesValues('Number', 'Summary!$A$'.$start, null, $key + 1);
-                $values[] = new DataSeriesValues('Number', 'Summary!$B$'.$start.':$M$'.$start, null, $key + 2);
+                $values[] = new DataSeriesValues('Number', 'Summary!$B$'.($start + 1).':$M$'.$start, null, $key + 2);
                 $start++;
             }
         }
