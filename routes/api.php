@@ -1,4 +1,5 @@
 <?php
+use App\Http\Controllers\STXI\EMS2\TYOAutoBarcodeController;
 use App\Http\Controllers\STXI\EMS2\YPODailyConfController;
 use App\Http\Controllers\STXI\LOG\CeisaMonitoringController;
 use Illuminate\Support\Facades\Route;
@@ -212,6 +213,8 @@ Route::group(['prefix' => 'div'], function () {
         
         Route::resource('ypoDailyConf', YPODailyConfController::class);
         // End CD/CU Price MRI
+        
+        Route::resource('tyoAutoBarcode', TYOAutoBarcodeController::class);
     });
 
     Route::group(['prefix' => 'log'], function () {
