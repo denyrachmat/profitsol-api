@@ -48,9 +48,6 @@ class ImportTYOAutoBCCreator implements ToModel, WithStartRow
             $process = Process::path('D:\Project\Automation\robot-tyo-barcode-creator')
                 ->run('C:\Python311\python.exe -m robocorp.tasks run tasks.py -- --data "'.$url.'"');
                 // ->run('rcc run');
-            
-            // logger($process->output());            
-            // logger($process->errorOutput());
 
             TYOA_BC_MSTR::updateorcreate([
                 'TYOAM_PONO' => $row[1],

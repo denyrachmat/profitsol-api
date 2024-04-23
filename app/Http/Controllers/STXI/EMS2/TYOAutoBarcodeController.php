@@ -11,6 +11,7 @@ use Maatwebsite\Excel\Facades\Excel;
 use App\Http\Controllers\API\PORTAL\BaseController;
 
 use App\Imports\STXI\EMS2\ImportTYOAutoBCCreator;
+use App\Models\STXI\EMS2\TYOA_BC_MSTR;
 
 class TYOAutoBarcodeController extends BaseController
 {
@@ -19,7 +20,7 @@ class TYOAutoBarcodeController extends BaseController
      */
     public function index()
     {
-        //
+        return TYOA_BC_MSTR::join(DB::raw('MGSVR.VMI_TYO.dbo.MITM_TBL'), 'MITM_ITMCD', 'TYOAM_ITMCD')->get();
     }
 
     /**
