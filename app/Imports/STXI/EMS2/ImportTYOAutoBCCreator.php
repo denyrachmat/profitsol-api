@@ -45,7 +45,7 @@ class ImportTYOAutoBCCreator implements ToModel, WithStartRow
                 'job_no' => $row[6],
             ]]));
 
-            $url = Storage::disk('public')->url('app/public/data_forpy.json');
+            $url = Storage::disk('public')->url('data_forpy.json');
 
             $insertJob = (
                 new AutoFillTYOWebEdiQueue(
