@@ -71,8 +71,9 @@ class AutoFillTYOWebEdiQueue implements ShouldQueue
         } catch (\Throwable $th) {
             Redis::publish('portalv2', json_encode([
                 'app' => 'auto_fill_tyo_webedi',
-                'message' => 'ID ' . $this->ids . ', PO ('.$this->data[1].') : Failed to execute.',
+                'message' => 'ID ' . $this->ids . ', PO ('.$this->data[1].') : '.$th->getMessage(),
                 'type' => 'red',
+                'data' => $th->getMessage(),
                 'status' => 'failed',
             ]));
         }
