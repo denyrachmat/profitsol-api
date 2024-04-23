@@ -25,7 +25,7 @@ class AutoFillTYOWebEdiQueue implements ShouldQueue
         $this->url = $url;
         $this->data = $data;
         $this->deliveryDate = $deliveryDate;
-        $this->id = $ids;
+        $this->ids = $ids;
     }
 
     /**
@@ -35,7 +35,7 @@ class AutoFillTYOWebEdiQueue implements ShouldQueue
     {
         Redis::publish('portalv2', json_encode([
             'app' => 'auto_fill_tyo_webedi',
-            'message' => 'ID ' . $this->id . ', PO ('.$this->data[1].') : Input to TYO WebEDI on progress !',
+            'message' => 'ID ' . $this->ids . ', PO ('.$this->data[1].') : Input to TYO WebEDI on progress !',
             'type' => 'green',
             'status' => 'start',
             'data' => $this->data
@@ -48,7 +48,7 @@ class AutoFillTYOWebEdiQueue implements ShouldQueue
             'TYOAM_PONO' => $this->data[1],
             'TYOAM_DLVDT' => $this->deliveryDate,
         ], [
-            'TYOA_ID' => $this->id,
+            'TYOA_ID' => $this->ids,
             'TYOAM_PONO' => $this->data[1],
             'TYOAM_ITMCD' => $this->data[0],
             'TYOAM_QTY' => $this->data[2],
@@ -60,7 +60,7 @@ class AutoFillTYOWebEdiQueue implements ShouldQueue
 
         Redis::publish('portalv2', json_encode([
             'app' => 'auto_fill_tyo_webedi',
-            'message' => 'ID ' . $this->id . ', PO ('.$this->data[1].') : '. $process->successful() ? 'Successfully inputed to WEBEdi': 'Failed input to WEBEdi',
+            'message' => 'ID ' . $this->ids . ', PO ('.$this->data[1].') : '. $process->successful() ? 'Successfully inputed to WEBEdi': 'Failed input to WEBEdi',
             'type' => $process->successful() ? 'green' : 'red',
             'status' => 'end',
             'data' => $this->data
