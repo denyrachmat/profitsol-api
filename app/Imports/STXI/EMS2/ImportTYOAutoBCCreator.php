@@ -17,14 +17,14 @@ use App\Jobs\STXI\EMS2\AutoFillTYOWebEdiQueue;
 
 class ImportTYOAutoBCCreator implements ToModel, WithStartRow
 {
-    public function __construct() {
+    public function getID() {
         
         $getLastPO = TYOA_BC_MSTR::where(DB::raw('YEAR(TYOAM_DLVDT)'), date('y'))
             ->where(DB::raw('MONTH(TYOAM_DLVDT)'), date('m'))
             ->orderBy('created_at', 'desc')
             ->first();
 
-        $this->id = 'TYO-ABC-' . (empty($getLastPO) ? (date('y/m/d') . '/' . '0001') : date('y/m/d') . '/' . sprintf('%04d', (int) substr($getLastPO->YPO_TXID, -3) + 1));
+        return 'TYO-ABC-' . (empty($getLastPO) ? (date('y/m/d') . '/' . '0001') : date('y/m/d') . '/' . sprintf('%04d', (int) substr($getLastPO->YPO_TXID, -3) + 1));
     }
 
     public function startRow(): int
@@ -52,7 +52,7 @@ class ImportTYOAutoBCCreator implements ToModel, WithStartRow
                     $row,
                     $url,
                     $DLVDT,
-                    $this->id
+                    $this->getID()
                 )
             );
     
