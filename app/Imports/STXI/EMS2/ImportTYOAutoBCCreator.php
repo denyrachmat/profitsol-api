@@ -13,6 +13,8 @@ use App\Models\STXI\EMS2\TYOA_BC_MSTR;
 use Illuminate\Support\Facades\Process;
 use Symfony\Component\Process\Exception\ProcessFailedException;
 
+use App\Jobs\STXI\EMS2\AutoFillTYOWebEdiQueue;
+
 class ImportTYOAutoBCCreator implements ToModel, WithStartRow
 {
     public function __construct() {
@@ -45,22 +47,16 @@ class ImportTYOAutoBCCreator implements ToModel, WithStartRow
 
             $url = Storage::disk('public')->url('app/public/data_forpy.json');
 
-            $process = Process::path('D:\app\stx-i-automation\robot-tyo-barcode-creator')
-                ->run('C:\Python311\python.exe -m robocorp.tasks run tasks.py -- --data "'.$url.'"');
-                // ->run('rcc run');
-
-            TYOA_BC_MSTR::updateorcreate([
-                'TYOAM_PONO' => $row[1],
-                'TYOAM_DLVDT' => $DLVDT,
-            ],[
-                'TYOA_ID' => $this->id,
-                'TYOAM_PONO' => $row[1],
-                'TYOAM_ITMCD' => $row[0],
-                'TYOAM_QTY' => $row[2],
-                'TYOAM_JOBNO' => $row[6],
-                'TYOAM_DLVDT' => $DLVDT,
-                'TYOAM_STAT' => $process->successful()
-            ]);
+            $insertJob = (
+                new AutoFillTYOWebEdiQueue(
+                    $row,
+                    $url,
+                    $DLVDT,
+                    $this->id
+                )
+            );
+    
+            dispatch($insertJob)->onQueue('autoFillTYO');
         }
     }
 }
