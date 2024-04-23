@@ -20,12 +20,12 @@ class AutoFillTYOWebEdiQueue implements ShouldQueue
     /**
      * Create a new job instance.
      */
-    public function __construct($data, $url, $deliveryDate, $id)
+    public function __construct($data, $url, $deliveryDate, $ids)
     {
         $this->url = $url;
         $this->data = $data;
         $this->deliveryDate = $deliveryDate;
-        $this->id = $id;
+        $this->id = $ids;
     }
 
     /**
