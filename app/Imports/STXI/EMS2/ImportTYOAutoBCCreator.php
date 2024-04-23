@@ -43,7 +43,7 @@ class ImportTYOAutoBCCreator implements ToModel, WithStartRow
                 'job_no' => $row[6],
             ]]));
 
-            $url = Storage::disk('public')->url('data_forpy.json');
+            $url = Storage::disk('public')->url('storage/data_forpy.json');
 
             $process = Process::path('D:\app\stx-i-automation\robot-tyo-barcode-creator')
                 ->run('C:\Python311\python.exe -m robocorp.tasks run tasks.py -- --data "'.$url.'"');
