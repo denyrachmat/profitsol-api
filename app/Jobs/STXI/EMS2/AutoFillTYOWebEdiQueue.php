@@ -17,6 +17,7 @@ class AutoFillTYOWebEdiQueue implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
+    public $data, $url, $deliveryDate, $ids;
     /**
      * Create a new job instance.
      */
