@@ -58,7 +58,7 @@ class AutoFillTYOWebEdiQueue implements ShouldQueue
             'TYOAM_JOBNO' => $this->data[6],
             'TYOAM_DLVDT' => $this->deliveryDate,
             'TYOAM_STAT' => $process->successful(),
-            'TYOAM_REMARKS' => iconv('','UTF-8',$process->errorOutput())
+            'TYOAM_REMARKS' => str_replace(',', '.', $process->errorOutput())
         ]);
 
         Redis::publish('portalv2', json_encode([
