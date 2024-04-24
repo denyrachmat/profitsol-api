@@ -9,9 +9,11 @@ use Illuminate\Http\File;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Http\Controllers\API\PORTAL\BaseController;
+use Illuminate\Support\Facades\Storage;
 
 use App\Imports\STXI\EMS2\ImportTYOAutoBCCreator;
 use App\Models\STXI\EMS2\TYOA_BC_MSTR;
+use App\Jobs\STXI\EMS2\AutoFillTYOWebEdiQueue;
 
 class TYOAutoBarcodeController extends BaseController
 {
@@ -83,7 +85,36 @@ class TYOAutoBarcodeController extends BaseController
      */
     public function update(Request $request, string $id)
     {
-        //
+        $getData = TYOA_BC_MSTR::where('id', $id)->first();
+        Storage::disk('public')->put('data_forpy.json', json_encode([[
+            'po_no' => $getData->TYOAM_PONO,
+            'date' => $getData->TYOAM_DLVDT,
+            'qty' => $getData->TYOAM_QTY,
+            'job_no' => $getData->TYOAM_JOBNO,
+        ]]));
+
+        $url = Storage::disk('public')->url('data_forpy.json');
+
+        $insertJob = (
+            new AutoFillTYOWebEdiQueue(
+                [
+                    $getData->TYOAM_ITMCD,
+                    $getData->TYOAM_PONO,
+                    $getData->TYOAM_QTY,
+                    '',
+                    '',
+                    '',
+                    $getData->TYOAM_JOBNO,
+                ],
+                $url,
+                $getData->TYOAM_DLVDT,
+                $getData->TYOA_ID
+            )
+        );
+
+        dispatch($insertJob)->onQueue('autoFillTYO');
+
+        return 'Data '.$getData->TYOAM_JOBNO.' and PO '.$getData->TYOAM_PONO.' resubmited!!';
     }
 
     /**
