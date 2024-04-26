@@ -91,6 +91,7 @@ class TYOAutoBarcodeController extends BaseController
             'date' => $getData->TYOAM_DLVDT,
             'qty' => $getData->TYOAM_QTY,
             'job_no' => $getData->TYOAM_JOBNO,
+            'spq' => $getData->TYOAM_SPQ,
         ]]));
 
         $url = Storage::disk('public')->url('data_forpy.json');
