@@ -42,6 +42,7 @@ class ImportTYOAutoBCCreator implements ToModel, WithStartRow
                 'po_no' => $row[1],
                 'date' => $DLVDT,
                 'qty' => $row[2],
+                'spq' => $row[2],
                 'job_no' => $row[6],
             ]]));
 

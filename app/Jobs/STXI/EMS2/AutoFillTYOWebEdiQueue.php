@@ -56,7 +56,8 @@ class AutoFillTYOWebEdiQueue implements ShouldQueue
                 'TYOAM_JOBNO' => $this->data[6],
                 'TYOAM_DLVDT' => $this->deliveryDate,
                 'TYOAM_STAT' => 2,
-                'TYOAM_REMARKS' => 'On Progress Data.'
+                'TYOAM_REMARKS' => 'On Progress Data.',
+                'TYOAM_SPQ' => $this->data[3]
             ]);
     
             $process = Process::path('D:\app\stx-i-automation\robot-tyo-barcode-creator')

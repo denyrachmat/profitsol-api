@@ -101,7 +101,7 @@ class TYOAutoBarcodeController extends BaseController
                     $getData->TYOAM_ITMCD,
                     $getData->TYOAM_PONO,
                     $getData->TYOAM_QTY,
-                    '',
+                    $getData->TYOAM_SPQ,
                     '',
                     '',
                     $getData->TYOAM_JOBNO,
