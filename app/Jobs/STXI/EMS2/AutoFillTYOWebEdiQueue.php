@@ -60,9 +60,9 @@ class AutoFillTYOWebEdiQueue implements ShouldQueue
                 'TYOAM_SPQ' => $this->data[3]
             ]);
     
-            $process = Process::path('D:\app\stx-i-automation\robot-tyo-barcode-creator')
+            $process = Process::timeout(300)->path('D:\app\stx-i-automation\robot-tyo-barcode-creator')
                 ->run('C:\Python311\python.exe -m robocorp.tasks run tasks.py -- --data "' . $this->url . '"');
-            
+
             if($process->successful()) {
                 TYOA_BC_MSTR::updateorcreate([
                     'TYOAM_PONO' => $this->data[1],
