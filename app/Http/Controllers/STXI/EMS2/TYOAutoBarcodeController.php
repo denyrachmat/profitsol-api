@@ -96,6 +96,10 @@ class TYOAutoBarcodeController extends BaseController
 
         $url = Storage::disk('public')->url('data_forpy.json');
 
+        TYOA_BC_MSTR::where('id', $id)->update([
+            'TYOAM_STAT' => 3
+        ]);
+
         $insertJob = (
             new AutoFillTYOWebEdiQueue(
                 [
