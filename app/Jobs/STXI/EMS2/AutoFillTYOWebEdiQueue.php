@@ -34,7 +34,6 @@ class AutoFillTYOWebEdiQueue implements ShouldQueue
      */
     public function handle(): void
     {
-        
         set_time_limit(3600);
         try {
             Redis::publish('portalv2', json_encode([
@@ -44,30 +43,19 @@ class AutoFillTYOWebEdiQueue implements ShouldQueue
                 'status' => 'start',
                 'data' => $this->data
             ]));
-    
-            TYOA_BC_MSTR::updateorcreate([
-                'TYOAM_PONO' => $this->data[1],
-                'TYOAM_DLVDT' => $this->deliveryDate,
-            ], [
-                'TYOA_ID' => $this->ids,
-                'TYOAM_PONO' => $this->data[1],
-                'TYOAM_ITMCD' => $this->data[0],
-                'TYOAM_QTY' => $this->data[2],
-                'TYOAM_JOBNO' => $this->data[6],
-                'TYOAM_DLVDT' => $this->deliveryDate,
+            
+            TYOA_BC_MSTR::where('TYOAM_PONO', $this->data[1])
+            ->update([
                 'TYOAM_STAT' => 2,
                 'TYOAM_REMARKS' => 'On Progress Data.',
-                'TYOAM_SPQ' => $this->data[3]
             ]);
     
             $process = Process::timeout(300)->path('D:\app\stx-i-automation\robot-tyo-barcode-creator')
                 ->run('C:\Python311\python.exe -m robocorp.tasks run tasks.py -- --data "' . $this->url . '"');
 
             if($process->successful()) {
-                TYOA_BC_MSTR::updateorcreate([
-                    'TYOAM_PONO' => $this->data[1],
-                    'TYOAM_DLVDT' => $this->deliveryDate,
-                ], [
+                TYOA_BC_MSTR::where('TYOAM_PONO', $this->data[1])
+                ->update([
                     'TYOAM_STAT' => $process->successful(),
                     'TYOAM_REMARKS' => iconv('','UTF-8',$process->errorOutput())
                 ]);
@@ -80,10 +68,8 @@ class AutoFillTYOWebEdiQueue implements ShouldQueue
                     'data' => $this->data
                 ]));
             } else {
-                TYOA_BC_MSTR::updateorcreate([
-                    'TYOAM_PONO' => $this->data[1],
-                    'TYOAM_DLVDT' => $this->deliveryDate,
-                ], [
+                TYOA_BC_MSTR::where('TYOAM_PONO', $this->data[1])
+                ->update([
                     'TYOAM_STAT' => $process->successful(),
                     'TYOAM_REMARKS' => !empty(iconv('','UTF-8',$process->errorOutput())) ? iconv('','UTF-8',$process->errorOutput()) : iconv('','UTF-8',$process->output())
                 ]);
@@ -100,13 +86,11 @@ class AutoFillTYOWebEdiQueue implements ShouldQueue
                 ]));
             }
         } catch (\Throwable $th) {
-            TYOA_BC_MSTR::updateorcreate([
-                'TYOAM_PONO' => $this->data[1],
-                'TYOAM_DLVDT' => $this->deliveryDate,
-            ], [
-                'TYOAM_STAT' => 0,
-                'TYOAM_REMARKS' => $th->getMessage()
-            ]);
+            TYOA_BC_MSTR::where('TYOAM_PONO', $this->data[1])
+                ->update([
+                    'TYOAM_STAT' => 0,
+                    'TYOAM_REMARKS' => $th->getMessage()
+                ]);
 
             Redis::publish('portalv2', json_encode([
                 'app' => 'auto_fill_tyo_webedi',
