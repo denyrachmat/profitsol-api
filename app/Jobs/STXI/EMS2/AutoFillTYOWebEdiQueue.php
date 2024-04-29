@@ -87,10 +87,13 @@ class AutoFillTYOWebEdiQueue implements ShouldQueue
                     'TYOAM_STAT' => $process->successful(),
                     'TYOAM_REMARKS' => !empty(iconv('','UTF-8',$process->errorOutput())) ? iconv('','UTF-8',$process->errorOutput()) : iconv('','UTF-8',$process->output())
                 ]);
+
+                $logsErrorOutput = iconv('','UTF-8',$process->errorOutput());
+                $getError = substr($logsErrorOutput, strpos($logsErrorOutput, "raise exception") + 1);
         
                 Redis::publish('portalv2', json_encode([
                     'app' => 'auto_fill_tyo_webedi',
-                    'message' => 'ID ' . $this->ids . ', PO ('.$this->data[1].') : Failed input to WEBEdi',
+                    'message' => 'ID ' . $this->ids . ', PO ('.$this->data[1].') : '.!empty($logsErrorOutput) ? $getError : iconv('','UTF-8',$process->output()),
                     'type' => 'red',
                     'status' => 'end',
                     'data' => $this->data
