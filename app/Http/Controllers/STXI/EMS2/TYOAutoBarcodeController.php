@@ -112,7 +112,7 @@ class TYOAutoBarcodeController extends BaseController
                     $getData->TYOAM_JOBNO,
                 ],
                 $url,
-                $getData->TYOAM_DLVDT,
+                date('Y/m/d', strtotime($getData->TYOAM_DLVDT)),
                 $getData->TYOA_ID
             )
         );
