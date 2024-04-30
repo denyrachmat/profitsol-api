@@ -47,7 +47,8 @@ class ImportBarang implements ToModel, WithHeadingRow
                             'TTLAMOUNT' => round((int) $row['cif'], 4),
                             'HSCODE' => $row['hs'],
                             'ITMD1' => !empty($getHSCode) ? $getHSCode->MITM_ITMD1 : trim($row['uraian']),
-                            'SPTNO' => !empty($getHSCode) ? $getHSCode->MITM_SPTNO : ''
+                            'SPTNO' => !empty($getHSCode) ? $getHSCode->MITM_SPTNO : '',
+                            'PENGIRIM' => $cekTempData['PENGIRIM']
                         ]);
                 } else {
                     $UOM = 'PIECE';
