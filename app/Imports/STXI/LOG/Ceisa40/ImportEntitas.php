@@ -37,7 +37,7 @@ class ImportEntitas implements ToModel, WithHeadingRow
                     'NO_DAFTAR' => $cekTempData['NO_DAFTAR'],
                     'PENGIRIM' => $row['nama_entitas']
                 ]);
-            } else {
+            } elseif($row['kode_entitas'] == 7) {
                 ITINVUploadTemp::updateOrCreate([
                     'NO_AJU' => $row['nomor_aju'],
                     'NO_DAFTAR' => $cekTempData['NO_DAFTAR']

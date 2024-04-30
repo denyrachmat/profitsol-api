@@ -70,7 +70,8 @@ class ImportDokumen implements ToModel, WithHeadingRow
                             (clone $baseDoc)
                                 ->where('ITMCD', $valueItm)
                                 ->update([
-                                    'HHEINVNO' => $row['nomor_dokumen']
+                                    'HHEINVNO' => $row['nomor_dokumen'],
+                                    'PENGIRIM' => $cekTempData['PENGIRIM']
                                 ]);
                         }
                     }
@@ -106,7 +107,8 @@ class ImportDokumen implements ToModel, WithHeadingRow
                         (clone $baseDoc)
                             ->whereIn('ITMCD', $cekIncoming->pluck('ITMCD'))
                             ->update([
-                                'DOCNO' => $row['nomor_dokumen']
+                                'DOCNO' => $row['nomor_dokumen'],
+                                'PENGIRIM' => $cekTempData['PENGIRIM']
                             ]);
                     }
                 } else {
