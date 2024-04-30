@@ -433,7 +433,8 @@ trait Ceisa40Traits
                 return 'storage/app/public/ceisa40storage/'.$fileName;
             } else {
                 // Storage::put('public/upload_ceisa40/'.$fileName, $getDetilPerusahanPenerima);
-                return 'storage/upload_ceisa40/'.$fileName;
+                // return 'storage/upload_ceisa40/'.$fileName;
+                return 'storage/ceisa40storage/'.$fileName;
             }
         } else {
             return $this->handleError('Failed fetching data from Portal Ceisa 4.0 !!');

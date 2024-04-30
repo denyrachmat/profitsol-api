@@ -60,7 +60,9 @@ class Ceisa40UploaderController extends BaseController
         try {
             ini_set('max_execution_time', '3200');
             $downloadExcel = $this->downloadExcel($noAju, $bc, $id, false);
-            
+            // return $downloadExcel;
+
+            // return public_path($downloadExcel);
             if (str_contains($downloadExcel, '1.6') || str_contains($downloadExcel, '2.7I') || str_contains($downloadExcel, '4.0')) {
                 logger('ini incoming !!');
                 $state = 'INC';
