@@ -35,6 +35,9 @@ class ImportHeader implements ToModel, WithHeadingRow
                 case 27:
                     $kodeDokumen = 'BC2.7I';
                     break;
+                case 41:
+                    $kodeDokumen = 'BC4.1';
+                    break;
                 default:
                     $kodeDokumen = 'BC4.0';
                     break;

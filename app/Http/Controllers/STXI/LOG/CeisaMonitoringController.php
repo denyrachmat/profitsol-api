@@ -124,4 +124,8 @@ class CeisaMonitoringController extends BaseController
 
         return 'sukses';
     }
+
+    public function mergeDownloadCeisa40(){
+        
+    }
 }
