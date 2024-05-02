@@ -53,8 +53,8 @@ class TYOAutoBarcodeController extends BaseController
         if ($extNya == 'xls') {
             $spreadsheet = \PhpOffice\PhpSpreadsheet\IOFactory::load($file);
             $writer = new Xlsx($spreadsheet);
-            $nama_file = $fileHash.'.xlsx';
-            $writer->save('/public/upload_tyo_auto_bc_gen/'.$nama_file);
+            $nama_file = $fileHash . '.xlsx';
+            $writer->save('/public/upload_tyo_auto_bc_gen/' . $nama_file);
         }
 
         $importer = new ImportTYOAutoBCCreator();
@@ -69,7 +69,26 @@ class TYOAutoBarcodeController extends BaseController
      */
     public function show(string $id)
     {
-        //
+        $zip_file = 'tyo_po_'.$id.'.zip';
+        $zip = new \ZipArchive();
+        $zip->open($zip_file, \ZipArchive::CREATE | \ZipArchive::OVERWRITE);
+
+        $path = storage_path('upload_tyo_auto_bc_gen/DownloadTYO');
+        $files = new \RecursiveIteratorIterator(new \RecursiveDirectoryIterator($path));
+        foreach ($files as $name => $file) {
+            // We're skipping all subfolders
+            if (!$file->isDir()) {
+                $filePath = $file->getRealPath();
+
+                // extracting filename with substr/strlen
+                $relativePath = 'upload_tyo_auto_bc_gen/DownloadTYO/' . substr($filePath, strlen($path) + 1);
+
+                $zip->addFile($filePath, $relativePath);
+            }
+        }
+        $zip->close();
+        
+        return response()->download($zip_file);
     }
 
     /**
@@ -86,13 +105,15 @@ class TYOAutoBarcodeController extends BaseController
     public function update(Request $request, string $id)
     {
         $getData = TYOA_BC_MSTR::where('id', $id)->first();
-        Storage::disk('public')->put('data_forpy.json', json_encode([[
-            'po_no' => $getData->TYOAM_PONO,
-            'date' => $getData->TYOAM_DLVDT,
-            'qty' => $getData->TYOAM_QTY,
-            'job_no' => $getData->TYOAM_JOBNO,
-            'spq' => $getData->TYOAM_SPQ,
-        ]]));
+        Storage::disk('public')->put('data_forpy.json', json_encode([
+            [
+                'po_no' => $getData->TYOAM_PONO,
+                'date' => $getData->TYOAM_DLVDT,
+                'qty' => $getData->TYOAM_QTY,
+                'job_no' => $getData->TYOAM_JOBNO,
+                'spq' => $getData->TYOAM_SPQ,
+            ]
+        ]));
 
         $url = Storage::disk('public')->url('data_forpy.json');
 
@@ -119,7 +140,7 @@ class TYOAutoBarcodeController extends BaseController
 
         dispatch($insertJob)->onQueue('autoFillTYO');
 
-        return 'Data '.$getData->TYOAM_JOBNO.' and PO '.$getData->TYOAM_PONO.' resubmited!!';
+        return 'Data ' . $getData->TYOAM_JOBNO . ' and PO ' . $getData->TYOAM_PONO . ' resubmited!!';
     }
 
     /**
