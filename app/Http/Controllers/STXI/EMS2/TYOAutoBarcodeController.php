@@ -70,6 +70,7 @@ class TYOAutoBarcodeController extends BaseController
     public function show(string $id)
     {
         $zip_file = 'tyo_po_'.$id.'.zip';
+        $zip_file_name = $zip_file;
         $zip = new \ZipArchive();
         $zip->open($zip_file, \ZipArchive::CREATE | \ZipArchive::OVERWRITE);
 
@@ -81,14 +82,16 @@ class TYOAutoBarcodeController extends BaseController
                 $filePath = $file->getRealPath();
 
                 // extracting filename with substr/strlen
-                $relativePath = 'upload_tyo_auto_bc_gen/DownloadTYO/' . substr($filePath, strlen($path) + 1);
+                $relativePath = substr($filePath, strlen($path) + 1);
 
                 $zip->addFile($filePath, $relativePath);
             }
         }
         $zip->close();
         
-        return response()->download($zip_file);
+        return response()->download($zip_file, $zip_file_name, [
+            'x-suggested-filename' => $zip_file_name
+        ]);
     }
 
     /**
