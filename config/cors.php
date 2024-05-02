@@ -25,7 +25,7 @@ return [
 
     'allowed_headers' => ['*'], // this is the line i needed to update to solve the issue.
 
-    'exposed_headers' => [],
+    'exposed_headers' => ['*'],
 
     'max_age' => 0,
 
