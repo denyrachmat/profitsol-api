@@ -150,4 +150,8 @@ class TYOAutoBarcodeController extends BaseController
     {
         //
     }
+
+    public function downloadExcel(Request $request, $id){
+        return $this->show($id);
+    }
 }

@@ -215,6 +215,9 @@ Route::group(['prefix' => 'div'], function () {
         // End CD/CU Price MRI
         
         Route::resource('tyoAutoBarcode', TYOAutoBarcodeController::class);
+        Route::group(['prefix' => 'tyoAutoBarcodes'], function() {
+            Route::post('downloadExcel', [TYOAutoBarcodeController::class, 'downloadExcel']);
+        });
     });
 
     Route::group(['prefix' => 'log'], function () {
