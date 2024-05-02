@@ -216,7 +216,7 @@ Route::group(['prefix' => 'div'], function () {
         
         Route::resource('tyoAutoBarcode', TYOAutoBarcodeController::class);
         Route::group(['prefix' => 'tyoAutoBarcodes'], function() {
-            Route::post('downloadExcel', [TYOAutoBarcodeController::class, 'downloadExcel']);
+            Route::post('downloadExcel/{id}', [TYOAutoBarcodeController::class, 'downloadExcel']);
         });
     });
 
