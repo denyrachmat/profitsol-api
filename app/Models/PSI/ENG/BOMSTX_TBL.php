@@ -10,6 +10,9 @@ class BOMSTX_TBL extends Model
     use HasFactory;
     const CREATED_AT = 'UPDDT';
     const UPDATED_AT = 'UPDDT';
+    protected $primaryKey = null;
+    public $incrementing = false;
+
     protected $connection = 'sqlsrv_psi_eng';
     protected $table = 'BOMSTX_TBL';
 
