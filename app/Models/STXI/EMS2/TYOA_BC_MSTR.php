@@ -18,6 +18,7 @@ class TYOA_BC_MSTR extends Model
         'TYOAM_JOBNO',
         'TYOAM_DLVDT',
         'TYOAM_STAT',
-        'TYOAM_REMARKS'
+        'TYOAM_REMARKS',
+        'TYOAM_SPQ'
     ];
 }
