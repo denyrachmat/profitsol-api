@@ -75,7 +75,7 @@ class AutoFillTYOWebEdiQueue implements ShouldQueue
                 ]);
 
                 $logsErrorOutput = iconv('','UTF-8',$process->errorOutput());
-                $getError = substr($logsErrorOutput, strpos($logsErrorOutput, "raise exception") + 1);
+                $getError = substr($logsErrorOutput, strpos($logsErrorOutput, "exception") + 1);
         
                 Redis::publish('portalv2', json_encode([
                     'app' => 'auto_fill_tyo_webedi',
