@@ -38,7 +38,7 @@ class ImportTYOAutoBCCreator implements ToModel, WithStartRow
         ini_set("memory_limit", "4G");
         if (!empty($row[0]) && !empty($row[1])) {
             $DLVDT = \PhpOffice\PhpSpreadsheet\Shared\Date::excelToDateTimeObject($row[7])->format('Y/m/d');
-            Storage::disk('public')->put('data_forpy.json', json_encode([[
+            Storage::disk('public')->put('upload_tyo_auto_bc_gen/data_'.$row[1].'_'.$row[6].'_'.$row[0].'_forpy.json', json_encode([[
                 'po_no' => $row[1],
                 'date' => $DLVDT,
                 'qty' => $row[2],
@@ -46,7 +46,7 @@ class ImportTYOAutoBCCreator implements ToModel, WithStartRow
                 'job_no' => $row[6],
             ]]));
 
-            $url = Storage::disk('public')->url('data_forpy.json');
+            $url = Storage::disk('public')->url('upload_tyo_auto_bc_gen/data_'.$row[1].'_'.$row[6].'_'.$row[0].'_forpy.json');
 
             $insertJob = (
                 new AutoFillTYOWebEdiQueue(
