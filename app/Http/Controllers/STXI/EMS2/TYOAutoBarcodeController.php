@@ -111,7 +111,7 @@ class TYOAutoBarcodeController extends BaseController
         Storage::disk('public')->put('data_forpy.json', json_encode([
             [
                 'po_no' => $getData->TYOAM_PONO,
-                'date' => $getData->TYOAM_DLVDT,
+                'date' => date('Y/m/d', strtotime($getData->TYOAM_DLVDT)),
                 'qty' => $getData->TYOAM_QTY,
                 'job_no' => $getData->TYOAM_JOBNO,
                 'spq' => $getData->TYOAM_SPQ,
