@@ -195,6 +195,19 @@ return [
             'prefix_indexes' => true,
         ],
 
+        'sqlsrv_pc' => [
+            'driver' => 'sqlsrv',
+            'url' => env('DATABASE_URL'),
+            'host' => env('DB_PC_HOST', 'localhost'),
+            'port' => env('DB_PC_PORT', '1433'),
+            'database' => env('DB_PC_DATABASE', 'forge'),
+            'username' => env('DB_PC_USERNAME', 'forge'),
+            'password' => env('DB_PC_PASSWORD', ''),
+            'charset' => 'utf8',
+            'prefix' => '',
+            'prefix_indexes' => true,
+        ],
+
         'sqlsrv_itinv' => [
             'driver' => 'sqlsrv',
             'url' => env('DATABASE_URL'),

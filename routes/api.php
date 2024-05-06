@@ -2,6 +2,7 @@
 use App\Http\Controllers\STXI\EMS2\TYOAutoBarcodeController;
 use App\Http\Controllers\STXI\EMS2\YPODailyConfController;
 use App\Http\Controllers\STXI\LOG\CeisaMonitoringController;
+use App\Http\Controllers\STXI\PC\autoSyncBOMtoPSIController;
 use Illuminate\Support\Facades\Route;
 
 use App\Http\Controllers\API\CMS\FormController;
@@ -267,6 +268,10 @@ Route::group(['prefix' => 'div'], function () {
         Route::get('viewListItemDesc/{ten}', [CirtenUpdateController::class, 'viewListItemDesc']);
         
         // CirtenUpdateController
+    });
+
+    Route::group(['prefix' => 'pc'], function() {
+        Route::get('syncBOMtoPSI', [autoSyncBOMtoPSIController::class, 'syncBOM']);
     });
 });
 
