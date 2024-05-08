@@ -74,7 +74,7 @@ class TYOAutoBarcodeController extends BaseController
         $zip = new \ZipArchive();
         $zip->open($zip_file, \ZipArchive::CREATE | \ZipArchive::OVERWRITE);
 
-        $path = Storage::disk('public')->path('upload_tyo_auto_bc_gen/DownloadTYO');
+        $path = Storage::disk('public')->path('upload_tyo_auto_bc_gen/DownloadTYO/'.$id);
         $files = new \RecursiveIteratorIterator(new \RecursiveDirectoryIterator($path));
         foreach ($files as $name => $file) {
             // We're skipping all subfolders
