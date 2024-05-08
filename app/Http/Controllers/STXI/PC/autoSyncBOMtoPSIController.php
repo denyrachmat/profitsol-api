@@ -22,7 +22,7 @@ class autoSyncBOMtoPSIController extends Controller
             return (array) $valueDe2;
         }, $getDataPA100);
 
-        return $getDataPA100;
+        // return $getDataPA100;
         
         foreach ($getDataPA100 as $key => $value) {
             syncBOMToPSIQueue::dispatch($value, $runTime)->onQueue('syncPA100BOMToPSI');
