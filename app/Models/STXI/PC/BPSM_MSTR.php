@@ -21,7 +21,7 @@ class BPSM_MSTR extends Model
     ];
 
     public function scopeNoLock($query)
-{
-    return $query->from(DB::raw(self::getTable() . ' with (nolock)'));
-}
+    {
+        return $query->from(DB::raw(self::getTable() . ' with (nolock)'));
+    }
 }

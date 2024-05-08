@@ -4,6 +4,7 @@ namespace App\Models\PSI\ENG;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\DB;
 
 class BOMSTX_TBL extends Model
 {
@@ -60,4 +61,8 @@ class BOMSTX_TBL extends Model
         'UPDDT',
         'UPDDT_STOCK',
     ];
+    public function scopeNoLock($query)
+    {
+        return $query->from(DB::raw(self::getTable() . ' with (nolock)'));
+    }
 }
