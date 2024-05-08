@@ -22,7 +22,7 @@ class TYOAutoBarcodeController extends BaseController
      */
     public function index()
     {
-        return TYOA_BC_MSTR::join(DB::raw('MGSVR.VMI_TYO.dbo.MITM_TBL'), 'MITM_ITMCD', 'TYOAM_ITMCD')->get();
+        return TYOA_BC_MSTR::join(DB::raw('MGSVR.VMI_TYO.dbo.MITM_TBL'), 'MITM_ITMCD', 'TYOAM_ITMCD')->orderBy('created_at', 'desc')->get();
     }
 
     /**
