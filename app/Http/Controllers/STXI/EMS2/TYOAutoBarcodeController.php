@@ -108,7 +108,7 @@ class TYOAutoBarcodeController extends BaseController
     public function update(Request $request, string $id)
     {
         $getData = TYOA_BC_MSTR::where('id', $id)->first();
-        Storage::disk('public')->put('data_forpy.json', json_encode([
+        Storage::disk('public')->put('upload_tyo_auto_bc_gen/data_'.$getData->TYOAM_PONO.'_'.$getData->TYOAM_JOBNO.'_'.$getData->TYOAM_ITMCD.'_forpy.json', json_encode([
             [
                 'po_no' => $getData->TYOAM_PONO,
                 'date' => date('Y/m/d', strtotime($getData->TYOAM_DLVDT)),
@@ -118,7 +118,7 @@ class TYOAutoBarcodeController extends BaseController
             ]
         ]));
 
-        $url = Storage::disk('public')->url('data_forpy.json');
+        $url = Storage::disk('public')->url('upload_tyo_auto_bc_gen/data_'.$getData->TYOAM_PONO.'_'.$getData->TYOAM_JOBNO.'_'.$getData->TYOAM_ITMCD.'_forpy.json');
 
         TYOA_BC_MSTR::where('id', $id)->update([
             'TYOAM_STAT' => 3
