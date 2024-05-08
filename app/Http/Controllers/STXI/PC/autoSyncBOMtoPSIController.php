@@ -12,7 +12,7 @@ use App\Jobs\STXI\PC\syncDeletePSItoBOMQueue;
 use App\Models\PSI\ENG\BOMSTX_TBL;
 class autoSyncBOMtoPSIController extends Controller
 {
-    public function syncBOM(): string
+    public function syncBOM(): array
     {
         $runTime = date('Y-m-d H:i:s');
         $getDataPA100 = DB::connection('sqlsrv_mega_sme')
@@ -21,6 +21,8 @@ class autoSyncBOMtoPSIController extends Controller
         $getDataPA100 = array_map(function ($valueDe2) {
             return (array) $valueDe2;
         }, $getDataPA100);
+
+        return $getDataPA100;
         
         foreach ($getDataPA100 as $key => $value) {
             syncBOMToPSIQueue::dispatch($value, $runTime)->onQueue('syncPA100BOMToPSI');

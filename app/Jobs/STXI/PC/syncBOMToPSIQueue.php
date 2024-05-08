@@ -34,6 +34,8 @@ class syncBOMToPSIQueue implements ShouldQueue
             'MODEL_CODE' => $this->data['MODEL CODE'],
             'REVISION' => $this->data['REVISION'],
             'MAIN_PART_CODE' => $this->data['MAIN PART CODE'],
+            'MAIN_SPTNO' => $this->data['MAIN SPTNO'],
+            'MS_NO' => $this->data['MS NO'],
             // 'TEN_UPDATE_DATE' => $this->data['TEN_UPDATE_DATE'],
             'IEI_TEN_NO' => trim($this->data['IEI TEN NO']) == '' ? 'N/A' : trim($this->data['IEI TEN NO']),
         ], [
@@ -69,8 +71,8 @@ class syncBOMToPSIQueue implements ShouldQueue
             'SEC_TEN_NO' => $this->data['SEC TEN NO'],
             'TEN_RECEIVE_DATE' => $this->data['TEN RECEIVE DATE'],
             'CHANGE_OVERVIEW' => $this->data['CHANGE OVERVIEW'],
-            'STOCK_SGL' => 0,
-            'STOCK_CPO' => 0,
+            // 'STOCK_SGL' => 0,
+            // 'STOCK_CPO' => 0,
             'TEN_UPDATE_DATE' => $this->data['TEN_UPDATE_DATE'],
             'UPDDT' => $this->runTime,
         ]);
