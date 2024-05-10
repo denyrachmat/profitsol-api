@@ -57,10 +57,22 @@ class ImportTYOAutoBCCreator implements ToModel, WithStartRow
                 )
             );
 
-            TYOA_BC_MSTR::updateorcreate([
-                'TYOAM_PONO' => $row[1],
-                'TYOAM_DLVDT' => $DLVDT,
-            ], [
+            // TYOA_BC_MSTR::updateorcreate([
+            //     'TYOAM_PONO' => $row[1],
+            //     'TYOAM_DLVDT' => $DLVDT,
+            // ], [
+            //     'TYOA_ID' => $this->getID(),
+            //     'TYOAM_PONO' => $row[1],
+            //     'TYOAM_ITMCD' => $row[0],
+            //     'TYOAM_QTY' => $row[2],
+            //     'TYOAM_JOBNO' => $row[6],
+            //     'TYOAM_DLVDT' => $DLVDT,
+            //     'TYOAM_STAT' => 3,
+            //     'TYOAM_REMARKS' => 'On Queue, please wait.',
+            //     'TYOAM_SPQ' => $row[3]
+            // ]);
+
+            TYOA_BC_MSTR::create([
                 'TYOA_ID' => $this->getID(),
                 'TYOAM_PONO' => $row[1],
                 'TYOAM_ITMCD' => $row[0],
