@@ -17,6 +17,7 @@ use App\Jobs\STXI\EMS2\AutoFillTYOWebEdiQueue;
 
 class ImportTYOAutoBCCreator implements ToModel, WithStartRow
 {
+    private $row = 0;
     public function getID() {
         
         $getLastPO = TYOA_BC_MSTR::where(DB::raw('YEAR(TYOAM_DLVDT)'), date('y'))
@@ -38,7 +39,7 @@ class ImportTYOAutoBCCreator implements ToModel, WithStartRow
         ini_set("memory_limit", "4G");
         if (!empty($row[0]) && !empty($row[1])) {
             $DLVDT = \PhpOffice\PhpSpreadsheet\Shared\Date::excelToDateTimeObject($row[7])->format('Y/m/d');
-            Storage::disk('public')->put('upload_tyo_auto_bc_gen/data_'.$row[1].'_'.$row[6].'_'.$row[0].'_'.date('His').'_forpy.json', json_encode([[
+            Storage::disk('public')->put('upload_tyo_auto_bc_gen/data_'.$row[1].'_'.$row[6].'_'.$row[0].'_'.++$this->row.'_forpy.json', json_encode([[
                 'po_no' => $row[1],
                 'date' => $DLVDT,
                 'qty' => $row[2],
@@ -46,7 +47,7 @@ class ImportTYOAutoBCCreator implements ToModel, WithStartRow
                 'job_no' => $row[6],
             ]]));
 
-            $url = Storage::disk('public')->url('upload_tyo_auto_bc_gen/data_'.$row[1].'_'.$row[6].'_'.$row[0].'_'.date('His').'_forpy.json');
+            $url = Storage::disk('public')->url('upload_tyo_auto_bc_gen/data_'.$row[1].'_'.$row[6].'_'.$row[0].'_'.++$this->row.'_forpy.json');
 
             $insertJob = (
                 new AutoFillTYOWebEdiQueue(
