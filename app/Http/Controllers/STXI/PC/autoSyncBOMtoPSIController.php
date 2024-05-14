@@ -12,15 +12,24 @@ use App\Jobs\STXI\PC\syncDeletePSItoBOMQueue;
 use App\Models\PSI\ENG\BOMSTX_TBL;
 class autoSyncBOMtoPSIController extends Controller
 {
-    public function syncBOM(): string
+    public function syncBOM(): Array
     {
         $runTime = date('Y-m-d H:i:s');
         $getDataPA100 = DB::connection('sqlsrv_mega_sme')
-            ->select("SET NOCOUNT ON;exec Z_STXI_DOWNLOAD_PA100_BOM_FOR_SYNC_PSI 0, '221561100'");
+            ->select("SET NOCOUNT ON;exec Z_STXI_DOWNLOAD_PA100_BOM_FOR_SYNC_PSI");
 
         $getDataPA100 = array_map(function ($valueDe2) {
             return (array) $valueDe2;
         }, $getDataPA100);
+
+        $cekBOM = BOMSTX_TBL::select('MODEL_CODE', 'REVISION')->where('APPROVED', 1)->get()->toArray();
+
+        $getDataPA100 = array_values(array_filter($getDataPA100, function($f) use ($cekBOM) {
+            return count(array_values(array_filter($cekBOM, function ($f2) use ($f) {
+                return $f['MODEL CODE'] === $f2['MODEL_CODE'] &&
+                $f['REVISION'] === $f2['REVISION'];
+            }))) === 0;
+        }));
 
         // return $getDataPA100;
         
