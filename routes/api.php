@@ -215,9 +215,11 @@ Route::group(['prefix' => 'div'], function () {
         Route::resource('ypoDailyConf', YPODailyConfController::class);
         // End CD/CU Price MRI
         
+        // Start Auto create barcode TYO
         Route::resource('tyoAutoBarcode', TYOAutoBarcodeController::class);
         Route::group(['prefix' => 'tyoAutoBarcodes'], function() {
             Route::post('downloadExcel/{id}', [TYOAutoBarcodeController::class, 'downloadExcel']);
+            Route::post('downloadBarcodeRange/{fdate}/{ldate}', [TYOAutoBarcodeController::class, 'downloadBarcodebyDate']);
         });
     });
 

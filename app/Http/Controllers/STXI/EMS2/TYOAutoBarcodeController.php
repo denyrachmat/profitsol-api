@@ -2,14 +2,14 @@
 
 namespace App\Http\Controllers\STXI\EMS2;
 
-use App\Http\Controllers\Controller;
+use App\Http\Controllers\API\PORTAL\BaseController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Http\File;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 use Maatwebsite\Excel\Facades\Excel;
-use App\Http\Controllers\API\PORTAL\BaseController;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Process;
 
 use App\Imports\STXI\EMS2\ImportTYOAutoBCCreator;
 use App\Models\STXI\EMS2\TYOA_BC_MSTR;
@@ -69,12 +69,12 @@ class TYOAutoBarcodeController extends BaseController
      */
     public function show(string $id)
     {
-        $zip_file = 'tyo_po_'.$id.'.zip';
+        $zip_file = 'tyo_po_' . $id . '.zip';
         $zip_file_name = $zip_file;
         $zip = new \ZipArchive();
         $zip->open($zip_file, \ZipArchive::CREATE | \ZipArchive::OVERWRITE);
 
-        $path = Storage::disk('public')->path('upload_tyo_auto_bc_gen/DownloadTYO/'.$id);
+        $path = Storage::disk('public')->path('upload_tyo_auto_bc_gen/DownloadTYO/' . $id);
         $files = new \RecursiveIteratorIterator(new \RecursiveDirectoryIterator($path));
         foreach ($files as $name => $file) {
             // We're skipping all subfolders
@@ -88,7 +88,7 @@ class TYOAutoBarcodeController extends BaseController
             }
         }
         $zip->close();
-        
+
         return response()->download($zip_file, $zip_file_name, [
             'x-suggested-filename' => $zip_file_name
         ]);
@@ -108,7 +108,7 @@ class TYOAutoBarcodeController extends BaseController
     public function update(Request $request, string $id)
     {
         $getData = TYOA_BC_MSTR::where('id', $id)->first();
-        Storage::disk('public')->put('upload_tyo_auto_bc_gen/data_'.$getData->TYOAM_PONO.'_'.$getData->TYOAM_JOBNO.'_'.$getData->TYOAM_ITMCD.'_forpy.json', json_encode([
+        Storage::disk('public')->put('upload_tyo_auto_bc_gen/data_' . $getData->TYOAM_PONO . '_' . $getData->TYOAM_JOBNO . '_' . $getData->TYOAM_ITMCD . '_forpy.json', json_encode([
             [
                 'po_no' => $getData->TYOAM_PONO,
                 'date' => date('Y/m/d', strtotime($getData->TYOAM_DLVDT)),
@@ -118,7 +118,7 @@ class TYOAutoBarcodeController extends BaseController
             ]
         ]));
 
-        $url = Storage::disk('public')->url('upload_tyo_auto_bc_gen/data_'.$getData->TYOAM_PONO.'_'.$getData->TYOAM_JOBNO.'_'.$getData->TYOAM_ITMCD.'_forpy.json');
+        $url = Storage::disk('public')->url('upload_tyo_auto_bc_gen/data_' . $getData->TYOAM_PONO . '_' . $getData->TYOAM_JOBNO . '_' . $getData->TYOAM_ITMCD . '_forpy.json');
 
         TYOA_BC_MSTR::where('id', $id)->update([
             'TYOAM_STAT' => 3
@@ -154,7 +154,22 @@ class TYOAutoBarcodeController extends BaseController
         //
     }
 
-    public function downloadExcel(Request $request, $id){
+    public function downloadExcel(Request $request, $id)
+    {
         return $this->show($id);
+    }
+
+    public function downloadBarcodebyDate($fdate, $ldate)
+    {
+        set_time_limit(3600);
+
+        $process = Process::timeout(300)->path('D:\app\stx-i-automation\robot-tyo-barcode-print-only')
+            ->run('C:\Python311\python.exe -m robocorp.tasks run tasks.py -- --frdate "' . $fdate . '" --todate "' . $ldate . '"');
+
+        if ($process->successful()) {
+            return $this->show('DownloadedRangeDLVDate');
+        } else {
+            return $this->handleError('Failed to get data');
+        }
     }
 }
