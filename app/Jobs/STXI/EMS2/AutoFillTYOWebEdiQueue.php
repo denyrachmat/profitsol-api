@@ -52,10 +52,14 @@ class AutoFillTYOWebEdiQueue implements ShouldQueue
                 ]);
 
             $cekStock = TYOA_BC_MSTR::select(
+                'TYOAM_PONO',
                 'TYOAM_QTY',
                 DB::raw('SUM(TYOAM_SPQ) AS TOT_SUBMIT_QTY')
             )->where('TYOAM_PONO', $this->data[1])
-            ->groupBy('TYOAM_QTY')
+            ->groupBy(
+                'TYOAM_PONO',
+                'TYOAM_QTY'
+            )
             ->first();
 
             if ($cekStock->TOT_SUBMIT_QTY < $cekStock->TYOAM_QTY) {
@@ -95,6 +99,20 @@ class AutoFillTYOWebEdiQueue implements ShouldQueue
                         'data' => $this->data
                     ]));
                 }
+            } else {
+                TYOA_BC_MSTR::where('TYOAM_PONO', $this->data[1])
+                ->update([
+                    'TYOAM_STAT' => 0,
+                    'TYOAM_REMARKS' => 'Stock not enough !!'
+                ]);
+
+                Redis::publish('portalv2', json_encode([
+                    'app' => 'auto_fill_tyo_webedi',
+                    'message' => 'ID ' . $this->ids . ', PO (' . $this->data[1] . ') : Stock not enough !!',
+                    'type' => 'red',
+                    'data' => $cekStock,
+                    'status' => 'failed',
+                ]));
             }
         } catch (\Throwable $th) {
             TYOA_BC_MSTR::where('TYOAM_PONO', $this->data[1])
