@@ -89,8 +89,8 @@ class SyncCirTentoOldDMS implements ShouldQueue
                 try {
                     $getModelList = $this->generateDocument($emailDate);
                     $model = $getModelList['model'];
-                    $sch = $getModelList['exec_sch'];
-                    $reason = $getModelList['reason'];
+                    $sch = empty($getModelList['exec_sch']) ? '-' : $getModelList['exec_sch'];
+                    $reason = empty($getModelList['reason']) ? '-' : $getModelList['reason'];
                     $content = $getModelList['content'];
 
                     if (!empty($model) && !empty($sch) && !empty($reason) && !empty($content)) {
