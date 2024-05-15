@@ -55,7 +55,8 @@ class AutoFillTYOWebEdiQueue implements ShouldQueue
                 'TYOAM_QTY',
                 DB::raw('SUM(TYOAM_SPQ) AS TOT_SUBMIT_QTY')
             )->where('TYOAM_PONO', $this->data[1])
-                ->first();
+            ->groupBy('TYOAM_QTY')
+            ->first();
 
             if ($cekStock->TOT_SUBMIT_QTY < $cekStock->TYOAM_QTY) {
 
