@@ -169,7 +169,7 @@ class TYOAutoBarcodeController extends BaseController
         if ($process->successful()) {
             return $this->show('DownloadedRangeDLVDate');
         } else {
-            return $this->handleError('Failed to get data');
+            return $this->handleError($process->errorOutput());
         }
     }
 }
