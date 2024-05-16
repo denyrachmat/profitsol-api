@@ -164,7 +164,7 @@ class TYOAutoBarcodeController extends BaseController
         set_time_limit(3600);
 
         $process = Process::timeout(300)->path('D:\app\stx-i-automation\robot-tyo-barcode-print-only')
-            ->run('C:\Python311\python.exe -m robocorp.tasks run tasks.py -- --frdate "' . $fdate . '" --todate "' . $ldate . '"');
+            ->run('C:\Python311\python.exe -m robocorp.tasks run tasks.py -t printbyDate -- --frdate "' . $fdate . '" --todate "' . $ldate . '"');
 
         if ($process->successful()) {
             return $this->show('DownloadedRangeDLVDate');
