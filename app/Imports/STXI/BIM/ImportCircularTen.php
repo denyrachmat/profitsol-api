@@ -120,6 +120,7 @@ class ImportCircularTen implements ToModel
                 }
             }
             $this->data['contentCek'][] = $hasilCekKosong;
+            $this->data['contentCek2'][] = $this->contentArray;
 
             if (count($hasilCekKosong) > 0) {
                 $this->contentArray[] = $row;
