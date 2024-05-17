@@ -30,7 +30,7 @@ class syncBOMToPSIQueue implements ShouldQueue
      */
     public function handle(): void
     {
-        $bomSTXonPSI = BOMSTX_TBL::NoLock()->updateOrCreate(
+        $bomSTXonPSI = BOMSTX_TBL::updateOrCreate(
         [
             'MODEL_CODE' => $this->data['MODEL CODE'],
             'REVISION' => $this->data['REVISION'],
