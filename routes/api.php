@@ -274,6 +274,8 @@ Route::group(['prefix' => 'div'], function () {
 
     Route::group(['prefix' => 'pc'], function() {
         Route::get('syncBOMtoPSI', [autoSyncBOMtoPSIController::class, 'syncBOM']);
+        Route::get('syncBOMtoPSIWoJobs', [autoSyncBOMtoPSIController::class, 'syncWithoutJobs']);
+        Route::get('syncAllNotInterfaced', [autoSyncBOMtoPSIController::class, 'syncAllNotInterfaced']);
     });
 });
 
