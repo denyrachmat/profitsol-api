@@ -17,7 +17,7 @@ class autoSyncBOMtoPSIController extends Controller
     {
         $runTime = date('Y-m-d H:i:s');
         $getDataPA100 = DB::connection('sqlsrv_mega_sme')
-            ->select("SET NOCOUNT ON;exec Z_STXI_DOWNLOAD_PA100_BOM_FOR_SYNC_PSI 0,'222381602'");
+            ->select("SET NOCOUNT ON;exec Z_STXI_DOWNLOAD_PA100_BOM_FOR_SYNC_PSI");
 
         $getDataPA100 = array_map(function ($valueDe2) {
             return (array) $valueDe2;
@@ -81,7 +81,7 @@ class autoSyncBOMtoPSIController extends Controller
     {
         $runTime = date('Y-m-d H:i:s');
         $getDataPA100 = DB::connection('sqlsrv_mega_sme')
-            ->select("SET NOCOUNT ON;exec Z_STXI_DOWNLOAD_PA100_BOM_FOR_SYNC_PSI 0,'223395600ES'");
+            ->select("SET NOCOUNT ON;exec Z_STXI_DOWNLOAD_PA100_BOM_FOR_SYNC_PSI 0,'222381602'");
 
         $getDataPA100 = array_map(function ($valueDe2) {
             return (array) $valueDe2;
