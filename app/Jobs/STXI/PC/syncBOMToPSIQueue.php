@@ -37,7 +37,7 @@ class syncBOMToPSIQueue implements ShouldQueue
             'MAIN_SPTNO' => $this->data['MAIN SPTNO'],
             'MS_NO' => $this->data['MS NO'],
             // 'TEN_UPDATE_DATE' => $this->data['TEN_UPDATE_DATE'],
-            'IEI_TEN_NO' => trim($this->data['IEI TEN NO']) == '' ? 'N/A' : trim($this->data['IEI TEN NO']),
+            // 'IEI_TEN_NO' => trim($this->data['IEI TEN NO']) == '' ? 'N/A' : trim($this->data['IEI TEN NO']),
         ], [
             'MODEL_CODE' => $this->data['MODEL CODE'],
             'MODEL_DESC' => $this->data['MODEL DESC'],
