@@ -101,7 +101,7 @@ class deliveryMethodToPSIController extends BaseController
 
     public function SPQDeleteData($id)
     {
-        $data = SPQMaster::where('id', $id);
+        $data = SPQMaster::where('id', $id)->delete();
 
         return $this->handleResponse($data, 'Data deleted !');
     }
