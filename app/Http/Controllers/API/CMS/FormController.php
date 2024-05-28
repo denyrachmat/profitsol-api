@@ -164,11 +164,13 @@ class FormController extends BaseController
         }
 
         FormAnswerDet::where('cfm_id', $insertMaster->id)->delete();
+        FormAnswerUserDet::where('cfm_id', $insertMaster->id)->delete();
+        FormMaster::where('cfmt_id', $insertMaster->id)->delete();
 
         $hasil = [];
         $listPage = [];
         foreach ($data as $key => $value) {
-            $listPage[] = $value['seq_name'];
+            // $listPage[] = $value['seq_name'];
             $hasil[] = $this->storingForms(
                 $value,
                 $request->header('username'),

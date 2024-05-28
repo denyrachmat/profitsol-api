@@ -24,8 +24,11 @@ trait FormsTraits
                 if (!empty($cekAnswer)) {
                     $answer[] = is_array(json_decode($cekAnswer['cfm_val'])) ? json_decode($cekAnswer['cfm_val']) : $cekAnswer['cfm_val'];
                     $exp[] = $cekAnswer['cfm_exp'];
-                    $answerID[] = $valueAns['id'];
+                } else {
+                    $answer[] = '';
+                    $exp[] = '';
                 }
+                $answerID[] = $valueAns['id'];
             }
 
             $shared = FormShareDet::where('cfmt_id', $value['id'])
@@ -96,7 +99,7 @@ trait FormsTraits
                 'id' => $value['id'],
                 'type' => $value['cfm_type'],
                 'required' => $value['cfm_type'] === 'form' ? ($value['cfm_required'] == 1) : false,
-                'seq_name' => $value['cfm_seq_name'],
+                'seq_name' => empty($value['cfm_seq_name']) ? $key + 1 : $value['cfm_seq_name'],
                 'content' => $value['cfm_type'] === 'row'
                     ? $this->convertToFE($value['all_children_content'])
                     : (
@@ -153,8 +156,9 @@ trait FormsTraits
 
             if(!empty($data['id'])) {
                 $insert = FormMaster::updateOrCreate([
-                    // 'cfmt_id' => $idTitle,
-                    'id' => $data['id'],
+                    'cfmt_id' => $idTitle,
+                    'cfm_type' => $data['type'],
+                    'cfm_seq_name' => isset($data['seq_name']) ? $data['seq_name'] : '',
                 ],[
                     'p_u_username' => $uname,
                     'cfmt_id' => $idTitle,
@@ -178,10 +182,11 @@ trait FormsTraits
 
             if ($insert) {
                 $detail_data = [];
-                if (isset($data['content']['detail_data']) && count($data['content']['detail_data']) > 0) {
+                if ($data['type'] === 'form' && isset($data['content']['detail_data']) && count($data['content']['detail_data']) > 0) {
                     foreach ($data['content']['detail_data'] as $key => $valueDet) {
                         $detail_data[] = FormMultiDet::updateOrCreate([
                             'cfm_id' => $insert->id,
+                            'cfmd_value' => $valueDet['value'],
                         ],[
                             'cfm_id' => $insert->id,
                             'cfmd_value' => $valueDet['value'],
@@ -191,7 +196,7 @@ trait FormsTraits
                 }
 
                 $detail_data_key_ans = [];
-                if (count($keyAnswer) > 0) {
+                if ($data['type'] === 'form' && count($keyAnswer) > 0) {
                     foreach ($keyAnswer as $keyAns => $valueAns) {
                         if ($keyAns === $masterKeys) {
                             $getIDDetail = array_values(array_filter($detail_data, function ($f) use ($valueAns) {

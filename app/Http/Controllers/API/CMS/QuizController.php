@@ -104,14 +104,18 @@ class QuizController extends Controller
                 $f2->with('allChildrenContent');
             }
         ])->first();
-
+        
+        // return $dataAnswers;
         $hasil = [];
         foreach ($dataAnswers as $key => $value) {
             $answers = is_array(json_decode($value['cfm_val'])) ? json_decode($value['cfm_val']) : $value['cfm_val'];
             if (is_array($answers)) {
                 sort($answers);
             }
-            $data = FormAnswerUserDet::where('p_u_username', $request->header('username'))->where('cfm_id', (int)$id)->where('cfmd_id', (int)$value['cfmd_id'])->first();
+            $data = FormAnswerUserDet::where('p_u_username', $request->header('username'))
+                ->where('cfm_id', (int)$id)
+                ->where('cfmd_id', $value['cfmd_id'])
+                ->first();
 
             $answersUser = !empty($data)
                 ? (is_array(json_decode($data->cfm_val)) ? json_decode($data->cfm_val) : $data->cfm_val)
