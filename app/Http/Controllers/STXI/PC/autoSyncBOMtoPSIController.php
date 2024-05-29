@@ -23,16 +23,27 @@ class autoSyncBOMtoPSIController extends Controller
             return (array) $valueDe2;
         }, $getDataPA100);
 
-        // $cekBOM = BOMSTX_TBL::select('MODEL_CODE', 'REVISION')->where('APPROVED', 1)->get()->toArray();
+        $getListModelPart = [];
+        $count = 0;
+        foreach ($getDataPA100 as $keyPart => $valuePart) {
+            $getListModelPart[$valuePart['MODEL CODE']]['MODEL'] = $valuePart['MODEL CODE'];
 
-        // $getDataPA100 = array_values(array_filter($getDataPA100, function($f) use ($cekBOM) {
-        //     return count(array_values(array_filter($cekBOM, function ($f2) use ($f) {
-        //         return $f['MODEL CODE'] === $f2['MODEL_CODE'] &&
-        //         $f['REVISION'] === $f2['REVISION'];
-        //     }))) === 0;
-        // }));
+            if ($keyPart > 0 && $valuePart['MODEL CODE'] == $getDataPA100[$keyPart - 1]['MODEL CODE']) {
+                $count++;
+            } else {
+                $count = 0;
+            }
 
-        // return $getDataPA100;
+            $getListModelPart[$valuePart['MODEL CODE']]['MAIN_PART'][$count] = $valuePart['MAIN PART CODE'];
+        }
+
+        foreach (array_values($getListModelPart) as $keyPartModel => $valuePartModel) {
+            // Delete Model Part
+            BOMSTX_TBL::where('MODEL_CODE', $valuePartModel['MODEL'])
+                ->whereIn('MAIN_PART_CODE', array_values($getListModelPart['MAIN_PART']))
+                ->whereNull('APRVDT')
+                ->delete();
+        }
 
         foreach ($getDataPA100 as $key => $value) {
             syncBOMToPSIQueue::dispatch($value, $runTime)->onQueue('syncPA100BOMToPSI');
@@ -41,14 +52,26 @@ class autoSyncBOMtoPSIController extends Controller
         return 'Sync BOM Queued, Data to be updated : ' . count($getDataPA100);
     }
 
-    public function syncBOMbyItem($item) {
+    public function syncBOMbyItem($item)
+    {
         $runTime = date('Y-m-d H:i:s');
         $getDataPA100 = DB::connection('sqlsrv_mega_sme')
-            ->select("SET NOCOUNT ON;exec Z_STXI_DOWNLOAD_PA100_BOM_FOR_SYNC_PSI 0, '".$item."'");
+            ->select("SET NOCOUNT ON;exec Z_STXI_DOWNLOAD_PA100_BOM_FOR_SYNC_PSI 0, '" . $item . "'");
 
         $getDataPA100 = array_map(function ($valueDe2) {
             return (array) $valueDe2;
         }, $getDataPA100);
+
+        $getListModelPart = [];
+        foreach ($getDataPA100 as $keyPart => $valuePart) {
+            $getListModelPart[$valuePart['MODEL CODE'] . $valuePart['MAIN PART CODE']] = $valuePart['MAIN PART CODE'];
+        }
+
+        // Delete Model
+        BOMSTX_TBL::where('MODEL_CODE', $item)
+            ->whereIn('MAIN_PART_CODE', array_values($getListModelPart))
+            ->whereNull('APRVDT')
+            ->delete();
 
         foreach ($getDataPA100 as $key => $value) {
             syncBOMToPSIQueue::dispatch($value, $runTime)->onQueue('syncPA100BOMToPSI');
@@ -201,56 +224,6 @@ class autoSyncBOMtoPSIController extends Controller
                     'UPDDT' => date('Y-m-d H:i:s'),
                 ]);
             }
-            // $hasil[] = BOMSTX_TBL::NoLock()->updateOrCreate(
-            //     [
-            //         'MODEL_CODE' => $valData['MODEL CODE'],
-            //         'REVISION' => $valData['REVISION'],
-            //         'MAIN_PART_CODE' => $valData['MAIN PART CODE'],
-            //         'MAIN_SPTNO' => $valData['MAIN SPTNO'],
-            //         'MS_NO' => $valData['MS NO'],
-            //         // 'TEN_UPDATE_DATE' => $valData['TEN_UPDATE_DATE'],
-            //         'IEI_TEN_NO' => trim($valData['IEI TEN NO']) == '' ? 'N/A' : trim($valData['IEI TEN NO']),
-            //         'PART_QTY' => $valData['PART QTY'],
-            //     ],
-            //     [
-            //         'MODEL_CODE' => $valData['MODEL CODE'],
-            //         'MODEL_DESC' => $valData['MODEL DESC'],
-            //         'REVISION' => $valData['REVISION'],
-            //         'MAIN_PART_CODE' => $valData['MAIN PART CODE'],
-            //         'MAIN_SPTNO' => $valData['MAIN SPTNO'],
-            //         'MAIN_MAKERNM' => $valData['MAIN MAKERNM'],
-            //         'MS_NO' => $valData['MS NO'],
-            //         'MODEL_QTY' => $valData['MODEL QTY'],
-            //         'PART_QTY' => $valData['PART QTY'],
-            //         'MAIN_PA_PERCENT' => $valData['MAIN PA%'],
-            //         'PO_FAILURE' => $valData['PO FAILURE'],
-            //         'KO_FAILURE' => $valData['KO FAILURE'],
-            //         'DETAIL_REMARK' => $valData['DETAIL REMARK'],
-            //         'CONSIDER_PO_MRP' => $valData['CONSIDER PO MRP'],
-            //         'CONSIDER_KO_MRP' => $valData['CONSIDER KO MRP'],
-            //         'PROCESS_CODE' => $valData['PROCESS CODE'],
-            //         'EPSON_ORG_PART' => $valData['EPSON ORG PART'],
-            //         'EPSON_SPTNO' => $valData['EPSON SPTNO'],
-            //         'EPSON_MAKERNM' => $valData['EPSON MAKERNM'],
-            //         'BOM_REMARK' => $valData['BOM REMARK'],
-            //         'SUB' => $valData['SUB'],
-            //         'SUB_SPTNO' => $valData['SUB SPTNO'],
-            //         'SUB_MAKERNM' => $valData['SUB MAKERNM'],
-            //         'SUB_PA_PERCENT' => $valData['SUB PA%'],
-            //         'SUB1' => $valData['SUB1'],
-            //         'SUB1_SPTNO' => $valData['SUB1 SPTNO'],
-            //         'SUB2' => $valData[''],
-            //         'SUB2_SPTNO' => $valData['SUB2 SPTNO'],
-            //         'IEI_TEN_NO' => trim($valData['IEI TEN NO']) == '' ? 'N/A' : trim($valData['IEI TEN NO']),
-            //         'SEC_TEN_NO' => $valData['SEC TEN NO'],
-            //         'TEN_RECEIVE_DATE' => $valData['TEN RECEIVE DATE'],
-            //         'CHANGE_OVERVIEW' => $valData['CHANGE OVERVIEW'],
-            //         // 'STOCK_SGL' => 0,
-            //         // 'STOCK_CPO' => 0,
-            //         'TEN_UPDATE_DATE' => $valData['TEN_UPDATE_DATE'],
-            //         // 'UPDDT' => date('Y-m-d H:i:s'),
-            //     ]
-            // );
         }
 
         return $hasil;
