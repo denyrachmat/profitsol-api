@@ -36,16 +36,23 @@ class syncBOMToPSIQueue implements ShouldQueue
             ->where('MAIN_PART_CODE', $this->data['MAIN PART CODE'])
             ->where('MAIN_SPTNO', $this->data['MAIN SPTNO'])
             ->where('MS_NO', $this->data['MS NO'])
-            ->where('IEI_TEN_NO', $this->data['IEI TEN NO'])
+            // ->where('IEI_TEN_NO', $this->data['IEI TEN NO'])
             ->first();
 
         if (!empty($cekData)) {
+            BOMSTX_TBL::where('MODEL_CODE', $this->data['MODEL CODE'])
+                ->where('REVISION', $this->data['REVISION'])
+                ->where('MAIN_PART_CODE', $this->data['MAIN PART CODE'])
+                ->where('MAIN_SPTNO', $this->data['MAIN SPTNO'])
+                ->where('MS_NO', $this->data['MS NO'])
+                ->delete();
+
             $bomSTXonPSI = BOMSTX_TBL::where('MODEL_CODE', $this->data['MODEL CODE'])
                 ->where('REVISION', $this->data['REVISION'])
                 ->where('MAIN_PART_CODE', $this->data['MAIN PART CODE'])
                 ->where('MAIN_SPTNO', $this->data['MAIN SPTNO'])
                 ->where('MS_NO', $this->data['MS NO'])
-                ->where('IEI_TEN_NO', $this->data['IEI TEN NO'])
+                // ->where('IEI_TEN_NO', $this->data['IEI TEN NO'])
                 ->update([
                     'MODEL_CODE' => $this->data['MODEL CODE'],
                     'MODEL_DESC' => $this->data['MODEL DESC'],
