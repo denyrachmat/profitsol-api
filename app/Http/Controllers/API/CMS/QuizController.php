@@ -112,6 +112,7 @@ class QuizController extends Controller
             if (is_array($answers)) {
                 sort($answers);
             }
+            
             $data = FormAnswerUserDet::where('p_u_username', $request->header('username'))
                 ->where('cfm_id', (int)$id)
                 ->where('cfmd_id', $value['cfmd_id'])

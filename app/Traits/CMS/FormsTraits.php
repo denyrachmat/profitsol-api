@@ -155,11 +155,7 @@ trait FormsTraits
             }
 
             if(!empty($data['id'])) {
-                $insert = FormMaster::updateOrCreate([
-                    'cfmt_id' => $idTitle,
-                    'cfm_type' => $data['type'],
-                    'cfm_seq_name' => isset($data['seq_name']) ? $data['seq_name'] : '',
-                ],[
+                $insert = FormMaster::create([
                     'p_u_username' => $uname,
                     'cfmt_id' => $idTitle,
                     'cfm_type' => $data['type'],
