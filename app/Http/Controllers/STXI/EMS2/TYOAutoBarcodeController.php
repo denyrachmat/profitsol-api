@@ -159,14 +159,14 @@ class TYOAutoBarcodeController extends BaseController
         return $this->show($id);
     }
 
-    public function downloadBarcodebyDate($fdate, $ldate)
+    public function downloadBarcodebyDate($fdate, $ldate, $type)
     {
         set_time_limit(3600);
 
         $process = Process::timeout(300)->path('D:\app\stx-i-automation\robot-tyo-barcode-print-only')
-            ->run('C:\Python311\python.exe -m robocorp.tasks run tasks.py -t printbyDate -- --frdate "' . $fdate . '" --todate "' . $ldate . '"');
+            ->run('C:\Python311\python.exe -m robocorp.tasks run tasks.py -t printbyDate -- --frdate "' . $fdate . '" --todate "' . $ldate . '" --typePrint "' . $type . '"');
 
-        if ($process->successful()) {
+        if (!$process->failed()) {
             return $this->show('DownloadedRangeDLVDate');
         } else {
             return $this->handleError($process->errorOutput());

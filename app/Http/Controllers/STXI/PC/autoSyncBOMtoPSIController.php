@@ -69,10 +69,11 @@ class autoSyncBOMtoPSIController extends Controller
 
         // Delete Model
         BOMSTX_TBL::where('MODEL_CODE', $item)
-            ->whereIn('MAIN_PART_CODE', array_values($getListModelPart))
+            // ->whereIn('MAIN_PART_CODE', array_values($getListModelPart))
             ->whereNull('APRVDT')
             ->delete();
 
+            // return 'test';
         foreach ($getDataPA100 as $key => $value) {
             syncBOMToPSIQueue::dispatch($value, $runTime)->onQueue('syncPA100BOMToPSI');
         }
