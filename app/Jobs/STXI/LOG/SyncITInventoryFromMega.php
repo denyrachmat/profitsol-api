@@ -38,6 +38,7 @@ class SyncITInventoryFromMega implements ShouldQueue
      */
     public function handle()
     {
+        set_time_limit(3600);
         try {
             if ($this->isIfaceMega || $this->isIfaceMega != 0) {
                 Redis::publish('portalv2', json_encode([
@@ -45,39 +46,39 @@ class SyncITInventoryFromMega implements ShouldQueue
                     'message' => $this->date. ' start mega sync to it inventory now...',
                     'type' => 'info',
                     'status' => 'start_mega_resync',
-                    'data' => $this->date 
+                    'data' => $this->date
                 ]));
-        
+
                 DB::connection('sqlsrv_itinv')->update("SET NOCOUNT ON;EXEC IF_CR_ALL_BYDAY @IFDT_Str='".$this->date."', @SUMFLG=1");
-        
+
                 Redis::publish('portalv2', json_encode([
                     'app' => 'it_inv_checker',
                     'message' => $this->date. ' data sync !! please check on IT Inventory',
                     'type' => 'green',
                     'status' => 'success_mega_resync',
-                    'data' => $this->date 
+                    'data' => $this->date
                 ]));
             } else {
                 Redis::publish('portalv2', json_encode([
                     'app' => 'it_inv_checker',
                     'message' => 'Mega sync skipping date : '.$this->date,
                     'type' => 'orange',
-                    'data' => $this->date 
+                    'data' => $this->date
                 ]));
             }
-    
+
             if ($this->isIfaceCeisa || $this->isIfaceCeisa != 0) {
                 Redis::publish('portalv2', json_encode([
                     'app' => 'it_inv_checker',
                     'message' => 'date : '.$this->date . ' sync data from ceisa 4.0',
                     'type' => 'info',
-                    'data' => $this->date 
+                    'data' => $this->date
                 ]));
-    
+
                 $dataUnsync = viewCeisaRespon::where('TGL_DAFTAR', $this->date)
                 ->orderBy('TGL_DAFTAR', 'DESC')
                 ->get();
-        
+
                 foreach ($dataUnsync as $key => $valueData) {
                     SyncITInventoryByBCNo::dispatch($valueData->NOMOR_DAFTAR, $valueData->TGL_DAFTAR)->onQueue('SyncITInventoryFromMega'); //->onQueue('SyncITInventoryByBCNo');
                 }
@@ -86,7 +87,7 @@ class SyncITInventoryFromMega implements ShouldQueue
                     'app' => 'it_inv_checker',
                     'message' => 'date : '.$this->date . ' sync data from ceisa 4.0 is skipped',
                     'type' => 'orange',
-                    'data' => $this->date 
+                    'data' => $this->date
                 ]));
             }
         } catch (\Throwable $th) {
