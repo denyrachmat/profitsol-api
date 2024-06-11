@@ -13,12 +13,13 @@ class CreateCmsFormEvent extends Migration
      */
     public function up()
     {
-        Schema::create('cms_form_event', function (Blueprint $table) {
+        Schema::connection('sqlsrv_cms')->create('cms_form_event', function (Blueprint $table) {
             $table->id();
             $table->string('p_u_username');
             $table->integer('cfmt_id');
-            $table->string('cfe_type');
-            $table->string('cfe_opr');
+            $table->integer('cfm_id')->nullable();
+            $table->string('cfe_event');
+            $table->string('cfe_result');
             $table->timestamps();
         });
     }
@@ -30,6 +31,6 @@ class CreateCmsFormEvent extends Migration
      */
     public function down()
     {
-        Schema::dropIfExists('cms_form_event');
+        Schema::connection('sqlsrv_cms')->dropIfExists('cms_form_event');
     }
 }

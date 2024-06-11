@@ -8,6 +8,8 @@ use App\Models\CMS\FormAnswerDet;
 use App\Models\CMS\FormMasterTitle;
 use App\Models\CMS\FormSetupDet;
 use App\Models\CMS\FormShareDet;
+use App\Models\CMS\FormLogicsDet;
+
 use Illuminate\Support\Facades\DB;
 
 trait FormsTraits
@@ -222,6 +224,19 @@ trait FormsTraits
                                 'cfm_exp' => (string) $keyExp[$keyAns],
                             ]);
                         }
+                    }
+                }
+
+                if (isset($data['logics'])) {
+                    foreach ($data['logics'] as $keyLogics => $valueLogics) {
+                        FormLogicsDet::create([
+                            'cfm_id' => $insert->id,
+                            'cfld_opr' => $valueLogics['opr'],
+                            'cfld_val' => $valueLogics['modelValue'],
+                            'cfld_opr_ctrl' => $valueLogics['oprCont'],
+                            'cfld_res' => $valueLogics['result'],
+                            'cfld_actions' => json_encode($valueLogics['resultAction']),
+                        ]);
                     }
                 }
 

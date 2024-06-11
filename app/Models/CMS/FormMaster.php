@@ -12,7 +12,6 @@ class FormMaster extends Model
     protected $table = 'cms_form_mstr';
 
     protected $fillable = [
-        'id',
         'p_u_username',
         'cfmt_id',
         'cfm_type',
