@@ -67,7 +67,7 @@ class ExportDOChecker implements FromCollection, WithHeadings, WithEvents
                 'SHEET' => $value['SHEET'],
                 'TPM_VERSION' => $value['TPM_VERSION'],
                 'TPM_REMARK' => $value['TPM_REMARK'],
-                'diff_days' => $value['diff_days'],,
+                'diff_days' => $value['diff_days'],
                 'IS_POEXSTS_DESC' => $value['IS_POEXSTS_DESC'],
             ];
         }
