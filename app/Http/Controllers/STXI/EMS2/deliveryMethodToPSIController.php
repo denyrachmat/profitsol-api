@@ -107,22 +107,22 @@ class deliveryMethodToPSIController extends BaseController
     }
 
     public function DLVIndex($paginate = 0, $date = '')
-    {        
+    {
         ini_set('max_execution_time', '3000');
         $data = $this->DLVGetData(
-            $date, 
-            !empty($date) 
+            $date,
+            !empty($date)
                 ? [
                     'MITM_MODELCD',
                     'MITM_ITMD1',
                     'DEL_DATE'
-                ] 
+                ]
                 : ['DEL_DATE'],
-            !empty($date), 
-            true, 
-            false, 
-            '', 
-            true, 
+            !empty($date),
+            true,
+            false,
+            '',
+            true,
             false,
             $paginate !== 0
             ? json_decode(base64_decode($paginate))
@@ -1240,7 +1240,12 @@ class deliveryMethodToPSIController extends BaseController
             '),
             DB::raw('
                 DATEDIFF(day, TPM_ISSDT, TPM_DLVDT) as diff_days
-            ')
+            '),
+            DB::raw("CASE WHEN PPO2_DELNO IS NULL
+                THEN 'New PO'
+                ELSE 'Exists PO'
+            END AS IS_POEXSTS_DESC
+            ")
         )->join(
             DB::raw('[MGSVR].[VMI_TYO].[dbo].[MITM_TBL]'),
             'MITM_ITMCD',
@@ -1249,6 +1254,13 @@ class deliveryMethodToPSIController extends BaseController
             'SPQ_MSTR_TBL',
             'MITM_MODELCD',
             'TPM_ITMCD'
+        )
+        ->leftjoin(
+            DB::raw('[MGSVR].[VMI_TYO].[dbo].[PPO2_TBL]'),
+            function ($j) {
+                $j->on('PPO2_MDLCD', 'TPM_ITMCD');
+                $j->on('PPO2_DELNO', 'TPM_ORDERNO');
+            }
         )
             ->where('TPM_ISSDT', $date)
             ->whereNull('TPM_EXPORT');
