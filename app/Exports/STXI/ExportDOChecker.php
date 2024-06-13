@@ -40,7 +40,8 @@ class ExportDOChecker implements FromCollection, WithHeadings, WithEvents
                 'Sheet',
                 'Version',
                 'Remark',
-                'Due Date (Days)'
+                'Due Date (Days)',
+                'Status PO on MEGA'
             ],
             []
         ];
@@ -66,7 +67,8 @@ class ExportDOChecker implements FromCollection, WithHeadings, WithEvents
                 'SHEET' => $value['SHEET'],
                 'TPM_VERSION' => $value['TPM_VERSION'],
                 'TPM_REMARK' => $value['TPM_REMARK'],
-                'diff_days' => $value['diff_days'],
+                'diff_days' => $value['diff_days'],,
+                'IS_POEXSTS_DESC' => $value['IS_POEXSTS_DESC'],
             ];
         }
 
@@ -100,7 +102,7 @@ class ExportDOChecker implements FromCollection, WithHeadings, WithEvents
 
                 $event->sheet->getStyle('C')->getNumberFormat()->setFormatCode(NumberFormat::FORMAT_DATE_XLSX15);
                 $event->sheet->getStyle('D')->getNumberFormat()->setFormatCode(NumberFormat::FORMAT_DATE_XLSX15);
-                
+
                 $event->sheet->getStyle('A2:'.$highestColumn.'2')->getAlignment()->setHorizontal('center');
                 $event->sheet->getStyle('I3:I' . $highestRow)->getNumberFormat()
                 ->setFormatCode(
