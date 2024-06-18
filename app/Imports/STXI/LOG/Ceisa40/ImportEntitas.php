@@ -5,12 +5,13 @@ namespace App\Imports\STXI\LOG\Ceisa40;
 use Illuminate\Support\Collection;
 use Maatwebsite\Excel\Concerns\ToModel;
 use Maatwebsite\Excel\Concerns\WithHeadingRow;
+use Maatwebsite\Excel\Concerns\SkipsEmptyRows;
 
 use App\Models\STXI\LOG\ITINVIncoming;
 use App\Models\STXI\LOG\ITINVOutgoing;
 use App\Models\STXI\LOG\ITINVUploadTemp;
 
-class ImportEntitas implements ToModel, WithHeadingRow
+class ImportEntitas implements ToModel, WithHeadingRow, SkipsEmptyRows
 {
     private $incout;
 
@@ -25,6 +26,10 @@ class ImportEntitas implements ToModel, WithHeadingRow
     public function model(array $row)
     {
         ini_set("memory_limit", "3G");
+        if(!array_filter($row)) {
+            return null;
+        }
+
         if (!empty(trim($row['nomor_aju']))) {
             $cekTempData = ITINVUploadTemp::where('NO_AJU', $row['nomor_aju'])->first();
 

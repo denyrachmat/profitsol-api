@@ -5,13 +5,14 @@ namespace App\Imports\STXI\LOG\Ceisa40;
 use Illuminate\Support\Collection;
 use Maatwebsite\Excel\Concerns\ToModel;
 use Maatwebsite\Excel\Concerns\WithHeadingRow;
+use Maatwebsite\Excel\Concerns\SkipsEmptyRows;
 use DB;
 
 use App\Models\STXI\LOG\ITINVIncoming;
 use App\Models\STXI\LOG\ITINVOutgoing;
 use App\Models\STXI\LOG\ITINVUploadTemp;
 
-class ImportDokumen implements ToModel, WithHeadingRow
+class ImportDokumen implements ToModel, WithHeadingRow, SkipsEmptyRows
 {
     private $incout;
 
@@ -26,6 +27,10 @@ class ImportDokumen implements ToModel, WithHeadingRow
     public function model(array $row)
     {
         ini_set("memory_limit", "3G");
+
+        if(!array_filter($row)) {
+            return null;
+        }
 
         if (!empty(trim($row['nomor_aju']))) {
             $cekKosong = array_filter($row, function ($f) {

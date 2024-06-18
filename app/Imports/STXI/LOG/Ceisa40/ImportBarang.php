@@ -5,6 +5,7 @@ namespace App\Imports\STXI\LOG\Ceisa40;
 use Illuminate\Support\Collection;
 use Maatwebsite\Excel\Concerns\ToModel;
 use Maatwebsite\Excel\Concerns\WithHeadingRow;
+use Maatwebsite\Excel\Concerns\SkipsEmptyRows;
 use Illuminate\Support\Facades\DB;
 
 use App\Models\STXI\LOG\ITINVIncoming;
@@ -12,7 +13,7 @@ use App\Models\STXI\LOG\ITINVOutgoing;
 use App\Models\STXI\LOG\ITINVUploadTemp;
 use App\Models\STXI\CEISA40\viewCeisaRespon;
 
-class ImportBarang implements ToModel, WithHeadingRow
+class ImportBarang implements ToModel, WithHeadingRow, SkipsEmptyRows
 {
     private $incout;
 
