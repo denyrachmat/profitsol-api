@@ -94,7 +94,11 @@ class ImportHeader implements ToModel, WithHeadingRow, SkipsEmptyRows
                         'NO_DAFTAR' => $cekData->BCDOCNO,
                         'TGL_DAFTAR' => $row['tanggal_daftar'],
                         'TYPE_BC' => $kodeDokumen,
-                        'CURR' => $row['kode_valuta'],
+                        'CURR' => !empty($row['kode_valuta']) ? $row['kode_valuta'] : (
+                            $row['kode_dokumen'] == 40
+                            ? 'IDR'
+                            : 'USD'
+                        ),
                         'STATE_FLG' => $this->incout
                     ]);
                 } else {
@@ -123,7 +127,11 @@ class ImportHeader implements ToModel, WithHeadingRow, SkipsEmptyRows
                         ->where('BCTYPE', $kodeDokumen)
                         ->where('BCDOCDT', $row["tanggal_daftar"])
                         ->update([
-                            'CURCD' => !empty($row['kode_valuta']) ? $row['kode_valuta'] : 'USD',
+                            'CURCD' => !empty($row['kode_valuta']) ? $row['kode_valuta'] : (
+                                $row['kode_dokumen'] == 41
+                                ? 'IDR'
+                                : 'USD'
+                            ),
                         ]);
 
                     ITINVUploadTemp::updateOrCreate([
@@ -154,7 +162,11 @@ class ImportHeader implements ToModel, WithHeadingRow, SkipsEmptyRows
                         'NO_DAFTAR' => $row["nomor_daftar"],
                         'TGL_DAFTAR' => $row['tanggal_daftar'],
                         'TYPE_BC' => $kodeDokumen,
-                        'CURR' => $row['kode_valuta'],
+                        'CURR' => !empty($row['kode_valuta']) ? $row['kode_valuta'] : (
+                            $row['kode_dokumen'] == 41
+                            ? 'IDR'
+                            : 'USD'
+                        ),
                         'STATE_FLG' => $this->incout
                     ]);
                 }
