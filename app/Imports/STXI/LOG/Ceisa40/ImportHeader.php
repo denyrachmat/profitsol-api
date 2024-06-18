@@ -77,7 +77,11 @@ class ImportHeader implements ToModel, WithHeadingRow, SkipsEmptyRows
                         ->where('BCTYPE', $kodeDokumen)
                         ->where('BCDOCDT', $row["tanggal_daftar"])
                         ->update([
-                            'CURCD' => $row['kode_valuta'],
+                            'CURCD' => !empty($row['kode_valuta']) ? $row['kode_valuta'] : (
+                                $row['kode_dokumen'] == 40
+                                ? 'IDR'
+                                : 'USD'
+                            ),
                         ]);
 
                     ITINVUploadTemp::updateOrCreate([
@@ -132,7 +136,11 @@ class ImportHeader implements ToModel, WithHeadingRow, SkipsEmptyRows
                         'NO_DAFTAR' => $cekData->BCDOCNO,
                         'TGL_DAFTAR' => $row['tanggal_daftar'],
                         'TYPE_BC' => $kodeDokumen,
-                        'CURR' => empty($row['kode_valuta']) ? $row['kode_valuta'] : 'USD',
+                        'CURR' => empty($row['kode_valuta']) ? $row['kode_valuta'] : (
+                            $row['kode_dokumen'] == 41
+                            ? 'IDR'
+                            : 'USD'
+                        ),
                         'STATE_FLG' => $this->incout
                     ]);
                 } else {
