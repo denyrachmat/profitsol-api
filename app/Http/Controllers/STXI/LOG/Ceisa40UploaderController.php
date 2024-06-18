@@ -59,7 +59,7 @@ class Ceisa40UploaderController extends BaseController
     public function syncCeisaToWebBased($noAju, $bc, $id){
         try {
             ini_set('max_execution_time', '3200');
-            $downloadExcel = $this->downloadExcel($noAju, $bc, $id, false);
+            $downloadExcel = $this->downloadExcel($noAju, $bc, $id, true);
             // return $downloadExcel;
 
             // return public_path($downloadExcel);
@@ -69,11 +69,11 @@ class Ceisa40UploaderController extends BaseController
             } else {
                 $state = 'OUT';
             }
-    
+
             $importer = new ImportCeisa40($state);
-    
+
             Excel::import($importer, public_path($downloadExcel));
-    
+
             return $this->handleResponse([], 'Sync data sukses !!');
         } catch (\Throwable $th) {
             return $this->handleError($th->getMessage());
