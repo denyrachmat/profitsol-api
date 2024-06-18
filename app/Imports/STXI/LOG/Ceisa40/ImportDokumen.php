@@ -94,7 +94,7 @@ class ImportDokumen implements ToModel, WithHeadingRow
             }
 
             // sj
-            if (($row['kode_dokumen'] == 640 || $row['kode_dokumen'] == 630) && $jumlahDoc === 0) {                
+            if (($row['kode_dokumen'] == 640 || $row['kode_dokumen'] == 630) && $jumlahDoc === 0) {
                 logger('Inv ' . $row['nomor_dokumen']);
                 logger('Jumlah Doc ' . $jumlahDoc);
                 if ($this->incout == 'INC') {
@@ -122,6 +122,24 @@ class ImportDokumen implements ToModel, WithHeadingRow
                             ->whereIn('ITMCD', $cekOutgoing->pluck('ITMCD'))
                             ->update([
                                 'DOCNO' => $row['nomor_dokumen']
+                            ]);
+                    }
+                }
+            }
+
+            // EX-BC
+            if (($row['kode_dokumen'] == 16 || $row['kode_dokumen'] == 33) && $jumlahInv === 0) {
+                if ($this->incout == 'OUT') {
+                    $cekOutgoing = (clone $baseDoc)
+                        ->get();
+
+                    if (count($cekOutgoing) > 0) {
+                        (clone $baseDoc)
+                            ->whereIn('ITMCD', $cekOutgoing->pluck('ITMCD'))
+                            ->update([
+                                'BC23BCTYPE' => $row['kode_dokumen'] == 33 ? 'BC3.3' : 'BC1.6',
+                                'BC33DOCNO' => $row['kode_dokumen'] == 33 ? $row['nomor_dokumen'] : '',
+                                'BC33DOCDT' => $row['kode_dokumen'] == 33 ? $row['tanggal_dokumen'] : '',
                             ]);
                     }
                 }

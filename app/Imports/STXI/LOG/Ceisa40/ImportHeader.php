@@ -102,7 +102,6 @@ class ImportHeader implements ToModel, WithHeadingRow
                 ]);
             }
         } else {
-            logger([$row['kode_dokumen'], $kodeDokumen]);
             $cekData = ITINVOutgoing::where("BCDOCNO", $row["nomor_daftar"])
                 ->where('BCTYPE', $kodeDokumen)
                 ->where('BCDOCDT', $row["tanggal_daftar"])
