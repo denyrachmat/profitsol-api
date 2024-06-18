@@ -59,7 +59,7 @@ class Ceisa40UploaderController extends BaseController
     public function syncCeisaToWebBased($noAju, $bc, $id){
         try {
             ini_set('max_execution_time', '3200');
-            $downloadExcel = $this->downloadExcel($noAju, $bc, $id, true);
+            $downloadExcel = $this->downloadExcel($noAju, $bc, $id, false);
             // return $downloadExcel;
 
             // return public_path($downloadExcel);
