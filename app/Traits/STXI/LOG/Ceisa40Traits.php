@@ -334,7 +334,7 @@ trait Ceisa40Traits
 
     public function getDetPerusahaan(Request $request) : Array {
         $hasil = [];
-        foreach ($request->data as $key => $value) {    
+        foreach ($request->data as $key => $value) {
             $getDetilPerusahanPenerima = $this->apiPointData(
                 'profil/perusahaan/data-perusahaan-by-npwp/?npwp=' . $value,
                 'GET',
@@ -354,7 +354,7 @@ trait Ceisa40Traits
                     'KODEKTR' => '050900',
                     'NIB' => $getDetilPerusahanPenerima['nib'],
                 ]);
-    
+
                 $getSkepPerusahaan = $this->apiPointData(
                     'GudangPlb/perusahanSkepFasilitas?idPerusahaanPajak=' . $value,
                     'GET',
@@ -362,7 +362,7 @@ trait Ceisa40Traits
                     'parser',
                     true
                 );
-                
+
                 if (!empty($getSkepPerusahaan)) {
                     foreach ($getSkepPerusahaan['data'] as $keySkep => $valueSkep) {
                         EntitasSkepDetail::where('NPWP', $value)->where('NOSKEP', $valueSkep['nomorSkep'])->delete();
@@ -416,7 +416,7 @@ trait Ceisa40Traits
                     }
 
                     break;
-                
+
                 default:
                     $splitStr = str_split((string)$bc);
                     $bcComp = 'BC '. implode('.',$splitStr);
@@ -432,7 +432,7 @@ trait Ceisa40Traits
                 Storage::put('public/ceisa40storage/'.$fileName, $getDetilPerusahanPenerima);
                 return 'storage/app/public/ceisa40storage/'.$fileName;
             } else {
-                // Storage::put('public/upload_ceisa40/'.$fileName, $getDetilPerusahanPenerima);
+                Storage::put('public/upload_ceisa40/'.$fileName, $getDetilPerusahanPenerima);
                 // return 'storage/upload_ceisa40/'.$fileName;
                 return 'storage/ceisa40storage/'.$fileName;
             }
