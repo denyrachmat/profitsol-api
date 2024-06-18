@@ -112,7 +112,7 @@ class ImportHeader implements ToModel, WithHeadingRow
                     ->where('BCTYPE', $kodeDokumen)
                     ->where('BCDOCDT', $row["tanggal_daftar"])
                     ->update([
-                        'CURCD' => empty($row['kode_valuta']) ? $row['kode_valuta'] : 'USD',
+                        'CURCD' => !empty($row['kode_valuta']) ? $row['kode_valuta'] : 'USD',
                     ]);
 
                 ITINVUploadTemp::updateOrCreate([
