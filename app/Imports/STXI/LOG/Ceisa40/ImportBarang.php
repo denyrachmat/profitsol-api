@@ -45,8 +45,12 @@ class ImportBarang implements ToModel, WithHeadingRow, SkipsEmptyRows
                             ->where('BCDOCDT', $cekTempData["TGL_DAFTAR"])
                             ->where('ITMCD', trim($row['kode_barang']))
                             ->update([
-                                'PRICE' => round((int) $row['cif'] / (int) $row['jumlah_satuan'], 4),
-                                'TTLAMOUNT' => round((int) $row['cif'], 4),
+                                'PRICE' => $row['cif'] == 0
+                                ? round((int) $row['harga_penyerahan'] / (int) $row['jumlah_satuan'], 4)
+                                : round((int) $row['cif'] / (int) $row['jumlah_satuan'], 4),
+                                'TTLAMOUNT' => $row['cif'] == 0
+                                ? round((int) $row['harga_penyerahan'], 4)
+                                : round((int) $row['cif'], 4),
                                 'HSCODE' => $row['hs'],
                                 'ITMD1' => !empty($getHSCode) ? $getHSCode->MITM_ITMD1 : trim($row['uraian']),
                                 'SPTNO' => !empty($getHSCode) ? $getHSCode->MITM_SPTNO : '',
@@ -141,8 +145,12 @@ class ImportBarang implements ToModel, WithHeadingRow, SkipsEmptyRows
                             ->where('BCDOCDT', $cekTempData["TGL_DAFTAR"])
                             ->where('ITMCD', trim($row['kode_barang']))
                             ->update([
-                                'PRICE' => round((int) $row['cif'] / (int) $row['jumlah_satuan'], 4),
-                                'TTLAMOUNT' => round((int) $row['cif'], 4),
+                                'PRICE' => $row['cif'] == 0
+                                ? round((int) $row['harga_penyerahan'] / (int) $row['jumlah_satuan'], 4)
+                                : round((int) $row['cif'] / (int) $row['jumlah_satuan'], 4),
+                                'TTLAMOUNT' => $row['cif'] == 0
+                                ? round((int) $row['harga_penyerahan'], 4)
+                                : round((int) $row['cif'], 4),
                                 'CUSNM' => $cekTempData['PENERIMA'],
                                 'ITMD1' => !empty($getHSCode) ? $getHSCode->MITM_ITMD1 : trim($row['uraian']),
                                 'SPTNO' => !empty($getHSCode) ? $getHSCode->MITM_SPTNO : ''
