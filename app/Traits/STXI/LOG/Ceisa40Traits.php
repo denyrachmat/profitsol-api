@@ -395,7 +395,7 @@ trait Ceisa40Traits
 
     public function downloadExcel($noAju, $bc, $id, $isStore = true) {
         $getDetilPerusahanPenerima = $this->apiPointData(
-            'ekspor-xml/Xlsx?nomorAju='.$noAju.'&idUser=adf9ea0f-de99-444d-b502-e4a474670624',
+            'ekspor-xml/Xlsx?nomorAju='.$noAju.'&idUser=adf9ea0f-de99-444d-b502-e4a474670624&kodeDokumen='.$bc,
             'GET',
             [],
             'excel-service',
