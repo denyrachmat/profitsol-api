@@ -126,7 +126,7 @@ class ImportCircularTen implements ToModel
                 $this->contentArray[] = $row;
             }
 
-            if(empty($value)){
+            if(count($row) === 0){
                 $this->data['cekContentJuga'][] = $this->contentArray;
                 foreach ($this->contentArray as $keyRow => $valueRow) {
                     $this->tableBuild .= "<tr>";
