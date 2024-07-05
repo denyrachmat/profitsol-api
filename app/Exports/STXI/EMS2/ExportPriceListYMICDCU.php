@@ -31,7 +31,12 @@ class ExportPriceListYMICDCU implements FromCollection, WithEvents, WithHeadings
             'SP',
             'DIFF',
             'MU(%)',
-            'GP(%)'
+            'GP(%)',
+            'RATE',
+            'New SP under Rp Rate',
+            'Eff Date From',
+            'Eff Date To',
+            'Effective Date'
         ];
     }
 
@@ -53,6 +58,11 @@ class ExportPriceListYMICDCU implements FromCollection, WithEvents, WithHeadings
                 'DIFF' => $value->DIFF,
                 'MU' => $value->MU,
                 'GP' => $value->GP,
+                'RATE' => $value->YQMT_RATE,
+                'AMNT' => $value->YQMT_SP_RPH,
+                'EFFDTFR' => $value->YQMT_BGNDT,
+                'EFFDTTO' => $value->YQMT_ENDDT,
+                'EFFDTRMK' => $value->YQMT_EFFDT_RMK,
             ];
         }
 
@@ -70,7 +80,7 @@ class ExportPriceListYMICDCU implements FromCollection, WithEvents, WithHeadings
                     ->setOrientation(\PhpOffice\PhpSpreadsheet\Worksheet\PageSetup::ORIENTATION_LANDSCAPE)
                     ->setPaperSize(\PhpOffice\PhpSpreadsheet\Worksheet\PageSetup::PAPERSIZE_A4);
 
-                $event->sheet->getStyle('A1:I1')->applyFromArray([
+                $event->sheet->getStyle('A1:'.$highestColumn.'1')->applyFromArray([
                     'font' => [
                         'size' => '12',
                         'bold' => true
@@ -78,7 +88,7 @@ class ExportPriceListYMICDCU implements FromCollection, WithEvents, WithHeadings
                 ]);
 
                 $event->sheet->styleCells(
-                    'A1:I' . $highestRow,
+                    'A1:' .$highestColumn. $highestRow,
                     [
                         'borders' => [
                             'allBorders' => [

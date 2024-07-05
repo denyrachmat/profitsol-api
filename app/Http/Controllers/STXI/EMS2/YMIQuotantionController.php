@@ -106,15 +106,26 @@ class YMIQuotantionController extends BaseController
             'A.YQMT_ENDDT',
             'A.YMQT_REMARK',
             'A.YMQT_REMARK2',
+            'A.YQMT_BGNDT',
+            'A.YQMT_ENDDT',
+            'A.YQMT_EFFDT_RMK',
+            DB::raw('(
+                SELECT COUNT(*) FROM YMI_QUO_MSTR_TBL bb
+                where A.YQMT_ITMCD = bb.YQMT_ITMCD
+            ) as TOTHIST')
         )->join(
             'MGSVR.VMI_EXIM.dbo.MITM_TBL', 'MITM_ITMCD', 'A.YQMT_ITMCD'
-        )->join(DB::raw("(
-            SELECT bb.YQMT_ITMCD, MAX(ID) AS maxid FROM YMI_QUO_MSTR_TBL bb
-            group by bb.YQMT_ITMCD
-        ) aa "), function($j) {
-            $j->on('A.YQMT_ITMCD', 'aa.YQMT_ITMCD');
-            $j->on('A.id', 'aa.maxid');
-        });
+        );
+
+        if (!$req->has('hist') || !$req->hist) {
+            $data->join(DB::raw("(
+                SELECT bb.YQMT_ITMCD, MAX(ID) AS maxid FROM YMI_QUO_MSTR_TBL bb
+                group by bb.YQMT_ITMCD
+            ) aa "), function($j) {
+                $j->on('A.YQMT_ITMCD', 'aa.YQMT_ITMCD');
+                $j->on('A.id', 'aa.maxid');
+            });
+        }
 
         if ($req->has('filter')) {
             foreach ($req->filter as $key => $value) {
@@ -131,8 +142,6 @@ class YMIQuotantionController extends BaseController
             }
         }
 
-
-        // return $data->toSql();
         if ($req->has('pagination')) {
             if (isset($req->pagination['sortBy'])) {
                 $data->orderBy($req->pagination['sortBy'], $req->pagination['descending'] ? 'DESC' : 'ASC');
@@ -149,14 +158,14 @@ class YMIQuotantionController extends BaseController
     }
 
     public function listDetail($item){
-        
+
     }
 
     public function exportPriceList(Request $req){
         $data = $this->getData($req);
 
         Excel::store(new ExportPriceListYMICDCU($data), 'export_pricelist.xlsx', 'public');
-        
+
         return 'storage/app/public/export_pricelist.xlsx';
     }
 }

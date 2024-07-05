@@ -25,6 +25,7 @@ class ImportEntitas implements ToModel, WithHeadingRow, SkipsEmptyRows
      */
     public function model(array $row)
     {
+        logger('entitas start');
         ini_set("memory_limit", "3G");
         if(!array_filter($row)) {
             return null;
@@ -67,5 +68,7 @@ class ImportEntitas implements ToModel, WithHeadingRow, SkipsEmptyRows
                 }
             }
         }
+
+        logger(json_encode($row));
     }
 }

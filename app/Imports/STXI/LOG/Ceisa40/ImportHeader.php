@@ -24,6 +24,7 @@ class ImportHeader implements ToModel, WithHeadingRow, SkipsEmptyRows
      */
     public function model(array $row)
     {
+        logger('header start');
         ini_set("memory_limit", "3G");
 
         if (!array_filter($row)) {
@@ -179,5 +180,7 @@ class ImportHeader implements ToModel, WithHeadingRow, SkipsEmptyRows
                 // ]));
             }
         }
+
+        logger(json_encode($row));
     }
 }

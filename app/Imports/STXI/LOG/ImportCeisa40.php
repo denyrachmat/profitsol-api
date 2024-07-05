@@ -23,6 +23,7 @@ class ImportCeisa40 implements WithMultipleSheets
     */
     public function sheets(): array
     {
+        set_time_limit(3600);
         return [
             'HEADER' => new ImportHeader($this->incout),
             'ENTITAS' => new ImportEntitas($this->incout),

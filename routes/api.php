@@ -95,7 +95,7 @@ Route::group(['prefix' => 'cms'], function () {
     Route::resource('quiz', QuizController::class);
 
     Route::post('storeAnswers', [FormController::class, 'storeAnswers']);
-    
+
     Route::get('migrationHRMS', [QuizController::class, 'migrationHRMS']);
     Route::get('migrationHRMSUserAns', [QuizController::class, 'migrateUsersAnswers']);
     Route::get('viewByLinkForm/{link}', [FormController::class, 'viewByLinkForm']);
@@ -211,10 +211,10 @@ Route::group(['prefix' => 'div'], function () {
 
         Route::post('ymiQuoList', [YMIQuotantionController::class, 'getData']);
         Route::post('exportPriceList', [YMIQuotantionController::class, 'exportPriceList']);
-        
+
         Route::resource('ypoDailyConf', YPODailyConfController::class);
         // End CD/CU Price MRI
-        
+
         // Start Auto create barcode TYO
         Route::resource('tyoAutoBarcode', TYOAutoBarcodeController::class);
         Route::group(['prefix' => 'tyoAutoBarcodes'], function() {
@@ -226,7 +226,7 @@ Route::group(['prefix' => 'div'], function () {
     Route::group(['prefix' => 'log'], function () {
         Route::get('INSWGetDataDetail/{filter}', [INSWDataController::class, 'getData']);
         Route::get('INSWGetData/{filter?}/{size?}', [INSWDataController::class, 'getListHSCode']);
-        
+
         Route::post('uploadData', [Ceisa40UploaderController::class, 'uploadData']);
         Route::post('getNopen', [Ceisa40UploaderController::class, 'getNopen']);
         Route::post('getDetPerusahaan', [Ceisa40UploaderController::class, 'getDetPerusahaan']);
@@ -241,7 +241,7 @@ Route::group(['prefix' => 'div'], function () {
         Route::get('interfaceBC',[CeisaMonitoringController::class, 'interfaceBCDOCMEGAtoWEB']);
         Route::get('interfaceByDate/{fdate}/{ldate}/{isInterMega?}/{isInterCeisa?}', [Ceisa40UploaderController::class, 'syncByDate']);
         Route::get('syncBCNo/{bcno}/{bcdate}', [Ceisa40UploaderController::class, 'syncBCNo']);
-        
+
     });
 
     Route::group(['prefix' => 'pu'], function () {
@@ -268,7 +268,7 @@ Route::group(['prefix' => 'div'], function () {
         Route::get('cekFilePDF/{ten}', [CirtenUpdateController::class, 'cekFilePDF']);
 
         Route::get('viewListItemDesc/{ten}', [CirtenUpdateController::class, 'viewListItemDesc']);
-        
+
         // CirtenUpdateController
     });
 

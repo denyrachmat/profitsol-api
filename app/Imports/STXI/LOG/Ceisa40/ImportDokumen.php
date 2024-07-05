@@ -26,6 +26,7 @@ class ImportDokumen implements ToModel, WithHeadingRow, SkipsEmptyRows
      */
     public function model(array $row)
     {
+        logger('dok start');
         ini_set("memory_limit", "3G");
 
         if(!array_filter($row)) {
@@ -39,6 +40,7 @@ class ImportDokumen implements ToModel, WithHeadingRow, SkipsEmptyRows
                 }
             });
 
+            logger(json_encode($cekKosong));
             if (count($cekKosong) > 0) {
 
                 $cekTempData = ITINVUploadTemp::where('NO_AJU', $row['nomor_aju'])->first();
@@ -152,5 +154,7 @@ class ImportDokumen implements ToModel, WithHeadingRow, SkipsEmptyRows
                 }
             }
         }
+
+        logger(json_encode($row));
     }
 }

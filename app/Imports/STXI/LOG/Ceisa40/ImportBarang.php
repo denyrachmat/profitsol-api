@@ -26,6 +26,7 @@ class ImportBarang implements ToModel, WithHeadingRow, SkipsEmptyRows
      */
     public function model(array $row)
     {
+        logger('barang start');
         ini_set("memory_limit", "3G");
         if (!empty(trim($row['nomor_aju']))) {
             $cekTempData = ITINVUploadTemp::where('NO_AJU', $row['nomor_aju'])->first();
@@ -193,5 +194,7 @@ class ImportBarang implements ToModel, WithHeadingRow, SkipsEmptyRows
                 }
             }
         }
+
+        logger(json_encode($row));
     }
 }
