@@ -53,7 +53,7 @@ class TrainingListController extends BaseController
 
     /**
      * Display the specified resource.
-     *  
+     *
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
@@ -100,7 +100,7 @@ class TrainingListController extends BaseController
         foreach ($hasil as $key => $value) {
             $getGrade = $this->getTrainingList($value['email'], $id);
             $hasilFinal[] = array_merge(
-                $value, 
+                $value,
                 [
                     'grade' => $getGrade[0]['cfm_val'],
                     'status' => $getGrade[0]['status']
@@ -156,10 +156,10 @@ class TrainingListController extends BaseController
     public function showHistoryPerUser($email, $id, $dataOnly = false){
         $dataAnswers = FormAnswerDet::where('cfm_id', $id)->get();
         $getBatch = FormAnswerUserDet::select(
-            'cfaud_batch', 
+            'cfaud_batch',
             DB::raw('MAX(created_at) as answersDate'))
         ->where('p_u_username', $email)->where('cfm_id', $id)->withTrashed()->groupBy('cfaud_batch')->get();
-        
+
         // return $getBatch->toArray();
         $hasil = [];
         foreach ($getBatch as $key => $value) {
@@ -195,7 +195,7 @@ class TrainingListController extends BaseController
             $filterOnlyMoreThan1 = array_filter($dataPerUser, function($f) {
                 return !$f['is_pass'];
             });
-            
+
             // if (count($filterOnlyMoreThan1) > 0) {
             //     $hasilUsers[$valueUsers] = array_values($dataPerUser);
             // }
@@ -205,14 +205,14 @@ class TrainingListController extends BaseController
         $dataQuestion = array_values($hasilUsers)[0][0]['data_ori'];
         // return $dataQuestion;
         $dataFinal = [];
-        foreach ($dataQuestion as $keyFinal => $valueFinal) {
+        foreach (array_values(array_filter($dataQuestion, function($f) {return $f['type'] === 'form';})) as $keyFinal => $valueFinal) {
             $dataQ = [];
             $dataQTrue = [];
             foreach ($hasilUsers as $keyHU => $valueHU) {
                 foreach ($valueHU as $keyHUDet => $valueHUDet) {
                     $testData = array_filter($valueHUDet['data'], function($f) use ($valueFinal, $dataQTrue, $keyHU) { return !$f['status'] && $f['id'] == $valueFinal['id'] && !isset($dataQTrue[$keyHU]); });
                     $testData2 = array_filter($valueHUDet['data'], function($f, $k) use ($valueFinal, $dataQ, $keyHU) { return $f['status'] && $f['id'] == $valueFinal['id'] && !isset($dataQ[$keyHU]); }, ARRAY_FILTER_USE_BOTH);
-                    
+
                     if (count($testData) > 0) {
                         $dataQ[$keyHU][] = array_values($testData)[0];
                     }
@@ -227,21 +227,21 @@ class TrainingListController extends BaseController
             $hasilAnswers = '';
             if (!empty($cekAnswers)) {
                 $cekDataAns = FormMultiDet::where('cfm_id', $valueFinal['id'])
-                    ->whereIn('cfmd_value', is_array(json_decode($cekAnswers->cfm_val)) 
-                        ? json_decode($cekAnswers->cfm_val) 
+                    ->whereIn('cfmd_value', is_array(json_decode($cekAnswers->cfm_val))
+                        ? json_decode($cekAnswers->cfm_val)
                         : [$cekAnswers->cfm_val])
                     ->pluck('cfmd_label')
                     ->toArray();
 
                 $hasilAnswers = implode("\\r\\n", $cekDataAns);
-            }            
-                
+            }
+
             // FormMultiDet::where('cfm_id', $valueFinal['id'])->first();
 
             $dataFinal[] = array_merge(
                 $valueFinal,
                 [
-                    'failData' => $dataQ, 
+                    'failData' => $dataQ,
                     'successData' => $dataQTrue,
                     'answers' => $hasilAnswers,
                     'data' => json_decode($cekAnswers->cfm_val)
