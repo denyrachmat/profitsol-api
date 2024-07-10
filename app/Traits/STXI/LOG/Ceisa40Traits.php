@@ -409,6 +409,10 @@ trait Ceisa40Traits
                 case '27':
                     $cekEntitas = $this->getEntitas($id);
 
+                    $cekEntitas = array_values(array_filter($cekEntitas, function($f) {
+                        return $f['kodeEntitas'] == '7';
+                    }));
+
                     if ($cekEntitas[0]['nomorIdentitas'] === '015582513056000') { // Jika Entitas pemilik dari sumitronics
                         $bcComp = 'BC 2.7';
                     } else { // Selain itu maka return
