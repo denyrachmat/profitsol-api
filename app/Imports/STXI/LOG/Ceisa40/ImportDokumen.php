@@ -29,7 +29,7 @@ class ImportDokumen implements ToModel, WithHeadingRow, SkipsEmptyRows
         logger('dok start');
         ini_set("memory_limit", "3G");
 
-        if(!array_filter($row)) {
+        if (!array_filter($row)) {
             return null;
         }
 
@@ -40,12 +40,16 @@ class ImportDokumen implements ToModel, WithHeadingRow, SkipsEmptyRows
                 }
             });
 
-            logger(json_encode($cekKosong));
             if (count($cekKosong) > 0) {
-
+                $time_start = microtime(true);
                 $cekTempData = ITINVUploadTemp::where('NO_AJU', $row['nomor_aju'])->first();
+                $time_end = microtime(true);
+                $execution_time = ($time_end - $time_start) / 60;
 
+                logger('Dokumen fetch: Total time cek Ceisa Temp Data: ' . $execution_time);
                 $jumlahInv = $jumlahDoc = 0;
+
+                $time_start = microtime(true);
                 if ($this->incout == 'INC') {
                     $baseDoc = ITINVIncoming::where(DB::raw('LEFT(BCDOCNO, 6)'), substr($cekTempData['NO_DAFTAR'], 0, 6))
                         ->where('BCTYPE', $cekTempData['TYPE_BC'])
@@ -61,13 +65,20 @@ class ImportDokumen implements ToModel, WithHeadingRow, SkipsEmptyRows
                     $jumlahInv = (clone $baseDoc)->where('INVNO', $row['nomor_dokumen'])->count();
                     $jumlahDoc = (clone $baseDoc)->where('DOCNO', $row['nomor_dokumen'])->count();
                 }
+                $time_end = microtime(true);
 
+
+                $execution_time = ($time_end - $time_start) / 60;
+
+                logger('Dokumen fetch: Total time cek Data on IT Inventory: ' . $execution_time);
+
+
+                $time_start = microtime(true);
                 // Invoice
                 if ($row['kode_dokumen'] == 380 && $jumlahInv === 0) {
                     if ($this->incout == 'INC') {
                         $cekIncoming = (clone $baseDoc)
                             ->whereNull(DB::raw('rtrim(HHEINVNO)'))
-                            ->orWhere('HHEINVNO', '')
                             ->get();
 
                         if (count($cekIncoming) > 0) {
@@ -82,8 +93,7 @@ class ImportDokumen implements ToModel, WithHeadingRow, SkipsEmptyRows
                         }
                     } else {
                         $cekOutgoing = (clone $baseDoc)
-                            ->whereNull('INVNO')
-                            ->orWhere('INVNO', '')
+                            ->whereNull(DB::raw('rtrim(INVNO)'))
                             ->get();
 
                         if (count($cekOutgoing) > 0) {
@@ -101,19 +111,31 @@ class ImportDokumen implements ToModel, WithHeadingRow, SkipsEmptyRows
                 // Tax Invoice
                 if ($row['kode_dokumen'] == 388 && $jumlahInv === 0) {
                     if ($this->incout == 'INC') {
+                        $time_start_ins = microtime(true);
                         $cekIncoming = (clone $baseDoc)
                             ->whereNull(DB::raw('rtrim(TAXINV)'))
-                            ->orWhere('TAXINV', '')
                             ->get();
+                        $time_end_ins = microtime(true);
+                        $execution_time = ($time_end_ins - $time_start_ins) / 60;
+
+                        logger($cekIncoming);
+                        logger('Dokumen fetch: Total time cek Data if TAXINV in null on IT Inventory: ' . $execution_time);
 
                         if (count($cekIncoming) > 0) {
-                            foreach ($cekIncoming->pluck('ITMCD') as $key => $valueItm) {
-                                (clone $baseDoc)
-                                    ->where('ITMCD', $valueItm)
-                                    ->update([
-                                        'TAXINV' => $row['nomor_dokumen']
-                                    ]);
-                            }
+                            $time_start_ins = microtime(true);
+                            ITINVIncoming::where(DB::raw('LEFT(BCDOCNO, 6)'), substr($cekTempData['NO_DAFTAR'], 0, 6))
+                                ->where('BCTYPE', $cekTempData['TYPE_BC'])
+                                ->where('BCDOCDT', $cekTempData['TGL_DAFTAR'])
+                                ->whereIn('ITMCD', $cekIncoming->pluck('ITMCD'))
+                                ->update([
+                                    'TAXINV' => $row['nomor_dokumen']
+                                ]);
+
+                            $time_end_ins = microtime(true);
+                            $execution_time = ($time_end_ins - $time_start_ins) / 60;
+
+                            logger('Dokumen fetch: Total time update if TAXINV in null on IT Inventory: ' . $execution_time);
+
                         }
                     }
                 }
@@ -124,8 +146,7 @@ class ImportDokumen implements ToModel, WithHeadingRow, SkipsEmptyRows
                     logger('Jumlah Doc ' . $jumlahDoc);
                     if ($this->incout == 'INC') {
                         $cekIncoming = (clone $baseDoc)
-                            ->whereNull('DOCNO')
-                            ->orWhere('DOCNO', '')
+                            ->whereNull(DB::raw('rtrim(DOCNO)'))
                             ->get();
 
                         if (count($cekIncoming) > 0) {
@@ -138,8 +159,7 @@ class ImportDokumen implements ToModel, WithHeadingRow, SkipsEmptyRows
                         }
                     } else {
                         $cekOutgoing = (clone $baseDoc)
-                            ->whereNull('DOCNO')
-                            ->orWhere('DOCNO', '')
+                            ->whereNull(DB::raw('rtrim(DOCNO)'))
                             ->get();
 
                         if (count($cekOutgoing) > 0) {
@@ -169,6 +189,9 @@ class ImportDokumen implements ToModel, WithHeadingRow, SkipsEmptyRows
                         }
                     }
                 }
+                $time_end = microtime(true);
+
+                logger('Dokumen fetch: Total time Update data on IT Inventory: ' . $execution_time);
             }
         }
 
