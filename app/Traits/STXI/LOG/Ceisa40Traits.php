@@ -394,6 +394,7 @@ trait Ceisa40Traits
     }
 
     public function downloadExcel($noAju, $bc, $id, $isStore = true) {
+        logger(json_encode([$noAju, $bc, $id, $isStore]));
         $getDetilPerusahanPenerima = $this->apiPointData(
             'ekspor-xml/Xlsx?nomorAju='.$noAju.'&idUser=adf9ea0f-de99-444d-b502-e4a474670624&kodeDokumen='.$bc,
             'GET',
@@ -437,8 +438,7 @@ trait Ceisa40Traits
                 return 'storage/app/public/ceisa40storage/'.$fileName;
             } else {
                 Storage::put('public/upload_ceisa40/'.$fileName, $getDetilPerusahanPenerima);
-                // return 'storage/upload_ceisa40/'.$fileName;
-                return 'storage/ceisa40storage/'.$fileName;
+                return 'storage/upload_ceisa40/'.$fileName;
             }
         } else {
             return $this->handleError('Failed fetching data from Portal Ceisa 4.0 !!');
