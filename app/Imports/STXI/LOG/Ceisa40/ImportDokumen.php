@@ -64,15 +64,12 @@ class ImportDokumen implements ToModel, WithHeadingRow, SkipsEmptyRows
 
                 // Invoice
                 if ($row['kode_dokumen'] == 380 && $jumlahInv === 0) {
-                    logger('Inv ' . $row['nomor_dokumen']);
-                    logger('Jumlah Inv ' . $jumlahInv);
                     if ($this->incout == 'INC') {
                         $cekIncoming = (clone $baseDoc)
                             ->whereNull(DB::raw('rtrim(HHEINVNO)'))
                             ->orWhere('HHEINVNO', '')
                             ->get();
 
-                        logger(json_encode($cekIncoming));
                         if (count($cekIncoming) > 0) {
                             foreach ($cekIncoming->pluck('ITMCD') as $key => $valueItm) {
                                 (clone $baseDoc)
@@ -95,6 +92,26 @@ class ImportDokumen implements ToModel, WithHeadingRow, SkipsEmptyRows
                                     ->where('ITMCD', $valueItm)
                                     ->update([
                                         'INVNO' => $row['nomor_dokumen']
+                                    ]);
+                            }
+                        }
+                    }
+                }
+
+                // Tax Invoice
+                if ($row['kode_dokumen'] == 388 && $jumlahInv === 0) {
+                    if ($this->incout == 'INC') {
+                        $cekIncoming = (clone $baseDoc)
+                            ->whereNull(DB::raw('rtrim(TAXINV)'))
+                            ->orWhere('TAXINV', '')
+                            ->get();
+
+                        if (count($cekIncoming) > 0) {
+                            foreach ($cekIncoming->pluck('ITMCD') as $key => $valueItm) {
+                                (clone $baseDoc)
+                                    ->where('ITMCD', $valueItm)
+                                    ->update([
+                                        'TAXINV' => $row['nomor_dokumen']
                                     ]);
                             }
                         }
