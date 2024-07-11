@@ -161,6 +161,8 @@ class CirtenUpdateController extends BaseController
 
             Excel::import($importer, $cirtenMstr->CIRTEN_FILEPATH, 'ten_bim');
 
+            // return $this->handleError('Re-sync TEN ' . $id . ' Failed', $importer);
+            // return $importer;
             if (!empty($importer->data) && isset($importer->data) && isset($importer->data['send_data']) && !empty($importer->data['send_data'])) {
 
                 SyncCirTentoOldDMS::dispatch($importer->data['send_data'])->onQueue('SyncCirTentoOldDMS');
@@ -256,7 +258,7 @@ class CirtenUpdateController extends BaseController
         $importer2 = new ImportTENList($year, 0);
 
         Excel::import($importer2, 'Technical Notice List/TECHNICAL NOTICE LIST - PROJECTOR.xlsx', 'root_bim');
-        
+
         return 'Sync !!';
     }
 
@@ -323,8 +325,8 @@ class CirtenUpdateController extends BaseController
             ->join('MGSVR.VMI_SME.dbo.MITM_TBL', 'MITM_ITMCD', 'CIM_ITMCD')
             ->orderby('CIRTEN_MSTR.created_at', 'desc')
             ->get();
-        
-        
+
+
         return $data;
     }
 }
