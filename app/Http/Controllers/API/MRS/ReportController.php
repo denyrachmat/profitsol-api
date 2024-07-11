@@ -160,14 +160,14 @@ class ReportController extends BaseController
     public function simRunning(Request $request)
     {
         $conn = $this->masterConn($request->id, $request->dbname);
-        
+
         if ($request->type === 'sp') {
             // $data = $conn->fetchAllAssociative($request->code);
 
             $changeConn = $this->eloqConn($request->id, $request->dbname);
             if ($changeConn) {
                 $data = DB::connection('sqlsrv_conn_dyn')->select('SET NOCOUNT ON;'.$request->code);
-                
+
                 $data = json_decode(json_encode($data), true);
                 $cols = [];
                 foreach ($data as $key => $value) {
@@ -258,31 +258,29 @@ class ReportController extends BaseController
         )->join('mrs_db_mstr', 'mdm_id', 'mrs_db_mstr.id')
             ->where('mrs_report_mstr.id', $idReport)
             ->first();
-        
+
         if (!empty($cekReport)) {
             $conn = $this->masterConn($cekReport->mdm_id, $cekReport->mrm_db);
-            
+
             if ($cekReport->mrm_url_gen === 'sp') {
                 $changeConn = $this->eloqConn($cekReport->mdm_id, $cekReport->mrm_db);
                 if ($changeConn) {
                     $splitSPCode = explode(' ', $cekReport->mrm_query);
 
-                    // return $splitSPCode;
                     $finalCode = $splitSPCode[0].' '.$splitSPCode[1];
                     if ($request->has('filter') && count($request->filter) > 0) {
                         foreach ($request->filter as $key => $valueFilter) {
-                            if (!empty($valueFilter['value'][0])) {
-                                $valuenya = $valueFilter['cols']['type'] == 'int'
-                                ? $valueFilter['value'][0]
-                                : "'" . $valueFilter['value'][0] . "'";
-    
-                                $finalCode .= ($key === 0 ? ' ' : ', ') .$valueFilter['cols']['value'].'='.$valuenya;
-                            }
+                            $valuenya = $valueFilter['cols']['type'] == 'int'
+                            ? $valueFilter['value'][0]
+                            : "'" . $valueFilter['value'][0] . "'";
+
+                            $finalCode .= ($key === 0 ? ' ' : ', ') .$valueFilter['cols']['value'].'='.$valuenya;
                         }
                     }
+                    // return $finalCode;
 
                     $data = DB::connection('sqlsrv_conn_dyn')->select('SET NOCOUNT ON;'.$finalCode);
-                    
+
                     $data = json_decode(json_encode($data), true);
 
                     $parse = [
@@ -316,7 +314,7 @@ class ReportController extends BaseController
                         $valuenya1 = $valueFilter['cols']['type'] == 'int'
                             ? $valueFilter['value'][0]
                             : "'" . $valueFilter['value'][0] . "'";
-    
+
                         $valuenya2 = isset($valueFilter['value'][1])
                             ? (
                                 $valueFilter['cols']['type'] == 'int'
@@ -324,7 +322,7 @@ class ReportController extends BaseController
                                 : "'" . $valueFilter['value'][1] . "'"
                             )
                             : null;
-    
+
                         if ($valueFilter['opr'] == 'between') {
                             if ($valueFilter['conmet'] == 'and') {
                                 $smBuild->andwhere($valueFilter['cols']['value'] . ' between ' . $valuenya1 . ' and ' . $valuenya2);
@@ -350,7 +348,7 @@ class ReportController extends BaseController
 
                 $getQuery = (clone $smBuild)->getSql();
                 $smAllRecords = $conn->fetchAllAssociative('SELECT COUNT(*) as total FROM (' . $getQuery . ') a');
-                
+
                 $buildSelect = "";
                 $listCols = MRSReportColsDet::where('mrm_id',$idReport)->where('mrcd_isActive', 1)->get();
                 foreach ($listCols as $keyCols => $valueCols) {
@@ -360,7 +358,7 @@ class ReportController extends BaseController
                 $sm = $conn->createQueryBuilder()
                     ->select($buildSelect)
                     ->from('(' . (clone $smBuild)->getSql() . ') smb');
-    
+
                 if ($request->has('pagination')) {
                     if ($request->pagination['page'] == 1) {
                         $firstNum = 1;
@@ -376,7 +374,7 @@ class ReportController extends BaseController
                     $sm->andwhere('smb.RowNum >= ' . ($firstNum))
                         ->andwhere('smb.RowNum <= ' . ($lastNum))
                         ->orderBy('smb.RowNum');
-    
+
                     $hasil = [
                         'data' => $sm
                             ->executeQuery()

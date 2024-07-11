@@ -154,7 +154,8 @@ class ImportBarang implements ToModel, WithHeadingRow, SkipsEmptyRows
                                 : round((int) $row['cif'], 4),
                                 'CUSNM' => $cekTempData['PENERIMA'],
                                 'ITMD1' => !empty($getHSCode) ? $getHSCode->MITM_ITMD1 : trim($row['uraian']),
-                                'SPTNO' => !empty($getHSCode) ? $getHSCode->MITM_SPTNO : ''
+                                'SPTNO' => !empty($getHSCode) ? $getHSCode->MITM_SPTNO : '',
+                                'HSCODE' => $row['hs']
                             ]);
                     } else {
                         $UOM = 'PIECE';
