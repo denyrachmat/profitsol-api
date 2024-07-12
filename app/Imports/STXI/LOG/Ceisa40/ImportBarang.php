@@ -67,6 +67,10 @@ class ImportBarang implements ToModel, WithHeadingRow, SkipsEmptyRows
 
                         if ($cekBCStatus->STAT_MEGABCDOC == 1) {
                             $cekItemMega = DB::connection('sqlsrv_itinv')->table('VIEW_MITM_TBL')->where('MITM_ITMCD', $row['kode_barang'])->first();
+                            $cekHeaderMega = DB::connection('sqlsrv_mega_db')
+                                ->table('Z_STXI_VW_INCBCINFO')
+                                ->where('BCDOCNO', $row["nomor_daftar"])
+                                ->first();
 
                             ITINVIncoming::updateOrCreate([
                                 'BCTYPE' => $cekTempData['TYPE_BC'],
@@ -74,11 +78,11 @@ class ImportBarang implements ToModel, WithHeadingRow, SkipsEmptyRows
                                 'BCDOCDT' => $cekTempData['TGL_DAFTAR'],
                                 'ITMCD' => trim($row['kode_barang']),
                             ], [
-                                'LOCCD' => empty($cekItemMega) ? 'STX-I' : '',
+                                'LOCCD' => empty($cekHeaderMega) ? 'STX-I' : $cekHeaderMega->IGRN_LOCCD,
                                 'BCTYPE' => $cekTempData['TYPE_BC'],
                                 'BCDOCNO' => $noDaftar,
                                 'BCDOCDT' => $cekTempData['TGL_DAFTAR'],
-                                'BSGRP' => 'LAIN NYA',
+                                'BSGRP' =>  empty($cekHeaderMega) ? 'LAIN NYA' : $cekHeaderMega->IGRN_BSGRP,
                                 'DOCCD' => '',
                                 'DOCNO' => '',
                                 'HHEINVNO' => '',
