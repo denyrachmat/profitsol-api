@@ -64,7 +64,7 @@ class Ceisa40UploaderController extends BaseController
 
             sleep(1);
             // return public_path($downloadExcel);
-            if (str_contains($downloadExcel, '1.6') || str_contains($downloadExcel, '2.7I') || str_contains($downloadExcel, '4.0')) {
+            if (str_contains($downloadExcel, '1.6') || str_contains($downloadExcel, '2.0') || str_contains($downloadExcel, '2.7I') || str_contains($downloadExcel, '4.0')) {
                 logger('ini incoming !!');
                 $state = 'INC';
             } else {
