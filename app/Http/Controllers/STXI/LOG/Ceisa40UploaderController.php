@@ -42,7 +42,7 @@ class Ceisa40UploaderController extends BaseController
         }
 
 
-        if (str_contains($realFileName, '1.6') || str_contains($realFileName, '2.7I') || str_contains($realFileName, '4.0')) {
+        if (str_contains($realFileName, '1.6') || str_contains($realFileName, '2.0') || str_contains($realFileName, '2.7I') || str_contains($realFileName, '4.0')) {
             logger('ini incoming !!');
             $state = 'INC';
         } else {

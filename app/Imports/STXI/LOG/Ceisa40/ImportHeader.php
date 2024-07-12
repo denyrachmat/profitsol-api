@@ -6,6 +6,7 @@ use Illuminate\Support\Collection;
 use Maatwebsite\Excel\Concerns\ToModel;
 use Maatwebsite\Excel\Concerns\WithHeadingRow;
 use Maatwebsite\Excel\Concerns\SkipsEmptyRows;
+use DB;
 
 use App\Models\STXI\LOG\ITINVIncoming;
 use App\Models\STXI\LOG\ITINVOutgoing;
@@ -43,6 +44,9 @@ class ImportHeader implements ToModel, WithHeadingRow, SkipsEmptyRows
                     case 27:
                         $kodeDokumen = 'BC2.7I';
                         break;
+                    case 20:
+                        $kodeDokumen = 'BC2.0';
+                        break;
                     default:
                         $kodeDokumen = 'BC4.0';
                         break;
@@ -74,16 +78,38 @@ class ImportHeader implements ToModel, WithHeadingRow, SkipsEmptyRows
                     ->first();
 
                 if (!empty($cekData)) {
-                    ITINVIncoming::where("BCDOCNO", 'LIKE', $row["nomor_daftar"] . '%')
-                        ->where('BCTYPE', $kodeDokumen)
-                        ->where('BCDOCDT', $row["tanggal_daftar"])
-                        ->update([
-                            'CURCD' => !empty($row['kode_valuta']) ? $row['kode_valuta'] : (
-                                $row['kode_dokumen'] == 40
-                                ? 'IDR'
-                                : 'USD'
-                            ),
-                        ]);
+                    // Check is it real BG LAIN NYA
+                    if ($cekData->BSGRP === 'LAIN NYA') {
+                        $cekHeader = DB::connection('sqlsrv_mega_db')
+                            ->table('Z_STXI_VW_INCBCINFO')
+                            ->where('BCDOCNO', $row["nomor_daftar"])
+                            ->first();
+
+                        ITINVIncoming::where("BCDOCNO", 'LIKE', $row["nomor_daftar"] . '%')
+                            ->where('BCTYPE', $kodeDokumen)
+                            ->where('BCDOCDT', $row["tanggal_daftar"])
+                            ->update([
+                                'LOCCD' => !empty($cekHeader) ? $cekHeader->IGRN_LOCCD : 'STX-I',
+                                'BSGRP' => !empty($cekHeader) ? $cekHeader->IGRN_BSGRP : 'LAIN NYA',
+                                'BCTYPE' => $kodeDokumen,
+                                'CURCD' => !empty($row['kode_valuta']) ? $row['kode_valuta'] : (
+                                    $row['kode_dokumen'] == 40
+                                    ? 'IDR'
+                                    : 'USD'
+                                ),
+                            ]);
+                    } else {
+                        ITINVIncoming::where("BCDOCNO", 'LIKE', $row["nomor_daftar"] . '%')
+                            ->where('BCTYPE', $kodeDokumen)
+                            ->where('BCDOCDT', $row["tanggal_daftar"])
+                            ->update([
+                                'CURCD' => !empty($row['kode_valuta']) ? $row['kode_valuta'] : (
+                                    $row['kode_dokumen'] == 40
+                                    ? 'IDR'
+                                    : 'USD'
+                                ),
+                            ]);
+                    }
 
                     ITINVUploadTemp::updateOrCreate([
                         'NO_AJU' => $row['nomor_aju'],
@@ -124,16 +150,39 @@ class ImportHeader implements ToModel, WithHeadingRow, SkipsEmptyRows
                     ->first();
 
                 if (!empty($cekData)) {
-                    ITINVOutgoing::where("BCDOCNO", $row["nomor_daftar"])
-                        ->where('BCTYPE', $kodeDokumen)
-                        ->where('BCDOCDT', $row["tanggal_daftar"])
-                        ->update([
-                            'CURCD' => !empty($row['kode_valuta']) ? $row['kode_valuta'] : (
-                                $row['kode_dokumen'] == 41
-                                ? 'IDR'
-                                : 'USD'
-                            ),
-                        ]);
+                    if ($cekData->BSGRP === 'LAIN NYA') {
+                        if ($cekData->BSGRP === 'LAIN NYA') {
+                            $cekHeader = DB::connection('sqlsrv_mega_db')
+                                ->table('Z_STXI_VW_INCBCINFO')
+                                ->where('BCDOCNO', $row["nomor_daftar"])
+                                ->first();
+
+                            ITINVOutgoing::where("BCDOCNO", 'LIKE', $row["nomor_daftar"] . '%')
+                                ->where('BCTYPE', $kodeDokumen)
+                                ->where('BCDOCDT', $row["tanggal_daftar"])
+                                ->update([
+                                    'LOCCD' => !empty($cekHeader) ? $cekHeader->IGRN_LOCCD : 'STX-I',
+                                    'BSGRP' => !empty($cekHeader) ? $cekHeader->IGRN_BSGRP : 'LAIN NYA',
+                                    'BCTYPE' => $kodeDokumen,
+                                    'CURCD' => !empty($row['kode_valuta']) ? $row['kode_valuta'] : (
+                                        $row['kode_dokumen'] == 40
+                                        ? 'IDR'
+                                        : 'USD'
+                                    ),
+                                ]);
+                        } else {
+                            ITINVOutgoing::where("BCDOCNO", $row["nomor_daftar"])
+                                ->where('BCTYPE', $kodeDokumen)
+                                ->where('BCDOCDT', $row["tanggal_daftar"])
+                                ->update([
+                                    'CURCD' => !empty($row['kode_valuta']) ? $row['kode_valuta'] : (
+                                        $row['kode_dokumen'] == 41
+                                        ? 'IDR'
+                                        : 'USD'
+                                    ),
+                                ]);
+                        }
+                    }
 
                     ITINVUploadTemp::updateOrCreate([
                         'NO_AJU' => $row['nomor_aju'],

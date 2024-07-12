@@ -287,6 +287,19 @@ return [
             'prefix_indexes' => true,
         ],
 
+        'sqlsrv_mega_db' => [
+            'driver' => 'sqlsrv',
+            'url' => env('DATABASE_URL'),
+            'host' => env('DB_MEGA_DB_HOST', 'localhost'),
+            'port' => env('DB_MEGA_DB_PORT', '1433'),
+            'database' => env('DB_MEGA_DB_DATABASE', 'forge'),
+            'username' => env('DB_MEGA_DB_USERNAME', 'forge'),
+            'password' => env('DB_MEGA_DB_PASSWORD', ''),
+            'charset' => 'utf8',
+            'prefix' => '',
+            'prefix_indexes' => true,
+        ],
+
         'sqlsrv_psi_eng' => [
             'driver' => 'sqlsrv',
             'url' => env('DATABASE_URL'),
