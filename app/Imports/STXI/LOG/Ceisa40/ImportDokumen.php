@@ -78,7 +78,7 @@ class ImportDokumen implements ToModel, WithHeadingRow, SkipsEmptyRows
                 if ($row['kode_dokumen'] == 380 && $jumlahInv === 0) {
                     if ($this->incout == 'INC') {
                         $cekIncoming = (clone $baseDoc)
-                            ->whereNull(DB::raw('rtrim(HHEINVNO)'))
+                            ->whereNull(DB::raw("NULLIF(HHEINVNO, '')"))
                             ->get();
 
                         if (count($cekIncoming) > 0) {
@@ -93,7 +93,7 @@ class ImportDokumen implements ToModel, WithHeadingRow, SkipsEmptyRows
                         }
                     } else {
                         $cekOutgoing = (clone $baseDoc)
-                            ->whereNull(DB::raw('rtrim(INVNO)'))
+                            ->whereNull(DB::raw("NULLIF(INVNO, '')"))
                             ->get();
 
                         if (count($cekOutgoing) > 0) {
@@ -113,7 +113,7 @@ class ImportDokumen implements ToModel, WithHeadingRow, SkipsEmptyRows
                     if ($this->incout == 'INC') {
                         $time_start_ins = microtime(true);
                         $cekIncoming = (clone $baseDoc)
-                            ->whereNull(DB::raw('rtrim(TAXINV)'))
+                            ->whereNull(DB::raw("NULLIF(TAXINV, '')"))
                             ->get();
                         $time_end_ins = microtime(true);
                         $execution_time = ($time_end_ins - $time_start_ins) / 60;
@@ -146,7 +146,7 @@ class ImportDokumen implements ToModel, WithHeadingRow, SkipsEmptyRows
                     logger('Jumlah Doc ' . $jumlahDoc);
                     if ($this->incout == 'INC') {
                         $cekIncoming = (clone $baseDoc)
-                            ->whereNull(DB::raw('rtrim(DOCNO)'))
+                            ->whereNull(DB::raw("NULLIF(DOCNO, '')"))
                             ->get();
 
                         if (count($cekIncoming) > 0) {
@@ -159,7 +159,7 @@ class ImportDokumen implements ToModel, WithHeadingRow, SkipsEmptyRows
                         }
                     } else {
                         $cekOutgoing = (clone $baseDoc)
-                            ->whereNull(DB::raw('rtrim(DOCNO)'))
+                            ->whereNull(DB::raw("NULLIF(DOCNO, '')"))
                             ->get();
 
                         if (count($cekOutgoing) > 0) {
@@ -189,6 +189,7 @@ class ImportDokumen implements ToModel, WithHeadingRow, SkipsEmptyRows
                         }
                     }
                 }
+
                 $time_end = microtime(true);
 
                 logger('Dokumen fetch: Total time Update data on IT Inventory: ' . $execution_time);
