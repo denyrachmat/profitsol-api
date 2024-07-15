@@ -115,12 +115,13 @@ class ImportCircularTen implements ToModel
         if ($this->nowRows >= $this->getRowsForModel && $this->statusGetData == 'getContent') {
             $hasilCekKosong = [];
             foreach ($row as $keyCekKosongModel => $valueKosongModel) {
-                if (!empty($valueKosongModel)) {
+                if (!empty(trim($valueKosongModel))) {
                     $hasilCekKosong[] = $valueKosongModel;
                 }
             }
             $this->data['contentCek'][] = $hasilCekKosong;
             $this->data['contentCek2'][] = $this->contentArray;
+            $this->data['contentCek3'][] = count($hasilCekKosong);
 
             if (count($hasilCekKosong) > 0) {
                 $this->contentArray[] = $hasilCekKosong;
@@ -128,7 +129,7 @@ class ImportCircularTen implements ToModel
 
             $this->data['cekContentJuga'][] = [count($hasilCekKosong),$hasilCekKosong, count($this->contentArray)];
 
-            if(count($hasilCekKosong) === 0 && count($this->contentArray) > 0){
+            if(count($this->contentArray) > 0){
 
                 foreach ($this->contentArray as $keyRow => $valueRow) {
                     $this->tableBuild .= "<tr>";
