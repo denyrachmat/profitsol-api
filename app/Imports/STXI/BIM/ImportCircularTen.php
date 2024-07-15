@@ -129,7 +129,7 @@ class ImportCircularTen implements ToModel
 
             $this->data['cekContentJuga'][] = [count($hasilCekKosong),$hasilCekKosong, count($this->contentArray)];
 
-            if(count($this->contentArray) > 0){
+            if(count($hasilCekKosong) === 0 && count($this->contentArray) > 0){
 
                 foreach ($this->contentArray as $keyRow => $valueRow) {
                     $this->tableBuild .= "<tr>";
