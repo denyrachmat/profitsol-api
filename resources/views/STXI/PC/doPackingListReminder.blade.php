@@ -71,7 +71,11 @@
         </tbody>
     </table>
 
+    <br>
     <div style="top-padding:1em">
         * This is an automatically generated email. Do not reply.
+        <br>
+        <p>Best Regards,</p>
+        <p><b>PT Sumitronics Indonesia</b></p>
     </div>
 </div>
