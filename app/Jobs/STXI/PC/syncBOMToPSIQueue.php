@@ -35,24 +35,16 @@ class syncBOMToPSIQueue implements ShouldQueue
             ->where('REVISION', $this->data['REVISION'])
             ->where('MAIN_PART_CODE', $this->data['MAIN PART CODE'])
             ->where('MAIN_SPTNO', $this->data['MAIN SPTNO'])
-            ->where('MS_NO', $this->data['MS NO'])
-            ->where('IEI_TEN_NO', $this->data['IEI TEN NO'])
+            // ->where('MS_NO', $this->data['MS NO'])
+            // ->where('IEI_TEN_NO', $this->data['IEI TEN NO'])
             ->first();
 
         if (!empty($cekData)) {
-            // BOMSTX_TBL::where('MODEL_CODE', $this->data['MODEL CODE'])
-            //     ->where('REVISION', $this->data['REVISION'])
-            //     ->where('MAIN_PART_CODE', $this->data['MAIN PART CODE'])
-            //     ->where('MAIN_SPTNO', $this->data['MAIN SPTNO'])
-            //     ->where('MS_NO', $this->data['MS NO'])
-            //     ->delete();
-
             $bomSTXonPSI = BOMSTX_TBL::where('MODEL_CODE', $this->data['MODEL CODE'])
                 ->where('REVISION', $this->data['REVISION'])
                 ->where('MAIN_PART_CODE', $this->data['MAIN PART CODE'])
                 ->where('MAIN_SPTNO', $this->data['MAIN SPTNO'])
-                ->where('MS_NO', $this->data['MS NO'])
-                // ->where('IEI_TEN_NO', $this->data['IEI TEN NO'])
+                // ->where('MS_NO', $this->data['MS NO'])
                 ->update([
                     'MODEL_CODE' => $this->data['MODEL CODE'],
                     'MODEL_DESC' => $this->data['MODEL DESC'],
@@ -86,8 +78,6 @@ class syncBOMToPSIQueue implements ShouldQueue
                     'SEC_TEN_NO' => $this->data['SEC TEN NO'],
                     'TEN_RECEIVE_DATE' => $this->data['TEN RECEIVE DATE'],
                     'CHANGE_OVERVIEW' => $this->data['CHANGE OVERVIEW'],
-                    // 'STOCK_SGL' => 0,
-                    // 'STOCK_CPO' => 0,
                     'TEN_UPDATE_DATE' => $this->data['TEN_UPDATE_DATE'],
                     'UPDDT' => date('Y-m-d H:i:s')
                 ]);
@@ -138,8 +128,6 @@ class syncBOMToPSIQueue implements ShouldQueue
                 'SEC_TEN_NO' => $this->data['SEC TEN NO'],
                 'TEN_RECEIVE_DATE' => $this->data['TEN RECEIVE DATE'],
                 'CHANGE_OVERVIEW' => $this->data['CHANGE OVERVIEW'],
-                // 'STOCK_SGL' => 0,
-                // 'STOCK_CPO' => 0,
                 'TEN_UPDATE_DATE' => $this->data['TEN_UPDATE_DATE'],
                 'UPDDT' => date('Y-m-d H:i:s'),
             ]);
@@ -157,38 +145,5 @@ class syncBOMToPSIQueue implements ShouldQueue
                 'BPSM_RUNTIME' => $this->runTime,
             ]);
         }
-
-        // if (!$bomSTXonPSI->wasRecentlyCreated && $bomSTXonPSI->wasChanged()) {
-        //     // updateOrCreate performed an update
-        //     BPSM_MSTR::updateOrCreate([
-        //         'BPSM_ITMCD' => $this->data['MAIN PART CODE'],
-        //         'BPSM_MDLCD' => $this->data['MODEL CODE'],
-        //         'BPSM_REV' => $this->data['REVISION'],
-        //     ], [
-        //         'BPSM_ITMCD' => $this->data['MAIN PART CODE'],
-        //         'BPSM_MDLCD' => $this->data['MODEL CODE'],
-        //         'BPSM_REV' => $this->data['REVISION'],
-        //         'BPSM_STAT' => 2,
-        //         'BPSM_REMARKS' => 'BOM Was updated !',
-        //         'BPSM_RUNTIME' => $this->runTime,
-        //     ]);
-        // }
-
-        // if ($bomSTXonPSI->wasRecentlyCreated) {
-        //     BPSM_MSTR::updateOrCreate([
-        //         'BPSM_ITMCD' => $this->data['MAIN PART CODE'],
-        //         'BPSM_MDLCD' => $this->data['MODEL CODE'],
-        //         'BPSM_REV' => $this->data['REVISION'],
-        //     ], [
-        //         'BPSM_ITMCD' => $this->data['MAIN PART CODE'],
-        //         'BPSM_MDLCD' => $this->data['MODEL CODE'],
-        //         'BPSM_REV' => $this->data['REVISION'],
-        //         'BPSM_STAT' => 1,
-        //         'BPSM_REMARKS' => 'BOM Was inserted !',
-        //         'BPSM_RUNTIME' => $this->runTime,
-        //     ]);
-
-        //     // updateOrCreate performed create
-        // }
     }
 }
