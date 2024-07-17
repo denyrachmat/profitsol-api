@@ -39,6 +39,11 @@ class syncBOMToPSIQueue implements ShouldQueue
             // ->where('IEI_TEN_NO', $this->data['IEI TEN NO'])
             ->first();
 
+        if ($this->data['MAIN PART CODE'] == 'L630PNL_WS') {
+            logger('cek apakah item L630PNL_WS muncul');
+            logger($cekData);
+        }
+
         if (!empty($cekData)) {
             $bomSTXonPSI = BOMSTX_TBL::where('MODEL_CODE', trim($this->data['MODEL CODE']))
                 ->where('REVISION', trim($this->data['REVISION']))
