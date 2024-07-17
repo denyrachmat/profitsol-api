@@ -28,7 +28,7 @@ class DOPackingList extends Mailable
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: 'DO Picking Confirmation',
+            subject: "DO Picking Confirmation - {$this->data[0]['KSHP_BSGRP']}",
         );
     }
 
