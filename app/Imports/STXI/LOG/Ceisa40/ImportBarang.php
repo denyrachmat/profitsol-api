@@ -7,6 +7,7 @@ use Maatwebsite\Excel\Concerns\ToModel;
 use Maatwebsite\Excel\Concerns\WithHeadingRow;
 use Maatwebsite\Excel\Concerns\SkipsEmptyRows;
 use Illuminate\Support\Facades\DB;
+use Redis;
 
 use App\Models\STXI\LOG\ITINVIncoming;
 use App\Models\STXI\LOG\ITINVOutgoing;
@@ -47,16 +48,29 @@ class ImportBarang implements ToModel, WithHeadingRow, SkipsEmptyRows
                             ->where('ITMCD', trim($row['kode_barang']))
                             ->update([
                                 'PRICE' => $row['cif'] == 0
-                                ? round((int) $row['harga_penyerahan'] / (int) $row['jumlah_satuan'], 4)
-                                : round((int) $row['cif'] / (int) $row['jumlah_satuan'], 4),
+                                    ? round((int) $row['harga_penyerahan'] / (int) $row['jumlah_satuan'], 4)
+                                    : round((int) $row['cif'] / (int) $row['jumlah_satuan'], 4),
                                 'TTLAMOUNT' => $row['cif'] == 0
-                                ? round((int) $row['harga_penyerahan'], 4)
-                                : round((int) $row['cif'], 4),
+                                    ? round((int) $row['harga_penyerahan'], 4)
+                                    : round((int) $row['cif'], 4),
                                 'HSCODE' => $row['hs'],
                                 'ITMD1' => !empty($getHSCode) ? $getHSCode->MITM_ITMD1 : trim($row['uraian']),
                                 'SPTNO' => !empty($getHSCode) ? $getHSCode->MITM_SPTNO : '',
                                 'PENGIRIM' => $cekTempData['PENGIRIM']
                             ]);
+
+                        Redis::publish('portalv2', json_encode([
+                            'app' => 'it_inv_checker',
+                            'message' => $noDaftar . ' on date bc : ' . $cekTempData["TGL_DAFTAR"] . ' - INC Item Exists on updated',
+                            'type' => 'info',
+                            'status' => 'progress_bc_sync_item_inc_exists',
+                            'data' => [
+                                'nodaftar' => $noDaftar,
+                                'tgldaftar' => $cekTempData["TGL_DAFTAR"],
+                                'updatedItem' => trim($row['kode_barang']),
+                                'data' => $cekIncoming
+                            ]
+                        ]));
                     } else {
                         $UOM = 'PIECE';
                         if ($row['kode_satuan'] !== 'PCE') {
@@ -72,7 +86,7 @@ class ImportBarang implements ToModel, WithHeadingRow, SkipsEmptyRows
                                 ->where('BCDOCNO', $row["nomor_daftar"])
                                 ->first();
 
-                            ITINVIncoming::updateOrCreate([
+                            $insert = ITINVIncoming::updateOrCreate([
                                 'BCTYPE' => $cekTempData['TYPE_BC'],
                                 'BCDOCNO' => $noDaftar,
                                 'BCDOCDT' => $cekTempData['TGL_DAFTAR'],
@@ -82,7 +96,7 @@ class ImportBarang implements ToModel, WithHeadingRow, SkipsEmptyRows
                                 'BCTYPE' => $cekTempData['TYPE_BC'],
                                 'BCDOCNO' => $noDaftar,
                                 'BCDOCDT' => $cekTempData['TGL_DAFTAR'],
-                                'BSGRP' =>  empty($cekHeaderMega) ? 'LAIN NYA' : $cekHeaderMega->IGRN_BSGRP,
+                                'BSGRP' => empty($cekHeaderMega) ? 'LAIN NYA' : $cekHeaderMega->IGRN_BSGRP,
                                 'DOCCD' => '',
                                 'DOCNO' => '',
                                 'HHEINVNO' => '',
@@ -101,11 +115,24 @@ class ImportBarang implements ToModel, WithHeadingRow, SkipsEmptyRows
                                 'WMSLOC' => '',
                                 'HSCODE' => $row['hs']
                             ]);
+
+                            Redis::publish('portalv2', json_encode([
+                                'app' => 'it_inv_checker',
+                                'message' => $noDaftar . ' on date bc : ' . $cekTempData["TGL_DAFTAR"] . ' - INC Item Exists on updated',
+                                'type' => 'info',
+                                'status' => 'progress_bc_sync_item_inc_not_exists_w_mega',
+                                'data' => [
+                                    'nodaftar' => $noDaftar,
+                                    'tgldaftar' => $cekTempData["TGL_DAFTAR"],
+                                    'updatedItem' => trim($row['kode_barang']),
+                                    'data' => $insert
+                                ]
+                            ]));
                         } else {
                             $cekItemMega = DB::connection('sqlsrv_itinv')->table('VIEW_MITM_TBL')->where('MITM_ITMCD', $row['kode_barang'])->first();
 
                             if (empty($cekItemMega)) {
-                                ITINVIncoming::updateOrCreate([
+                                $insert = ITINVIncoming::updateOrCreate([
                                     'BCTYPE' => $cekTempData['TYPE_BC'],
                                     'BCDOCNO' => $noDaftar,
                                     'BCDOCDT' => $cekTempData['TGL_DAFTAR'],
@@ -134,11 +161,24 @@ class ImportBarang implements ToModel, WithHeadingRow, SkipsEmptyRows
                                     'WMSLOC' => '',
                                     'HSCODE' => $row['hs']
                                 ]);
+
+                                Redis::publish('portalv2', json_encode([
+                                    'app' => 'it_inv_checker',
+                                    'message' => $noDaftar . ' on date bc : ' . $cekTempData["TGL_DAFTAR"] . ' - INC Item Exists on updated',
+                                    'type' => 'info',
+                                    'status' => 'progress_bc_sync_item_inc_not_exists_wo_mega',
+                                    'data' => [
+                                        'nodaftar' => $noDaftar,
+                                        'tgldaftar' => $cekTempData["TGL_DAFTAR"],
+                                        'updatedItem' => trim($row['kode_barang']),
+                                        'data' => $insert
+                                    ]
+                                ]));
                             }
                         }
                     }
                 } else {
-                    $cekOutgoing = ITINVOutgoing::where('BCDOCNO', 'LIKE', $noDaftar . '%')
+                    $cekOutgoing = ITINVOutgoing::NoLock()->where('BCDOCNO', 'LIKE', $noDaftar . '%')
                         ->where('BCTYPE', $cekTempData['TYPE_BC'])
                         ->where('BCDOCDT', $cekTempData['TGL_DAFTAR'])
                         ->where('ITMCD', trim($row['kode_barang']))
@@ -151,23 +191,36 @@ class ImportBarang implements ToModel, WithHeadingRow, SkipsEmptyRows
                             ->where('ITMCD', trim($row['kode_barang']))
                             ->update([
                                 'PRICE' => $row['cif'] == 0
-                                ? round((int) $row['harga_penyerahan'] / (int) $row['jumlah_satuan'], 4)
-                                : round((int) $row['cif'] / (int) $row['jumlah_satuan'], 4),
+                                    ? round((int) $row['harga_penyerahan'] / (int) $row['jumlah_satuan'], 4)
+                                    : round((int) $row['cif'] / (int) $row['jumlah_satuan'], 4),
                                 'TTLAMOUNT' => $row['cif'] == 0
-                                ? round((int) $row['harga_penyerahan'], 4)
-                                : round((int) $row['cif'], 4),
+                                    ? round((int) $row['harga_penyerahan'], 4)
+                                    : round((int) $row['cif'], 4),
                                 'CUSNM' => $cekTempData['PENERIMA'],
                                 'ITMD1' => !empty($getHSCode) ? $getHSCode->MITM_ITMD1 : trim($row['uraian']),
                                 'SPTNO' => !empty($getHSCode) ? $getHSCode->MITM_SPTNO : '',
                                 'HSCODE' => $row['hs']
                             ]);
+
+                        Redis::publish('portalv2', json_encode([
+                            'app' => 'it_inv_checker',
+                            'message' => $noDaftar . ' on date bc : ' . $cekTempData["TGL_DAFTAR"] . ' - OUT Item Exists on updated',
+                            'type' => 'info',
+                            'status' => 'progress_bc_sync_item_out_exists',
+                            'data' => [
+                                'nodaftar' => $noDaftar,
+                                'tgldaftar' => $cekTempData["TGL_DAFTAR"],
+                                'updatedItem' => trim($row['kode_barang']),
+                                'data' => $cekOutgoing
+                            ]
+                        ]));
                     } else {
                         $UOM = 'PIECE';
                         if ($row['kode_satuan'] !== 'PCE') {
                             $UOM = $row['kode_satuan'];
                         }
 
-                        ITINVOutgoing::updateOrCreate([
+                        $insert = ITINVOutgoing::updateOrCreate([
                             'BCTYPE' => $cekTempData['TYPE_BC'],
                             'BCDOCNO' => $noDaftar,
                             'BCDOCDT' => $cekTempData['TGL_DAFTAR'],
@@ -195,6 +248,19 @@ class ImportBarang implements ToModel, WithHeadingRow, SkipsEmptyRows
                             'WMSLOC' => '',
                             'HSCODE' => $row['hs']
                         ]);
+
+                        Redis::publish('portalv2', json_encode([
+                            'app' => 'it_inv_checker',
+                            'message' => $noDaftar . ' on date bc : ' . $cekTempData["TGL_DAFTAR"] . ' - INC Item Exists on updated',
+                            'type' => 'info',
+                            'status' => 'progress_bc_sync_item_out_not_exists',
+                            'data' => [
+                                'nodaftar' => $noDaftar,
+                                'tgldaftar' => $cekTempData["TGL_DAFTAR"],
+                                'updatedItem' => trim($row['kode_barang']),
+                                'data' => $insert
+                            ]
+                        ]));
                     }
                 }
             }

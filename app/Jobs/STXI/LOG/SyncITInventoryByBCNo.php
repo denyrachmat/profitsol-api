@@ -2,6 +2,8 @@
 
 namespace App\Jobs\STXI\LOG;
 
+use App\Models\STXI\LOG\ITINVIncoming;
+use App\Models\STXI\LOG\ITINVOutgoing;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldBeUnique;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -45,7 +47,17 @@ class SyncITInventoryByBCNo implements ShouldQueue
                 ->where('NOMOR_DAFTAR', $this->nodaftar)
                 ->orderBy('TGL_DAFTAR', 'DESC')
                 ->first();
-    
+
+            $listUpdatedData[] = ITINVIncoming::where('BCDOCNO', $this->nodaftar)
+                ->where('BCDOCDT', $this->tgldaftar)
+                ->get()
+                ->toArray();
+
+            $listUpdatedData[] = ITINVOutgoing::where('BCDOCNO', $this->nodaftar)
+                ->where('BCDOCDT', $this->tgldaftar)
+                ->get()
+                ->toArray();
+
             Redis::publish('portalv2', json_encode([
                 'app' => 'it_inv_checker',
                 'message' => $this->nodaftar . ' on date bc : ' . $this->tgldaftar . ' - sync from portal ceisa 40 data now...',
@@ -53,24 +65,25 @@ class SyncITInventoryByBCNo implements ShouldQueue
                 'status' => 'start_bc_sync',
                 'data' => [
                     'nodaftar' => $this->nodaftar,
-                    'tgldaftar' => $this->tgldaftar
+                    'tgldaftar' => $this->tgldaftar,
+                    'listItemNeedUpdated' => $listUpdatedData
                 ]
             ]));
-    
-    
+
+
             if (!empty($dataUnsync)) {
                 $downloadExcel = $this->downloadExcel($dataUnsync->NOMOR_AJU, $dataUnsync->CEISA_TYPE, $dataUnsync->ID_HEADER, false);
-    
+
                 if (str_contains($downloadExcel, '1.6') || str_contains($downloadExcel, '2.7I') || str_contains($downloadExcel, '4.0')) {
                     $state = 'INC';
                 } else {
                     $state = 'OUT';
                 }
-    
+
                 $importer = new ImportCeisa40($state);
-    
+
                 Excel::import($importer, public_path($downloadExcel));
-    
+
                 Redis::publish('portalv2', json_encode([
                     'app' => 'it_inv_checker',
                     'message' => $this->nodaftar . ' on date bc : ' . $this->tgldaftar . ' sync from portal ceisa 40 done !',
@@ -97,7 +110,7 @@ class SyncITInventoryByBCNo implements ShouldQueue
         } catch (\Throwable $th) {
             Redis::publish('portalv2', json_encode([
                 'app' => 'it_inv_checker',
-                'message' => $this->nodaftar . ' on date bc : ' . $this->tgldaftar . ' sync failed server : '.$th->getMessage(),
+                'message' => $this->nodaftar . ' on date bc : ' . $this->tgldaftar . ' sync failed server : ' . $th->getMessage(),
                 'type' => 'red',
                 'detail_err' => $th->getTrace(),
                 'status' => 'failed_bc_sync',

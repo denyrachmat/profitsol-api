@@ -51,14 +51,14 @@ class ImportDokumen implements ToModel, WithHeadingRow, SkipsEmptyRows
 
                 $time_start = microtime(true);
                 if ($this->incout == 'INC') {
-                    $baseDoc = ITINVIncoming::where(DB::raw('LEFT(BCDOCNO, 6)'), substr($cekTempData['NO_DAFTAR'], 0, 6))
+                    $baseDoc = ITINVIncoming::NoLock()->where(DB::raw('LEFT(BCDOCNO, 6)'), substr($cekTempData['NO_DAFTAR'], 0, 6))
                         ->where('BCTYPE', $cekTempData['TYPE_BC'])
                         ->where('BCDOCDT', $cekTempData['TGL_DAFTAR']);
 
                     $jumlahInv = (clone $baseDoc)->where('HHEINVNO', $row['nomor_dokumen'])->count();
                     $jumlahDoc = (clone $baseDoc)->where('DOCNO', $row['nomor_dokumen'])->count();
                 } else {
-                    $baseDoc = ITINVOutgoing::where(DB::raw('LEFT(BCDOCNO, 6)'), substr($cekTempData['NO_DAFTAR'], 0, 6))
+                    $baseDoc = ITINVOutgoing::NoLock()->where(DB::raw('LEFT(BCDOCNO, 6)'), substr($cekTempData['NO_DAFTAR'], 0, 6))
                         ->where('BCTYPE', $cekTempData['TYPE_BC'])
                         ->where('BCDOCDT', $cekTempData['TGL_DAFTAR']);
 
