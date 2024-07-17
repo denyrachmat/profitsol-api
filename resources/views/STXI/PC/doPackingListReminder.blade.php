@@ -51,7 +51,7 @@
     }
 </style>
 <div>
-    <h1 style="text-align: left;">Dear PC,</h1>
+    <h3 style="text-align: left;">Dear PC,</h3>
     <p>Please kindly proceed input PO & Sales Invoice for DO SME as below</p>
 
     <table class="tg">
