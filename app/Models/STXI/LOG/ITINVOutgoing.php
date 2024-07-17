@@ -4,6 +4,7 @@ namespace App\Models\STXI\LOG;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\DB;
 
 class ITINVOutgoing extends Model
 {
@@ -46,4 +47,9 @@ class ITINVOutgoing extends Model
         'BC33EXBCDOCDT',
         'BC23BCTYPE',
     ];
+
+    public function scopeNoLock($query)
+    {
+        return $query->from(DB::raw(self::getTable() . ' with (nolock)'));
+    }
 }

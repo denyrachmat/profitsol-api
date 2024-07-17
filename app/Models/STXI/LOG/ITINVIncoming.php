@@ -4,6 +4,7 @@ namespace App\Models\STXI\LOG;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\DB;
 
 class ITINVIncoming extends Model
 {
@@ -39,4 +40,8 @@ class ITINVIncoming extends Model
         'HSCODE',
         'LUPDT',
     ];
+    public function scopeNoLock($query)
+    {
+        return $query->from(DB::raw(self::getTable() . ' with (nolock)'));
+    }
 }
