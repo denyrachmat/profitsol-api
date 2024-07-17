@@ -31,19 +31,19 @@ class syncBOMToPSIQueue implements ShouldQueue
     public function handle(): void
     {
         $cekData = BOMSTX_TBL::NoLock()
-            ->where('MODEL_CODE', $this->data['MODEL CODE'])
-            ->where('REVISION', $this->data['REVISION'])
-            ->where('MAIN_PART_CODE', $this->data['MAIN PART CODE'])
-            ->where('MAIN_SPTNO', $this->data['MAIN SPTNO'])
+            ->where('MODEL_CODE', trim($this->data['MODEL CODE']))
+            ->where('REVISION', trim($this->data['REVISION']))
+            ->where('MAIN_PART_CODE', trim($this->data['MAIN PART CODE']))
+            // ->where('MAIN_SPTNO', $this->data['MAIN SPTNO'])
             // ->where('MS_NO', $this->data['MS NO'])
             // ->where('IEI_TEN_NO', $this->data['IEI TEN NO'])
             ->first();
 
         if (!empty($cekData)) {
-            $bomSTXonPSI = BOMSTX_TBL::where('MODEL_CODE', $this->data['MODEL CODE'])
-                ->where('REVISION', $this->data['REVISION'])
-                ->where('MAIN_PART_CODE', $this->data['MAIN PART CODE'])
-                ->where('MAIN_SPTNO', $this->data['MAIN SPTNO'])
+            $bomSTXonPSI = BOMSTX_TBL::where('MODEL_CODE', trim($this->data['MODEL CODE']))
+                ->where('REVISION', trim($this->data['REVISION']))
+                ->where('MAIN_PART_CODE', trim($this->data['MAIN PART CODE']))
+                // ->where('MAIN_SPTNO', $this->data['MAIN SPTNO'])
                 // ->where('MS_NO', $this->data['MS NO'])
                 ->update([
                     'MODEL_CODE' => $this->data['MODEL CODE'],
