@@ -2,12 +2,13 @@
 
 namespace App\Jobs\STXI\PC;
 
-use App\Mail\STXI\PC\DOPackingList;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
+
+use App\Mail\STXI\PC\DOPackingList;
 use Illuminate\Support\Facades\Mail;
 
 class autoMailDOPackingListQueue implements ShouldQueue
@@ -28,12 +29,18 @@ class autoMailDOPackingListQueue implements ShouldQueue
      */
     public function handle(): void
     {
-        Mail::to(array_values(array_filter($this->data['email'], function($f) {
-            return $f['AMDC_EMAILTYPE'] == 'to';
-        })))
-            ->cc(array_values(array_filter($this->data['email'], function($f) {
-                return $f['AMDC_EMAILTYPE'] == 'cc';
-            })))
+        $listTo = $listCC = [];
+        foreach ($this->data['email'] as $key => $value) {
+            if ($value['AMDC_EMAILTYPE'] == 'to') {
+                $listTo[] = $value['AMDC_EMAIL'];
+            }
+
+            if ($value['AMDC_EMAILTYPE'] == 'cc') {
+                $listCC[] = $value['AMDC_EMAIL'];
+            }
+        }
+        Mail::to($listTo)
+            ->cc($listCC)
             ->send(new DOPackingList($this->data['data']));
     }
 }
