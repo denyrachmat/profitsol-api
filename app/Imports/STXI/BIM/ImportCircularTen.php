@@ -140,6 +140,7 @@ class ImportCircularTen implements ToModel
 
                     $this->tableBuild .= "</tr>";
                 }
+
                 $this->tableBuild .= "</tbody></table>";
 
                 $this->data['content'] = $this->tableBuild;
