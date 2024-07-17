@@ -73,7 +73,7 @@ class autoSyncBOMtoPSIController extends Controller
             ->whereNull('APRVDT')
             ->delete();
 
-            // return 'test';
+        // return 'test';
         foreach ($getDataPA100 as $key => $value) {
             syncBOMToPSIQueue::dispatch($value, $runTime)->onQueue('syncPA100BOMToPSIItem');
         }
@@ -117,114 +117,12 @@ class autoSyncBOMtoPSIController extends Controller
         return 'Sync BOM For delete Queued, Data to be updated : ' . count($getPSIDataForDelete);
     }
 
-    public function syncWithoutJobs()
+    public function syncWithoutJobs(Request $request)
     {
-        $runTime = date('Y-m-d H:i:s');
-        $getDataPA100 = DB::connection('sqlsrv_mega_sme')
-            ->select("SET NOCOUNT ON;exec Z_STXI_DOWNLOAD_PA100_BOM_FOR_SYNC_PSI 0,'222381602'");
-
-        $getDataPA100 = array_map(function ($valueDe2) {
-            return (array) $valueDe2;
-        }, $getDataPA100);
-
-        // return $getDataPA100;
-
-        $hasil = [];
-        foreach ($getDataPA100 as $key => $valData) {
-            $cekData = BOMSTX_TBL::NoLock()
-                ->where('MODEL_CODE', $valData['MODEL CODE'])
-                ->where('REVISION', $valData['REVISION'])
-                ->where('MAIN_PART_CODE', $valData['MAIN PART CODE'])
-                ->where('MAIN_SPTNO', $valData['MAIN SPTNO'])
-                ->where('MS_NO', $valData['MS NO'])
-                ->where('IEI_TEN_NO', $valData['IEI TEN NO'])
-                ->first();
-
-            if (!empty($cekData)) {
-                $hasil[] = BOMSTX_TBL::where('MODEL_CODE', $valData['MODEL CODE'])
-                    ->where('REVISION', $valData['REVISION'])
-                    ->where('MAIN_PART_CODE', $valData['MAIN PART CODE'])
-                    ->where('MAIN_SPTNO', $valData['MAIN SPTNO'])
-                    ->where('MS_NO', $valData['MS NO'])
-                    ->where('IEI_TEN_NO', $valData['IEI TEN NO'])
-                    ->update([
-                        'MODEL_CODE' => $valData['MODEL CODE'],
-                        'MODEL_DESC' => $valData['MODEL DESC'],
-                        'REVISION' => $valData['REVISION'],
-                        'MAIN_PART_CODE' => $valData['MAIN PART CODE'],
-                        'MAIN_SPTNO' => $valData['MAIN SPTNO'],
-                        'MAIN_MAKERNM' => $valData['MAIN MAKERNM'],
-                        'MS_NO' => $valData['MS NO'],
-                        'MODEL_QTY' => $valData['MODEL QTY'],
-                        'PART_QTY' => $valData['PART QTY'],
-                        'MAIN_PA_PERCENT' => $valData['MAIN PA%'],
-                        'PO_FAILURE' => $valData['PO FAILURE'],
-                        'KO_FAILURE' => $valData['KO FAILURE'],
-                        'DETAIL_REMARK' => $valData['DETAIL REMARK'],
-                        'CONSIDER_PO_MRP' => $valData['CONSIDER PO MRP'],
-                        'CONSIDER_KO_MRP' => $valData['CONSIDER KO MRP'],
-                        'PROCESS_CODE' => $valData['PROCESS CODE'],
-                        'EPSON_ORG_PART' => $valData['EPSON ORG PART'],
-                        'EPSON_SPTNO' => $valData['EPSON SPTNO'],
-                        'EPSON_MAKERNM' => $valData['EPSON MAKERNM'],
-                        'BOM_REMARK' => $valData['BOM REMARK'],
-                        'SUB' => $valData['SUB'],
-                        'SUB_SPTNO' => $valData['SUB SPTNO'],
-                        'SUB_MAKERNM' => $valData['SUB MAKERNM'],
-                        'SUB_PA_PERCENT' => $valData['SUB PA%'],
-                        'SUB1' => $valData['SUB1'],
-                        'SUB1_SPTNO' => $valData['SUB1 SPTNO'],
-                        'SUB2' => '',
-                        'SUB2_SPTNO' => $valData['SUB2 SPTNO'],
-                        'IEI_TEN_NO' => trim($valData['IEI TEN NO']) == '' ? 'N/A' : trim($valData['IEI TEN NO']),
-                        'SEC_TEN_NO' => $valData['SEC TEN NO'],
-                        'TEN_RECEIVE_DATE' => $valData['TEN RECEIVE DATE'],
-                        'CHANGE_OVERVIEW' => $valData['CHANGE OVERVIEW'],
-                        // 'STOCK_SGL' => 0,
-                        // 'STOCK_CPO' => 0,
-                        'TEN_UPDATE_DATE' => $valData['TEN_UPDATE_DATE'],
-                        'UPDDT' => date('Y-m-d H:i:s')
-                    ]);
-            } else {
-                $hasil[] = BOMSTX_TBL::NoLock()->create([
-                    'MODEL_CODE' => $valData['MODEL CODE'],
-                    'MODEL_DESC' => $valData['MODEL DESC'],
-                    'REVISION' => $valData['REVISION'],
-                    'MAIN_PART_CODE' => $valData['MAIN PART CODE'],
-                    'MAIN_SPTNO' => $valData['MAIN SPTNO'],
-                    'MAIN_MAKERNM' => $valData['MAIN MAKERNM'],
-                    'MS_NO' => $valData['MS NO'],
-                    'MODEL_QTY' => $valData['MODEL QTY'],
-                    'PART_QTY' => $valData['PART QTY'],
-                    'MAIN_PA_PERCENT' => $valData['MAIN PA%'],
-                    'PO_FAILURE' => $valData['PO FAILURE'],
-                    'KO_FAILURE' => $valData['KO FAILURE'],
-                    'DETAIL_REMARK' => $valData['DETAIL REMARK'],
-                    'CONSIDER_PO_MRP' => $valData['CONSIDER PO MRP'],
-                    'CONSIDER_KO_MRP' => $valData['CONSIDER KO MRP'],
-                    'PROCESS_CODE' => $valData['PROCESS CODE'],
-                    'EPSON_ORG_PART' => $valData['EPSON ORG PART'],
-                    'EPSON_SPTNO' => $valData['EPSON SPTNO'],
-                    'EPSON_MAKERNM' => $valData['EPSON MAKERNM'],
-                    'BOM_REMARK' => $valData['BOM REMARK'],
-                    'SUB' => $valData['SUB'],
-                    'SUB_SPTNO' => $valData['SUB SPTNO'],
-                    'SUB_MAKERNM' => $valData['SUB MAKERNM'],
-                    'SUB_PA_PERCENT' => $valData['SUB PA%'],
-                    'SUB1' => $valData['SUB1'],
-                    'SUB1_SPTNO' => $valData['SUB1 SPTNO'],
-                    'SUB2' => $valData[''],
-                    'SUB2_SPTNO' => $valData['SUB2 SPTNO'],
-                    'IEI_TEN_NO' => trim($valData['IEI TEN NO']) == '' ? 'N/A' : trim($valData['IEI TEN NO']),
-                    'SEC_TEN_NO' => $valData['SEC TEN NO'],
-                    'TEN_RECEIVE_DATE' => $valData['TEN RECEIVE DATE'],
-                    'CHANGE_OVERVIEW' => $valData['CHANGE OVERVIEW'],
-                    // 'STOCK_SGL' => 0,
-                    // 'STOCK_CPO' => 0,
-                    'TEN_UPDATE_DATE' => $valData['TEN_UPDATE_DATE'],
-                    'UPDDT' => date('Y-m-d H:i:s'),
-                ]);
-            }
+        $hasil = '';
+        foreach ($request->data as $key => $value) {
+            $proses = $this->syncBOMbyItem($value);
+            $hasil .= "Item : {{$value}} - {{$proses}}<br>";
         }
 
         return $hasil;

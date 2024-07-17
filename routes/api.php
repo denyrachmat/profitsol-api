@@ -2,6 +2,7 @@
 use App\Http\Controllers\STXI\EMS2\TYOAutoBarcodeController;
 use App\Http\Controllers\STXI\EMS2\YPODailyConfController;
 use App\Http\Controllers\STXI\LOG\CeisaMonitoringController;
+use App\Http\Controllers\STXI\PC\autoEmailWMSConfirmation;
 use App\Http\Controllers\STXI\PC\autoSyncBOMtoPSIController;
 use Illuminate\Support\Facades\Route;
 
@@ -275,8 +276,10 @@ Route::group(['prefix' => 'div'], function () {
     Route::group(['prefix' => 'pc'], function() {
         Route::get('syncBOMtoPSI', [autoSyncBOMtoPSIController::class, 'syncBOM']);
         Route::get('syncBOMtoPSIByItem/{item}', [autoSyncBOMtoPSIController::class, 'syncBOMbyItem']);
-        Route::get('syncBOMtoPSIWoJobs', [autoSyncBOMtoPSIController::class, 'syncWithoutJobs']);
+        Route::post('syncBOMMultipleItem', [autoSyncBOMtoPSIController::class, 'syncWithoutJobs']);
         Route::get('syncAllNotInterfaced', [autoSyncBOMtoPSIController::class, 'syncAllNotInterfaced']);
+
+        Route::get('autoMailOSDOList', [autoEmailWMSConfirmation::class, 'sendEmailFun']);
     });
 });
 
