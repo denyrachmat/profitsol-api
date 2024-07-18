@@ -58,8 +58,7 @@ class ImportDokumen implements ToModel, WithHeadingRow, SkipsEmptyRows
                     $jumlahInv = (clone $baseDoc)->where('HHEINVNO', $row['nomor_dokumen'])->count();
                     $jumlahDoc = (clone $baseDoc)->where('DOCNO', $row['nomor_dokumen'])->count();
                 } else {
-                    $baseDoc = ITINVOutgoing::NoLock()->where(
-                        DB::raw('LEFT(BCDOCNO, 6)'), substr($cekTempData['NO_DAFTAR'], 0, 6))
+                    $baseDoc = ITINVOutgoing::NoLock()->where(DB::raw('LEFT(BCDOCNO, 6)'), substr($cekTempData['NO_DAFTAR'], 0, 6))
                         ->where('BCTYPE', $cekTempData['TYPE_BC'])
                         ->where('BCDOCDT', $cekTempData['TGL_DAFTAR']);
 
@@ -181,24 +180,13 @@ class ImportDokumen implements ToModel, WithHeadingRow, SkipsEmptyRows
                             ->get();
 
                         if (count($cekOutgoing) > 0) {
-                            $itemList = [];
-                            foreach ($cekOutgoing as $key => $valueItm) {
-                                $itemList[] = $valueItm['ITMCD'];
-
-                                $updated = ITINVOutgoing::NoLock()->where(
-                                    DB::raw('LEFT(BCDOCNO, 6)'), substr($cekTempData['NO_DAFTAR'], 0, 6))
-                                    ->where('BCTYPE', $cekTempData['TYPE_BC'])
-                                    ->where('BCDOCDT', $cekTempData['TGL_DAFTAR'])
-                                    ->where('ITMCD', $valueItm['ITMCD'])
-                                    ->update([
-                                        'BC23BCTYPE' => 'BC3.3',
-                                        'BC33DOCNO' => $row['nomor_dokumen'],
-                                        'BC33DOCDT' => $row['tanggal_dokumen'],
-                                    ]);
-
-                                logger("is updated {$updated}");
-                            }
-
+                            (clone $baseDoc)
+                                ->whereIn('ITMCD', (clone $cekOutgoing)->pluck('ITMCD'))
+                                ->update([
+                                    'BC23BCTYPE' => $row['kode_dokumen'] == 33 ? 'BC3.3' : 'BC1.6',
+                                    'BC33DOCNO' => $row['kode_dokumen'] == 33 ? $row['nomor_dokumen'] : NULL,
+                                    'BC33DOCDT' => $row['kode_dokumen'] == 33 ? $row['tanggal_dokumen'] : NULL,
+                                ]);
                         }
                     }
                 }
