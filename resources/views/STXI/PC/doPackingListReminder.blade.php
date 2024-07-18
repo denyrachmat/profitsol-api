@@ -59,6 +59,7 @@
             <tr>
                 <th class="tg-0pky">BG</th>
                 <th class="tg-0pky">DO</th>
+                <th class="tg-0pky">DLV Code</th>
             </tr>
         </thead>
         <tbody>
@@ -66,6 +67,7 @@
                 <tr>
                     <td class="tg-btxf">{{$value['KSHP_BSGRP']}}</td>
                     <td class="tg-btxf">{{$value['KSHP_DONO']}}</td>
+                    <td class="tg-btxf">{{$value['KSHP_DLVCD']}}</td>
                 </tr>
             @endforeach
         </tbody>
