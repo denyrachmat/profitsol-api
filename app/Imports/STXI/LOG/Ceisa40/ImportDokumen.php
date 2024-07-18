@@ -58,7 +58,8 @@ class ImportDokumen implements ToModel, WithHeadingRow, SkipsEmptyRows
                     $jumlahInv = (clone $baseDoc)->where('HHEINVNO', $row['nomor_dokumen'])->count();
                     $jumlahDoc = (clone $baseDoc)->where('DOCNO', $row['nomor_dokumen'])->count();
                 } else {
-                    $baseDoc = ITINVOutgoing::NoLock()->where(DB::raw('LEFT(BCDOCNO, 6)'), substr($cekTempData['NO_DAFTAR'], 0, 6))
+                    $baseDoc = ITINVOutgoing::NoLock()->where(
+                        DB::raw('LEFT(BCDOCNO, 6)'), substr($cekTempData['NO_DAFTAR'], 0, 6))
                         ->where('BCTYPE', $cekTempData['TYPE_BC'])
                         ->where('BCDOCDT', $cekTempData['TGL_DAFTAR']);
 
@@ -187,7 +188,10 @@ class ImportDokumen implements ToModel, WithHeadingRow, SkipsEmptyRows
 
                             logger(json_encode([$itemList, $cekOutgoing]));
 
-                            $updated = (clone $baseDoc)
+                            $updated = ITINVOutgoing::NoLock()->where(
+                                DB::raw('LEFT(BCDOCNO, 6)'), substr($cekTempData['NO_DAFTAR'], 0, 6))
+                                ->where('BCTYPE', $cekTempData['TYPE_BC'])
+                                ->where('BCDOCDT', $cekTempData['TGL_DAFTAR'])
                                 ->whereIn('ITMCD', $itemList)
                                 ->update([
                                     'BC23BCTYPE' => $row['kode_dokumen'] == 33 ? 'BC3.3' : 'BC1.6',
