@@ -188,7 +188,7 @@ class ImportDokumen implements ToModel, WithHeadingRow, SkipsEmptyRows
 
                             logger(json_encode([$itemList, $cekOutgoing]));
 
-                            $updated = ITINVOutgoing::NoLock()->where(
+                            $updated = ITINVOutgoing::where(
                                 DB::raw('LEFT(BCDOCNO, 6)'), substr($cekTempData['NO_DAFTAR'], 0, 6))
                                 ->where('BCTYPE', $cekTempData['TYPE_BC'])
                                 ->where('BCDOCDT', $cekTempData['TGL_DAFTAR'])
