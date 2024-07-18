@@ -181,7 +181,7 @@ class ImportDokumen implements ToModel, WithHeadingRow, SkipsEmptyRows
 
                         if (count($cekOutgoing) > 0) {
                             (clone $baseDoc)
-                                ->whereIn('ITMCD', $cekOutgoing->pluck('ITMCD'))
+                                ->whereIn('ITMCD', (clone $cekOutgoing)->pluck('ITMCD'))
                                 ->update([
                                     'BC23BCTYPE' => $row['kode_dokumen'] == 33 ? 'BC3.3' : 'BC1.6',
                                     'BC33DOCNO' => $row['kode_dokumen'] == 33 ? $row['nomor_dokumen'] : NULL,
