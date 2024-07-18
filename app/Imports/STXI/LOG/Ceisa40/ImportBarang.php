@@ -65,8 +65,8 @@ class ImportBarang implements ToModel, WithHeadingRow, SkipsEmptyRows
                             'type' => 'info',
                             'status' => 'progress_bc_sync_item_inc_exists',
                             'data' => [
-                                'nodaftar' => $noDaftar,
-                                'tgldaftar' => $cekTempData["TGL_DAFTAR"],
+                                'NOMOR_DAFTAR' => $noDaftar,
+                                'TGL_DAFTAR' => $cekTempData["TGL_DAFTAR"],
                                 'updatedItem' => trim($row['kode_barang']),
                                 'data' => $cekIncoming
                             ]
@@ -122,8 +122,8 @@ class ImportBarang implements ToModel, WithHeadingRow, SkipsEmptyRows
                                 'type' => 'info',
                                 'status' => 'progress_bc_sync_item_inc_not_exists_w_mega',
                                 'data' => [
-                                    'nodaftar' => $noDaftar,
-                                    'tgldaftar' => $cekTempData["TGL_DAFTAR"],
+                                    'NOMOR_DAFTAR' => $noDaftar,
+                                    'TGL_DAFTAR' => $cekTempData["TGL_DAFTAR"],
                                     'updatedItem' => trim($row['kode_barang']),
                                     'data' => $insert
                                 ]
@@ -168,8 +168,8 @@ class ImportBarang implements ToModel, WithHeadingRow, SkipsEmptyRows
                                     'type' => 'info',
                                     'status' => 'progress_bc_sync_item_inc_not_exists_wo_mega',
                                     'data' => [
-                                        'nodaftar' => $noDaftar,
-                                        'tgldaftar' => $cekTempData["TGL_DAFTAR"],
+                                        'NOMOR_DAFTAR' => $noDaftar,
+                                        'TGL_DAFTAR' => $cekTempData["TGL_DAFTAR"],
                                         'updatedItem' => trim($row['kode_barang']),
                                         'data' => $insert
                                     ]
@@ -208,8 +208,8 @@ class ImportBarang implements ToModel, WithHeadingRow, SkipsEmptyRows
                             'type' => 'info',
                             'status' => 'progress_bc_sync_item_out_exists',
                             'data' => [
-                                'nodaftar' => $noDaftar,
-                                'tgldaftar' => $cekTempData["TGL_DAFTAR"],
+                                'NOMOR_DAFTAR' => $noDaftar,
+                                'TGL_DAFTAR' => $cekTempData["TGL_DAFTAR"],
                                 'updatedItem' => trim($row['kode_barang']),
                                 'data' => $cekOutgoing
                             ]
@@ -255,8 +255,8 @@ class ImportBarang implements ToModel, WithHeadingRow, SkipsEmptyRows
                             'type' => 'info',
                             'status' => 'progress_bc_sync_item_out_not_exists',
                             'data' => [
-                                'nodaftar' => $noDaftar,
-                                'tgldaftar' => $cekTempData["TGL_DAFTAR"],
+                                'NOMOR_DAFTAR' => $noDaftar,
+                                'TGL_DAFTAR' => $cekTempData["TGL_DAFTAR"],
                                 'updatedItem' => trim($row['kode_barang']),
                                 'data' => $insert
                             ]

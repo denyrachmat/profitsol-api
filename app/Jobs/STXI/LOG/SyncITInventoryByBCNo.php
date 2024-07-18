@@ -48,15 +48,25 @@ class SyncITInventoryByBCNo implements ShouldQueue
                 ->orderBy('TGL_DAFTAR', 'DESC')
                 ->first();
 
-            $listUpdatedData[] = ITINVIncoming::where('BCDOCNO', $this->nodaftar)
+            $inc = ITINVIncoming::where('BCDOCNO', $this->nodaftar)
                 ->where('BCDOCDT', $this->tgldaftar)
                 ->get()
                 ->toArray();
 
-            $listUpdatedData[] = ITINVOutgoing::where('BCDOCNO', $this->nodaftar)
+            $out = ITINVOutgoing::where('BCDOCNO', $this->nodaftar)
                 ->where('BCDOCDT', $this->tgldaftar)
                 ->get()
                 ->toArray();
+
+            $listUpdatedData = [];
+
+            if (count($inc) > 0) {
+                $listUpdatedData[] = array_merge($listUpdatedData, $inc);
+            }
+
+            if (count($out) > 0) {
+                $listUpdatedData[] = array_merge($listUpdatedData, $out);
+            }
 
             Redis::publish('portalv2', json_encode([
                 'app' => 'it_inv_checker',
@@ -64,8 +74,8 @@ class SyncITInventoryByBCNo implements ShouldQueue
                 'type' => 'info',
                 'status' => 'start_bc_sync',
                 'data' => [
-                    'nodaftar' => $this->nodaftar,
-                    'tgldaftar' => $this->tgldaftar,
+                    'NOMOR_DAFTAR' => $this->nodaftar,
+                    'TGL_DAFTAR' => $this->tgldaftar,
                     'listItemNeedUpdated' => $listUpdatedData
                 ]
             ]));
@@ -90,8 +100,8 @@ class SyncITInventoryByBCNo implements ShouldQueue
                     'type' => 'green',
                     'status' => 'success_bc_sync',
                     'data' => [
-                        'nodaftar' => $this->nodaftar,
-                        'tgldaftar' => $this->tgldaftar
+                        'NOMOR_DAFTAR' => $this->nodaftar,
+                        'TGL_DAFTAR' => $this->tgldaftar
                     ],
                     'data_importer' => $importer
                 ]));
@@ -102,8 +112,8 @@ class SyncITInventoryByBCNo implements ShouldQueue
                     'type' => 'red',
                     'status' => 'failed_bc_sync',
                     'data' => [
-                        'nodaftar' => $this->nodaftar,
-                        'tgldaftar' => $this->tgldaftar
+                        'NOMOR_DAFTAR' => $this->nodaftar,
+                        'TGL_DAFTAR' => $this->tgldaftar
                     ]
                 ]));
             }
@@ -115,8 +125,8 @@ class SyncITInventoryByBCNo implements ShouldQueue
                 'detail_err' => $th->getTrace(),
                 'status' => 'failed_bc_sync',
                 'data' => [
-                    'nodaftar' => $this->nodaftar,
-                    'tgldaftar' => $this->tgldaftar
+                    'NOMOR_DAFTAR' => $this->nodaftar,
+                    'TGL_DAFTAR' => $this->tgldaftar
                 ]
             ]));
         }
