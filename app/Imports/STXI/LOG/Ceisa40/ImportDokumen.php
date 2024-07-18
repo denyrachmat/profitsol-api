@@ -184,6 +184,9 @@ class ImportDokumen implements ToModel, WithHeadingRow, SkipsEmptyRows
                             foreach ($cekOutgoing as $key => $valueItm) {
                                 $itemList[] = $valueItm['ITMCD'];
                             }
+
+                            logger(json_encode([$itemList, $cekOutgoing]));
+
                             (clone $baseDoc)
                                 ->whereIn('ITMCD', $itemList)
                                 ->update([
