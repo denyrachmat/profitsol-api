@@ -180,6 +180,8 @@ class ImportDokumen implements ToModel, WithHeadingRow, SkipsEmptyRows
                             ->get();
 
                         if (count($cekOutgoing) > 0) {
+                            logger("cek lagi 22 : {(clone $cekOutgoing)->pluck('ITMCD')} - {$row['kode_dokumen']}");
+
                             (clone $baseDoc)
                                 ->whereIn('ITMCD', (clone $cekOutgoing)->pluck('ITMCD'))
                                 ->update([
