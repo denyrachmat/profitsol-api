@@ -193,7 +193,7 @@ class ImportDokumen implements ToModel, WithHeadingRow, SkipsEmptyRows
 
                 $time_end = microtime(true);
 
-                logger("Dokumen fetch: Total time Update data on IT Inventory: {$execution_time}");
+                // logger("Dokumen fetch: Total time Update data on IT Inventory: {$execution_time}");
             }
         }
 
