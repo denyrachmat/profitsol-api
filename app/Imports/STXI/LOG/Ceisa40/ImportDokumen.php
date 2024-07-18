@@ -187,13 +187,15 @@ class ImportDokumen implements ToModel, WithHeadingRow, SkipsEmptyRows
 
                             logger(json_encode([$itemList, $cekOutgoing]));
 
-                            (clone $baseDoc)
+                            $updated = (clone $baseDoc)
                                 ->whereIn('ITMCD', $itemList)
                                 ->update([
                                     'BC23BCTYPE' => $row['kode_dokumen'] == 33 ? 'BC3.3' : 'BC1.6',
                                     'BC33DOCNO' => $row['kode_dokumen'] == 33 ? $row['nomor_dokumen'] : NULL,
                                     'BC33DOCDT' => $row['kode_dokumen'] == 33 ? $row['tanggal_dokumen'] : NULL,
                                 ]);
+
+                            logger("is updated {$updated}");
                         }
                     }
                 }
