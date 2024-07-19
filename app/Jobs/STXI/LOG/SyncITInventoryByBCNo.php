@@ -10,6 +10,7 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
+use Illuminate\Support\Facades\DB;
 use Redis;
 use Excel;
 
@@ -48,16 +49,16 @@ class SyncITInventoryByBCNo implements ShouldQueue
                 ->orderBy('TGL_DAFTAR', 'DESC')
                 ->first();
 
-            $inc = ITINVIncoming::where('BCDOCNO', $this->nodaftar)
+            $inc = ITINVIncoming::noLock()->where(DB::raw('LEFT(BCDOCNO, 6)'), $this->nodaftar)
                 ->where('BCDOCDT', $this->tgldaftar)
                 ->get()
                 ->toArray();
-            logger(json_encode($inc));
-            $out = ITINVOutgoing::where('BCDOCNO', $this->nodaftar)
+
+            $out = ITINVOutgoing::noLock()->where(DB::raw('LEFT(BCDOCNO, 6)'), $this->nodaftar)
                 ->where('BCDOCDT', $this->tgldaftar)
                 ->get()
                 ->toArray();
-            logger(json_encode($out));
+
             $listUpdatedData = [];
 
             if (count($inc) > 0) {
