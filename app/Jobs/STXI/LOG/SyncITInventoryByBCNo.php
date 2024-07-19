@@ -62,11 +62,11 @@ class SyncITInventoryByBCNo implements ShouldQueue
             $listUpdatedData = [];
 
             if (count($inc) > 0) {
-                $listUpdatedData[] = array_merge($listUpdatedData, $inc);
+                $listUpdatedData = array_merge($listUpdatedData, $inc);
             }
 
             if (count($out) > 0) {
-                $listUpdatedData[] = array_merge($listUpdatedData, $out);
+                $listUpdatedData = array_merge($listUpdatedData, $out);
             }
 
             Redis::publish('portalv2', json_encode([
