@@ -48,12 +48,12 @@ class SyncITInventoryByBCNo implements ShouldQueue
                 ->orderBy('TGL_DAFTAR', 'DESC')
                 ->first();
 
-            $inc = ITINVIncoming::noLock()->where('BCDOCNO', $this->nodaftar)
+            $inc = ITINVIncoming::where('BCDOCNO', $this->nodaftar)
                 ->where('BCDOCDT', $this->tgldaftar)
                 ->get()
                 ->toArray();
             logger(json_encode($inc));
-            $out = ITINVOutgoing::noLock()->where('BCDOCNO', $this->nodaftar)
+            $out = ITINVOutgoing::where('BCDOCNO', $this->nodaftar)
                 ->where('BCDOCDT', $this->tgldaftar)
                 ->get()
                 ->toArray();
