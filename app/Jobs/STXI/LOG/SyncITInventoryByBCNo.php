@@ -52,12 +52,12 @@ class SyncITInventoryByBCNo implements ShouldQueue
                 ->where('BCDOCDT', $this->tgldaftar)
                 ->get()
                 ->toArray();
-
+            logger(json_encode($inc));
             $out = ITINVOutgoing::noLock()->where('BCDOCNO', $this->nodaftar)
                 ->where('BCDOCDT', $this->tgldaftar)
                 ->get()
                 ->toArray();
-
+            logger(json_encode($out));
             $listUpdatedData = [];
 
             if (count($inc) > 0) {
