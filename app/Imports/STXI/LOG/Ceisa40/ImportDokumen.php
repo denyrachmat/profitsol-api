@@ -181,6 +181,10 @@ class ImportDokumen implements ToModel, WithHeadingRow, SkipsEmptyRows
 
                         if (count($cekOutgoing) > 0) {
                             logger("cek lagi 22 : {(clone $cekOutgoing)->pluck('ITMCD')} - {$row['kode_dokumen']}");
+                            foreach ((clone $baseDoc)
+                            ->whereIn('ITMCD', (clone $cekOutgoing)->pluck('ITMCD'))->get as $key => $value) {
+                                logger(json_encode($value));
+                            }
 
                             (clone $baseDoc)
                                 ->whereIn('ITMCD', (clone $cekOutgoing)->pluck('ITMCD'))
