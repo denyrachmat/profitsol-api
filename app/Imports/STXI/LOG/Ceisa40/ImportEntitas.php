@@ -35,7 +35,7 @@ class ImportEntitas implements ToModel, WithHeadingRow, SkipsEmptyRows
             $cekTempData = ITINVUploadTemp::where('NO_AJU', $row['nomor_aju'])->first();
 
             if ($this->incout == 'INC') {
-                if ($row['kode_entitas'] == 9) {
+                if ($row['kode_entitas'] == 9 || $row['kode_entitas'] == 3) {
                     ITINVUploadTemp::updateOrCreate([
                         'NO_AJU' => $row['nomor_aju'],
                         'NO_DAFTAR' => $cekTempData['NO_DAFTAR']
