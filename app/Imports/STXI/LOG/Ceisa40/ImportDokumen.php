@@ -189,7 +189,6 @@ class ImportDokumen implements ToModel, WithHeadingRow, SkipsEmptyRows
                             logger(json_encode($listUpdated));
 
                             (clone $baseDoc)
-                                ->whereIn('ITMCD', (clone $cekOutgoing)->pluck('ITMCD'))
                                 ->update($listUpdated);
                         }
                     }
