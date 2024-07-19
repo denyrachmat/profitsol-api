@@ -77,7 +77,8 @@ class SyncITInventoryByBCNo implements ShouldQueue
                 'data' => [
                     'NOMOR_DAFTAR' => $this->nodaftar,
                     'TGL_DAFTAR' => $this->tgldaftar,
-                    'listItemNeedUpdated' => $listUpdatedData
+                    'listItemNeedUpdated' => $listUpdatedData,
+                    'updatedList' => []
                 ]
             ]));
 
