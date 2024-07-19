@@ -55,10 +55,18 @@ class ImportDokumen implements ToModel, WithHeadingRow, SkipsEmptyRows
                         ->where('BCTYPE', $cekTempData['TYPE_BC'])
                         ->where('BCDOCDT', $cekTempData['TGL_DAFTAR']);
 
+                    $baseDocUpdate = ITINVIncoming::where(DB::raw('LEFT(BCDOCNO, 6)'), substr($cekTempData['NO_DAFTAR'], 0, 6))
+                        ->where('BCTYPE', $cekTempData['TYPE_BC'])
+                        ->where('BCDOCDT', $cekTempData['TGL_DAFTAR']);
+
                     $jumlahInv = (clone $baseDoc)->where('HHEINVNO', $row['nomor_dokumen'])->count();
                     $jumlahDoc = (clone $baseDoc)->where('DOCNO', $row['nomor_dokumen'])->count();
                 } else {
                     $baseDoc = ITINVOutgoing::NoLock()->where(DB::raw('LEFT(BCDOCNO, 6)'), substr($cekTempData['NO_DAFTAR'], 0, 6))
+                        ->where('BCTYPE', $cekTempData['TYPE_BC'])
+                        ->where('BCDOCDT', $cekTempData['TGL_DAFTAR']);
+
+                    $baseDocUpdate = ITINVOutgoing::where(DB::raw('LEFT(BCDOCNO, 6)'), substr($cekTempData['NO_DAFTAR'], 0, 6))
                         ->where('BCTYPE', $cekTempData['TYPE_BC'])
                         ->where('BCDOCDT', $cekTempData['TGL_DAFTAR']);
 
@@ -83,7 +91,7 @@ class ImportDokumen implements ToModel, WithHeadingRow, SkipsEmptyRows
 
                         if (count($cekIncoming) > 0) {
                             foreach ($cekIncoming->pluck('ITMCD') as $key => $valueItm) {
-                                (clone $baseDoc)
+                                (clone $baseDocUpdate)
                                     ->where('ITMCD', $valueItm)
                                     ->update([
                                         'HHEINVNO' => $row['nomor_dokumen'],
@@ -98,7 +106,7 @@ class ImportDokumen implements ToModel, WithHeadingRow, SkipsEmptyRows
 
                         if (count($cekOutgoing) > 0) {
                             foreach ($cekOutgoing->pluck('ITMCD') as $key => $valueItm) {
-                                (clone $baseDoc)
+                                (clone $baseDocUpdate)
                                     ->where('ITMCD', $valueItm)
                                     ->update([
                                         'INVNO' => $row['nomor_dokumen']
@@ -150,7 +158,7 @@ class ImportDokumen implements ToModel, WithHeadingRow, SkipsEmptyRows
                             ->get();
 
                         if (count($cekIncoming) > 0) {
-                            (clone $baseDoc)
+                            (clone $baseDocUpdate)
                                 ->whereIn('ITMCD', $cekIncoming->pluck('ITMCD'))
                                 ->update([
                                     'DOCNO' => $row['nomor_dokumen'],
@@ -163,7 +171,7 @@ class ImportDokumen implements ToModel, WithHeadingRow, SkipsEmptyRows
                             ->get();
 
                         if (count($cekOutgoing) > 0) {
-                            (clone $baseDoc)
+                            (clone $baseDocUpdate)
                                 ->whereIn('ITMCD', $cekOutgoing->pluck('ITMCD'))
                                 ->update([
                                     'DOCNO' => $row['nomor_dokumen']
@@ -189,7 +197,8 @@ class ImportDokumen implements ToModel, WithHeadingRow, SkipsEmptyRows
 
                             logger(json_encode($listUpdated));
 
-                            (clone $cekOutgoing)
+                            (clone $baseDocUpdate)
+                                ->whereIn('ITMCD', $cekOutgoing->pluck('ITMCD'))
                                 ->update($listUpdated);
                         }
                     }
