@@ -32,49 +32,53 @@ class ImportEntitas implements ToModel, WithHeadingRow, SkipsEmptyRows
         }
 
         if (!empty(trim($row['nomor_aju']))) {
-            $cekTempData = ITINVUploadTemp::where('NO_AJU', $row['nomor_aju'])->first();
+            $cekTempDataList = ITINVUploadTemp::where('NO_AJU', $row['nomor_aju'])->get()->toArray();
 
-            if ($this->incout == 'INC') {
-                if ($row['kode_entitas'] == 9 || $row['kode_entitas'] == 3) {
-                    ITINVUploadTemp::updateOrCreate([
-                        'NO_AJU' => $row['nomor_aju'],
-                        'NO_DAFTAR' => $cekTempData['NO_DAFTAR']
-                    ], [
-                        'NO_AJU' => $row['nomor_aju'],
-                        'NO_DAFTAR' => $cekTempData['NO_DAFTAR'],
-                        'PENGIRIM' => $row['nama_entitas']
-                    ]);
-                } elseif ($row['kode_entitas'] == 7) {
-                    ITINVUploadTemp::updateOrCreate([
-                        'NO_AJU' => $row['nomor_aju'],
-                        'NO_DAFTAR' => $cekTempData['NO_DAFTAR']
-                    ], [
-                        'NO_AJU' => $row['nomor_aju'],
-                        'NO_DAFTAR' => $cekTempData['NO_DAFTAR'],
-                        'SUPPL' => $row['nama_entitas']
-                    ]);
-                }
-            } else {
-                if (($row['kode_entitas'] == 7) && !empty($cekTempData['NO_DAFTAR'])) {
-                    ITINVUploadTemp::updateOrCreate([
-                        'NO_AJU' => $row['nomor_aju'],
-                        'NO_DAFTAR' => $cekTempData['NO_DAFTAR']
-                    ], [
-                        'NO_AJU' => $row['nomor_aju'],
-                        'NO_DAFTAR' => $cekTempData['NO_DAFTAR'],
-                        'PENGIRIM' => $row['nama_entitas']
-                    ]);
-                }
+            foreach ($cekTempDataList as $key => $cekTempData) {
 
-                if (($row['kode_entitas'] == 8) && !empty($cekTempData['NO_DAFTAR'])) {
-                    ITINVUploadTemp::updateOrCreate([
-                        'NO_AJU' => $row['nomor_aju'],
-                        'NO_DAFTAR' => $cekTempData['NO_DAFTAR']
-                    ], [
-                        'NO_AJU' => $row['nomor_aju'],
-                        'NO_DAFTAR' => $cekTempData['NO_DAFTAR'],
-                        'PENERIMA' => $row['nama_entitas']
-                    ]);
+                if ($this->incout == 'INC') {
+                    // Pengirim / Pengusaha
+                    if ($row['kode_entitas'] == 9 || $row['kode_entitas'] == 3) {
+                        ITINVUploadTemp::updateOrCreate([
+                            'NO_AJU' => $row['nomor_aju'],
+                            'NO_DAFTAR' => $cekTempData['NO_DAFTAR']
+                        ], [
+                            'NO_AJU' => $row['nomor_aju'],
+                            'NO_DAFTAR' => $cekTempData['NO_DAFTAR'],
+                            'PENGIRIM' => $row['nama_entitas']
+                        ]);
+                    } elseif ($row['kode_entitas'] == 7) {
+                        ITINVUploadTemp::updateOrCreate([
+                            'NO_AJU' => $row['nomor_aju'],
+                            'NO_DAFTAR' => $cekTempData['NO_DAFTAR']
+                        ], [
+                            'NO_AJU' => $row['nomor_aju'],
+                            'NO_DAFTAR' => $cekTempData['NO_DAFTAR'],
+                            'SUPPL' => $row['nama_entitas']
+                        ]);
+                    }
+                } else {
+                    if (($row['kode_entitas'] == 7) && !empty($cekTempData['NO_DAFTAR'])) {
+                        ITINVUploadTemp::updateOrCreate([
+                            'NO_AJU' => $row['nomor_aju'],
+                            'NO_DAFTAR' => $cekTempData['NO_DAFTAR']
+                        ], [
+                            'NO_AJU' => $row['nomor_aju'],
+                            'NO_DAFTAR' => $cekTempData['NO_DAFTAR'],
+                            'PENGIRIM' => $row['nama_entitas']
+                        ]);
+                    }
+
+                    if (($row['kode_entitas'] == 8) && !empty($cekTempData['NO_DAFTAR'])) {
+                        ITINVUploadTemp::updateOrCreate([
+                            'NO_AJU' => $row['nomor_aju'],
+                            'NO_DAFTAR' => $cekTempData['NO_DAFTAR']
+                        ], [
+                            'NO_AJU' => $row['nomor_aju'],
+                            'NO_DAFTAR' => $cekTempData['NO_DAFTAR'],
+                            'PENERIMA' => $row['nama_entitas']
+                        ]);
+                    }
                 }
             }
         }
