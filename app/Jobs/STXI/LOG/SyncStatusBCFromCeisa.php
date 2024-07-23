@@ -57,8 +57,6 @@ class SyncStatusBCFromCeisa implements ShouldQueue
                     'CRSD_RESDTTO' => date('Y-m-d H:i:s', strtotime($value['waktuSelesai'])),
                 ]);
             }
-
-            return $getStatus;
         }
     }
 }

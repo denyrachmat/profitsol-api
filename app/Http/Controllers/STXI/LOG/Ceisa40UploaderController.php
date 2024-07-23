@@ -115,16 +115,17 @@ class Ceisa40UploaderController extends BaseController
         return $this->handleResponse([$bcNo, $tglNo], 'Sync data queued !!');
     }
 
-    public function syncStatusCeisaAll()
+    public function syncStatusCeisaAll(): Array
     {
-        $getlistIDHeader = CEISARESPON::select('ID_HEADER')
-            ->leftJoin('CR_STATUS_DET', 'ID_HEADER', 'CR_STATUS_DET.ID_HEADER')
-            ->whereNull('ID_HEADER')
-            ->groupBy('ID_HEADER')
-            ->get();
+        $getlistIDHeader = CEISARESPON::select('00_CEISARESPON.ID_HEADER')
+            ->leftJoin('CR_STATUS_DET', '00_CEISARESPON.ID_HEADER', 'CR_STATUS_DET.ID_HEADER')
+            ->whereNull('CR_STATUS_DET.ID_HEADER')
+            ->groupBy('00_CEISARESPON.ID_HEADER')
+            ->get()
+            ->toArray();
 
         foreach ($getlistIDHeader as $key => $value) {
-            SyncStatusBCFromCeisa::dispatch($value->ID_HEADER)->onQueue('syncStatusOfBC');
+            SyncStatusBCFromCeisa::dispatch($value['ID_HEADER'])->onQueue('syncStatusOfBC');
         }
 
         return $getlistIDHeader;
