@@ -245,6 +245,9 @@ Route::group(['prefix' => 'div'], function () {
         Route::get('interfaceByDate/{fdate}/{ldate}/{isInterMega?}/{isInterCeisa?}', [Ceisa40UploaderController::class, 'syncByDate']);
         Route::get('syncBCNo/{bcno}/{bcdate}', [Ceisa40UploaderController::class, 'syncBCNo']);
 
+        Route::get('syncStatusCeisaByIDHeader/{id}', [Ceisa40UploaderController::class, 'syncStatusCeisaByIDHeader']);
+        Route::get('syncStatusCeisaAll', [Ceisa40UploaderController::class, 'syncStatusCeisaAll']);
+
     });
 
     Route::group(['prefix' => 'pu'], function () {
