@@ -10,11 +10,15 @@ use Illuminate\Support\Facades\Redis;
 use Illuminate\Support\Facades\DB;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 
+use App\Models\STXI\CEISA40\CEISARESPON;
+use App\Models\STXI\CEISA40\CR_STATUS_DET;
+
 use App\Imports\STXI\LOG\ImportCeisa40;
 use App\Jobs\STXI\LOG\SyncITInventoryQueue;
 use App\Jobs\STXI\LOG\SyncITInventoryByBCNo;
 
 use App\Traits\STXI\LOG\Ceisa40Traits;
+use App\Jobs\STXI\LOG\SyncStatusBCFromCeisa;
 
 class Ceisa40UploaderController extends BaseController
 {
@@ -56,7 +60,8 @@ class Ceisa40UploaderController extends BaseController
         return $this->handleResponse([], 'Upload Sukses ' . $nama_file);
     }
 
-    public function syncCeisaToWebBased($noAju, $bc, $id){
+    public function syncCeisaToWebBased($noAju, $bc, $id)
+    {
         try {
             ini_set('max_execution_time', '3200');
             $downloadExcel = $this->downloadExcel($noAju, $bc, $id, false);
@@ -81,11 +86,13 @@ class Ceisa40UploaderController extends BaseController
         }
     }
 
-    public function test($db, $data) {
+    public function test($db, $data)
+    {
         Redis::set($db, $data);
     }
 
-    public function autoSyncCeisa40() {
+    public function autoSyncCeisa40()
+    {
         $getNGData = DB::connection('sqlsrv_itinv')->table('v_empty_cols')->get();
 
         foreach ($getNGData as $key => $value) {
@@ -95,14 +102,66 @@ class Ceisa40UploaderController extends BaseController
         return $this->handleResponse($getNGData, 'Sync data queued !!');
     }
 
-    public function syncByDate($fdate, $ldate, $isSyncMega = false, $isSyncCeisa = false){
+    public function syncByDate($fdate, $ldate, $isSyncMega = false, $isSyncCeisa = false)
+    {
         SyncITInventoryQueue::dispatch($fdate, $ldate, $isSyncMega, $isSyncCeisa)->onQueue('SyncITInventoryQueue');
 
         return $this->handleResponse([$fdate, $ldate, $isSyncMega, $isSyncCeisa], 'Sync data queued !!');
     }
 
-    public function syncBCNo($bcNo, $tglNo) {
+    public function syncBCNo($bcNo, $tglNo)
+    {
         SyncITInventoryByBCNo::dispatch($bcNo, $tglNo)->onQueue('SyncITInventoryByBCNo');
         return $this->handleResponse([$bcNo, $tglNo], 'Sync data queued !!');
+    }
+
+    public function syncStatusCeisaAll()
+    {
+        $getlistIDHeader = CEISARESPON::select('ID_HEADER')
+            ->leftJoin('CR_STATUS_DET', 'ID_HEADER', 'CR_STATUS_DET.ID_HEADER')
+            ->whereNull('ID_HEADER')
+            ->groupBy('ID_HEADER')
+            ->get();
+
+        foreach ($getlistIDHeader as $key => $value) {
+            SyncStatusBCFromCeisa::dispatch($value->ID_HEADER)->onQueue('syncStatusOfBC');
+        }
+
+        return $getlistIDHeader;
+    }
+
+    public function syncStatusCeisaByIDHeader($id)
+    {
+        $getStatus = $this->apiPointData(
+            "proses/getRiwayatStatus/{$id}",
+            'GET',
+            [],
+            'parser',
+            true
+        );
+
+        if (!empty($getStatus)) {
+            foreach ($getStatus['data'] as $key => $value) {
+                $getAJU = CEISARESPON::select('NOMOR_AJU', 'ID_HEADER')
+                    ->where('ID_HEADER', $id)
+                    ->groupBy('NOMOR_AJU', 'ID_HEADER')
+                    ->first();
+
+                CR_STATUS_DET::updateOrCreate([
+                    'ID_HEADER' => $id,
+                    'CRSD_NOMOR_AJU' => $getAJU->NOMOR_AJU,
+                    'CRSD_RESNM' => $value['namaProses'],
+                ],[
+                    'ID_HEADER' => $id,
+                    'CRSD_NOMOR_AJU' => $getAJU->NOMOR_AJU,
+                    'CRSD_RESNM' => $value['namaProses'],
+                    'CRSD_RESDTFR' => date('Y-m-d H:i:s', strtotime($value['waktuMulai'])),
+                    'CRSD_RESDTTO' => date('Y-m-d H:i:s', strtotime($value['waktuSelesai'])),
+                ]);
+            }
+
+            return $getStatus;
+        }
+        // CR_STATUS_DET
     }
 }
