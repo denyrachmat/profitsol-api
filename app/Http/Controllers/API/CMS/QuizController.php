@@ -503,6 +503,10 @@ class QuizController extends Controller
     }
 
     public function downloadHTMLMaterial($id) {
-        return base64_encode(PDF::loadFile("http://192.168.100.32:8081/portal_v2/#/showHTMLTraining?data={$id}")->inline('Read Material.pdf'));
+        // $pdf = PDF::loadFile("http://192.168.100.32:8081/portal_v2/#/showHTMLTraining?data={$id}");
+        // $pdf = PDF::loadFile("http://localhost:8080/#/showHTMLTraining?data={$id}");
+        $pdf = PDF::loadView("CMS.HTMLMaterial", ['data' => $this->getHTMLList($id)]);
+
+        return base64_encode($pdf->inline('download.pdf'));
     }
 }
