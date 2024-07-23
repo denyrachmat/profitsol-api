@@ -86,7 +86,7 @@ class SyncITInventoryByBCNo implements ShouldQueue
             if (!empty($dataUnsync)) {
                 $downloadExcel = $this->downloadExcel($dataUnsync->NOMOR_AJU, $dataUnsync->CEISA_TYPE, $dataUnsync->ID_HEADER, false);
 
-                if (str_contains($downloadExcel, '1.6') || str_contains($downloadExcel, '2.7I') || str_contains($downloadExcel, '4.0')) {
+                if (str_contains($downloadExcel, '1.6') || str_contains($downloadExcel, '2.0') || str_contains($downloadExcel, '2.7I') || str_contains($downloadExcel, '4.0')) {
                     $state = 'INC';
                 } else {
                     $state = 'OUT';
