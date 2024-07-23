@@ -100,6 +100,8 @@ Route::group(['prefix' => 'cms'], function () {
     Route::get('migrationHRMS', [QuizController::class, 'migrationHRMS']);
     Route::get('migrationHRMSUserAns', [QuizController::class, 'migrateUsersAnswers']);
     Route::get('viewByLinkForm/{link}', [FormController::class, 'viewByLinkForm']);
+    Route::get('viewHTMLOnlyQuiz/{id}', [QuizController::class, 'getHTMLList']);
+    Route::post('downloadHTMLMaterial/{id}', [QuizController::class, 'downloadHTMLMaterial']);
 });
 
 Route::group(['prefix' => 'tos'], function () {

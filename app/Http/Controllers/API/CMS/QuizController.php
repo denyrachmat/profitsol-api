@@ -13,6 +13,7 @@ use App\Models\CMS\FormSetupDet;
 use App\Models\CMS\FormMaster;
 use App\Models\CMS\FormShareDet;
 use App\Traits\TOS\TrainingTraits;
+use Barryvdh\Snappy\Facades\SnappyPdf as PDF;
 
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
@@ -495,5 +496,13 @@ class QuizController extends Controller
         }
 
         return $hasil;
+    }
+
+    public function getHTMLList($id) {
+        return FormMaster::where('cfmt_id', $id)->where('cfm_type', 'html')->get()->toArray();
+    }
+
+    public function downloadHTMLMaterial($id) {
+        return base64_encode(PDF::loadFile("http://192.168.100.32:8081/portal_v2/#/showHTMLTraining?data={$id}")->inline('Read Material.pdf'));
     }
 }
