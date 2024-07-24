@@ -8,6 +8,7 @@ use Illuminate\Http\Request;
 use App\Models\STXI\CEISA40\CEISARESPON;
 use Illuminate\Support\Facades\DB;
 use App\Models\STXI\LOG\BCMega;
+use App\Models\STXI\CEISA40\CR_STATUS_DET;
 
 class CeisaMonitoringController extends BaseController
 {
@@ -58,11 +59,17 @@ class CeisaMonitoringController extends BaseController
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function show($id, $daftar)
+    public function show($id, $daftar, $idHeader)
     {
-        $data = CEISARESPON::where('NOMOR_AJU', $id)
-            ->where('NOMOR_DAFTAR', $daftar)
-            ->orderBy('TGL_DAFTAR', 'DESC')
+        // $data = CEISARESPON::where('NOMOR_AJU', $id)
+        //     ->where('NOMOR_DAFTAR', $daftar)
+        //     ->orderBy('TGL_DAFTAR', 'DESC')
+        //     ->get();
+
+        $data = CR_STATUS_DET::select(
+
+        )->where('ID_HEADER', $idHeader)
+        // ->where('CRSD_NOMOR_AJU', $id)
             ->get();
 
         return $this->handleResponse($data, 'Data fetched ');
@@ -103,7 +110,7 @@ class CeisaMonitoringController extends BaseController
     }
 
     public function resyncITInventory(){
-        
+
     }
 
     public function interfaceBCDOCMEGAtoWEB(){
@@ -126,6 +133,6 @@ class CeisaMonitoringController extends BaseController
     }
 
     public function mergeDownloadCeisa40(){
-        
+
     }
 }

@@ -238,7 +238,7 @@ Route::group(['prefix' => 'div'], function () {
         Route::get('syncCeisa/{noAju}/{bc}/{id}', [Ceisa40UploaderController::class, 'syncCeisaToWebBased']);
 
         Route::resource('ceisaMon', CeisaMonitoringController::class);
-        Route::get('ceisaMonDet/{noAju}/{noDaftar}', [CeisaMonitoringController::class, 'show']);
+        Route::get('ceisaMonDet/{noAju}/{noDaftar}/{idHeader?}', [CeisaMonitoringController::class, 'show']);
 
         Route::get('testData/{db}/{data}', [Ceisa40UploaderController::class, 'test']);
         Route::get('interfaceBC',[CeisaMonitoringController::class, 'interfaceBCDOCMEGAtoWEB']);
