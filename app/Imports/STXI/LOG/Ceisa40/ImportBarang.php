@@ -82,8 +82,8 @@ class ImportBarang implements ToModel, WithHeadingRow, SkipsEmptyRows
                         if ($cekBCStatus->STAT_MEGABCDOC == 1) {
                             $cekItemMega = DB::connection('sqlsrv_itinv')->table('VIEW_MITM_TBL')->where('MITM_ITMCD', $row['kode_barang'])->first();
                             $cekHeaderMega = DB::connection('sqlsrv_mega_db')
-                                ->table('Z_STXI_VW_INCBCINFO')
-                                ->where('BCDOCNO', $row["nomor_daftar"])
+                                ->table('Z_STXI_VW_CBCDOC')
+                                ->where('CBCDOC_BCDOCNO', $row["nomor_daftar"])
                                 ->first();
 
                             $insert = ITINVIncoming::updateOrCreate([
@@ -92,11 +92,11 @@ class ImportBarang implements ToModel, WithHeadingRow, SkipsEmptyRows
                                 'BCDOCDT' => $cekTempData['TGL_DAFTAR'],
                                 'ITMCD' => trim($row['kode_barang']),
                             ], [
-                                'LOCCD' => empty($cekHeaderMega) ? 'STX-I' : $cekHeaderMega->IGRN_LOCCD,
+                                'LOCCD' => empty($cekHeaderMega) ? 'STX-I' : $cekHeaderMega->FIFO_LOCCD,
                                 'BCTYPE' => $cekTempData['TYPE_BC'],
                                 'BCDOCNO' => $noDaftar,
                                 'BCDOCDT' => $cekTempData['TGL_DAFTAR'],
-                                'BSGRP' => empty($cekHeaderMega) ? 'LAIN NYA' : $cekHeaderMega->IGRN_BSGRP,
+                                'BSGRP' => empty($cekHeaderMega) ? 'LAIN NYA' : $cekHeaderMega->FIFO_BSGRP,
                                 'DOCCD' => '',
                                 'DOCNO' => '',
                                 'HHEINVNO' => '',
@@ -220,47 +220,99 @@ class ImportBarang implements ToModel, WithHeadingRow, SkipsEmptyRows
                             $UOM = $row['kode_satuan'];
                         }
 
-                        $insert = ITINVOutgoing::updateOrCreate([
-                            'BCTYPE' => $cekTempData['TYPE_BC'],
-                            'BCDOCNO' => $noDaftar,
-                            'BCDOCDT' => $cekTempData['TGL_DAFTAR'],
-                            'ITMCD' => trim($row['kode_barang']),
-                        ], [
-                            'LOCCD' => 'STX-I',
-                            'BCTYPE' => $cekTempData['TYPE_BC'],
-                            'BCDOCNO' => $noDaftar,
-                            'BCDOCDT' => $cekTempData['TGL_DAFTAR'],
-                            'BSGRP' => 'LAIN NYA',
-                            'DOCCD' => '',
-                            'DOCNO' => '',
-                            'HHEINVNO' => '',
-                            'ISUDT' => $cekTempData['TGL_DAFTAR'],
-                            'ITMCD' => trim($row['kode_barang']),
-                            'ITMD1' => $row['uraian'],
-                            'SPTNO' => $row['tipe'],
-                            'UOM' => $UOM,
-                            'TTLQTY' => $row['jumlah_satuan'],
-                            'CURCD' => $cekTempData['CURR'],
-                            'PRICE' => round((int) $row['cif'] / (int) $row['jumlah_satuan'], 4),
-                            'TTLAMOUNT' => round((int) $row['cif'], 4),
-                            'TAXINV' => '',
-                            'CUSNM' => $cekTempData['PENERIMA'],
-                            'WMSLOC' => '',
-                            'HSCODE' => $row['hs']
-                        ]);
+                        $cekBCStatus = viewCeisaRespon::where('NOMOR_DAFTAR', $noDaftar)->where('TGL_DAFTAR', $cekTempData['TGL_DAFTAR'])->first();
 
-                        Redis::publish('portalv2', json_encode([
-                            'app' => 'it_inv_checker',
-                            'message' => $noDaftar . ' on date bc : ' . $cekTempData["TGL_DAFTAR"] . ' - INC Item Exists on updated',
-                            'type' => 'info',
-                            'status' => 'progress_bc_sync_item_out_not_exists',
-                            'data' => [
-                                'NOMOR_DAFTAR' => $noDaftar,
-                                'TGL_DAFTAR' => $cekTempData["TGL_DAFTAR"],
-                                'updatedItem' => trim($row['kode_barang']),
-                                'data' => $insert
-                            ]
-                        ]));
+                        if ($cekBCStatus->STAT_MEGABCDOC == 1) {
+                            $cekItemMega = DB::connection('sqlsrv_itinv')->table('VIEW_MITM_TBL')->where('MITM_ITMCD', $row['kode_barang'])->first();
+                            $cekHeaderMega = DB::connection('sqlsrv_mega_db')
+                                ->table('Z_STXI_VW_CBCDOC')
+                                ->where('CBCDOC_BCDOCNO', $row["nomor_daftar"])
+                                ->first();
+
+                            $insert = ITINVOutgoing::updateOrCreate([
+                                'BCTYPE' => $cekTempData['TYPE_BC'],
+                                'BCDOCNO' => $noDaftar,
+                                'BCDOCDT' => $cekTempData['TGL_DAFTAR'],
+                                'ITMCD' => trim($row['kode_barang']),
+                            ], [
+                                'LOCCD' => empty($cekHeaderMega) ? 'STX-I' : $cekHeaderMega->FIFO_LOCCD,
+                                'BCTYPE' => $cekTempData['TYPE_BC'],
+                                'BCDOCNO' => $noDaftar,
+                                'BCDOCDT' => $cekTempData['TGL_DAFTAR'],
+                                'BSGRP' => empty($cekHeaderMega) ? 'LAIN NYA' : $cekHeaderMega->FIFO_BSGRP,
+                                'DOCCD' => '',
+                                'DOCNO' => '',
+                                'HHEINVNO' => '',
+                                'ISUDT' => $cekTempData['TGL_DAFTAR'],
+                                'ITMCD' => trim($row['kode_barang']),
+                                'ITMD1' => $row['uraian'],
+                                'SPTNO' => $row['tipe'],
+                                'UOM' => $UOM,
+                                'TTLQTY' => $row['jumlah_satuan'],
+                                'CURCD' => $cekTempData['CURR'],
+                                'PRICE' => round((int) $row['cif'] / (int) $row['jumlah_satuan'], 4),
+                                'TTLAMOUNT' => round((int) $row['cif'], 4),
+                                'TAXINV' => '',
+                                'CUSNM' => $cekTempData['PENERIMA'],
+                                'WMSLOC' => '',
+                                'HSCODE' => $row['hs']
+                            ]);
+
+                            Redis::publish('portalv2', json_encode([
+                                'app' => 'it_inv_checker',
+                                'message' => $noDaftar . ' on date bc : ' . $cekTempData["TGL_DAFTAR"] . ' - INC Item Exists on updated',
+                                'type' => 'info',
+                                'status' => 'progress_bc_sync_item_inc_not_exists_w_mega',
+                                'data' => [
+                                    'NOMOR_DAFTAR' => $noDaftar,
+                                    'TGL_DAFTAR' => $cekTempData["TGL_DAFTAR"],
+                                    'updatedItem' => trim($row['kode_barang']),
+                                    'data' => $insert
+                                ]
+                            ]));
+                        } else {
+                            $insert = ITINVOutgoing::updateOrCreate([
+                                'BCTYPE' => $cekTempData['TYPE_BC'],
+                                'BCDOCNO' => $noDaftar,
+                                'BCDOCDT' => $cekTempData['TGL_DAFTAR'],
+                                'ITMCD' => trim($row['kode_barang']),
+                            ], [
+                                'LOCCD' => 'STX-I',
+                                'BCTYPE' => $cekTempData['TYPE_BC'],
+                                'BCDOCNO' => $noDaftar,
+                                'BCDOCDT' => $cekTempData['TGL_DAFTAR'],
+                                'BSGRP' => 'LAIN NYA',
+                                'DOCCD' => '',
+                                'DOCNO' => '',
+                                'HHEINVNO' => '',
+                                'ISUDT' => $cekTempData['TGL_DAFTAR'],
+                                'ITMCD' => trim($row['kode_barang']),
+                                'ITMD1' => $row['uraian'],
+                                'SPTNO' => $row['tipe'],
+                                'UOM' => $UOM,
+                                'TTLQTY' => $row['jumlah_satuan'],
+                                'CURCD' => $cekTempData['CURR'],
+                                'PRICE' => round((int) $row['cif'] / (int) $row['jumlah_satuan'], 4),
+                                'TTLAMOUNT' => round((int) $row['cif'], 4),
+                                'TAXINV' => '',
+                                'CUSNM' => $cekTempData['PENERIMA'],
+                                'WMSLOC' => '',
+                                'HSCODE' => $row['hs']
+                            ]);
+
+                            Redis::publish('portalv2', json_encode([
+                                'app' => 'it_inv_checker',
+                                'message' => $noDaftar . ' on date bc : ' . $cekTempData["TGL_DAFTAR"] . ' - INC Item Exists on updated',
+                                'type' => 'info',
+                                'status' => 'progress_bc_sync_item_out_not_exists',
+                                'data' => [
+                                    'NOMOR_DAFTAR' => $noDaftar,
+                                    'TGL_DAFTAR' => $cekTempData["TGL_DAFTAR"],
+                                    'updatedItem' => trim($row['kode_barang']),
+                                    'data' => $insert
+                                ]
+                            ]));
+                        }
                     }
                 }
             }
