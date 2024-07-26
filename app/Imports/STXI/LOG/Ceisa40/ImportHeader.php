@@ -158,7 +158,7 @@ class ImportHeader implements ToModel, WithHeadingRow, SkipsEmptyRows
                     ->first();
 
                 if (!empty($cekData)) {
-                    if ($cekData->BSGRP === 'LAIN NYA') {
+                    if (empty($cekData->BSGRP) || $cekData->BSGRP === 'LAIN NYA') {
                         $cekHeader = DB::connection('sqlsrv_mega_db')
                             ->table('Z_STXI_VW_CBCDOC')
                             ->where('BCDOCNO', $row["nomor_daftar"])
