@@ -105,7 +105,7 @@ class ImportBarang implements ToModel, WithHeadingRow, SkipsEmptyRows
                                     ? $cekHeaderMega->FIFO_BSGRP
                                     : $cekHeaderMega->CBCDOC_BSGRP
                                 ),
-                                'DOCCD' => '',
+                                'DOCCD' => $cekHeaderMega->CBCDOC_DOCCD,
                                 'DOCNO' => '',
                                 'HHEINVNO' => '',
                                 'ISUDT' => $cekTempData['TGL_DAFTAR'],
@@ -255,7 +255,7 @@ class ImportBarang implements ToModel, WithHeadingRow, SkipsEmptyRows
                                     ? $cekHeaderMega->FIFO_BSGRP
                                     : $cekHeaderMega->CBCDOC_BSGRP
                                 ),
-                                'DOCCD' => '',
+                                'DOCCD' => $cekHeaderMega->CBCDOC_DOCCD,
                                 'DOCNO' => '',
                                 'HHEINVNO' => '',
                                 'ISUDT' => $cekTempData['TGL_DAFTAR'],

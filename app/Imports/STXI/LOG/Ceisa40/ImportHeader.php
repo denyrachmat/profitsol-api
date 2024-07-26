@@ -99,6 +99,7 @@ class ImportHeader implements ToModel, WithHeadingRow, SkipsEmptyRows
                                     ? $cekHeader->FIFO_BSGRP
                                     : $cekHeader->CBCDOC_BSGRP
                                 ),
+                                'DOCCD' => $cekHeader->CBCDOC_DOCCD,
                                 'BCTYPE' => $kodeDokumen,
                                 'CURCD' => !empty($row['kode_valuta']) ? $row['kode_valuta'] : (
                                     $row['kode_dokumen'] == 40
@@ -179,6 +180,7 @@ class ImportHeader implements ToModel, WithHeadingRow, SkipsEmptyRows
                                     ? $cekHeader->FIFO_BSGRP
                                     : $cekHeader->CBCDOC_BSGRP
                                 ),
+                                'DOCCD' => $cekHeader->CBCDOC_DOCCD,
                                 'BCTYPE' => $kodeDokumen,
                                 'CURCD' => !empty($row['kode_valuta']) ? $row['kode_valuta'] : (
                                     $row['kode_dokumen'] == 40
