@@ -79,9 +79,9 @@ class ImportHeader implements ToModel, WithHeadingRow, SkipsEmptyRows
 
                 if (!empty($cekData)) {
                     // Check is it real BG LAIN NYA
-                    if ($cekData->BSGRP === 'LAIN NYA') {
+                    if (empty($cekData->BSGRP) || $cekData->BSGRP === 'LAIN NYA') {
                         $cekHeader = DB::connection('sqlsrv_mega_db')
-                            ->table('Z_STXI_VW_INCBCINFO')
+                            ->table('Z_STXI_VW_CBCDOC')
                             ->where('BCDOCNO', $row["nomor_daftar"])
                             ->first();
 
@@ -89,8 +89,16 @@ class ImportHeader implements ToModel, WithHeadingRow, SkipsEmptyRows
                             ->where('BCTYPE', $kodeDokumen)
                             ->where('BCDOCDT', $row["tanggal_daftar"])
                             ->update([
-                                'LOCCD' => !empty($cekHeader) ? $cekHeader->IGRN_LOCCD : 'STX-I',
-                                'BSGRP' => !empty($cekHeader) ? $cekHeader->IGRN_BSGRP : 'LAIN NYA',
+                                'LOCCD' => empty($cekHeader) ? 'STX-I' : (
+                                    empty($cekHeader->FIFO_LOCCD)
+                                    ? $cekHeader->FIFO_LOCCD
+                                    : $cekHeader->CBCDOC_WHSCD
+                                ),
+                                'BSGRP' => empty($cekHeader) ? 'STX-I' : (
+                                    empty($cekHeader->FIFO_BSGRP)
+                                    ? $cekHeader->FIFO_BSGRP
+                                    : $cekHeader->CBCDOC_BSGRP
+                                ),
                                 'BCTYPE' => $kodeDokumen,
                                 'CURCD' => !empty($row['kode_valuta']) ? $row['kode_valuta'] : (
                                     $row['kode_dokumen'] == 40
@@ -152,16 +160,25 @@ class ImportHeader implements ToModel, WithHeadingRow, SkipsEmptyRows
                 if (!empty($cekData)) {
                     if ($cekData->BSGRP === 'LAIN NYA') {
                         $cekHeader = DB::connection('sqlsrv_mega_db')
-                            ->table('Z_STXI_VW_INCBCINFO')
+                            ->table('Z_STXI_VW_CBCDOC')
                             ->where('BCDOCNO', $row["nomor_daftar"])
                             ->first();
+
 
                         ITINVOutgoing::where("BCDOCNO", 'LIKE', $row["nomor_daftar"] . '%')
                             ->where('BCTYPE', $kodeDokumen)
                             ->where('BCDOCDT', $row["tanggal_daftar"])
                             ->update([
-                                'LOCCD' => !empty($cekHeader) ? $cekHeader->IGRN_LOCCD : 'STX-I',
-                                'BSGRP' => !empty($cekHeader) ? $cekHeader->IGRN_BSGRP : 'LAIN NYA',
+                                'LOCCD' => empty($cekHeader) ? 'STX-I' : (
+                                    empty($cekHeader->FIFO_LOCCD)
+                                    ? $cekHeader->FIFO_LOCCD
+                                    : $cekHeader->CBCDOC_WHSCD
+                                ),
+                                'BSGRP' => empty($cekHeader) ? 'STX-I' : (
+                                    empty($cekHeader->FIFO_BSGRP)
+                                    ? $cekHeader->FIFO_BSGRP
+                                    : $cekHeader->CBCDOC_BSGRP
+                                ),
                                 'BCTYPE' => $kodeDokumen,
                                 'CURCD' => !empty($row['kode_valuta']) ? $row['kode_valuta'] : (
                                     $row['kode_dokumen'] == 40
