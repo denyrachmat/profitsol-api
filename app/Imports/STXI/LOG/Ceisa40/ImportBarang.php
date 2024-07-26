@@ -83,7 +83,7 @@ class ImportBarang implements ToModel, WithHeadingRow, SkipsEmptyRows
                             $cekItemMega = DB::connection('sqlsrv_itinv')->table('VIEW_MITM_TBL')->where('MITM_ITMCD', $row['kode_barang'])->first();
                             $cekHeaderMega = DB::connection('sqlsrv_mega_db')
                                 ->table('Z_STXI_VW_CBCDOC')
-                                ->where('CBCDOC_BCDOCNO', $row["nomor_daftar"])
+                                ->where('CBCDOC_BCDOCNO', $noDaftar)
                                 ->first();
 
                             $insert = ITINVIncoming::updateOrCreate([
@@ -223,10 +223,9 @@ class ImportBarang implements ToModel, WithHeadingRow, SkipsEmptyRows
                         $cekBCStatus = viewCeisaRespon::where('NOMOR_DAFTAR', $noDaftar)->where('TGL_DAFTAR', $cekTempData['TGL_DAFTAR'])->first();
 
                         if ($cekBCStatus->STAT_MEGABCDOC == 1) {
-                            $cekItemMega = DB::connection('sqlsrv_itinv')->table('VIEW_MITM_TBL')->where('MITM_ITMCD', $row['kode_barang'])->first();
                             $cekHeaderMega = DB::connection('sqlsrv_mega_db')
                                 ->table('Z_STXI_VW_CBCDOC')
-                                ->where('CBCDOC_BCDOCNO', $row["nomor_daftar"])
+                                ->where('CBCDOC_BCDOCNO', $noDaftar)
                                 ->first();
 
                             $insert = ITINVOutgoing::updateOrCreate([
