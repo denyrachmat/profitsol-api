@@ -74,7 +74,7 @@ class ImportHeader implements ToModel, WithHeadingRow, SkipsEmptyRows
             if ($this->incout === 'INC') {
                 $cekData = ITINVIncoming::where("BCDOCNO", 'LIKE', $row["nomor_daftar"] . '%')
                     ->where('BCTYPE', $kodeDokumen)
-                    ->where('BCDOCDT', $row["tanggal_daftar"])
+                    ->where('CBCDOC_BCDOCNO', $row["tanggal_daftar"])
                     ->first();
 
                 if (!empty($cekData)) {
@@ -161,7 +161,7 @@ class ImportHeader implements ToModel, WithHeadingRow, SkipsEmptyRows
                     if (empty($cekData->BSGRP) || $cekData->BSGRP === 'LAIN NYA') {
                         $cekHeader = DB::connection('sqlsrv_mega_db')
                             ->table('Z_STXI_VW_CBCDOC')
-                            ->where('BCDOCNO', $row["nomor_daftar"])
+                            ->where('CBCDOC_BCDOCNO', $row["nomor_daftar"])
                             ->first();
 
 
