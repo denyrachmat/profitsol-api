@@ -178,11 +178,12 @@ class AuthController extends BaseController
         if ($validator->fails()) {
             return response()->json($validator->errors());
         }
+
         $response = Password::sendResetLink($input);
 
-        $message = $response == Password::RESET_LINK_SENT ? 'Mail send successfully' : GLOBAL_SOMETHING_WANTS_TO_WRONG;
+        $message = $response == Password::RESET_LINK_SENT ? 'Mail send successfully' : 'Something went wrong, please contact administrator !!';
 
-        return response()->json($message);
+        return $this->handleResponse($response, $message);
     }
 
     public function change_password(Request $request)
@@ -201,11 +202,11 @@ class AuthController extends BaseController
             try {
                 $user = User::where('username', $userid)->first();
                 if ((Hash::check(request('old_password'), $user->password)) == false) {
-                    return $this->handleError('Check your old password.',[
+                    return $this->handleError('Check your old password.', [
                         'old_password' => ['Check your old password.']
                     ]);
                 } else if ((Hash::check(request('new_password'), $user->password)) == true) {
-                    return $this->handleError('Please enter a password which is not similar then current password.',[
+                    return $this->handleError('Please enter a password which is not similar then current password.', [
                         'old_password' => ['Please enter a password which is not similar then current password.']
                     ]);
                 } else {
@@ -222,5 +223,32 @@ class AuthController extends BaseController
             }
         }
         return \Response::json($arr);
+    }
+
+    public function submitResetPasswordForm(Request $request, $token)
+    {
+        $request->validate([
+            'email' => 'required|email|exists:users',
+            'password' => 'required|string|min:6|confirmed',
+            'password_confirmation' => 'required'
+        ]);
+
+        $updatePassword = DB::table('password_resets')
+            ->where([
+                'email' => $request->email,
+                'token' => $token
+            ])
+            ->first();
+
+        if (!$updatePassword) {
+            return $this->handleError('Invalid Token, please request forget password again !!');
+        }
+
+        $user = User::where('email', $request->email)
+            ->update(['password' => Hash::make($request->password)]);
+
+        DB::table('password_resets')->where(['email' => $request->email])->delete();
+
+        return $this->handleResponse($user, 'Your password has been changed!');
     }
 }

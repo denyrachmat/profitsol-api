@@ -304,6 +304,7 @@ Route::post('register', [AuthController::class, 'register']);
 Route::get('countryList', [ProfileController::class, 'getCountryList']);
 
 Route::post('forgot-password', [AuthController::class, 'forgot_password']);
+Route::post('reset-password/{token}', [AuthController::class, 'submitResetPasswordForm']);
 
 Route::get('redis', function () {
     try{
