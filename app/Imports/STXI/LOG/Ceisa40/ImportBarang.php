@@ -92,11 +92,19 @@ class ImportBarang implements ToModel, WithHeadingRow, SkipsEmptyRows
                                 'BCDOCDT' => $cekTempData['TGL_DAFTAR'],
                                 'ITMCD' => trim($row['kode_barang']),
                             ], [
-                                'LOCCD' => empty($cekHeaderMega) ? 'STX-I' : $cekHeaderMega->FIFO_LOCCD,
+                                'LOCCD' => empty($cekHeaderMega) ? 'STX-I' : (
+                                    empty($cekHeaderMega->FIFO_LOCCD)
+                                    ? $cekHeaderMega->FIFO_LOCCD
+                                    : $cekHeaderMega->CBCDOC_WHSCD
+                                ),
                                 'BCTYPE' => $cekTempData['TYPE_BC'],
                                 'BCDOCNO' => $noDaftar,
                                 'BCDOCDT' => $cekTempData['TGL_DAFTAR'],
-                                'BSGRP' => empty($cekHeaderMega) ? 'LAIN NYA' : $cekHeaderMega->FIFO_BSGRP,
+                                'BSGRP' => empty($cekHeaderMega) ? 'LAIN NYA' : (
+                                    empty($cekHeaderMega->FIFO_BSGRP)
+                                    ? $cekHeaderMega->FIFO_BSGRP
+                                    : $cekHeaderMega->CBCDOC_BSGRP
+                                ),
                                 'DOCCD' => '',
                                 'DOCNO' => '',
                                 'HHEINVNO' => '',
@@ -234,11 +242,19 @@ class ImportBarang implements ToModel, WithHeadingRow, SkipsEmptyRows
                                 'BCDOCDT' => $cekTempData['TGL_DAFTAR'],
                                 'ITMCD' => trim($row['kode_barang']),
                             ], [
-                                'LOCCD' => empty($cekHeaderMega) ? 'STX-I' : $cekHeaderMega->FIFO_LOCCD,
+                                'LOCCD' => empty($cekHeaderMega) ? 'STX-I' : (
+                                    empty($cekHeaderMega->FIFO_LOCCD)
+                                    ? $cekHeaderMega->FIFO_LOCCD
+                                    : $cekHeaderMega->CBCDOC_WHSCD
+                                ),
                                 'BCTYPE' => $cekTempData['TYPE_BC'],
                                 'BCDOCNO' => $noDaftar,
                                 'BCDOCDT' => $cekTempData['TGL_DAFTAR'],
-                                'BSGRP' => empty($cekHeaderMega) ? 'LAIN NYA' : $cekHeaderMega->FIFO_BSGRP,
+                                'BSGRP' => empty($cekHeaderMega) ? 'LAIN NYA' : (
+                                    empty($cekHeaderMega->FIFO_BSGRP)
+                                    ? $cekHeaderMega->FIFO_BSGRP
+                                    : $cekHeaderMega->CBCDOC_BSGRP
+                                ),
                                 'DOCCD' => '',
                                 'DOCNO' => '',
                                 'HHEINVNO' => '',
