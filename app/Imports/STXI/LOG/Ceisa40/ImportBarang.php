@@ -93,7 +93,7 @@ class ImportBarang implements ToModel, WithHeadingRow, SkipsEmptyRows
                                 'ITMCD' => trim($row['kode_barang']),
                             ], [
                                 'LOCCD' => empty($cekHeaderMega) ? 'STX-I' : (
-                                    empty($cekHeaderMega->FIFO_LOCCD)
+                                    !empty($cekHeaderMega->FIFO_LOCCD)
                                     ? $cekHeaderMega->FIFO_LOCCD
                                     : $cekHeaderMega->CBCDOC_WHSCD
                                 ),
@@ -101,7 +101,7 @@ class ImportBarang implements ToModel, WithHeadingRow, SkipsEmptyRows
                                 'BCDOCNO' => $noDaftar,
                                 'BCDOCDT' => $cekTempData['TGL_DAFTAR'],
                                 'BSGRP' => empty($cekHeaderMega) ? 'LAIN NYA' : (
-                                    empty($cekHeaderMega->FIFO_BSGRP)
+                                    !empty($cekHeaderMega->FIFO_BSGRP)
                                     ? $cekHeaderMega->FIFO_BSGRP
                                     : $cekHeaderMega->CBCDOC_BSGRP
                                 ),
@@ -243,7 +243,7 @@ class ImportBarang implements ToModel, WithHeadingRow, SkipsEmptyRows
                                 'ITMCD' => trim($row['kode_barang']),
                             ], [
                                 'LOCCD' => empty($cekHeaderMega) ? 'STX-I' : (
-                                    empty($cekHeaderMega->FIFO_LOCCD)
+                                    !empty($cekHeaderMega->FIFO_LOCCD)
                                     ? $cekHeaderMega->FIFO_LOCCD
                                     : $cekHeaderMega->CBCDOC_WHSCD
                                 ),
@@ -251,7 +251,7 @@ class ImportBarang implements ToModel, WithHeadingRow, SkipsEmptyRows
                                 'BCDOCNO' => $noDaftar,
                                 'BCDOCDT' => $cekTempData['TGL_DAFTAR'],
                                 'BSGRP' => empty($cekHeaderMega) ? 'LAIN NYA' : (
-                                    empty($cekHeaderMega->FIFO_BSGRP)
+                                    !empty($cekHeaderMega->FIFO_BSGRP)
                                     ? $cekHeaderMega->FIFO_BSGRP
                                     : $cekHeaderMega->CBCDOC_BSGRP
                                 ),

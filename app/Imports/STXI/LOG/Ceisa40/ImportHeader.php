@@ -90,12 +90,12 @@ class ImportHeader implements ToModel, WithHeadingRow, SkipsEmptyRows
                             ->where('BCDOCDT', $row["tanggal_daftar"])
                             ->update([
                                 'LOCCD' => empty($cekHeader) ? 'STX-I' : (
-                                    empty($cekHeader->FIFO_LOCCD)
+                                    !empty($cekHeader->FIFO_LOCCD)
                                     ? $cekHeader->FIFO_LOCCD
                                     : $cekHeader->CBCDOC_WHSCD
                                 ),
                                 'BSGRP' => empty($cekHeader) ? 'STX-I' : (
-                                    empty($cekHeader->FIFO_BSGRP)
+                                    !empty($cekHeader->FIFO_BSGRP)
                                     ? $cekHeader->FIFO_BSGRP
                                     : $cekHeader->CBCDOC_BSGRP
                                 ),
@@ -170,12 +170,12 @@ class ImportHeader implements ToModel, WithHeadingRow, SkipsEmptyRows
                             ->where('BCDOCDT', $row["tanggal_daftar"])
                             ->update([
                                 'LOCCD' => empty($cekHeader) ? 'STX-I' : (
-                                    empty($cekHeader->FIFO_LOCCD)
+                                    !empty($cekHeader->FIFO_LOCCD)
                                     ? $cekHeader->FIFO_LOCCD
                                     : $cekHeader->CBCDOC_WHSCD
                                 ),
                                 'BSGRP' => empty($cekHeader) ? 'STX-I' : (
-                                    empty($cekHeader->FIFO_BSGRP)
+                                    !empty($cekHeader->FIFO_BSGRP)
                                     ? $cekHeader->FIFO_BSGRP
                                     : $cekHeader->CBCDOC_BSGRP
                                 ),
