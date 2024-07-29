@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Contracts\Hashing\Hasher as HasherContract;
 
 use App\Models\PORTAL\PortalEduDet;
 use App\Models\User;
@@ -17,6 +18,10 @@ use App\Models\PORTAL\PortalApp;
 
 class AuthController extends BaseController
 {
+    public function __construct(HasherContract $hasher)
+    {
+        $this->hasher = $hasher;
+    }
     /**
      * @OA\Post(
      *     path="/api/login",
@@ -235,12 +240,11 @@ class AuthController extends BaseController
 
         $updatePassword = DB::table('password_resets')
             ->where([
-                'email' => $request->email,
-                'token' => $token
+                'email' => $request->email
             ])
             ->first();
 
-        if (!$updatePassword) {
+        if (!$updatePassword || (!$this->hasher->check($request->token, $updatePassword->token))) {
             return $this->handleError('Invalid Token, please request forget password again !!');
         }
 
