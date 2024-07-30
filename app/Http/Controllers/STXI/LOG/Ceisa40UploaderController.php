@@ -118,7 +118,11 @@ class Ceisa40UploaderController extends BaseController
     public function syncStatusCeisaAll(): Array
     {
         $getlistIDHeader = CEISARESPON::select('00_CEISARESPON.ID_HEADER')
-            ->leftJoin('CR_STATUS_DET', '00_CEISARESPON.ID_HEADER', 'CR_STATUS_DET.ID_HEADER')
+            ->leftJoin(DB::raw("(
+                SELECT *
+                FROM CR_STATUS_DET
+                WHERE CRSD_RESNM LIKE '%Selesai Proses%'
+            ) CR_STATUS_DET"), '00_CEISARESPON.ID_HEADER', 'CR_STATUS_DET.ID_HEADER')
             ->whereNull('CR_STATUS_DET.ID_HEADER')
             ->groupBy('00_CEISARESPON.ID_HEADER')
             ->get()
