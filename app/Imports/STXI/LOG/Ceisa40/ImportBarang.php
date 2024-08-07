@@ -39,6 +39,7 @@ class ImportBarang implements ToModel, WithHeadingRow, SkipsEmptyRows
                         ->where('BCTYPE', $cekTempData['TYPE_BC'])
                         ->where('BCDOCDT', $cekTempData['TGL_DAFTAR'])
                         ->where('ITMCD', trim($row['kode_barang']))
+                        ->where('TTLQTY', trim($row['jumlah_satuan']))
                         ->first();
 
                     if (!empty($cekIncoming)) {
@@ -46,6 +47,7 @@ class ImportBarang implements ToModel, WithHeadingRow, SkipsEmptyRows
                             ->where('BCTYPE', $cekTempData['TYPE_BC'])
                             ->where('BCDOCDT', $cekTempData["TGL_DAFTAR"])
                             ->where('ITMCD', trim($row['kode_barang']))
+                            ->where('TTLQTY', trim($row['jumlah_satuan']))
                             ->update([
                                 'PRICE' => $row['cif'] == 0
                                     ? round((int) $row['harga_penyerahan'] / (int) $row['jumlah_satuan'], 4)
