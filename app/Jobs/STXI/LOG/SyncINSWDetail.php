@@ -12,6 +12,7 @@ use App\Models\STXI\LOG\INSWDataMaster;
 use App\Models\STXI\LOG\INSWDataJlsDetail;
 use App\Models\STXI\LOG\INSWDataSatDetail;
 use App\Models\STXI\LOG\INSWDataRegDet;
+use App\Models\STXI\LOG\INSWDataDocBeaMaster;
 
 class SyncINSWDetail implements ShouldQueue
 {
@@ -155,7 +156,7 @@ class SyncINSWDetail implements ShouldQueue
                     }
 
                     INSWDataRegDet::where('ZID_HSCODE', $getHSCode)
-                    ->delete();
+                        ->delete();
 
                     foreach ($dataDetailGet['import_regulation'] as $key => $valueReg) {
                         INSWDataRegDet::create([
@@ -213,6 +214,33 @@ class SyncINSWDetail implements ShouldQueue
                         ]);
                     }
 
+                    foreach ($dataDetailGet['dok_kepabean_import_border'] as $key => $valueDoc) {
+                        INSWDataDocBeaMaster::updateOrCreate([
+                            'ZIDBD_DOCCD' => $valueDoc['kd_dokumen'],
+                        ], [
+                            'ZIDBD_DOCCD' => $valueDoc['kd_dokumen'],
+                            'ZIDBD_DOCNM' => $valueDoc['nm_dokumen'],
+                            'ZIDBD_DOCNMINTR' => $valueDoc['uraian_intr'],
+                            'ZIDBD_LINK' => $valueDoc['ket_link'],
+                            'ZIDBD_TLINK' => $valueDoc['ket_text_link'],
+                            'ZIDBD_DESC' => $valueDoc['keterangan'],
+                            'ZIDBD_DESCINTR' => $valueDoc['keterangan_intr'],
+                        ]);
+                    }
+
+                    foreach ($dataDetailGet['dok_kepabean_import_post_border'] as $key => $valueDocPost) {
+                        INSWDataDocBeaMaster::updateOrCreate([
+                            'ZIDBD_DOCCD' => $valueDocPost['kd_dokumen'],
+                        ], [
+                            'ZIDBD_DOCCD' => $valueDocPost['kd_dokumen'],
+                            'ZIDBD_DOCNM' => $valueDocPost['nm_dokumen'],
+                            'ZIDBD_DOCNMINTR' => $valueDocPost['uraian_intr'],
+                            'ZIDBD_LINK' => $valueDocPost['ket_link'],
+                            'ZIDBD_TLINK' => $valueDocPost['ket_text_link'],
+                            'ZIDBD_DESC' => $valueDocPost['keterangan'],
+                            'ZIDBD_DESCINTR' => $valueDocPost['keterangan_intr'],
+                        ]);
+                    }
                     $hasilData[] = [
                         'status' => true,
                         'hsCode' => $getHSCode,
