@@ -232,6 +232,8 @@ Route::group(['prefix' => 'div'], function () {
     Route::group(['prefix' => 'log'], function () {
         Route::get('INSWGetDataDetail/{filter}', [INSWDataController::class, 'getData']);
         Route::get('INSWGetData/{filter?}/{size?}', [INSWDataController::class, 'getListHSCode']);
+        Route::get('runINSWSyncData', [INSWDataController::class, 'syncINSWData']);
+
 
         Route::post('uploadData', [Ceisa40UploaderController::class, 'uploadData']);
         Route::post('getNopen', [Ceisa40UploaderController::class, 'getNopen']);
