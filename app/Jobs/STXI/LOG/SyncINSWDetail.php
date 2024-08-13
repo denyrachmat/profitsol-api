@@ -31,7 +31,7 @@ class SyncINSWDetail implements ShouldQueue
      */
     public function handle(): void
     {
-        $getHSCode = $this->data['_source']['hs_code_format'];
+        $getHSCode = $this->data;
 
         try {
             $dataDetail = $this->getData($getHSCode);
