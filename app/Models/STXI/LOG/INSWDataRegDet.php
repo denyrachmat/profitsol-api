@@ -5,17 +5,20 @@ namespace App\Models\STXI\LOG;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
-
-class INSWDataSatDetail extends Model
+class INSWDataRegDet extends Model
 {
     use HasFactory, SoftDeletes;
     protected $connection = 'sqlsrv_log';
-    protected $table = 'Z_INTR_SAT_DET';
+    protected $table = 'Z_INTR_REG_DET';
     protected $fillable = [
         'ZID_HSCODE',
-        'ZISD_TYPE',
-        'ZISD_SERI',
-        'ZISD_JENIS',
-        'ZISD_SATUAN',
+        'ZIRD_TYPE',
+        'ZIRD_NMIJIN',
+        'ZIRD_KDIJIN',
+        'ZIRD_DESC',
+        'ZIRD_BEALIST',
+        'ZIRD_LEGAL',
+        'ZIRD_MODUL',
+        'ZIRD_SKEPNO',
     ];
 }

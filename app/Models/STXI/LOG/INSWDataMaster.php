@@ -4,10 +4,11 @@ namespace App\Models\STXI\LOG;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class INSWDataMaster extends Model
 {
-    use HasFactory;
+    use HasFactory, SoftDeletes;
     protected $connection = 'sqlsrv_log';
     protected $table = 'Z_INTR_DATA_MSTR';
     protected $fillable = [

@@ -62,7 +62,10 @@ Route::get('phpinfo', function() {
 Route::group(['prefix' => 'portal', 'middleware' => 'auth:sanctum', 'verify' => true], function () {
 
     // Settings Menu
-    Route::resource('users', UsersController::class);
+    Route::group(['prefix' => 'users'], function() {
+        Route::resource('', UsersController::class);
+        Route::get('ActiveOnly', [UsersController::class, 'userActiveOnly']);
+    });
 
     Route::resource('profiles', ProfilesController::class);
 

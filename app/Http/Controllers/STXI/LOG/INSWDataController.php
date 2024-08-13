@@ -8,6 +8,9 @@ use App\Models\STXI\LOG\INSWDataMaster;
 use App\Models\STXI\LOG\INSWDataJlsDetail;
 use App\Models\STXI\LOG\INSWDataSatDetail;
 
+use App\Jobs\STXI\LOG\SyncINSWDetail;
+use App\Jobs\STXI\LOG\SyncINSWRules;
+
 class INSWDataController extends BaseController
 {
     public function getData($hsCode)
@@ -50,9 +53,8 @@ class INSWDataController extends BaseController
     {
         ini_set('memory_limit', '2G');
         ini_set('max_execution_time', '10800');
-        $data = $this->getListMaster($hsCode === 0 || !empty($hsCode) ? '' : $hsCode, $maxSize)['data'][0]['result'];
-
-        // return $data;
+        $data = $this->getListMaster($hsCode === 0 || empty($hsCode) ? '' : $hsCode, $maxSize)['data'][0]['result'];
+        return $data;
         // INSWDataMaster::truncate();
         // INSWDataJlsDetail::truncate();
         // INSWDataSatDetail::truncate();
@@ -214,5 +216,11 @@ class INSWDataController extends BaseController
             'success' => array_values($dataRetSuccess),
             'failed' => array_values($dataRetFail)
         ];
+    }
+
+    public function syncINSWData(){
+        SyncINSWRules::dispatch()->onQueue('INSWQueueRunning');
+
+        return 'Checking INSW Rules has been started';
     }
 }
