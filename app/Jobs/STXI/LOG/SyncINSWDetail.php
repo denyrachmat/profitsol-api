@@ -71,6 +71,7 @@ class SyncINSWDetail implements ShouldQueue
                         if (!empty($this->search)) {
                             INSWDataJlsDetail::where('ZID_HSCODE', $getHSCode)
                                 ->where('ZIJD_TYPE', 'bab')
+                                ->where('ZIJD_DET_ID', $valueJls)
                                 ->delete();
                         }
                         $jlsCreate[] = INSWDataJlsDetail::updateOrCreate([
