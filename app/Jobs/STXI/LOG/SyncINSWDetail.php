@@ -177,8 +177,8 @@ class SyncINSWDetail implements ShouldQueue
                     }
 
                     if (!empty($this->search)) {
-                        INSWDataRegDet::where('ZID_HSCODE', $getHSCode)
-                            ->delete();
+                        // INSWDataRegDet::where('ZID_HSCODE', $getHSCode)
+                        //     ->delete();
                     }
 
                     $dataRegCreate = [];
