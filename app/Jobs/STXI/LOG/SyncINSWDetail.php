@@ -163,7 +163,7 @@ class SyncINSWDetail implements ShouldQueue
                     }
 
                     $satExp = [];
-                    foreach ($dataDetailGet['refSatuan']['export'] as $keySatImp => $valueSatimp) {
+                    foreach ($dataDetailGet['refSatuan']['expor'] as $keySatImp => $valueSatimp) {
 
                         if (!empty($this->search)) {
                             INSWDataSatDetail::where('ZID_HSCODE', $getHSCode)
