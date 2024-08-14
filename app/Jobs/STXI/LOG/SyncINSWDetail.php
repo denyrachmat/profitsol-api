@@ -109,7 +109,8 @@ class SyncINSWDetail implements ShouldQueue
                     }
 
                     foreach ($dataDetailGet['import_regulation_post_border'] as $key3 => $valueRegPostBord) {
-                        $dataRegCreate[] = INSWDataRegDet::create([
+                        logger(json_encode($valueRegPostBord['nama_ijin']));
+                        $cekReg = INSWDataRegDet::create([
                             'ZID_HSCODE' => $getHSCode,
                             'ZIRD_TYPE' => 'import_regulation_post_border',
                             'ZIRD_NMIJIN' => $valueRegPostBord['nama_ijin'] ? $valueRegPostBord['nama_ijin'] :$valueRegPostBord['name'],
@@ -120,6 +121,8 @@ class SyncINSWDetail implements ShouldQueue
                             'ZIRD_MODUL' => $valueRegPostBord['modul'],
                             'ZIRD_SKEPNO' => $valueRegPostBord['nomor_skep'] ? $valueRegPostBord['nomor_skep'] : ''
                         ]);
+
+                        logger(json_encode($cekReg));
                     }
 
                     foreach ($dataDetailGet['export_regulation'] as $key4 => $valueExport) {
