@@ -143,43 +143,7 @@ class SyncINSWDetail implements ShouldQueue
                         ]);
                     }
 
-                    $satImp = [];
-                    foreach ($dataDetailGet['refSatuan']['impor'] as $keySatImp => $valueSatimp) {
 
-                        if (!empty($this->search)) {
-                            INSWDataSatDetail::where('ZID_HSCODE', $getHSCode)
-                                ->where('ZISD_TYPE', 'import')
-                                ->delete();
-                        }
-
-                        $satImp[] = INSWDataSatDetail::updateOrCreate([
-                            'ZID_HSCODE' => $getHSCode,
-                        ], [
-                            'ZISD_TYPE' => 'import',
-                            'ZISD_SERI' => $valueSatimp['seri'],
-                            'ZISD_JENIS' => $valueSatimp['kd_satuan'],
-                            'ZISD_SATUAN' => $valueSatimp['ur_satuan'],
-                        ]);
-                    }
-
-                    $satExp = [];
-                    foreach ($dataDetailGet['refSatuan']['expor'] as $keySatImp => $valueSatimp) {
-
-                        if (!empty($this->search)) {
-                            INSWDataSatDetail::where('ZID_HSCODE', $getHSCode)
-                                ->where('ZISD_TYPE', 'export')
-                                ->delete();
-                        }
-
-                        $satExp[] = INSWDataSatDetail::updateOrCreate([
-                            'ZID_HSCODE' => $getHSCode,
-                        ], [
-                            'ZISD_TYPE' => 'export',
-                            'ZISD_SERI' => $valueSatimp['seri'],
-                            'ZISD_JENIS' => $valueSatimp['kd_satuan'],
-                            'ZISD_SATUAN' => $valueSatimp['ur_satuan'],
-                        ]);
-                    }
 
                     if (!empty($this->search)) {
                         INSWDataRegDet::where('ZID_HSCODE', $getHSCode)
@@ -270,6 +234,36 @@ class SyncINSWDetail implements ShouldQueue
                             'ZIDBD_TLINK' => $valueDocPost['ket_text_link'],
                             'ZIDBD_DESC' => $valueDocPost['keterangan'],
                             'ZIDBD_DESCINTR' => $valueDocPost['keterangan_intr'],
+                        ]);
+                    }
+
+
+                    if (!empty($this->search)) {
+                        INSWDataSatDetail::where('ZID_HSCODE', $getHSCode)
+                            ->delete();
+                    }
+
+                    $satImp = [];
+                    foreach ($dataDetailGet['refSatuan']['impor'] as $keySatImp => $valueSatimp) {
+                        $satImp[] = INSWDataSatDetail::updateOrCreate([
+                            'ZID_HSCODE' => $getHSCode,
+                        ], [
+                            'ZISD_TYPE' => 'import',
+                            'ZISD_SERI' => $valueSatimp['seri'],
+                            'ZISD_JENIS' => $valueSatimp['kd_satuan'],
+                            'ZISD_SATUAN' => $valueSatimp['ur_satuan'],
+                        ]);
+                    }
+
+                    $satExp = [];
+                    foreach ($dataDetailGet['refSatuan']['expor'] as $keySatImp => $valueSatimp) {
+                        $satExp[] = INSWDataSatDetail::updateOrCreate([
+                            'ZID_HSCODE' => $getHSCode,
+                        ], [
+                            'ZISD_TYPE' => 'export',
+                            'ZISD_SERI' => $valueSatimp['seri'],
+                            'ZISD_JENIS' => $valueSatimp['kd_satuan'],
+                            'ZISD_SATUAN' => $valueSatimp['ur_satuan'],
                         ]);
                     }
 
