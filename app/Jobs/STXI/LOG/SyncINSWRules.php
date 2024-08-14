@@ -48,7 +48,7 @@ class SyncINSWRules implements ShouldQueue
 
             SyncINSWHeader::dispatch($this->findData)->onQueue('INSWQueueRunning');
         } else {
-            $checkLatest = INSWDataRulesMaster::orderBy('created_at', 'desc')->first();
+            $checkLatest = INSWDataRulesMaster::orderBy('ZIRM_STARTDT', 'desc')->first();
 
             $data = $this->getData();
             if (count($data['data']) > 0) {
