@@ -176,6 +176,11 @@ class SyncINSWDetail implements ShouldQueue
                         ]);
                     }
 
+                    if ($getHSCode == '19011092') {
+                        logger('cek data registration of 19011092 after satuan');
+                        logger(json_encode($dataDetailGet['import_regulation_border']));
+                    }
+
                     if (!empty($this->search)) {
                         // INSWDataRegDet::where('ZID_HSCODE', $getHSCode)
                         //     ->delete();
@@ -208,11 +213,6 @@ class SyncINSWDetail implements ShouldQueue
                             'ZIRD_MODUL' => $valueRegBord['modul'],
                             'ZIRD_SKEPNO' => $valueRegBord['nomor_skep'] ?? ''
                         ]);
-                    }
-
-                    if ($getHSCode == '19011092') {
-                        logger('cek data registration of 19011092');
-                        logger(json_encode($dataDetailGet));
                     }
 
                     foreach ($dataDetailGet['import_regulation_post_border'] as $key3 => $valueRegPostBord) {
