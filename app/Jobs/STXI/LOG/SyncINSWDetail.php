@@ -72,7 +72,10 @@ class SyncINSWDetail implements ShouldQueue
 
                     if ($getHSCode == '19011092') {
                         logger('cek data registration of 19011092 after satuan 2');
-                        logger(json_encode($dataDetailGet['import_regulation_post_border']));
+
+                        foreach ($dataDetailGet['import_regulation_post_border'] as $key => $valuesss) {
+                            logger(json_encode($valuesss['nama_ijin']));
+                        }
                     }
 
                     $jlsCreate = [];
