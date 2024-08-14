@@ -172,7 +172,7 @@ class SyncINSWDetail implements ShouldQueue
                         ]);
                     }
 
-                    foreach ($dataDetailGet['import_regulation_border'] as $key => $valueRegBord) {
+                    foreach ($dataDetailGet['import_regulation_border'] as $key2 => $valueRegBord) {
                         INSWDataRegDet::create([
                             'ZID_HSCODE' => $getHSCode,
                             'ZIRD_TYPE' => 'import_regulation_border',
@@ -186,7 +186,7 @@ class SyncINSWDetail implements ShouldQueue
                         ]);
                     }
 
-                    foreach ($dataDetailGet['import_regulation_post_border'] as $key => $valueRegPostBord) {
+                    foreach ($dataDetailGet['import_regulation_post_border'] as $key3 => $valueRegPostBord) {
                         INSWDataRegDet::create([
                             'ZID_HSCODE' => $getHSCode,
                             'ZIRD_TYPE' => 'import_regulation_post_border',
@@ -200,7 +200,7 @@ class SyncINSWDetail implements ShouldQueue
                         ]);
                     }
 
-                    foreach ($dataDetailGet['export_regulation'] as $key => $valueExport) {
+                    foreach ($dataDetailGet['export_regulation'] as $key4 => $valueExport) {
                         INSWDataRegDet::create([
                             'ZID_HSCODE' => $getHSCode,
                             'ZIRD_TYPE' => 'export_regulation',
@@ -214,7 +214,7 @@ class SyncINSWDetail implements ShouldQueue
                         ]);
                     }
 
-                    foreach ($dataDetailGet['dok_kepabean_import_border'] as $key => $valueDoc) {
+                    foreach ($dataDetailGet['dok_kepabean_import_border'] as $key5 => $valueDoc) {
                         INSWDataDocBeaMaster::updateOrCreate([
                             'ZIDBD_DOCCD' => $valueDoc['kd_dokumen'],
                         ], [
@@ -228,7 +228,7 @@ class SyncINSWDetail implements ShouldQueue
                         ]);
                     }
 
-                    foreach ($dataDetailGet['dok_kepabean_import_post_border'] as $key => $valueDocPost) {
+                    foreach ($dataDetailGet['dok_kepabean_import_post_border'] as $key6 => $valueDocPost) {
                         INSWDataDocBeaMaster::updateOrCreate([
                             'ZIDBD_DOCCD' => $valueDocPost['kd_dokumen'],
                         ], [
