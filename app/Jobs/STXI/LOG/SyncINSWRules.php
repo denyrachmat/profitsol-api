@@ -37,7 +37,7 @@ class SyncINSWRules implements ShouldQueue
                     'ZIRM_NO' => $value['nomor_peraturan'],
                     'ZIRM_TYPE' => $value['bidang_peraturan'],
                     'ZIRM_ISSDT' => date('Y-m-d', strtotime($value['created_date'])),
-                    'ZIRM_FILE' => str_replace(".", "https://api.insw.go.id", $value['file']),
+                    'ZIRM_FILE' => str_replace("./", "https://api.insw.go.id/", $value['file']),
                     'ZIRM_INSTANCE' => $value['instansi'],
                     'ZIRM_TITLEHEAD' => $value['jenis_peraturan'],
                     'ZIRM_TITLE' => $value['judul_peraturan'],

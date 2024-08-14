@@ -238,7 +238,8 @@ class SyncINSWDetail implements ShouldQueue
                         ]);
                     }
 
-                    logger($dataRegCreate);
+                    logger('cek data registration');
+                    logger(json_encode($dataRegCreate));
 
                     foreach ($dataDetailGet['dok_kepabean_import_border'] as $key5 => $valueDoc) {
                         INSWDataDocBeaMaster::updateOrCreate([
