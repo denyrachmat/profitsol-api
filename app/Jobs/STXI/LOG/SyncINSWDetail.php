@@ -47,10 +47,10 @@ class SyncINSWDetail implements ShouldQueue
                         INSWDataMaster::where('ZID_HSCODE', $getHSCode)->delete();
                     }
 
-                    if ($getHSCode == '19011092') {
-                        logger('cek data registration of 19011092 after satuan 1');
-                        logger(json_encode($dataDetailGet));
-                    }
+                    // if ($getHSCode == '19011092') {
+                    //     logger('cek data registration of 19011092 after satuan 1');
+                    //     logger(json_encode($dataDetailGet));
+                    // }
 
                     $masterCreate = INSWDataMaster::updateOrCreate([
                         'ZID_HSCODE' => $getHSCode,
@@ -70,12 +70,70 @@ class SyncINSWDetail implements ShouldQueue
                         'ZID_KOND' => $dataDetailGet['kondisiTertentu'],
                     ]);
 
-                    if ($getHSCode == '19011092') {
-                        logger('cek data registration of 19011092 after satuan 2');
+                    // if ($getHSCode == '19011092') {
+                    //     logger('cek data registration of 19011092 after satuan 2');
 
-                        foreach ($dataDetailGet['import_regulation_post_border'] as $key => $valuesss) {
-                            logger(json_encode($valuesss['nama_ijin']));
-                        }
+                    //     foreach ($dataDetailGet['import_regulation_post_border'] as $key => $valuesss) {
+                    //         logger(json_encode($valuesss['nama_ijin']));
+                    //     }
+                    // }
+
+
+                    $dataRegCreate = [];
+                    foreach ($dataDetailGet['import_regulation'] as $key => $valueReg) {
+                        $dataRegCreate[] = INSWDataRegDet::create([
+                            'ZID_HSCODE' => $getHSCode,
+                            'ZIRD_TYPE' => 'import_regulation',
+                            'ZIRD_NMIJIN' => $valueReg['nama_ijin'] ?? $valueReg['name'],
+                            'ZIRD_KDIJIN' => $valueReg['kd_ijin'],
+                            'ZIRD_DESC' => $valueReg['desc'] ?? $valueReg['deskripsi'],
+                            'ZIRD_BEALIST' => json_encode($valueReg['dok_pabean']),
+                            'ZIRD_LEGAL' => $valueReg['legal'] ?? '',
+                            'ZIRD_MODUL' => $valueReg['modul'],
+                            'ZIRD_SKEPNO' => $valueReg['nomor_skep'] ?? ''
+                        ]);
+                    }
+
+                    foreach ($dataDetailGet['import_regulation_border'] as $key2 => $valueRegBord) {
+                        $dataRegCreate[] = INSWDataRegDet::create([
+                            'ZID_HSCODE' => $getHSCode,
+                            'ZIRD_TYPE' => 'import_regulation_border',
+                            'ZIRD_NMIJIN' => $valueRegBord['nama_ijin'] ?? $valueRegBord['name'],
+                            'ZIRD_KDIJIN' => $valueRegBord['kd_ijin'],
+                            'ZIRD_DESC' => $valueRegBord['desc'] ?? $valueRegBord['deskripsi'],
+                            'ZIRD_BEALIST' => json_encode($valueRegBord['dok_pabean']),
+                            'ZIRD_LEGAL' => $valueRegBord['legal'] ?? '',
+                            'ZIRD_MODUL' => $valueRegBord['modul'],
+                            'ZIRD_SKEPNO' => $valueRegBord['nomor_skep'] ?? ''
+                        ]);
+                    }
+
+                    foreach ($dataDetailGet['import_regulation_post_border'] as $key3 => $valueRegPostBord) {
+                        $dataRegCreate[] = INSWDataRegDet::create([
+                            'ZID_HSCODE' => $getHSCode,
+                            'ZIRD_TYPE' => 'import_regulation_post_border',
+                            'ZIRD_NMIJIN' => $valueRegPostBord['nama_ijin'] ?? $valueRegPostBord['name'],
+                            'ZIRD_KDIJIN' => $valueRegPostBord['kd_ijin'],
+                            'ZIRD_DESC' => $valueRegPostBord['desc'] ?? $valueRegPostBord['deskripsi'],
+                            'ZIRD_BEALIST' => json_encode($valueRegPostBord['dok_pabean']),
+                            'ZIRD_LEGAL' => $valueRegPostBord['legal'] ?? '',
+                            'ZIRD_MODUL' => $valueRegPostBord['modul'],
+                            'ZIRD_SKEPNO' => $valueRegPostBord['nomor_skep'] ?? ''
+                        ]);
+                    }
+
+                    foreach ($dataDetailGet['export_regulation'] as $key4 => $valueExport) {
+                        $dataRegCreate[] = INSWDataRegDet::create([
+                            'ZID_HSCODE' => $getHSCode,
+                            'ZIRD_TYPE' => 'export_regulation',
+                            'ZIRD_NMIJIN' => $valueExport['nama_ijin'] ?? $valueExport['name'],
+                            'ZIRD_KDIJIN' => $valueExport['kd_ijin'],
+                            'ZIRD_DESC' => $valueExport['desc'] ?? $valueExport['deskripsi'],
+                            'ZIRD_BEALIST' => json_encode($valueExport['dok_pabean']) ?? '',
+                            'ZIRD_LEGAL' => $valueExport['legal'] ?? '',
+                            'ZIRD_MODUL' => $valueExport['modul'],
+                            'ZIRD_SKEPNO' => $valueExport['nomor_skep'] ?? ''
+                        ]);
                     }
 
                     $jlsCreate = [];
@@ -192,63 +250,6 @@ class SyncINSWDetail implements ShouldQueue
                     if (!empty($this->search)) {
                         // INSWDataRegDet::where('ZID_HSCODE', $getHSCode)
                         //     ->delete();
-                    }
-
-                    $dataRegCreate = [];
-                    foreach ($dataDetailGet['import_regulation'] as $key => $valueReg) {
-                        $dataRegCreate[] = INSWDataRegDet::create([
-                            'ZID_HSCODE' => $getHSCode,
-                            'ZIRD_TYPE' => 'import_regulation',
-                            'ZIRD_NMIJIN' => $valueReg['nama_ijin'] ?? $valueReg['name'],
-                            'ZIRD_KDIJIN' => $valueReg['kd_ijin'],
-                            'ZIRD_DESC' => $valueReg['desc'] ?? $valueReg['deskripsi'],
-                            'ZIRD_BEALIST' => json_encode($valueReg['dok_pabean']),
-                            'ZIRD_LEGAL' => $valueReg['legal'] ?? '',
-                            'ZIRD_MODUL' => $valueReg['modul'],
-                            'ZIRD_SKEPNO' => $valueReg['nomor_skep'] ?? ''
-                        ]);
-                    }
-
-                    foreach ($dataDetailGet['import_regulation_border'] as $key2 => $valueRegBord) {
-                        $dataRegCreate[] = INSWDataRegDet::create([
-                            'ZID_HSCODE' => $getHSCode,
-                            'ZIRD_TYPE' => 'import_regulation_border',
-                            'ZIRD_NMIJIN' => $valueRegBord['nama_ijin'] ?? $valueRegBord['name'],
-                            'ZIRD_KDIJIN' => $valueRegBord['kd_ijin'],
-                            'ZIRD_DESC' => $valueRegBord['desc'] ?? $valueRegBord['deskripsi'],
-                            'ZIRD_BEALIST' => json_encode($valueRegBord['dok_pabean']),
-                            'ZIRD_LEGAL' => $valueRegBord['legal'] ?? '',
-                            'ZIRD_MODUL' => $valueRegBord['modul'],
-                            'ZIRD_SKEPNO' => $valueRegBord['nomor_skep'] ?? ''
-                        ]);
-                    }
-
-                    foreach ($dataDetailGet['import_regulation_post_border'] as $key3 => $valueRegPostBord) {
-                        $dataRegCreate[] = INSWDataRegDet::create([
-                            'ZID_HSCODE' => $getHSCode,
-                            'ZIRD_TYPE' => 'import_regulation_post_border',
-                            'ZIRD_NMIJIN' => $valueRegPostBord['nama_ijin'] ?? $valueRegPostBord['name'],
-                            'ZIRD_KDIJIN' => $valueRegPostBord['kd_ijin'],
-                            'ZIRD_DESC' => $valueRegPostBord['desc'] ?? $valueRegPostBord['deskripsi'],
-                            'ZIRD_BEALIST' => json_encode($valueRegPostBord['dok_pabean']),
-                            'ZIRD_LEGAL' => $valueRegPostBord['legal'] ?? '',
-                            'ZIRD_MODUL' => $valueRegPostBord['modul'],
-                            'ZIRD_SKEPNO' => $valueRegPostBord['nomor_skep'] ?? ''
-                        ]);
-                    }
-
-                    foreach ($dataDetailGet['export_regulation'] as $key4 => $valueExport) {
-                        $dataRegCreate[] = INSWDataRegDet::create([
-                            'ZID_HSCODE' => $getHSCode,
-                            'ZIRD_TYPE' => 'export_regulation',
-                            'ZIRD_NMIJIN' => $valueExport['nama_ijin'] ?? $valueExport['name'],
-                            'ZIRD_KDIJIN' => $valueExport['kd_ijin'],
-                            'ZIRD_DESC' => $valueExport['desc'] ?? $valueExport['deskripsi'],
-                            'ZIRD_BEALIST' => json_encode($valueExport['dok_pabean']) ?? '',
-                            'ZIRD_LEGAL' => $valueExport['legal'] ?? '',
-                            'ZIRD_MODUL' => $valueExport['modul'],
-                            'ZIRD_SKEPNO' => $valueExport['nomor_skep'] ?? ''
-                        ]);
                     }
 
                     logger('cek data registration');
