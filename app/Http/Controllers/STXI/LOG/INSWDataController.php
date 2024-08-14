@@ -280,9 +280,9 @@ class INSWDataController extends BaseController
         ];
     }
 
-    public function syncINSWData()
+    public function syncINSWData($hsCode)
     {
-        SyncINSWRules::dispatch()->onQueue('INSWQueueRunning');
+        SyncINSWRules::dispatch($hsCode)->onQueue('INSWQueueRunning');
 
         return 'Checking INSW Rules has been started';
     }

@@ -46,7 +46,7 @@ class SyncINSWRules implements ShouldQueue
                 ]);
             }
 
-            SyncINSWHeader::dispatch()->onQueue('INSWQueueRunning');
+            SyncINSWHeader::dispatch($this->findData)->onQueue('INSWQueueRunning');
         } else {
             $checkLatest = INSWDataRulesMaster::orderBy('created_at', 'desc')->first();
 
