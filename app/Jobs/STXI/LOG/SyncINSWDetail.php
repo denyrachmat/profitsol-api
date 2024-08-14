@@ -47,6 +47,11 @@ class SyncINSWDetail implements ShouldQueue
                         INSWDataMaster::where('ZID_HSCODE', $getHSCode)->delete();
                     }
 
+                    if ($getHSCode == '19011092') {
+                        logger('cek data registration of 19011092 after satuan 1');
+                        logger(json_encode($dataDetailGet['import_regulation_border']));
+                    }
+
                     $masterCreate = INSWDataMaster::updateOrCreate([
                         'ZID_HSCODE' => $getHSCode,
                     ], [
@@ -64,6 +69,11 @@ class SyncINSWDetail implements ShouldQueue
                         'ZID_MFN_PPH' => isset($dataMFN['pph'][0]) ? $dataMFN['pph'][0]['pph'] : '',
                         'ZID_KOND' => $dataDetailGet['kondisiTertentu'],
                     ]);
+
+                    if ($getHSCode == '19011092') {
+                        logger('cek data registration of 19011092 after satuan 2');
+                        logger(json_encode($dataDetailGet['import_regulation_border']));
+                    }
 
                     $jlsCreate = [];
                     foreach ($dataDetailGet['bab_penjelasan'] as $keyJls => $valueJls) {
@@ -174,11 +184,6 @@ class SyncINSWDetail implements ShouldQueue
                             'ZISD_JENIS' => $valueSatimp['kd_satuan'],
                             'ZISD_SATUAN' => $valueSatimp['ur_satuan'],
                         ]);
-                    }
-
-                    if ($getHSCode == '19011092') {
-                        logger('cek data registration of 19011092 after satuan');
-                        logger(json_encode($dataDetailGet['import_regulation_border']));
                     }
 
                     if (!empty($this->search)) {
