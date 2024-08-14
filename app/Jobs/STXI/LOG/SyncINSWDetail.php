@@ -17,13 +17,14 @@ use App\Models\STXI\LOG\INSWDataDocBeaMaster;
 class SyncINSWDetail implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
-    public $data;
+    public $data, $search;
     /**
      * Create a new job instance.
      */
-    public function __construct($data)
+    public function __construct($data, $search)
     {
         $this->data = $data;
+        $this->search = $search;
     }
 
     /**
@@ -42,7 +43,9 @@ class SyncINSWDetail implements ShouldQueue
                     $dataHSParent = $dataDetailGet['hsParent'][0];
                     $dataMFN = $dataDetailGet['mfn'][0];
 
-                    INSWDataMaster::where('ZID_HSCODE', $getHSCode)->delete();
+                    if (!empty($this->search)) {
+                        INSWDataMaster::where('ZID_HSCODE', $getHSCode)->delete();
+                    }
 
                     $masterCreate = INSWDataMaster::updateOrCreate([
                         'ZID_HSCODE' => $getHSCode,
@@ -64,10 +67,12 @@ class SyncINSWDetail implements ShouldQueue
 
                     $jlsCreate = [];
                     foreach ($dataDetailGet['bab_penjelasan'] as $keyJls => $valueJls) {
-                        INSWDataJlsDetail::where('ZID_HSCODE', $getHSCode)
-                            ->where('ZIJD_TYPE', 'bab')
-                            ->delete();
 
+                        if (!empty($this->search)) {
+                            INSWDataJlsDetail::where('ZID_HSCODE', $getHSCode)
+                                ->where('ZIJD_TYPE', 'bab')
+                                ->delete();
+                        }
                         $jlsCreate[] = INSWDataJlsDetail::updateOrCreate([
                             'ZID_HSCODE' => $getHSCode,
                             'ZIJD_TYPE' => 'bab',
@@ -79,9 +84,12 @@ class SyncINSWDetail implements ShouldQueue
                     }
 
                     foreach ($dataDetailGet['bab_penjelasan_en'] as $keyJls => $valueJls2) {
-                        INSWDataJlsDetail::where('ZID_HSCODE', $getHSCode)
-                            ->where('ZIJD_TYPE', 'bab_en')
-                            ->delete();
+
+                        if (!empty($this->search)) {
+                            INSWDataJlsDetail::where('ZID_HSCODE', $getHSCode)
+                                ->where('ZIJD_TYPE', 'bab_en')
+                                ->delete();
+                        }
 
                         $jlsCreate[] = INSWDataJlsDetail::updateOrCreate([
                             'ZID_HSCODE' => $getHSCode,
@@ -94,9 +102,12 @@ class SyncINSWDetail implements ShouldQueue
                     }
 
                     foreach ($dataDetailGet['bagian_penjelasan'] as $keyJls => $valueJls3) {
-                        INSWDataJlsDetail::where('ZID_HSCODE', $getHSCode)
-                            ->where('ZIJD_TYPE', 'bagian')
-                            ->delete();
+
+                        if (!empty($this->search)) {
+                            INSWDataJlsDetail::where('ZID_HSCODE', $getHSCode)
+                                ->where('ZIJD_TYPE', 'bagian')
+                                ->delete();
+                        }
 
                         $jlsCreate[] = INSWDataJlsDetail::updateOrCreate([
                             'ZID_HSCODE' => $getHSCode,
@@ -109,9 +120,12 @@ class SyncINSWDetail implements ShouldQueue
                     }
 
                     foreach ($dataDetailGet['bagian_penjelasan_en'] as $keyJls => $valueJls4) {
-                        INSWDataJlsDetail::where('ZID_HSCODE', $getHSCode)
-                            ->where('ZIJD_TYPE', 'bagian_en')
-                            ->delete();
+
+                        if (!empty($this->search)) {
+                            INSWDataJlsDetail::where('ZID_HSCODE', $getHSCode)
+                                ->where('ZIJD_TYPE', 'bagian_en')
+                                ->delete();
+                        }
 
                         $jlsCreate[] = INSWDataJlsDetail::updateOrCreate([
                             'ZID_HSCODE' => $getHSCode,
@@ -125,9 +139,12 @@ class SyncINSWDetail implements ShouldQueue
 
                     $satImp = [];
                     foreach ($dataDetailGet['refSatuan']['impor'] as $keySatImp => $valueSatimp) {
-                        INSWDataSatDetail::where('ZID_HSCODE', $getHSCode)
-                            ->where('ZISD_TYPE', 'import')
-                            ->delete();
+
+                        if (!empty($this->search)) {
+                            INSWDataSatDetail::where('ZID_HSCODE', $getHSCode)
+                                ->where('ZISD_TYPE', 'import')
+                                ->delete();
+                        }
 
                         $satImp[] = INSWDataSatDetail::updateOrCreate([
                             'ZID_HSCODE' => $getHSCode,
@@ -141,9 +158,12 @@ class SyncINSWDetail implements ShouldQueue
 
                     $satExp = [];
                     foreach ($dataDetailGet['refSatuan']['export'] as $keySatImp => $valueSatimp) {
-                        INSWDataSatDetail::where('ZID_HSCODE', $getHSCode)
-                            ->where('ZISD_TYPE', 'export')
-                            ->delete();
+
+                        if (!empty($this->search)) {
+                            INSWDataSatDetail::where('ZID_HSCODE', $getHSCode)
+                                ->where('ZISD_TYPE', 'export')
+                                ->delete();
+                        }
 
                         $satExp[] = INSWDataSatDetail::updateOrCreate([
                             'ZID_HSCODE' => $getHSCode,
@@ -155,8 +175,10 @@ class SyncINSWDetail implements ShouldQueue
                         ]);
                     }
 
-                    INSWDataRegDet::where('ZID_HSCODE', $getHSCode)
-                        ->delete();
+                    if (!empty($this->search)) {
+                        INSWDataRegDet::where('ZID_HSCODE', $getHSCode)
+                            ->delete();
+                    }
 
                     $dataRegCreate = [];
                     foreach ($dataDetailGet['import_regulation'] as $key => $valueReg) {

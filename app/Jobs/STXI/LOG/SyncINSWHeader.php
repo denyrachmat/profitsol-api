@@ -32,7 +32,7 @@ class SyncINSWHeader implements ShouldQueue
 
         $hasilData = [];
         foreach ($data as $key => $value) {
-            SyncINSWDetail::dispatch($value['_source']['hs_code_format'])->onQueue('INSWQueueRunningDetail');
+            SyncINSWDetail::dispatch($value['_source']['hs_code_format'], $this->search)->onQueue('INSWQueueRunningDetail');
         }
     }
 

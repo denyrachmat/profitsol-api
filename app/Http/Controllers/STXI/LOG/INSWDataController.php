@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use App\Models\STXI\LOG\INSWDataMaster;
 use App\Models\STXI\LOG\INSWDataJlsDetail;
 use App\Models\STXI\LOG\INSWDataSatDetail;
+use App\Models\STXI\LOG\INSWDataRegDet;
 
 use App\Jobs\STXI\LOG\SyncINSWDetail;
 use App\Jobs\STXI\LOG\SyncINSWRules;
@@ -54,7 +55,7 @@ class INSWDataController extends BaseController
         ini_set('memory_limit', '2G');
         ini_set('max_execution_time', '10800');
         $data = $this->getListMaster($hsCode === 0 || empty($hsCode) ? '' : $hsCode, $maxSize)['data'][0]['result'];
-        return $data;
+        // return $data;
         // INSWDataMaster::truncate();
         // INSWDataJlsDetail::truncate();
         // INSWDataSatDetail::truncate();
@@ -81,8 +82,8 @@ class INSWDataController extends BaseController
                             'ZID_HSPRNT' => $dataHSParent['hs_code_format'],
                             'ZID_HSPRNT_DESC_ID' => $dataHSParent['ur_id'],
                             'ZID_HSPRNT_DESC_EN' => $dataHSParent['ur_en'],
-                            'ZID_HSPRNT_FRMT' =>  isset($dataDetailGet['hsParent'][1]) ? $dataDetailGet['hsParent'][1]['hs_code_format'] : '',
-                            'ZID_HSPRNT_FRMT_DESC_ID' =>  isset($dataDetailGet['hsParent'][1]) ? $dataDetailGet['hsParent'][1]['ur_id'] : '',
+                            'ZID_HSPRNT_FRMT' => isset($dataDetailGet['hsParent'][1]) ? $dataDetailGet['hsParent'][1]['hs_code_format'] : '',
+                            'ZID_HSPRNT_FRMT_DESC_ID' => isset($dataDetailGet['hsParent'][1]) ? $dataDetailGet['hsParent'][1]['ur_id'] : '',
                             'ZID_HSPRNT_FRMT_DESC_END' => isset($dataDetailGet['hsParent'][1]) ? $dataDetailGet['hsParent'][1]['ur_en'] : '',
                             'ZID_MFN_BM' => isset($dataMFN['bm'][0]) ? $dataMFN['bm'][0]['bm'] : '',
                             'ZID_MFN_PPN' => isset($dataMFN['ppn'][0]) ? $dataMFN['ppn'][0]['ppn'] : '',
@@ -159,13 +160,74 @@ class INSWDataController extends BaseController
                             ]);
                         }
 
+                        INSWDataRegDet::where('ZID_HSCODE', $getHSCode)
+                        ->delete();
+
+                        $dataRegCreate = [];
+                        foreach ($dataDetailGet['import_regulation'] as $key => $valueReg) {
+                            $dataRegCreate[] = INSWDataRegDet::create([
+                                'ZID_HSCODE' => $getHSCode,
+                                'ZIRD_TYPE' => 'import_regulation',
+                                'ZIRD_NMIJIN' => $valueReg['nama_ijin'] ?? $valueReg['name'],
+                                'ZIRD_KDIJIN' => $valueReg['kd_ijin'],
+                                'ZIRD_DESC' => $valueReg['desc'] ?? $valueReg['deskripsi'],
+                                'ZIRD_BEALIST' => json_encode($valueReg['dok_pabean']),
+                                'ZIRD_LEGAL' => $valueReg['legal'] ?? '',
+                                'ZIRD_MODUL' => $valueReg['modul'],
+                                'ZIRD_SKEPNO' => $valueReg['nomor_skep'] ?? ''
+                            ]);
+                        }
+
+                        foreach ($dataDetailGet['import_regulation_border'] as $key2 => $valueRegBord) {
+                            $dataRegCreate[] = INSWDataRegDet::create([
+                                'ZID_HSCODE' => $getHSCode,
+                                'ZIRD_TYPE' => 'import_regulation_border',
+                                'ZIRD_NMIJIN' => $valueRegBord['nama_ijin'] ?? $valueRegBord['name'],
+                                'ZIRD_KDIJIN' => $valueRegBord['kd_ijin'],
+                                'ZIRD_DESC' => $valueRegBord['desc'] ?? $valueRegBord['deskripsi'],
+                                'ZIRD_BEALIST' => json_encode($valueRegBord['dok_pabean']),
+                                'ZIRD_LEGAL' => $valueRegBord['legal'] ?? '',
+                                'ZIRD_MODUL' => $valueRegBord['modul'],
+                                'ZIRD_SKEPNO' => $valueRegBord['nomor_skep'] ?? ''
+                            ]);
+                        }
+
+                        foreach ($dataDetailGet['import_regulation_post_border'] as $key3 => $valueRegPostBord) {
+                            $dataRegCreate[] = INSWDataRegDet::create([
+                                'ZID_HSCODE' => $getHSCode,
+                                'ZIRD_TYPE' => 'import_regulation_post_border',
+                                'ZIRD_NMIJIN' => $valueRegPostBord['nama_ijin'] ?? $valueRegPostBord['name'],
+                                'ZIRD_KDIJIN' => $valueRegPostBord['kd_ijin'],
+                                'ZIRD_DESC' => $valueRegPostBord['desc'] ?? $valueRegPostBord['deskripsi'],
+                                'ZIRD_BEALIST' => json_encode($valueRegPostBord['dok_pabean']),
+                                'ZIRD_LEGAL' => $valueRegPostBord['legal'] ?? '',
+                                'ZIRD_MODUL' => $valueRegPostBord['modul'],
+                                'ZIRD_SKEPNO' => $valueRegPostBord['nomor_skep'] ?? ''
+                            ]);
+                        }
+
+                        foreach ($dataDetailGet['export_regulation'] as $key4 => $valueExport) {
+                            $dataRegCreate[] = INSWDataRegDet::create([
+                                'ZID_HSCODE' => $getHSCode,
+                                'ZIRD_TYPE' => 'export_regulation',
+                                'ZIRD_NMIJIN' => $valueExport['nama_ijin'] ?? $valueExport['name'],
+                                'ZIRD_KDIJIN' => $valueExport['kd_ijin'],
+                                'ZIRD_DESC' => $valueExport['desc'] ?? $valueExport['deskripsi'],
+                                'ZIRD_BEALIST' => json_encode($valueExport['dok_pabean']) ?? '',
+                                'ZIRD_LEGAL' => $valueExport['legal'] ?? '',
+                                'ZIRD_MODUL' => $valueExport['modul'],
+                                'ZIRD_SKEPNO' => $valueExport['nomor_skep'] ?? ''
+                            ]);
+                        }
+
                         $hasilData[] = [
                             'status' => true,
                             'hsCode' => $getHSCode,
                             'message' => 'Data berhasil di update',
                             'storedMaster' => $masterCreate,
                             'storedPenjelasanDet' => $jlsCreate,
-                            'storedStatusDet' => $satExp
+                            'storedStatusDet' => $satExp,
+                            'storedReg' => $dataRegCreate
                         ];
                     } else {
                         $hasilData[] = [
@@ -204,11 +266,11 @@ class INSWDataController extends BaseController
             }
         }
 
-        $dataRetSuccess = array_filter($hasilData, function($f) {
+        $dataRetSuccess = array_filter($hasilData, function ($f) {
             return $f['status'] === true;
         });
 
-        $dataRetFail = array_filter($hasilData, function($f) {
+        $dataRetFail = array_filter($hasilData, function ($f) {
             return $f['status'] === false;
         });
 
@@ -218,7 +280,8 @@ class INSWDataController extends BaseController
         ];
     }
 
-    public function syncINSWData(){
+    public function syncINSWData()
+    {
         SyncINSWRules::dispatch()->onQueue('INSWQueueRunning');
 
         return 'Checking INSW Rules has been started';
