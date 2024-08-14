@@ -47,10 +47,6 @@ class SyncINSWDetail implements ShouldQueue
                         INSWDataMaster::where('ZID_HSCODE', $getHSCode)->delete();
                     }
 
-
-                    logger('cek data registration');
-                    logger(json_encode($dataDetailGet));
-
                     $masterCreate = INSWDataMaster::updateOrCreate([
                         'ZID_HSCODE' => $getHSCode,
                     ], [
@@ -212,6 +208,11 @@ class SyncINSWDetail implements ShouldQueue
                             'ZIRD_MODUL' => $valueRegBord['modul'],
                             'ZIRD_SKEPNO' => $valueRegBord['nomor_skep'] ?? ''
                         ]);
+                    }
+
+                    if ($getHSCode == '19011092') {
+                        logger('cek data registration of 19011092');
+                        logger(json_encode($dataDetailGet));
                     }
 
                     foreach ($dataDetailGet['import_regulation_post_border'] as $key3 => $valueRegPostBord) {
