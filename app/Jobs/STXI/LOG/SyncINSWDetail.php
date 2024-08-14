@@ -112,13 +112,13 @@ class SyncINSWDetail implements ShouldQueue
                         $dataRegCreate[] = INSWDataRegDet::create([
                             'ZID_HSCODE' => $getHSCode,
                             'ZIRD_TYPE' => 'import_regulation_post_border',
-                            'ZIRD_NMIJIN' => $valueRegPostBord['nama_ijin'] ?? $valueRegPostBord['name'],
+                            'ZIRD_NMIJIN' => $valueRegPostBord['nama_ijin'] ? $valueRegPostBord['nama_ijin'] :$valueRegPostBord['name'],
                             'ZIRD_KDIJIN' => $valueRegPostBord['kd_ijin'],
-                            'ZIRD_DESC' => $valueRegPostBord['desc'] ?? $valueRegPostBord['deskripsi'],
+                            'ZIRD_DESC' => $valueRegPostBord['desc'] ? $valueRegPostBord['desc'] : $valueRegPostBord['deskripsi'],
                             'ZIRD_BEALIST' => json_encode($valueRegPostBord['dok_pabean']),
-                            'ZIRD_LEGAL' => $valueRegPostBord['legal'] ?? '',
+                            'ZIRD_LEGAL' => $valueRegPostBord['legal'] ? $valueRegPostBord['legal'] : '',
                             'ZIRD_MODUL' => $valueRegPostBord['modul'],
-                            'ZIRD_SKEPNO' => $valueRegPostBord['nomor_skep'] ?? ''
+                            'ZIRD_SKEPNO' => $valueRegPostBord['nomor_skep'] ? $valueRegPostBord['nomor_skep'] : ''
                         ]);
                     }
 
