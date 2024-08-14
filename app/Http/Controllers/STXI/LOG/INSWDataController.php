@@ -280,7 +280,7 @@ class INSWDataController extends BaseController
         ];
     }
 
-    public function syncINSWData($hsCode)
+    public function syncINSWData($hsCode = '')
     {
         SyncINSWRules::dispatch($hsCode)->onQueue('INSWQueueRunning');
 
