@@ -47,6 +47,10 @@ class SyncINSWDetail implements ShouldQueue
                         INSWDataMaster::where('ZID_HSCODE', $getHSCode)->delete();
                     }
 
+
+                    logger('cek data registration');
+                    logger(json_encode($dataDetailGet));
+
                     $masterCreate = INSWDataMaster::updateOrCreate([
                         'ZID_HSCODE' => $getHSCode,
                     ], [
