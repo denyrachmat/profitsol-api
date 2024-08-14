@@ -26,6 +26,8 @@ class SyncINSWHeader implements ShouldQueue
      */
     public function handle(): void
     {
+        ini_set('memory_limit', '2G');
+        ini_set('max_execution_time', '10800');
         $data = $this->getData($this->search, 10000)['data'][0]['result'];
 
         $hasilData = [];

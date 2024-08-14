@@ -241,6 +241,7 @@ class SyncINSWDetail implements ShouldQueue
                             'ZIDBD_DESCINTR' => $valueDocPost['keterangan_intr'],
                         ]);
                     }
+
                     $hasilData[] = [
                         'status' => true,
                         'hsCode' => $getHSCode,
