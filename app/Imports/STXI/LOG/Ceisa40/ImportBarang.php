@@ -35,6 +35,13 @@ class ImportBarang implements ToModel, WithHeadingRow, SkipsEmptyRows
                 $noDaftar = substr($cekTempData['NO_DAFTAR'], 0, 6);
                 $getHSCode = DB::connection('sqlsrv_itinv')->table('VIEW_MITM_TBL')->where('MITM_ITMCD', $row['kode_barang'])->first();
                 if ($this->incout == 'INC') {
+                    ITINVIncoming::where('BCDOCNO', 'LIKE', $noDaftar . '%')
+                        ->where('BCTYPE', $cekTempData['TYPE_BC'])
+                        ->where('BCDOCDT', $cekTempData['TGL_DAFTAR'])
+                        ->where('ITMCD', trim($row['kode_barang']))
+                        ->where('TTLQTY', trim($row['jumlah_satuan']))
+                        ->delete();
+
                     $cekIncoming = ITINVIncoming::where('BCDOCNO', 'LIKE', $noDaftar . '%')
                         ->where('BCTYPE', $cekTempData['TYPE_BC'])
                         ->where('BCDOCDT', $cekTempData['TGL_DAFTAR'])
@@ -194,6 +201,7 @@ class ImportBarang implements ToModel, WithHeadingRow, SkipsEmptyRows
                         ->where('BCTYPE', $cekTempData['TYPE_BC'])
                         ->where('BCDOCDT', $cekTempData['TGL_DAFTAR'])
                         ->where('ITMCD', trim($row['kode_barang']))
+                        ->where('TTLQTY', trim($row['jumlah_satuan']))
                         ->first();
 
                     if (!empty($cekOutgoing)) {
@@ -201,6 +209,7 @@ class ImportBarang implements ToModel, WithHeadingRow, SkipsEmptyRows
                             ->where('BCTYPE', $cekTempData['TYPE_BC'])
                             ->where('BCDOCDT', $cekTempData["TGL_DAFTAR"])
                             ->where('ITMCD', trim($row['kode_barang']))
+                            ->where('TTLQTY', trim($row['jumlah_satuan']))
                             ->update([
                                 'PRICE' => $row['cif'] == 0
                                     ? round((int) $row['harga_penyerahan'] / (int) $row['jumlah_satuan'], 4)
@@ -245,6 +254,7 @@ class ImportBarang implements ToModel, WithHeadingRow, SkipsEmptyRows
                                 'BCDOCNO' => $noDaftar,
                                 'BCDOCDT' => $cekTempData['TGL_DAFTAR'],
                                 'ITMCD' => trim($row['kode_barang']),
+                                'TTLQTY' => trim($row['jumlah_satuan'])
                             ], [
                                 'LOCCD' => empty($cekHeaderMega) ? 'STX-I' : (
                                     !empty($cekHeaderMega->FIFO_LOCCD)
@@ -295,6 +305,7 @@ class ImportBarang implements ToModel, WithHeadingRow, SkipsEmptyRows
                                 'BCDOCNO' => $noDaftar,
                                 'BCDOCDT' => $cekTempData['TGL_DAFTAR'],
                                 'ITMCD' => trim($row['kode_barang']),
+                                'TTLQTY' => trim($row['jumlah_satuan'])
                             ], [
                                 'LOCCD' => 'STX-I',
                                 'BCTYPE' => $cekTempData['TYPE_BC'],
