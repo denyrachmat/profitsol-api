@@ -112,7 +112,7 @@ class ImportDokumen implements ToModel, WithHeadingRow, SkipsEmptyRows
 
                         (clone $baseDocUpdate)
                             ->update([
-                                'INVNO' => implode(";", $explodeData)
+                                'INVNO' => count($explodeData) > 1 ? implode(";", $explodeData): $explodeData[0]
                             ]);
 
                         // if (count($cekOutgoing) > 0) {
