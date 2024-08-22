@@ -15,15 +15,15 @@ return new class extends Migration
             $table->id();
             $table->string('ZID_HSCODE');
             $table->string('ZIRD_TYPE');
-            $table->string('ZIRD_NMIJIN');
-            $table->string('ZIRD_KDIJIN');
-            $table->text('ZIRD_DESC');
-            $table->string('ZIRD_BEALIST');
-            $table->string('ZIRD_LEGAL');
-            $table->string('ZIRD_MODUL');
-            $table->text('ZIRD_SKEPNO');
+            $table->string('ZIRD_NMIJIN')->nullable();
+            $table->string('ZIRD_KDIJIN')->nullable();
+            $table->text('ZIRD_DESC')->nullable();
+            $table->string('ZIRD_BEALIST')->nullable();
+            $table->string('ZIRD_LEGAL')->nullable();
+            $table->string('ZIRD_MODUL')->nullable();
+            $table->text('ZIRD_SKEPNO')->nullable();
             $table->timestamps();
-            $table->dateTime('deleted_at');
+            $table->dateTime('deleted_at')->nullable();
         });
     }
 

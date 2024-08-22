@@ -14,14 +14,14 @@ return new class extends Migration
         Schema::connection('sqlsrv_log')->create('Z_INTR_RULES_MSTR', function (Blueprint $table) {
             $table->id();
             $table->string('ZIRM_NO');
-            $table->string('ZIRM_TYPE');
-            $table->date('ZIRM_ISSDT');
-            $table->string('ZIRM_FILE');
-            $table->string('ZIRM_INSTANCE');
-            $table->string('ZIRM_TITLEHEAD');
-            $table->string('ZIRM_TITLE');
-            $table->date('ZIRM_STARTDT');
-            $table->date('ZIRM_RULEDT');
+            $table->string('ZIRM_TYPE')->nullable();
+            $table->date('ZIRM_ISSDT')->nullable();
+            $table->string('ZIRM_FILE')->nullable();
+            $table->string('ZIRM_INSTANCE')->nullable();
+            $table->string('ZIRM_TITLEHEAD')->nullable();
+            $table->string('ZIRM_TITLE')->nullable();
+            $table->date('ZIRM_STARTDT')->nullable();
+            $table->date('ZIRM_RULEDT')->nullable();
             $table->timestamps();
         });
     }
