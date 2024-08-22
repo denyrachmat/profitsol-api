@@ -103,7 +103,11 @@ class ImportDokumen implements ToModel, WithHeadingRow, SkipsEmptyRows
                         $cekOutgoing = (clone $baseDoc)
                             ->first();
 
-                        $explodeData = explode($cekOutgoing->INVNO, ";");
+                        $explodeData = [];
+                        if (!empty($cekOutgoing->INVNO)) {
+                            $explodeData = explode($cekOutgoing->INVNO, ";");
+                        }
+
                         $explodeData[] = $row['nomor_dokumen'];
 
                         (clone $baseDocUpdate)
