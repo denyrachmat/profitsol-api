@@ -186,7 +186,7 @@ class ImportHeader implements ToModel, WithHeadingRow, SkipsEmptyRows
                                 'DOCCD' => $cekHeader->CBCDOC_DOCCD,
                                 'BCTYPE' => $kodeDokumen,
                                 'CURCD' => !empty($row['kode_valuta']) ? $row['kode_valuta'] : (
-                                    $row['kode_dokumen'] == 40
+                                    $row['kode_dokumen'] == 41
                                     ? 'IDR'
                                     : 'USD'
                                 ),
@@ -214,7 +214,7 @@ class ImportHeader implements ToModel, WithHeadingRow, SkipsEmptyRows
                         'NO_DAFTAR' => $cekData->BCDOCNO,
                         'TGL_DAFTAR' => $row['tanggal_daftar'],
                         'TYPE_BC' => $kodeDokumen,
-                        'CURR' => empty($row['kode_valuta']) ? $row['kode_valuta'] : (
+                        'CURR' => !empty($row['kode_valuta']) ? $row['kode_valuta'] : (
                             $row['kode_dokumen'] == 41
                             ? 'IDR'
                             : 'USD'
