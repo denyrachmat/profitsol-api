@@ -148,7 +148,10 @@ class ImportHeader implements ToModel, WithHeadingRow, SkipsEmptyRows
                         'NO_DAFTAR' => $row["nomor_daftar"],
                         'TGL_DAFTAR' => $row['tanggal_daftar'],
                         'TYPE_BC' => $kodeDokumen,
-                        'CURR' => $row['kode_valuta'],
+                        'CURR' => !empty($row['kode_valuta']) ? $row['kode_valuta'] : (
+                            $row['kode_dokumen'] == 40
+                            ? 'IDR'
+                            : 'USD'),
                         'STATE_FLG' => $this->incout
                     ]);
                 }
