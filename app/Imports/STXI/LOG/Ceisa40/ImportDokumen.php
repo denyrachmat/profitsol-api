@@ -101,33 +101,40 @@ class ImportDokumen implements ToModel, WithHeadingRow, SkipsEmptyRows
                         }
                     } else {
                         $cekOutgoing = (clone $baseDoc)
-                            ->whereNull(DB::raw("NULLIF(INVNO, '')"))
-                            ->get();
+                            ->first();
 
-                        if (count($cekOutgoing) > 0) {
-                            foreach ($cekOutgoing->pluck('ITMCD') as $key => $valueItm) {
-                                (clone $baseDocUpdate)
-                                    ->where('ITMCD', $valueItm)
-                                    ->update([
-                                        'INVNO' => $row['nomor_dokumen']
-                                    ]);
-                            }
-                        } else {
-                            $cekLatest = (clone $baseDoc)->first();
+                        $explodeData = explode($cekOutgoing->INVNO, ";");
+                        $explodeData[] = $row['nomor_dokumen'];
 
-                            if (!empty($cekLatest)) {
-                                foreach ($cekOutgoing->pluck('ITMCD') as $key => $valueItm) {
-                                    $explodeData = explode($cekLatest, ";");
-                                    $explodeData[] = $row['nomor_dokumen'];
+                        (clone $baseDocUpdate)
+                            ->update([
+                                'INVNO' => implode(";", $explodeData)
+                            ]);
 
-                                    (clone $baseDocUpdate)
-                                        ->where('ITMCD', $valueItm)
-                                        ->update([
-                                            'INVNO' => implode(";", $explodeData)
-                                        ]);
-                                }
-                            };
-                        }
+                        // if (count($cekOutgoing) > 0) {
+                        //     foreach ($cekOutgoing->pluck('ITMCD') as $key => $valueItm) {
+                        //         (clone $baseDocUpdate)
+                        //             ->where('ITMCD', $valueItm)
+                        //             ->update([
+                        //                 'INVNO' => $row['nomor_dokumen']
+                        //             ]);
+                        //     }
+                        // } else {
+                        //     $cekLatest = (clone $baseDoc)->first();
+
+                        //     if (!empty($cekLatest)) {
+                        //         foreach ($cekOutgoing->pluck('ITMCD') as $key => $valueItm) {
+                        //             $explodeData = explode($cekLatest, ";");
+                        //             $explodeData[] = $row['nomor_dokumen'];
+
+                        //             (clone $baseDocUpdate)
+                        //                 ->where('ITMCD', $valueItm)
+                        //                 ->update([
+                        //                     'INVNO' => implode(";", $explodeData)
+                        //                 ]);
+                        //         }
+                        //     };
+                        // }
                     }
                 }
 
