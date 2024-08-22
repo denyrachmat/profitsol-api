@@ -197,6 +197,13 @@ class ImportBarang implements ToModel, WithHeadingRow, SkipsEmptyRows
                         }
                     }
                 } else {
+                    ITINVOutgoing::where('BCDOCNO', 'LIKE', $noDaftar . '%')
+                        ->where('BCTYPE', $cekTempData['TYPE_BC'])
+                        ->where('BCDOCDT', $cekTempData['TGL_DAFTAR'])
+                        ->where('ITMCD', trim($row['kode_barang']))
+                        ->where('TTLQTY', trim($row['jumlah_satuan']))
+                        ->delete();
+
                     $cekOutgoing = ITINVOutgoing::NoLock()->where('BCDOCNO', 'LIKE', $noDaftar . '%')
                         ->where('BCTYPE', $cekTempData['TYPE_BC'])
                         ->where('BCDOCDT', $cekTempData['TGL_DAFTAR'])
