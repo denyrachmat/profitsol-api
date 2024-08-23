@@ -39,7 +39,8 @@ class ImportBarang implements ToModel, WithHeadingRow, SkipsEmptyRows
                         ->where('BCTYPE', $cekTempData['TYPE_BC'])
                         ->where('BCDOCDT', $cekTempData['TGL_DAFTAR'])
                         ->where('ITMCD', trim($row['kode_barang']))
-                        ->havingRaw('SUM(TTLQTY) = ' . trim($row['jumlah_satuan']))
+                        ->where('TTLQTY', trim($row['jumlah_satuan']))
+                        // ->havingRaw('SUM(TTLQTY) = ' . trim($row['jumlah_satuan']))
                         ->delete();
 
                     $cekIncoming = ITINVIncoming::where('BCDOCNO', 'LIKE', $noDaftar . '%')
@@ -201,7 +202,8 @@ class ImportBarang implements ToModel, WithHeadingRow, SkipsEmptyRows
                         ->where('BCTYPE', $cekTempData['TYPE_BC'])
                         ->where('BCDOCDT', $cekTempData['TGL_DAFTAR'])
                         ->where('ITMCD', trim($row['kode_barang']))
-                        ->havingRaw('SUM(TTLQTY) = ' . trim($row['jumlah_satuan']))
+                        ->where('TTLQTY', trim($row['jumlah_satuan']))
+                        // ->havingRaw('SUM(TTLQTY) = ' . trim($row['jumlah_satuan']))
                         ->delete();
 
                     $cekOutgoing = ITINVOutgoing::NoLock()->where('BCDOCNO', 'LIKE', $noDaftar . '%')
@@ -216,7 +218,8 @@ class ImportBarang implements ToModel, WithHeadingRow, SkipsEmptyRows
                             ->where('BCTYPE', $cekTempData['TYPE_BC'])
                             ->where('BCDOCDT', $cekTempData["TGL_DAFTAR"])
                             ->where('ITMCD', trim($row['kode_barang']))
-                            ->havingRaw('SUM(TTLQTY) = ' . trim($row['jumlah_satuan']))
+                            ->where('TTLQTY', trim($row['jumlah_satuan']))
+                            // ->havingRaw('SUM(TTLQTY) = ' . trim($row['jumlah_satuan']))
                             ->update([
                                 'PRICE' => $row['cif'] == 0
                                     ? round((int) $row['harga_penyerahan'] / (int) $row['jumlah_satuan'], 4)
