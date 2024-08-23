@@ -25,6 +25,7 @@ class autoSyncBOMtoPSIController extends Controller
 
         $getListModelPart = [];
         $count = 0;
+
         foreach ($getDataPA100 as $keyPart => $valuePart) {
             $getListModelPart[$valuePart['MODEL CODE']]['MODEL'] = $valuePart['MODEL CODE'];
 
@@ -43,6 +44,22 @@ class autoSyncBOMtoPSIController extends Controller
                 ->whereIn('MAIN_PART_CODE', array_values($valuePartModel['MAIN_PART']))
                 ->whereNull('APRVDT')
                 ->delete();
+
+            BOMSTX_TBL::where('MODEL_CODE', $valuePartModel['MODEL'])
+                ->whereIn('MAIN_PART_CODE', array_values($valuePartModel['MAIN_PART']))
+                ->first();
+        }
+
+        foreach ($getDataPA100 as $keyData => $valueData) {
+            $cekDataBOM = BOMSTX_TBL::where('MODEL_CODE', $valueData['MODEL CODE'])
+                // ->where('MAIN_PART_CODE', $valueData['MAIN PART CODE'])
+                ->where('REVISION', $valueData['REVISION'])
+                ->orderBy('TEN_UPDATE_DATE', 'desc')
+                ->first();
+
+            if (!empty($cekDataBOM) && $cekDataBOM->TEN_UPDATE_DATE <> $valueData['TEN_UPDATE_DATE']) {
+                $getDataPA100[$keyData]['REVISION'] = (float)$valueData['REVISION'] + 0.01;
+            }
         }
 
         foreach ($getDataPA100 as $key => $value) {
@@ -72,6 +89,18 @@ class autoSyncBOMtoPSIController extends Controller
             // ->whereIn('MAIN_PART_CODE', array_values($getListModelPart))
             ->whereNull('APRVDT')
             ->delete();
+
+        foreach ($getDataPA100 as $keyData => $valueData) {
+            $cekDataBOM = BOMSTX_TBL::where('MODEL_CODE', $valueData['MODEL CODE'])
+                // ->where('MAIN_PART_CODE', $valueData['MAIN PART CODE'])
+                ->where('REVISION', $valueData['REVISION'])
+                ->orderBy('TEN_UPDATE_DATE', 'desc')
+                ->first();
+
+            if (!empty($cekDataBOM) && $cekDataBOM->TEN_UPDATE_DATE <> $valueData['TEN_UPDATE_DATE']) {
+                $getDataPA100[$keyData]['REVISION'] = (float)$valueData['REVISION'] + 0.01;
+            }
+        }
 
         // return 'test';
         foreach ($getDataPA100 as $key => $value) {
