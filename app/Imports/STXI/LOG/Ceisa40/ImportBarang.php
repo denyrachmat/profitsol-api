@@ -39,7 +39,7 @@ class ImportBarang implements ToModel, WithHeadingRow, SkipsEmptyRows
                         ->where('BCTYPE', $cekTempData['TYPE_BC'])
                         ->where('BCDOCDT', $cekTempData['TGL_DAFTAR'])
                         ->where('ITMCD', trim($row['kode_barang']))
-                        ->havingRaw('SUM(TTLQTY) = '.trim($row['jumlah_satuan']))
+                        ->havingRaw('SUM(TTLQTY) = ' . trim($row['jumlah_satuan']))
                         ->delete();
 
                     $cekIncoming = ITINVIncoming::where('BCDOCNO', 'LIKE', $noDaftar . '%')
@@ -201,7 +201,7 @@ class ImportBarang implements ToModel, WithHeadingRow, SkipsEmptyRows
                         ->where('BCTYPE', $cekTempData['TYPE_BC'])
                         ->where('BCDOCDT', $cekTempData['TGL_DAFTAR'])
                         ->where('ITMCD', trim($row['kode_barang']))
-                        ->havingRaw('SUM(TTLQTY) = '.trim($row['jumlah_satuan']))
+                        ->havingRaw('SUM(TTLQTY) = ' . trim($row['jumlah_satuan']))
                         ->delete();
 
                     $cekOutgoing = ITINVOutgoing::NoLock()->where('BCDOCNO', 'LIKE', $noDaftar . '%')
@@ -216,7 +216,7 @@ class ImportBarang implements ToModel, WithHeadingRow, SkipsEmptyRows
                             ->where('BCTYPE', $cekTempData['TYPE_BC'])
                             ->where('BCDOCDT', $cekTempData["TGL_DAFTAR"])
                             ->where('ITMCD', trim($row['kode_barang']))
-                            ->where('TTLQTY', trim($row['jumlah_satuan']))
+                            ->havingRaw('SUM(TTLQTY) = ' . trim($row['jumlah_satuan']))
                             ->update([
                                 'PRICE' => $row['cif'] == 0
                                     ? round((int) $row['harga_penyerahan'] / (int) $row['jumlah_satuan'], 4)
@@ -254,6 +254,7 @@ class ImportBarang implements ToModel, WithHeadingRow, SkipsEmptyRows
                             $cekHeaderMega = DB::connection('sqlsrv_mega_db')
                                 ->table('Z_STXI_VW_CBCDOC')
                                 ->where('CBCDOC_BCDOCNO', $noDaftar)
+                                ->where('CBCDOC_BCTYPE', $cekTempData['TYPE_BC'])
                                 ->first();
 
                             $insert = ITINVOutgoing::updateOrCreate([
@@ -277,7 +278,7 @@ class ImportBarang implements ToModel, WithHeadingRow, SkipsEmptyRows
                                     : $cekHeaderMega->CBCDOC_BSGRP
                                 ),
                                 'DOCCD' => $cekHeaderMega->CBCDOC_DOCCD,
-                                'DOCNO' => '',
+                                'DOCNO' => $cekHeaderMega->CBCDOC_DOCNO,
                                 'HHEINVNO' => '',
                                 'ISUDT' => $cekHeaderMega->CBCDOC_ISUDT,
                                 'ITMCD' => trim($row['kode_barang']),
@@ -307,6 +308,11 @@ class ImportBarang implements ToModel, WithHeadingRow, SkipsEmptyRows
                                 ]
                             ]));
                         } else {
+                            $cekOutgoingDataOnly = ITINVOutgoing::NoLock()->where('BCDOCNO', 'LIKE', $noDaftar . '%')
+                                ->where('BCTYPE', $cekTempData['TYPE_BC'])
+                                ->where('BCDOCDT', $cekTempData['TGL_DAFTAR'])
+                                ->first();
+
                             $insert = ITINVOutgoing::updateOrCreate([
                                 'BCTYPE' => $cekTempData['TYPE_BC'],
                                 'BCDOCNO' => $noDaftar,
@@ -322,7 +328,7 @@ class ImportBarang implements ToModel, WithHeadingRow, SkipsEmptyRows
                                 'DOCCD' => '',
                                 'DOCNO' => '',
                                 'HHEINVNO' => '',
-                                'ISUDT' => $cekTempData['TGL_DAFTAR'],
+                                'ISUDT' => empty($cekOutgoingDataOnly) ? $cekTempData['TGL_DAFTAR'] : $cekOutgoingDataOnly->ISUDT,
                                 'ITMCD' => trim($row['kode_barang']),
                                 'ITMD1' => $row['uraian'],
                                 'SPTNO' => $row['tipe'],

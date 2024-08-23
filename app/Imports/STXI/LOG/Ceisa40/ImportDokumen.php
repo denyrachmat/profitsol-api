@@ -105,7 +105,7 @@ class ImportDokumen implements ToModel, WithHeadingRow, SkipsEmptyRows
 
                         $explodeData = [];
                         if (!empty($cekOutgoing->INVNO)) {
-                            $explodeData = explode($cekOutgoing->INVNO, ";");
+                            $explodeData = explode(";", $cekOutgoing->INVNO);
                         }
 
                         $explodeData[] = $row['nomor_dokumen'];
