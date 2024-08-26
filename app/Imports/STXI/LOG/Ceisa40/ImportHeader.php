@@ -161,15 +161,15 @@ class ImportHeader implements ToModel, WithHeadingRow, SkipsEmptyRows
                     ]);
                 }
             } else {
-                $cekData = ITINVOutgoing::where("BCDOCNO", $row["nomor_daftar"])
-                    ->where('BCTYPE', $kodeDokumen)
-                    ->where('BCDOCDT', $row["tanggal_daftar"])
-                    ->first();
-
                 ITINVOutgoing::where("BCDOCNO", $row["nomor_daftar"])
                     ->where('BCTYPE', $kodeDokumen)
                     ->where('BCDOCDT', $row["tanggal_daftar"])
                     ->delete();
+
+                $cekData = ITINVOutgoing::where("BCDOCNO", $row["nomor_daftar"])
+                    ->where('BCTYPE', $kodeDokumen)
+                    ->where('BCDOCDT', $row["tanggal_daftar"])
+                    ->first();
 
                 if (!empty($cekData)) {
                     if (empty($cekData->BSGRP) || $cekData->BSGRP === 'LAIN NYA') {
