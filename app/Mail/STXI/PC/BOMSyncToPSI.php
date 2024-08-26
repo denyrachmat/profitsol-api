@@ -28,7 +28,7 @@ class BOMSyncToPSI extends Mailable
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: "BOM STX-I Sync to PSI",
+            subject: "STX-I Server Notification - BOM STX-I Updated",
         );
     }
 
