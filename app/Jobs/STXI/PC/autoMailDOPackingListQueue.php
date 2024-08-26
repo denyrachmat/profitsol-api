@@ -39,6 +39,7 @@ class autoMailDOPackingListQueue implements ShouldQueue
                 $listCC[] = $value['AMDC_EMAIL'];
             }
         }
+
         Mail::to($listTo)
             ->cc($listCC)
             ->send(new DOPackingList($this->data['data']));

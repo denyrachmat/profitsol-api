@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\DB;
 
 use App\Jobs\STXI\PC\syncBOMToPSIQueue;
 use App\Jobs\STXI\PC\syncDeletePSItoBOMQueue;
+use App\Jobs\STXI\PC\syncBOMToPSINotifQueue;
 
 use App\Models\PSI\ENG\BOMSTX_TBL;
 
@@ -28,6 +29,10 @@ class autoSyncBOMtoPSIController extends Controller
 
         foreach ($getDataPA100 as $keyPart => $valuePart) {
             $getListModelPart[$valuePart['MODEL CODE']]['MODEL'] = $valuePart['MODEL CODE'];
+            $getListModelPart[$valuePart['MODEL CODE']]['MODEL_DESC'] = $valuePart['MODEL DESC'];
+            $getListModelPart[$valuePart['MODEL CODE']]['REVISION'] = $valuePart['REVISION'];
+            $getListModelPart[$valuePart['MODEL CODE']]['IEI_TEN_NO'] = trim($valuePart['IEI TEN NO']) == '' ? 'N/A' : trim($valuePart['IEI TEN NO']);
+            $getListModelPart[$valuePart['MODEL CODE']]['CHANGE_OVERVIEW'] = $valuePart['CHANGE OVERVIEW'];
 
             if ($keyPart > 0 && $valuePart['MODEL CODE'] == $getDataPA100[$keyPart - 1]['MODEL CODE']) {
                 $count++;
@@ -58,6 +63,27 @@ class autoSyncBOMtoPSIController extends Controller
             }
         }
 
+        // Send Email Notif
+        syncBOMToPSINotifQueue::dispatch(array_values($getListModelPart), [
+            'deny-rachmat@sumitronics.co.jp'
+        ],[])->onQueue('sendEmailQueue');
+        // syncBOMToPSINotifQueue::dispatch(array_values($getListModelPart), [
+        //     'hadi.cahyono@smt.co.id',
+        //     'ida.damayanti@smt.co.id',
+        //     'irma@smt.co.id',
+        //     'lia.meliyanti@smt.co.id',
+        //     'bella-setivany@sumitronics.co.jp',
+        //     'ludh-praditto@sumitronics.co.jp'
+        // ],[
+        //     'dadan-setiawan@sumitronics.co.jp',
+        //     'wawan-setiawan@sumitronics.co.jp',
+        //     'rexon-julianto@sumitronics.co.jp',
+        //     'mohammad-mujib@sumitronics.co.jp',
+        //     'huda@smt.co.id',
+        //     'krista.diana@smt.co.id',
+        //     'deny-rachmat@sumitronics.co.jp'
+        // ])->onQueue('sendEmailQueue');
+
         foreach ($getDataPA100 as $key => $value) {
             syncBOMToPSIQueue::dispatch($value, $runTime)->onQueue('syncPA100BOMToPSI');
         }
@@ -77,7 +103,13 @@ class autoSyncBOMtoPSIController extends Controller
 
         $getListModelPart = [];
         foreach ($getDataPA100 as $keyPart => $valuePart) {
-            $getListModelPart[$valuePart['MODEL CODE'] . $valuePart['MAIN PART CODE']] = $valuePart['MAIN PART CODE'];
+            $getListModelPart[$valuePart['MODEL CODE']]['MODEL'] = $valuePart['MODEL CODE'];
+            $getListModelPart[$valuePart['MODEL CODE']]['MODEL_DESC'] = $valuePart['MODEL DESC'];
+            $getListModelPart[$valuePart['MODEL CODE']]['REVISION'] = $valuePart['REVISION'];
+            $getListModelPart[$valuePart['MODEL CODE']]['IEI_TEN_NO'] = trim($valuePart['IEI TEN NO']) == '' ? 'N/A' : trim($valuePart['IEI TEN NO']);
+            $getListModelPart[$valuePart['MODEL CODE']]['CHANGE_OVERVIEW'] = $valuePart['CHANGE OVERVIEW'];
+
+            // $getListModelPart[$valuePart['MODEL CODE'] . $valuePart['MAIN PART CODE']] = $valuePart['MAIN PART CODE'];
         }
 
         // Delete Model
@@ -98,7 +130,11 @@ class autoSyncBOMtoPSIController extends Controller
             }
         }
 
-        // return 'test';
+        // Send Email Notif
+        syncBOMToPSINotifQueue::dispatch(array_values($getListModelPart), [
+            'deny-rachmat@sumitronics.co.jp'
+        ],[])->onQueue('sendEmailQueue');
+
         foreach ($getDataPA100 as $key => $value) {
             syncBOMToPSIQueue::dispatch($value, $runTime)->onQueue('syncPA100BOMToPSIItem');
         }
