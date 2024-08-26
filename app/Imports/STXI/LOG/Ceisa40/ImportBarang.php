@@ -35,13 +35,13 @@ class ImportBarang implements ToModel, WithHeadingRow, SkipsEmptyRows
                 $noDaftar = substr($cekTempData['NO_DAFTAR'], 0, 6);
                 $getHSCode = DB::connection('sqlsrv_itinv')->table('VIEW_MITM_TBL')->where('MITM_ITMCD', $row['kode_barang'])->first();
                 if ($this->incout == 'INC') {
-                    ITINVIncoming::where('BCDOCNO', 'LIKE', $noDaftar . '%')
-                        ->where('BCTYPE', $cekTempData['TYPE_BC'])
-                        ->where('BCDOCDT', $cekTempData['TGL_DAFTAR'])
-                        ->where('ITMCD', trim($row['kode_barang']))
-                        ->where('TTLQTY', trim($row['jumlah_satuan']))
-                        // ->havingRaw('SUM(TTLQTY) = ' . trim($row['jumlah_satuan']))
-                        ->delete();
+                    // ITINVIncoming::where('BCDOCNO', 'LIKE', $noDaftar . '%')
+                    //     ->where('BCTYPE', $cekTempData['TYPE_BC'])
+                    //     ->where('BCDOCDT', $cekTempData['TGL_DAFTAR'])
+                    //     ->where('ITMCD', trim($row['kode_barang']))
+                    //     ->where('TTLQTY', trim($row['jumlah_satuan']))
+                    //     // ->havingRaw('SUM(TTLQTY) = ' . trim($row['jumlah_satuan']))
+                    //     ->delete();
 
                     $cekIncoming = ITINVIncoming::where('BCDOCNO', 'LIKE', $noDaftar . '%')
                         ->where('BCTYPE', $cekTempData['TYPE_BC'])
@@ -198,13 +198,13 @@ class ImportBarang implements ToModel, WithHeadingRow, SkipsEmptyRows
                         }
                     }
                 } else {
-                    ITINVOutgoing::where('BCDOCNO', 'LIKE', $noDaftar . '%')
-                        ->where('BCTYPE', $cekTempData['TYPE_BC'])
-                        ->where('BCDOCDT', $cekTempData['TGL_DAFTAR'])
-                        ->where('ITMCD', trim($row['kode_barang']))
-                        ->where('TTLQTY', trim($row['jumlah_satuan']))
-                        // ->havingRaw('SUM(TTLQTY) = ' . trim($row['jumlah_satuan']))
-                        ->delete();
+                    // ITINVOutgoing::where('BCDOCNO', 'LIKE', $noDaftar . '%')
+                    //     ->where('BCTYPE', $cekTempData['TYPE_BC'])
+                    //     ->where('BCDOCDT', $cekTempData['TGL_DAFTAR'])
+                    //     ->where('ITMCD', trim($row['kode_barang']))
+                    //     ->where('TTLQTY', trim($row['jumlah_satuan']))
+                    //     // ->havingRaw('SUM(TTLQTY) = ' . trim($row['jumlah_satuan']))
+                    //     ->delete();
 
                     $cekOutgoing = ITINVOutgoing::NoLock()->where('BCDOCNO', 'LIKE', $noDaftar . '%')
                         ->where('BCTYPE', $cekTempData['TYPE_BC'])
