@@ -113,7 +113,6 @@ class autoSyncBOMtoPSIController extends Controller
 
             $getListModelPart[$valuePart['MODEL CODE'] . $valuePart['MAIN PART CODE']] = $valuePart['MAIN PART CODE'];
         }
-
         // Delete Model
         BOMSTX_TBL::where('MODEL_CODE', $item)
             // ->whereIn('MAIN_PART_CODE', array_values($getListModelPart))
@@ -132,16 +131,14 @@ class autoSyncBOMtoPSIController extends Controller
             }
         }
 
-        // Send Email Notif
-        syncBOMToPSINotifQueue::dispatch(array_values($getListModelPart['EMAIL']), [
-            'deny-rachmat@sumitronics.co.jp'
-        ],[])->onQueue('sendEmailQueue');
-
         foreach ($getDataPA100 as $key => $value) {
             syncBOMToPSIQueue::dispatch($value, $runTime)->onQueue('syncPA100BOMToPSIItem');
         }
 
-        return 'Sync BOM Queued, Data to be updated : ' . count($getDataPA100);
+        return [
+            'message' => 'Sync BOM Queued, Data to be updated : ' . count($getDataPA100),
+            'data' => array_values($getListModelPart['EMAIL'])
+        ];
     }
 
     public function syncAllNotInterfaced(): array
@@ -183,10 +180,18 @@ class autoSyncBOMtoPSIController extends Controller
     public function syncWithoutJobs(Request $request)
     {
         $hasil = '';
+
+        $dataSend = [];
         foreach ($request->data as $key => $value) {
             $proses = $this->syncBOMbyItem($value);
-            $hasil .= "Item : {{$value}} - {{$proses}}<br>";
+            $dataSend[] = $proses['data'];
+            $hasil .= "Item : {{$value}} - {{$proses['message']}}<br>";
         }
+
+        // Send Email Notif
+        syncBOMToPSINotifQueue::dispatch($dataSend, [
+            'deny-rachmat@sumitronics.co.jp'
+        ],[])->onQueue('sendEmailQueue');
 
         return $hasil;
     }
