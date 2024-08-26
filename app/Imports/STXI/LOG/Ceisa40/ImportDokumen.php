@@ -211,7 +211,7 @@ class ImportDokumen implements ToModel, WithHeadingRow, SkipsEmptyRows
                     if ($this->incout == 'OUT') {
                         $cekOutgoing = (clone $baseDoc)
                             ->where('BCTYPE', 'P3BET')
-                            ->where(DB::raw('ISNULL(BC23BCTYPE, "")'), '<>', '');
+                            ->whereNull('BC23BCTYPE');
 
                         if ((clone $cekOutgoing)->count() > 0) {
                             $listItem = (clone $cekOutgoing)->pluck('ITMCD');
