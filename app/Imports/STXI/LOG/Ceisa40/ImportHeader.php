@@ -74,12 +74,12 @@ class ImportHeader implements ToModel, WithHeadingRow, SkipsEmptyRows
             if ($this->incout === 'INC') {
                 ITINVIncoming::where("BCDOCNO", 'LIKE', $row["nomor_daftar"] . '%')
                     ->where('BCTYPE', $kodeDokumen)
-                    ->where('BCDOCNO', $row["tanggal_daftar"])
+                    ->where('BCDOCDT', $row["tanggal_daftar"])
                     ->delete();
 
                 $cekData = ITINVIncoming::where("BCDOCNO", 'LIKE', $row["nomor_daftar"] . '%')
                     ->where('BCTYPE', $kodeDokumen)
-                    ->where('BCDOCNO', $row["tanggal_daftar"])
+                    ->where('BCDOCDT', $row["tanggal_daftar"])
                     ->first();
 
                 if (!empty($cekData)) {
