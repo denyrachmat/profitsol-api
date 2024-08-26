@@ -41,13 +41,9 @@ class autoSyncBOMtoPSIController extends Controller
         foreach (array_values($getListModelPart) as $keyPartModel => $valuePartModel) {
             // Delete Model Part if not approved yet
             BOMSTX_TBL::where('MODEL_CODE', $valuePartModel['MODEL'])
-                ->whereIn('MAIN_PART_CODE', array_values($valuePartModel['MAIN_PART']))
+                // ->whereIn('MAIN_PART_CODE', array_values($valuePartModel['MAIN_PART']))
                 ->whereNull('APRVDT')
                 ->delete();
-
-            BOMSTX_TBL::where('MODEL_CODE', $valuePartModel['MODEL'])
-                ->whereIn('MAIN_PART_CODE', array_values($valuePartModel['MAIN_PART']))
-                ->first();
         }
 
         foreach ($getDataPA100 as $keyData => $valueData) {
