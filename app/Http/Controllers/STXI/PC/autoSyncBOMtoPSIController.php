@@ -28,11 +28,13 @@ class autoSyncBOMtoPSIController extends Controller
         $count = 0;
 
         foreach ($getDataPA100 as $keyPart => $valuePart) {
-            $getListModelPart[$valuePart['MODEL CODE']]['MODEL'] = $valuePart['MODEL CODE'];
-            $getListModelPart[$valuePart['MODEL CODE']]['MODEL_DESC'] = $valuePart['MODEL DESC'];
-            $getListModelPart[$valuePart['MODEL CODE']]['REVISION'] = $valuePart['REVISION'];
-            $getListModelPart[$valuePart['MODEL CODE']]['IEI_TEN_NO'] = trim($valuePart['IEI TEN NO']) == '' ? 'N/A' : trim($valuePart['IEI TEN NO']);
-            $getListModelPart[$valuePart['MODEL CODE']]['CHANGE_OVERVIEW'] = $valuePart['CHANGE OVERVIEW'];
+            $getListModelPart['DATA'][$valuePart['MODEL CODE']]['MODEL'] = $valuePart['MODEL CODE'];
+
+            $getListModelPart['EMAIL'][$valuePart['MODEL CODE']]['MODEL'] = $valuePart['MODEL CODE'];
+            $getListModelPart['EMAIL'][$valuePart['MODEL CODE']]['MODEL_DESC'] = $valuePart['MODEL DESC'];
+            $getListModelPart['EMAIL'][$valuePart['MODEL CODE']]['REVISION'] = $valuePart['REVISION'];
+            $getListModelPart['EMAIL'][$valuePart['MODEL CODE']]['IEI_TEN_NO'] = trim($valuePart['IEI TEN NO']) == '' ? 'N/A' : trim($valuePart['IEI TEN NO']);
+            $getListModelPart['EMAIL'][$valuePart['MODEL CODE']]['CHANGE_OVERVIEW'] = $valuePart['CHANGE OVERVIEW'];
 
             if ($keyPart > 0 && $valuePart['MODEL CODE'] == $getDataPA100[$keyPart - 1]['MODEL CODE']) {
                 $count++;
@@ -43,7 +45,7 @@ class autoSyncBOMtoPSIController extends Controller
             $getListModelPart[$valuePart['MODEL CODE']]['MAIN_PART'][$count] = $valuePart['MAIN PART CODE'];
         }
 
-        foreach (array_values($getListModelPart) as $keyPartModel => $valuePartModel) {
+        foreach (array_values($getListModelPart['DATA']) as $keyPartModel => $valuePartModel) {
             // Delete Model Part if not approved yet
             BOMSTX_TBL::where('MODEL_CODE', $valuePartModel['MODEL'])
                 // ->whereIn('MAIN_PART_CODE', array_values($valuePartModel['MAIN_PART']))
@@ -64,7 +66,7 @@ class autoSyncBOMtoPSIController extends Controller
         }
 
         // Send Email Notif
-        syncBOMToPSINotifQueue::dispatch(array_values($getListModelPart), [
+        syncBOMToPSINotifQueue::dispatch(array_values($getListModelPart['EMAIL']), [
             'deny-rachmat@sumitronics.co.jp'
         ],[])->onQueue('sendEmailQueue');
         // syncBOMToPSINotifQueue::dispatch(array_values($getListModelPart), [
@@ -103,11 +105,11 @@ class autoSyncBOMtoPSIController extends Controller
 
         $getListModelPart = [];
         foreach ($getDataPA100 as $keyPart => $valuePart) {
-            $getListModelPart[$valuePart['MODEL CODE']]['MODEL'] = $valuePart['MODEL CODE'];
-            $getListModelPart[$valuePart['MODEL CODE']]['MODEL_DESC'] = $valuePart['MODEL DESC'];
-            $getListModelPart[$valuePart['MODEL CODE']]['REVISION'] = $valuePart['REVISION'];
-            $getListModelPart[$valuePart['MODEL CODE']]['IEI_TEN_NO'] = trim($valuePart['IEI TEN NO']) == '' ? 'N/A' : trim($valuePart['IEI TEN NO']);
-            $getListModelPart[$valuePart['MODEL CODE']]['CHANGE_OVERVIEW'] = $valuePart['CHANGE OVERVIEW'];
+            $getListModelPart['EMAIL'][$valuePart['MODEL CODE']]['MODEL'] = $valuePart['MODEL CODE'];
+            $getListModelPart['EMAIL'][$valuePart['MODEL CODE']]['MODEL_DESC'] = $valuePart['MODEL DESC'];
+            $getListModelPart['EMAIL'][$valuePart['MODEL CODE']]['REVISION'] = $valuePart['REVISION'];
+            $getListModelPart['EMAIL'][$valuePart['MODEL CODE']]['IEI_TEN_NO'] = trim($valuePart['IEI TEN NO']) == '' ? 'N/A' : trim($valuePart['IEI TEN NO']);
+            $getListModelPart['EMAIL'][$valuePart['MODEL CODE']]['CHANGE_OVERVIEW'] = $valuePart['CHANGE OVERVIEW'];
 
             $getListModelPart[$valuePart['MODEL CODE'] . $valuePart['MAIN PART CODE']] = $valuePart['MAIN PART CODE'];
         }
@@ -131,7 +133,7 @@ class autoSyncBOMtoPSIController extends Controller
         }
 
         // Send Email Notif
-        syncBOMToPSINotifQueue::dispatch(array_values($getListModelPart), [
+        syncBOMToPSINotifQueue::dispatch(array_values($getListModelPart['EMAIL']), [
             'deny-rachmat@sumitronics.co.jp'
         ],[])->onQueue('sendEmailQueue');
 
