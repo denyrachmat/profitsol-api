@@ -109,7 +109,7 @@ class autoSyncBOMtoPSIController extends Controller
             $getListModelPart[$valuePart['MODEL CODE']]['IEI_TEN_NO'] = trim($valuePart['IEI TEN NO']) == '' ? 'N/A' : trim($valuePart['IEI TEN NO']);
             $getListModelPart[$valuePart['MODEL CODE']]['CHANGE_OVERVIEW'] = $valuePart['CHANGE OVERVIEW'];
 
-            // $getListModelPart[$valuePart['MODEL CODE'] . $valuePart['MAIN PART CODE']] = $valuePart['MAIN PART CODE'];
+            $getListModelPart[$valuePart['MODEL CODE'] . $valuePart['MAIN PART CODE']] = $valuePart['MAIN PART CODE'];
         }
 
         // Delete Model
