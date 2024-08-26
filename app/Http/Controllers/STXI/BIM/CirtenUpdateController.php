@@ -234,7 +234,11 @@ class CirtenUpdateController extends BaseController
             $getFolderName = $getListFolderName[count($getListFolderName) - 1];
 
             if (isset($tenNum[1])) {
-                $cekData = CircularTenMstr::where('CIRTEN_NO', $tenNum[1])->orwhere('CIRTEN_NO', explode(' ', $getFolderName)[0])->whereNotNull('CIRTEN_DMS_DOC_ID')->first();
+                $cekData = CircularTenMstr::where('CIRTEN_NO', $tenNum[1])
+                    ->orwhere('CIRTEN_NO', explode(' ', $getFolderName)[0])
+                    ->whereNotNull('CIRTEN_DMS_DOC_ID')
+                    ->first();
+
                 if (empty($cekData)) {
                     $hasil[] = [
                         'foldername' => $getFolderName,
