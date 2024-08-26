@@ -52,7 +52,7 @@
 </style>
 <div>
     <h3 style="text-align: left;">Dear All,</h3>
-    <p>Please kindly proceed input PO & Sales Invoice for DO SME as below</p>
+    <p>For your information, Below is updated Model Code from STX-I to PSI :</p>
 
     <table class="tg">
         <thead>
