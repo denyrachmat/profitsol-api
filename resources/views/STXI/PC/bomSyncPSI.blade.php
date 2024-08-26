@@ -69,7 +69,7 @@
             @foreach ($data as $key => $value)
                 <tr>
                     <td class="tg-btxf">{{$key + 1}}</td>
-                    <td class="tg-btxf">{{$value['MODEL_CODE']}}</td>
+                    <td class="tg-btxf">{{$value['MODEL']}}</td>
                     <td class="tg-btxf">{{$value['MODEL_DESC']}}</td>
                     <td class="tg-btxf">{{$value['REVISION']}}</td>
                     <td class="tg-btxf">{{$value['IEI_TEN_NO']}}</td>
