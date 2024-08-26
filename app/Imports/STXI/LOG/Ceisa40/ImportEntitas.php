@@ -38,7 +38,25 @@ class ImportEntitas implements ToModel, WithHeadingRow, SkipsEmptyRows
 
                 if ($this->incout == 'INC') {
                     // Pengirim / Pengusaha
-                    if ($row['kode_entitas'] == 9 || $row['kode_entitas'] == 3) {
+                    if ($row['kode_entitas'] == 3) {
+                        ITINVUploadTemp::updateOrCreate([
+                            'NO_AJU' => $row['nomor_aju'],
+                            'NO_DAFTAR' => $cekTempData['NO_DAFTAR']
+                        ], [
+                            'NO_AJU' => $row['nomor_aju'],
+                            'NO_DAFTAR' => $cekTempData['NO_DAFTAR'],
+                            'SUPPL' => $row['nama_entitas']
+                        ]);
+                    } elseif ($row['kode_entitas'] == 7) {
+                        ITINVUploadTemp::updateOrCreate([
+                            'NO_AJU' => $row['nomor_aju'],
+                            'NO_DAFTAR' => $cekTempData['NO_DAFTAR']
+                        ], [
+                            'NO_AJU' => $row['nomor_aju'],
+                            'NO_DAFTAR' => $cekTempData['NO_DAFTAR'],
+                            'SUPPL' => $row['nama_entitas']
+                        ]);
+                    }  elseif ($row['kode_entitas'] == 9) {
                         ITINVUploadTemp::updateOrCreate([
                             'NO_AJU' => $row['nomor_aju'],
                             'NO_DAFTAR' => $cekTempData['NO_DAFTAR']
@@ -47,7 +65,7 @@ class ImportEntitas implements ToModel, WithHeadingRow, SkipsEmptyRows
                             'NO_DAFTAR' => $cekTempData['NO_DAFTAR'],
                             'PENGIRIM' => $row['nama_entitas']
                         ]);
-                    } elseif ($row['kode_entitas'] == 7) {
+                    } elseif ($row['kode_entitas'] == 10) {
                         ITINVUploadTemp::updateOrCreate([
                             'NO_AJU' => $row['nomor_aju'],
                             'NO_DAFTAR' => $cekTempData['NO_DAFTAR']
