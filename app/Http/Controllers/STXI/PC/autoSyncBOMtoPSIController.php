@@ -45,6 +45,14 @@ class autoSyncBOMtoPSIController extends Controller
             $getListModelPart[$valuePart['MODEL CODE']]['MAIN_PART'][$count] = $valuePart['MAIN PART CODE'];
         }
 
+        // Send Email Notif
+        syncBOMToPSINotifQueue::dispatch(array_values($getListModelPart['EMAIL']), [
+            'ludh-praditto@sumitronics.co.jp',
+            'deny-rachmat@sumitronics.co.jp'
+        ],[])->onQueue('sendEmailQueue');
+
+        // return 'done';
+
         foreach (array_values($getListModelPart['DATA']) as $keyPartModel => $valuePartModel) {
             // Delete Model Part if not approved yet
             BOMSTX_TBL::where('MODEL_CODE', $valuePartModel['MODEL'])
@@ -65,10 +73,6 @@ class autoSyncBOMtoPSIController extends Controller
             }
         }
 
-        // Send Email Notif
-        syncBOMToPSINotifQueue::dispatch(array_values($getListModelPart['EMAIL']), [
-            'deny-rachmat@sumitronics.co.jp'
-        ],[])->onQueue('sendEmailQueue');
         // syncBOMToPSINotifQueue::dispatch(array_values($getListModelPart), [
         //     'hadi.cahyono@smt.co.id',
         //     'ida.damayanti@smt.co.id',
