@@ -46,10 +46,10 @@ class autoSyncBOMtoPSIController extends Controller
         }
 
         // Send Email Notif
-        syncBOMToPSINotifQueue::dispatch(array_values($getListModelPart['EMAIL']), [
-            'ludh-praditto@sumitronics.co.jp',
-            'deny-rachmat@sumitronics.co.jp'
-        ],[])->onQueue('sendEmailQueue');
+        // syncBOMToPSINotifQueue::dispatch(array_values($getListModelPart['EMAIL']), [
+        //     'ludh-praditto@sumitronics.co.jp',
+        //     'deny-rachmat@sumitronics.co.jp'
+        // ],[])->onQueue('sendEmailQueue');
 
         // return 'done';
 
@@ -73,22 +73,27 @@ class autoSyncBOMtoPSIController extends Controller
             }
         }
 
-        // syncBOMToPSINotifQueue::dispatch(array_values($getListModelPart), [
-        //     'hadi.cahyono@smt.co.id',
-        //     'ida.damayanti@smt.co.id',
-        //     'irma@smt.co.id',
-        //     'lia.meliyanti@smt.co.id',
-        //     'bella-setivany@sumitronics.co.jp',
-        //     'ludh-praditto@sumitronics.co.jp'
-        // ],[
-        //     'dadan-setiawan@sumitronics.co.jp',
-        //     'wawan-setiawan@sumitronics.co.jp',
-        //     'rexon-julianto@sumitronics.co.jp',
-        //     'mohammad-mujib@sumitronics.co.jp',
-        //     'huda@smt.co.id',
-        //     'krista.diana@smt.co.id',
-        //     'deny-rachmat@sumitronics.co.jp'
-        // ])->onQueue('sendEmailQueue');
+        syncBOMToPSINotifQueue::dispatch(array_values($getListModelPart), [
+            'hadi.cahyono@smt.co.id',
+            'ida.damayanti@smt.co.id',
+            'irma@smt.co.id',
+            'lia.meliyanti@smt.co.id',
+            'siti.fatmawati@smt.co.id',
+            'PSI-PPC.Partcontrol@smt.co.id',
+            'andy@smt.co.id',
+        ],[
+            'dadan-setiawan@sumitronics.co.jp',
+            'wawan-setiawan@sumitronics.co.jp',
+            'rexon-julianto@sumitronics.co.jp',
+            'mohammad-mujib@sumitronics.co.jp',
+            'bella-setivany@sumitronics.co.jp',
+            'ludh-praditto@sumitronics.co.jp',
+            'widiatama-rahayu@sumitronics.co.jp',
+            'retno-astuti@sumitronics.co.jp',
+            'huda@smt.co.id',
+            'krista.diana@smt.co.id',
+            'deny-rachmat@sumitronics.co.jp'
+        ])->onQueue('sendEmailQueue');
 
         foreach ($getDataPA100 as $key => $value) {
             syncBOMToPSIQueue::dispatch($value, $runTime)->onQueue('syncPA100BOMToPSI');
@@ -117,6 +122,7 @@ class autoSyncBOMtoPSIController extends Controller
 
             $getListModelPart[$valuePart['MODEL CODE'] . $valuePart['MAIN PART CODE']] = $valuePart['MAIN PART CODE'];
         }
+
         // Delete Model
         BOMSTX_TBL::where('MODEL_CODE', $item)
             // ->whereIn('MAIN_PART_CODE', array_values($getListModelPart))
@@ -188,6 +194,8 @@ class autoSyncBOMtoPSIController extends Controller
         $dataSend = [];
         foreach ($request->data as $key => $value) {
             $proses = $this->syncBOMbyItem($value);
+
+            // return $proses;
             $dataSend[] = $proses['data'];
             $hasil .= "Item : {{$value}} - {{$proses['message']}}<br>";
         }
