@@ -73,7 +73,7 @@ class autoSyncBOMtoPSIController extends Controller
             }
         }
 
-        syncBOMToPSINotifQueue::dispatch(array_values($getListModelPart), [
+        syncBOMToPSINotifQueue::dispatch(array_values($getListModelPart['EMAIL']), [
             'hadi.cahyono@smt.co.id',
             'ida.damayanti@smt.co.id',
             'irma@smt.co.id',
