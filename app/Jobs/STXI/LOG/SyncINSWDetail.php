@@ -37,6 +37,8 @@ class SyncINSWDetail implements ShouldQueue
         try {
             $dataDetail = $this->getData($getHSCode);
 
+            logger($dataDetail);
+
             if (!empty($dataDetail)) {
                 if (isset($dataDetail['data'][0])) {
                     $dataDetailGet = $dataDetail['data'][0];
