@@ -68,6 +68,10 @@ class SyncINSWRules implements ShouldQueue
                     ]);
 
                     SyncINSWHeader::dispatch($value['nomor_peraturan'])->onQueue('INSWQueueRunning');
+                } else {
+                    if (!empty($this->findData)) {
+                        SyncINSWHeader::dispatch($value['nomor_peraturan'])->onQueue('INSWQueueRunning');
+                    }
                 }
             }
         }
