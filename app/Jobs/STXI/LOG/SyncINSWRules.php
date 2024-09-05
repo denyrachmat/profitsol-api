@@ -54,6 +54,8 @@ class SyncINSWRules implements ShouldQueue
             if (count($data['data']) > 0) {
                 $value = $data['data'][0];
 
+                logger('Cek hasil header INSWRules');
+                logger($value);
                 if ($value['nomor_peraturan'] != $checkLatest->ZIRM_NO) {
                     INSWDataRulesMaster::create([
                         'ZIRM_NO' => $value['nomor_peraturan'],
