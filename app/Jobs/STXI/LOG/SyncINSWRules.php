@@ -51,11 +51,11 @@ class SyncINSWRules implements ShouldQueue
             $checkLatest = INSWDataRulesMaster::orderBy('ZIRM_STARTDT', 'desc')->first();
 
             $data = $this->getData();
+
+            logger('Cek hasil header INSWRules');
+            logger(json_encode($data));
             if (count($data['data']) > 0) {
                 $value = $data['data'][0];
-
-                logger('Cek hasil header INSWRules');
-                logger($value);
                 if ($value['nomor_peraturan'] != $checkLatest->ZIRM_NO) {
                     INSWDataRulesMaster::create([
                         'ZIRM_NO' => $value['nomor_peraturan'],
