@@ -52,8 +52,8 @@ class SyncINSWRules implements ShouldQueue
 
             $data = $this->getData();
 
-            logger('Cek hasil header INSWRules');
-            logger(json_encode($data));
+            // logger('Cek hasil header INSWRules');
+            // logger(json_encode($data));
             if (count($data['data']) > 0) {
                 $value = $data['data'][0];
                 if ($value['nomor_peraturan'] != $checkLatest->ZIRM_NO) {
@@ -70,10 +70,10 @@ class SyncINSWRules implements ShouldQueue
                     ]);
 
                     SyncINSWHeader::dispatch($value['nomor_peraturan'])->onQueue('INSWQueueRunning');
-                } else {
-                    if (!empty($this->findData)) {
-                        SyncINSWHeader::dispatch($value['nomor_peraturan'])->onQueue('INSWQueueRunning');
-                    }
+                }
+            } else {
+                if (!empty($this->findData)) {
+                    SyncINSWHeader::dispatch($this->findData)->onQueue('INSWQueueRunning');
                 }
             }
         }
