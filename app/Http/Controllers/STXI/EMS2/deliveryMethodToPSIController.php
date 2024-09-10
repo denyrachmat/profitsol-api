@@ -1125,12 +1125,12 @@ class deliveryMethodToPSIController extends BaseController
             'TPM_ORDERQTY',
             'TPM_ORDER_CRTDT',
             'TPM_DLVDT',
-            DB::raw('CASE WHEN PPO2_DELNO IS NULL
+            DB::raw('CASE WHEN SSO2_DELNO IS NULL
                 THEN NULL
-                ELSE PPO2_ISUDT
+                ELSE SSOO2_ISUDT
             END AS IS_POEXSTS
             '),
-            DB::raw("CASE WHEN PPO2_DELNO IS NULL
+            DB::raw("CASE WHEN SSO2_DELNO IS NULL
                 THEN 'New PO'
                 ELSE 'Exists PO'
             END AS IS_POEXSTS_DESC
@@ -1142,10 +1142,11 @@ class deliveryMethodToPSIController extends BaseController
             'TPM_ITMCD'
         )
             ->leftjoin(
-                DB::raw('[MGSVR].[VMI_TYO].[dbo].[PPO2_TBL]'),
+                DB::raw('[MGSVR].[VMI_TYO].[dbo].[SSO2_TBL]'),
                 function ($j) {
-                    $j->on('PPO2_MDLCD', 'TPM_ITMCD');
-                    $j->on('PPO2_DELNO', 'TPM_ORDERNO');
+                    $j->on('SSO2_MDLCD', 'TPM_ITMCD');
+                    $j->on('SSO2_DELNO', 'TPM_ORDERNO');
+                    $j->on('SSO2_ISUDT', 'TPM_ISSDT');
                 }
             )
             ->where('TPM_STATUS', 'New')
