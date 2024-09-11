@@ -215,7 +215,7 @@ trait FormsTraits
 
                             $detail_data_key_ans[] = FormAnswerDet::updateOrCreate([
                                 'cfm_id' => $insert->id,
-                                'cfm_val' => is_array($valueAns) ? (string) json_encode($valueAns) : (string) $valueAns,
+                                // 'cfm_val' => is_array($valueAns) ? (string) json_encode($valueAns) : (string) $valueAns,
                             ],[
                                 'p_u_username' => $uname,
                                 'cfm_id' => $idTitle,
