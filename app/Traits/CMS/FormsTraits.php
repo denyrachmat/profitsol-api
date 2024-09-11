@@ -213,6 +213,16 @@ trait FormsTraits
                                 $valnya = $valueAns;
                             }
 
+                            if(is_array($valueAns)) {
+                                $hasilValue = [];
+                                foreach ($valueAns as $keyAnswers => $valueAnswers) {
+                                    $hasilValue[(int)$valueAnswers] = (string)$valueAnswers;
+                                }
+
+                                $hasilValue = json_encode(array_values($hasilValue));
+                            } else {
+                                $hasilValue = $valueAns;
+                            }
                             $detail_data_key_ans[] = FormAnswerDet::updateOrCreate([
                                 'cfm_id' => $insert->id,
                                 // 'cfm_val' => is_array($valueAns) ? (string) json_encode($valueAns) : (string) $valueAns,
@@ -220,7 +230,7 @@ trait FormsTraits
                                 'p_u_username' => $uname,
                                 'cfm_id' => $idTitle,
                                 'cfmd_id' => $insert->id,
-                                'cfm_val' => is_array($valueAns) ? (string) json_encode($valueAns) : (string) $valueAns,
+                                'cfm_val' => (string)$hasilValue,
                                 'cfm_exp' => (string) $keyExp[$keyAns],
                             ]);
                         }
