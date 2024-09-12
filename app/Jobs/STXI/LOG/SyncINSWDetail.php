@@ -45,7 +45,7 @@ class SyncINSWDetail implements ShouldQueue
 
                     if (!empty($this->search)) {
                         if (ctype_digit($this->search)) {
-                            INSWDataMaster::where('ZID_HSCODE', $getHSCode)->delete();
+                            INSWDataMaster::where('ZID_HSCODE', $getHSCode)->truncate();
                         } else {
                             INSWDataMaster::where('ZID_HSCODE', $getHSCode)->delete();
                         }
