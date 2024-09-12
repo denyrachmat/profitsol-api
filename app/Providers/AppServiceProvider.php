@@ -37,7 +37,7 @@ class AppServiceProvider extends ServiceProvider
         // Password reset link in email template...
         ResetPassword::createUrlUsing(static function ($notifiable, $token) {
             // Url of the fronted app for resetting password...
-            return env('FE_URL', 'http://192.168.100.32:8081/portal_v2/#').'/reset-password/'.$token;
+            return 'http://192.168.100.32:8081/portal_v2/#/reset-password/'.$token;
         });
     }
 }
