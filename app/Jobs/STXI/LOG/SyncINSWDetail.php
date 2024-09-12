@@ -44,7 +44,11 @@ class SyncINSWDetail implements ShouldQueue
                     $dataMFN = $dataDetailGet['mfn'][0];
 
                     if (!empty($this->search)) {
-                        INSWDataMaster::where('ZID_HSCODE', $getHSCode)->truncate();
+                        if (ctype_digit($this->search)) {
+                            INSWDataMaster::where('ZID_HSCODE', $getHSCode)->truncate();
+                        } else {
+                            INSWDataMaster::where('ZID_HSCODE', $getHSCode)->delete();
+                        }
                     }
 
                     // if ($getHSCode == '19011092') {
@@ -76,10 +80,19 @@ class SyncINSWDetail implements ShouldQueue
                     foreach ($dataDetailGet['bab_penjelasan'] as $keyJls => $valueJls) {
 
                         if (!empty($this->search)) {
-                            INSWDataJlsDetail::where('ZID_HSCODE', $getHSCode)
-                                ->where('ZIJD_TYPE', 'bab')
-                                ->where('ZIJD_DET_ID', $valueJls)
-                                ->delete();
+                            if (ctype_digit($this->search)) {
+                                // INSWDataMaster::where('ZID_HSCODE', $getHSCode)->truncate();
+
+                                INSWDataJlsDetail::where('ZID_HSCODE', $getHSCode)
+                                    ->where('ZIJD_TYPE', 'bab')
+                                    ->where('ZIJD_DET_ID', $valueJls)
+                                    ->truncate();
+                            } else {
+                                INSWDataJlsDetail::where('ZID_HSCODE', $getHSCode)
+                                    ->where('ZIJD_TYPE', 'bab')
+                                    ->where('ZIJD_DET_ID', $valueJls)
+                                    ->delete();
+                            }
                         }
                         $jlsCreate[] = INSWDataJlsDetail::updateOrCreate([
                             'ZID_HSCODE' => $getHSCode,
@@ -94,9 +107,15 @@ class SyncINSWDetail implements ShouldQueue
                     foreach ($dataDetailGet['bab_penjelasan_en'] as $keyJls => $valueJls2) {
 
                         if (!empty($this->search)) {
-                            INSWDataJlsDetail::where('ZID_HSCODE', $getHSCode)
-                                ->where('ZIJD_TYPE', 'bab_en')
-                                ->delete();
+                            if (ctype_digit($this->search)) {
+                                INSWDataJlsDetail::where('ZID_HSCODE', $getHSCode)
+                                    ->where('ZIJD_TYPE', 'bab_en')
+                                    ->truncate();
+                            } else {
+                                INSWDataJlsDetail::where('ZID_HSCODE', $getHSCode)
+                                    ->where('ZIJD_TYPE', 'bab_en')
+                                    ->delete();
+                            }
                         }
 
                         $jlsCreate[] = INSWDataJlsDetail::updateOrCreate([
@@ -112,9 +131,15 @@ class SyncINSWDetail implements ShouldQueue
                     foreach ($dataDetailGet['bagian_penjelasan'] as $keyJls => $valueJls3) {
 
                         if (!empty($this->search)) {
-                            INSWDataJlsDetail::where('ZID_HSCODE', $getHSCode)
-                                ->where('ZIJD_TYPE', 'bagian')
-                                ->delete();
+                            if (ctype_digit($this->search)) {
+                                INSWDataJlsDetail::where('ZID_HSCODE', $getHSCode)
+                                    ->where('ZIJD_TYPE', 'bagian')
+                                    ->truncate();
+                            } else {
+                                INSWDataJlsDetail::where('ZID_HSCODE', $getHSCode)
+                                    ->where('ZIJD_TYPE', 'bagian')
+                                    ->delete();
+                            }
                         }
 
                         $jlsCreate[] = INSWDataJlsDetail::updateOrCreate([
@@ -130,9 +155,15 @@ class SyncINSWDetail implements ShouldQueue
                     foreach ($dataDetailGet['bagian_penjelasan_en'] as $keyJls => $valueJls4) {
 
                         if (!empty($this->search)) {
-                            INSWDataJlsDetail::where('ZID_HSCODE', $getHSCode)
-                                ->where('ZIJD_TYPE', 'bagian_en')
-                                ->delete();
+                            if (ctype_digit($this->search)) {
+                                INSWDataJlsDetail::where('ZID_HSCODE', $getHSCode)
+                                    ->where('ZIJD_TYPE', 'bagian_en')
+                                    ->truncate();
+                            } else {
+                                INSWDataJlsDetail::where('ZID_HSCODE', $getHSCode)
+                                    ->where('ZIJD_TYPE', 'bagian_en')
+                                    ->delete();
+                            }
                         }
 
                         $jlsCreate[] = INSWDataJlsDetail::updateOrCreate([
@@ -148,8 +179,13 @@ class SyncINSWDetail implements ShouldQueue
 
 
                     if (!empty($this->search)) {
-                        INSWDataRegDet::where('ZID_HSCODE', $getHSCode)
-                            ->delete();
+                        if (ctype_digit($this->search)) {
+                            INSWDataRegDet::where('ZID_HSCODE', $getHSCode)
+                                ->truncate();
+                        } else {
+                            INSWDataRegDet::where('ZID_HSCODE', $getHSCode)
+                                ->delete();
+                        }
                     }
 
                     $dataRegCreate = [];
@@ -241,8 +277,13 @@ class SyncINSWDetail implements ShouldQueue
 
 
                     if (!empty($this->search)) {
-                        INSWDataSatDetail::where('ZID_HSCODE', $getHSCode)
-                            ->delete();
+                        if (ctype_digit($this->search)) {
+                            INSWDataSatDetail::where('ZID_HSCODE', $getHSCode)
+                                ->truncate();
+                        } else {
+                            INSWDataSatDetail::where('ZID_HSCODE', $getHSCode)
+                                ->delete();
+                        }
                     }
 
                     $satImp = [];
