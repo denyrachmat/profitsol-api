@@ -45,16 +45,11 @@ class SyncINSWDetail implements ShouldQueue
 
                     if (!empty($this->search)) {
                         if (ctype_digit($this->search)) {
-                            INSWDataMaster::where('ZID_HSCODE', $getHSCode)->truncate();
+                            INSWDataMaster::where('ZID_HSCODE', $getHSCode)->forceDelete();
                         } else {
                             INSWDataMaster::where('ZID_HSCODE', $getHSCode)->delete();
                         }
                     }
-
-                    // if ($getHSCode == '19011092') {
-                    //     logger('cek data registration of 19011092 after satuan 1');
-                    //     logger(json_encode($dataDetailGet));
-                    // }
 
                     $masterCreate = INSWDataMaster::updateOrCreate([
                         'ZID_HSCODE' => $getHSCode,
@@ -84,7 +79,7 @@ class SyncINSWDetail implements ShouldQueue
                                 INSWDataJlsDetail::where('ZID_HSCODE', $getHSCode)
                                     ->where('ZIJD_TYPE', 'bab')
                                     ->where('ZIJD_DET_ID', $valueJls)
-                                    ->truncate();
+                                    ->forceDelete();
                             } else {
                                 INSWDataJlsDetail::where('ZID_HSCODE', $getHSCode)
                                     ->where('ZIJD_TYPE', 'bab')
@@ -108,7 +103,7 @@ class SyncINSWDetail implements ShouldQueue
                             if (ctype_digit($this->search)) {
                                 INSWDataJlsDetail::where('ZID_HSCODE', $getHSCode)
                                     ->where('ZIJD_TYPE', 'bab_en')
-                                    ->truncate();
+                                    ->forceDelete();
                             } else {
                                 INSWDataJlsDetail::where('ZID_HSCODE', $getHSCode)
                                     ->where('ZIJD_TYPE', 'bab_en')
@@ -132,7 +127,7 @@ class SyncINSWDetail implements ShouldQueue
                             if (ctype_digit($this->search)) {
                                 INSWDataJlsDetail::where('ZID_HSCODE', $getHSCode)
                                     ->where('ZIJD_TYPE', 'bagian')
-                                    ->truncate();
+                                    ->forceDelete();
                             } else {
                                 INSWDataJlsDetail::where('ZID_HSCODE', $getHSCode)
                                     ->where('ZIJD_TYPE', 'bagian')
@@ -156,7 +151,7 @@ class SyncINSWDetail implements ShouldQueue
                             if (ctype_digit($this->search)) {
                                 INSWDataJlsDetail::where('ZID_HSCODE', $getHSCode)
                                     ->where('ZIJD_TYPE', 'bagian_en')
-                                    ->truncate();
+                                    ->forceDelete();
                             } else {
                                 INSWDataJlsDetail::where('ZID_HSCODE', $getHSCode)
                                     ->where('ZIJD_TYPE', 'bagian_en')
@@ -180,7 +175,7 @@ class SyncINSWDetail implements ShouldQueue
                         if (ctype_digit($this->search)) {
                             INSWDataRegDet::where('ZID_HSCODE', $getHSCode)
                                 // ->where('ZIRD_TYPE', 'import_regulation')
-                                ->truncate();
+                                ->forceDelete();
                         } else {
                             INSWDataRegDet::where('ZID_HSCODE', $getHSCode)
                                 ->delete();
@@ -278,7 +273,7 @@ class SyncINSWDetail implements ShouldQueue
                     if (!empty($this->search)) {
                         if (ctype_digit($this->search)) {
                             INSWDataSatDetail::where('ZID_HSCODE', $getHSCode)
-                                ->truncate();
+                                ->forceDelete();
                         } else {
                             INSWDataSatDetail::where('ZID_HSCODE', $getHSCode)
                                 ->delete();
