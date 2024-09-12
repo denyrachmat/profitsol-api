@@ -282,7 +282,7 @@ trait INSWTraits
 
         $hasilData = [];
         foreach ($data as $key => $value) {
-            SyncINSWDetail::dispatch($value['_source']['hs_code_format'], $this->search)->onQueue('INSWQueueRunningDetail');
+            SyncINSWDetail::dispatch($value['_source']['hs_code_format'], $hsCode)->onQueue('INSWQueueRunningDetail');
 
             $hasilData[] = $value['_source']['hs_code_format'];
         }
