@@ -261,7 +261,7 @@ trait INSWTraits
     }
 
 
-    public function getListMaster($hsCode = '', $size = 200)
+    public function getListMaster($hsCode = '', $size = 10000)
     {
         $endpoint = 'https://api.insw.go.id/api/cms/hscode?keyword=' . $hsCode . '&size=' . $size . '&from=0';
 
@@ -276,7 +276,18 @@ trait INSWTraits
 
         $content['CURL'] = json_decode($res->getBody(), true);
 
-        return $content['CURL'];
+        // return $content['CURL'];
+
+        $data = $content['CURL']['data'][0]['result'];
+
+        $hasilData = [];
+        foreach ($data as $key => $value) {
+            SyncINSWDetail::dispatch($value['_source']['hs_code_format'], $this->search)->onQueue('INSWQueueRunningDetail');
+
+            $hasilData[] = $value['_source']['hs_code_format'];
+        }
+
+        return $hasilData;
     }
 
     public function syncINSWDataShare($hsCode = '')
