@@ -2,6 +2,7 @@
 use App\Http\Controllers\STXI\EMS2\TYOAutoBarcodeController;
 use App\Http\Controllers\STXI\EMS2\YPODailyConfController;
 use App\Http\Controllers\STXI\LOG\CeisaMonitoringController;
+use App\Http\Controllers\STXI\LOG\HSCodeUploadController;
 use App\Http\Controllers\STXI\PC\autoEmailWMSConfirmation;
 use App\Http\Controllers\STXI\PC\autoSyncBOMtoPSIController;
 use Illuminate\Support\Facades\Route;
@@ -253,6 +254,9 @@ Route::group(['prefix' => 'div'], function () {
         Route::get('syncStatusCeisaByIDHeader/{id}', [Ceisa40UploaderController::class, 'syncStatusCeisaByIDHeader']);
         Route::get('syncStatusCeisaAll', [Ceisa40UploaderController::class, 'syncStatusCeisaAll']);
 
+        Route::resource('HSCode', HSCodeUploadController::class);
+        Route::get('testRecurs', [HSCodeUploadController::class, 'testHeaderData']);
+        Route::post('exportData', [HSCodeUploadController::class, 'exportData']);
     });
 
     Route::group(['prefix' => 'pu'], function () {

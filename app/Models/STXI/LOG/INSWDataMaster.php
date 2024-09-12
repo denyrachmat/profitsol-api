@@ -25,5 +25,7 @@ class INSWDataMaster extends Model
         'ZID_MFN_PPN',
         'ZID_MFN_PPH',
         'ZID_KOND',
+        'ZID_MFN_BMPPN',
+        'ZID_MFN_CUKAI'
     ];
 }

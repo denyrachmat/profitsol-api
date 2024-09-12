@@ -45,6 +45,13 @@ class syncBOMToPSIQueue implements ShouldQueue
         }
 
         if (!empty($cekData)) {
+            $cekDoubleData = BOMSTX_TBL::NoLock()
+                ->where('MODEL_CODE', trim($this->data['MODEL CODE']))
+                ->where('REVISION', trim($this->data['REVISION']))
+                ->where('MAIN_PART_CODE', trim($this->data['MAIN PART CODE']))
+                ->where('TEN_UPDATE_DATE', $this->data['TEN_UPDATE_DATE'])
+                ->count();
+
             $bomSTXonPSI = BOMSTX_TBL::where('MODEL_CODE', trim($this->data['MODEL CODE']))
                 ->where('REVISION', trim($this->data['REVISION']))
                 ->where('MAIN_PART_CODE', trim($this->data['MAIN PART CODE']))

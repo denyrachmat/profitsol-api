@@ -104,6 +104,19 @@ return [
             'prefix_indexes' => true,
         ],
 
+        'sqlsrv_ams' => [
+            'driver' => 'sqlsrv',
+            'url' => env('DATABASE_URL'),
+            'host' => env('DB_AMS_HOST', 'localhost'),
+            'port' => env('DB_AMS_PORT', '1433'),
+            'database' => env('DB_AMS_DATABASE', 'forge'),
+            'username' => env('DB_AMS_USERNAME', 'forge'),
+            'password' => env('DB_AMS_PASSWORD', ''),
+            'charset' => 'utf8',
+            'prefix' => '',
+            'prefix_indexes' => true,
+        ],
+
         'sqlsrv_dms_old' => [
             'driver' => 'sqlsrv',
             'url' => env('DATABASE_URL'),

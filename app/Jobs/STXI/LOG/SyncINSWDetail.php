@@ -37,8 +37,6 @@ class SyncINSWDetail implements ShouldQueue
         try {
             $dataDetail = $this->getData($getHSCode);
 
-            logger($dataDetail);
-
             if (!empty($dataDetail)) {
                 if (isset($dataDetail['data'][0])) {
                     $dataDetailGet = $dataDetail['data'][0];
@@ -46,7 +44,7 @@ class SyncINSWDetail implements ShouldQueue
                     $dataMFN = $dataDetailGet['mfn'][0];
 
                     if (!empty($this->search)) {
-                        INSWDataMaster::where('ZID_HSCODE', $getHSCode)->delete();
+                        INSWDataMaster::where('ZID_HSCODE', $getHSCode)->truncate();
                     }
 
                     // if ($getHSCode == '19011092') {
@@ -66,9 +64,11 @@ class SyncINSWDetail implements ShouldQueue
                         'ZID_HSPRNT_FRMT' => isset($dataDetailGet['hsParent'][1]) ? $dataDetailGet['hsParent'][1]['hs_code_format'] : '',
                         'ZID_HSPRNT_FRMT_DESC_ID' => isset($dataDetailGet['hsParent'][1]) ? $dataDetailGet['hsParent'][1]['ur_id'] : '',
                         'ZID_HSPRNT_FRMT_DESC_END' => isset($dataDetailGet['hsParent'][1]) ? $dataDetailGet['hsParent'][1]['ur_en'] : '',
+                        'ZID_MFN_BMPPN' => isset($dataMFN['ppnbm'][0]) ? $dataMFN['ppnbm'][0]['ppnbm'] : '',
                         'ZID_MFN_BM' => isset($dataMFN['bm'][0]) ? $dataMFN['bm'][0]['bm'] : '',
                         'ZID_MFN_PPN' => isset($dataMFN['ppn'][0]) ? $dataMFN['ppn'][0]['ppn'] : '',
                         'ZID_MFN_PPH' => isset($dataMFN['pph'][0]) ? $dataMFN['pph'][0]['pph'] : '',
+                        'ZID_MFN_CUKAI' => isset($dataMFN['cukai'][0]) ? $dataMFN['cukai'][0]['cukai'] : '',
                         'ZID_KOND' => $dataDetailGet['kondisiTertentu'],
                     ]);
 

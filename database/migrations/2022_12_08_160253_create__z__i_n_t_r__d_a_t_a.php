@@ -24,9 +24,12 @@ class CreateZINTRDATA extends Migration
             $table->string('ZID_HSPRNT_FRMT');
             $table->text('ZID_HSPRNT_FRMT_DESC_ID');
             $table->text('ZID_HSPRNT_FRMT_DESC_END');
-            $table->string('ZID_MFN_BM');
-            $table->string('ZID_MFN_PPN');
-            $table->string('ZID_MFN_PPH');
+            $table->string('ZID_MFN_BMMFN')->nullable();
+            $table->string('ZID_MFN_BM')->nullable();
+            $table->string('ZID_MFN_PPN')->nullable();
+            $table->string('ZID_MFN_PPH')->nullable();
+            $table->string('ZID_MFN_BMPPN')->nullable();
+            $table->string('ZID_MFN_CUKAI')->nullable();
             $table->boolean('ZID_KOND');
             $table->timestamps();
         });

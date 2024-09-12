@@ -52,14 +52,14 @@ trait FolderDocumentTraits
                 ? $checkRootAlias->p_u_username
                 : ($checkRootAlias->dudrm_path)
             );
-        
+
         logger('check root di alias');
         logger($checkRootAlias);
         $root = empty($checkRootAlias->dudrm_source)
             ? 'data_folder'
             : $checkRootAlias->dudrm_source;
 
-        
+
             logger('check root');
         logger($root);
         $isUseRealNameFile = empty($checkRootAlias)
@@ -347,4 +347,6 @@ trait FolderDocumentTraits
 
         return $hasil;
     }
+
+    public function shareFileFolder($id) {}
 }
