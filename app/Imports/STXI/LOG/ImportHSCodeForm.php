@@ -17,7 +17,7 @@ class ImportHSCodeForm implements ToModel
 {
     use INSWTraits;
     protected $issdate, $keys, $doc, $type, $keysFordoc, $item, $bg, $series, $mkhscd, $stxihscd;
-    function __construct($issdate, $keys = 0, $doc = '', $type = '', $keysFordoc = 0, $item = '', $bg = '', $series = '', $mkhscd = '', $stxihscd = '')
+    function __construct($issdate = '', $keys = 0, $doc = '', $type = '', $keysFordoc = 0, $item = '', $bg = '', $series = '', $mkhscd = '', $stxihscd = '')
     {
         $this->issdate = $issdate;
         $this->keys = $keys;
@@ -60,8 +60,12 @@ class ImportHSCodeForm implements ToModel
         }
 
         // For Single HS Code Forms
-        if ($this->type === 'single' && $this->keys >= 2) {
+        if ($this->type === 'single' && $this->keys >= 1) {
             foreach ($row as $key => $valData) {
+                if (str_contains($valData, 'Issue Date') && !empty($row[$key + 5])) {
+                    $this->issdate = $row[$key + 5];
+                }
+
                 if (str_contains($valData, 'Parts Code')) {
                     $this->item = $row[$key + 5];
                 }
@@ -102,6 +106,10 @@ class ImportHSCodeForm implements ToModel
             foreach ($row as $key => $valData) {
                 if (str_contains($valData, 'BG') && !empty($row[$key + 2])) {
                     $this->bg = trim(str_replace(': ', '', $row[$key + 2]));
+                }
+
+                if (str_contains($valData, 'Issue Date') && !empty($row[$key + 2])) {
+                    $this->issdate = date('Y-m-d', strtotime(trim(str_replace(': ', '', $row[$key + 2]))));
                 }
             }
 

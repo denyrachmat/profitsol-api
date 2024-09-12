@@ -55,7 +55,7 @@ class HSCodeUploadController extends BaseController
             $writer->save('/public/upload_hs_code_form/' . $nama_file);
         }
 
-        $importer = new ImportHSCodeForm($request->date);
+        $importer = new ImportHSCodeForm();
 
         Excel::import($importer, public_path('/storage/upload_hs_code_form/' . $nama_file));
 
