@@ -45,7 +45,7 @@ class SyncINSWDetail implements ShouldQueue
 
                     if (!empty($this->search)) {
                         if (ctype_digit($this->search)) {
-                            INSWDataMaster::where('ZID_HSCODE', $getHSCode)->truncate();
+                            INSWDataMaster::where('ZID_HSCODE', $getHSCode)->delete();
                         } else {
                             INSWDataMaster::where('ZID_HSCODE', $getHSCode)->delete();
                         }
@@ -81,8 +81,6 @@ class SyncINSWDetail implements ShouldQueue
 
                         if (!empty($this->search)) {
                             if (ctype_digit($this->search)) {
-                                // INSWDataMaster::where('ZID_HSCODE', $getHSCode)->truncate();
-
                                 INSWDataJlsDetail::where('ZID_HSCODE', $getHSCode)
                                     ->where('ZIJD_TYPE', 'bab')
                                     ->where('ZIJD_DET_ID', $valueJls)
@@ -181,6 +179,7 @@ class SyncINSWDetail implements ShouldQueue
                     if (!empty($this->search)) {
                         if (ctype_digit($this->search)) {
                             INSWDataRegDet::where('ZID_HSCODE', $getHSCode)
+                                // ->where('ZIRD_TYPE', 'import_regulation')
                                 ->truncate();
                         } else {
                             INSWDataRegDet::where('ZID_HSCODE', $getHSCode)
