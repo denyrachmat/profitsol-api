@@ -11,13 +11,12 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::connection('sqlsrv_ams')->create('ams_apprv_map_det', function (Blueprint $table) {
+        Schema::connection('sqlsrv_ams')->create('ams_apprv_token_det', function (Blueprint $table) {
             $table->id();
             $table->string('p_u_username');
             $table->integer('amsm_id');
-            $table->string('amsmd_username');
-            $table->integer('amsmd_order');
-            $table->boolean('amsmd_reqaprv')->default(0);
+            $table->string('amstd_token');
+            $table->string('amstd_emailto')->nullable();
             $table->timestamps();
         });
     }
@@ -27,6 +26,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::connection('sqlsrv_ams')->dropIfExists('ams_apprv_map_det');
+        Schema::connection('sqlsrv_ams')->dropIfExists('ams_apprv_token_det');
     }
 };

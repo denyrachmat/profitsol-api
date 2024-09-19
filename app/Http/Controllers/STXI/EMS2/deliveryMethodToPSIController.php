@@ -1127,7 +1127,7 @@ class deliveryMethodToPSIController extends BaseController
             'TPM_DLVDT',
             DB::raw('CASE WHEN SSO2_DELNO IS NULL
                 THEN NULL
-                ELSE SSOO2_ISUDT
+                ELSE SSO2_ISUDT
             END AS IS_POEXSTS
             '),
             DB::raw("CASE WHEN SSO2_DELNO IS NULL

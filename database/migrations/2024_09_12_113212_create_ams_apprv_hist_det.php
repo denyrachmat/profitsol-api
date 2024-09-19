@@ -13,6 +13,7 @@ return new class extends Migration
     {
         Schema::connection('sqlsrv_ams')->create('ams_apprv_hist_det', function (Blueprint $table) {
             $table->id();
+            $table->string('p_u_username');
             $table->integer('amsm_id');
             $table->string('amshd_username');
             $table->string('amshd_username_apprv');

@@ -13,9 +13,11 @@ return new class extends Migration
     {
         Schema::connection('sqlsrv_ams')->create('ams_apprv_mstr', function (Blueprint $table) {
             $table->id();
+            $table->string('p_u_username');
             $table->string('ams_idapv');
             $table->string('ams_title');
-            $table->string('ams_type');
+            $table->text('ams_content')->nullable();
+            $table->boolean('ams_active')->default(0);
             $table->timestamps();
         });
     }
