@@ -22,7 +22,7 @@ trait Ceisa40Traits
         $isFile = false
     ) {
         $endpoint = $source === 'nle'
-            ? /* 'https://nlehub.kemenkeu.go.id/' */'https://apis-gw.beacukai.go.id/' . $url
+            ? /* 'https://nlehub.kemenkeu.go.id/' */ 'https://apis-gw.beacukai.go.id/' . $url
             : ($source === 'sce'
                 ? 'https://apis-gw.beacukai.go.id/v2/sce-ws/' . $url
                 : ($source === 'browse-service'
@@ -31,7 +31,10 @@ trait Ceisa40Traits
                         ? 'https://apis-gw.beacukai.go.id/v2/parser/v1/' . $url
                         : ($source === 'excel-service'
                             ? 'https://apis-gw.beacukai.go.id/excel-service/v1/' . $url
-                            : $url
+                            : ($source === 'report-parser'
+                                ? 'https://apis-gw.beacukai.go.id/v2/report-parser/v1/' . $url
+                                : $url
+                            )
                         )
                     )
                 )
@@ -56,7 +59,8 @@ trait Ceisa40Traits
                         $headers = [
                             'Content-Type' => 'application/json',
                             'Accept' => 'application/json',
-                            'Authorization' => 'Bearer ' . $getToken
+                            'Authorization' => 'Bearer ' . $getToken,
+                            'Beacukai-Api-Key' => '6222a75e-1dbb-493e-9461-27f721097e9c'
                         ];
                     }
 
@@ -244,7 +248,7 @@ trait Ceisa40Traits
                 $dataHasil = [];
                 foreach ($sendData['data'] as $key => $value) {
                     if (!empty($value['namaRespon'])) {
-                        if($request->has('isSaved') && $request->isSaved == 1) {
+                        if ($request->has('isSaved') && $request->isSaved == 1) {
                             $insertCeisa = CEISARESPON::updateOrCreate([
                                 'NOMOR_AJU' => $value['nomorAju'],
                                 'RES_TYPE' => $value['namaRespon'],
@@ -270,12 +274,12 @@ trait Ceisa40Traits
                                 'no' => $value['nomorRespon'],
                                 'tgl' => $value['tanggalRespon']
                             ],
-                            'param'=>$request->all(),
+                            'param' => $request->all(),
                             'statInsert' => $request->has('isSaved') && $request->isSaved == 1 ? $insertCeisa : 'Not Saved',
                             'dataOri' => $value
                         ];
                     } else {
-                        if($request->has('isSaved') && $request->isSaved == 1) {
+                        if ($request->has('isSaved') && $request->isSaved == 1) {
                             $insertCeisa = CEISARESPON::updateOrCreate([
                                 'NOMOR_AJU' => $value['nomorAju'],
                                 'RES_TYPE' => $value['namaRespon'],
@@ -301,7 +305,7 @@ trait Ceisa40Traits
                                 'no' => $value['nomorRespon'],
                                 'tgl' => $value['tanggalRespon']
                             ],
-                            'param'=>$request->all(),
+                            'param' => $request->all(),
                             'statInsert' => $request->has('isSaved') && $request->isSaved == 1 ? $insertCeisa : 'Not Saved',
                             'dataOri' => $value
                         ];
@@ -332,7 +336,8 @@ trait Ceisa40Traits
         }
     }
 
-    public function getDetPerusahaan(Request $request) : Array {
+    public function getDetPerusahaan(Request $request): array
+    {
         $hasil = [];
         foreach ($request->data as $key => $value) {
             $getDetilPerusahanPenerima = $this->apiPointData(
@@ -350,7 +355,7 @@ trait Ceisa40Traits
                 EntitasMaster::create([
                     'NPWP' => $value,
                     'NAMA' => $getDetilPerusahanPenerima['namaPerusahaan'],
-                    'ALMT' => $getDetilPerusahanPenerima['alamatPerusahaan'].', '.$getDetilPerusahanPenerima['rtRw'].', '.$getDetilPerusahanPenerima['kelurahan'],
+                    'ALMT' => $getDetilPerusahanPenerima['alamatPerusahaan'] . ', ' . $getDetilPerusahanPenerima['rtRw'] . ', ' . $getDetilPerusahanPenerima['kelurahan'],
                     'KODEKTR' => '050900',
                     'NIB' => $getDetilPerusahanPenerima['nib'],
                 ]);
@@ -379,9 +384,10 @@ trait Ceisa40Traits
         return $hasil;
     }
 
-    public function getEntitas($idHeader) {
+    public function getEntitas($idHeader)
+    {
         $getEntitas = $this->apiPointData(
-            'TdEntitas/findByIdHeader?idHeader='.$idHeader,
+            'TdEntitas/findByIdHeader?idHeader=' . $idHeader,
             'GET',
             [],
             'parser',
@@ -393,10 +399,11 @@ trait Ceisa40Traits
         }
     }
 
-    public function downloadExcel($noAju, $bc, $id, $isStore = true) {
+    public function downloadExcel($noAju, $bc, $id, $isStore = true)
+    {
         logger(json_encode([$noAju, $bc, $id, $isStore]));
         $getDetilPerusahanPenerima = $this->apiPointData(
-            'ekspor-xml/Xlsx?nomorAju='.$noAju.'&idUser=adf9ea0f-de99-444d-b502-e4a474670624&kodeDokumen='.$bc,
+            'ekspor-xml/Xlsx?nomorAju=' . $noAju . '&idUser=adf9ea0f-de99-444d-b502-e4a474670624&kodeDokumen=' . $bc,
             'GET',
             [],
             'excel-service',
@@ -410,7 +417,7 @@ trait Ceisa40Traits
                 case '27':
                     $cekEntitas = $this->getEntitas($id);
 
-                    $cekEntitas = array_values(array_filter($cekEntitas, function($f) {
+                    $cekEntitas = array_values(array_filter($cekEntitas, function ($f) {
                         return $f['kodeEntitas'] == '7';
                     }));
 
@@ -423,22 +430,22 @@ trait Ceisa40Traits
                     break;
 
                 default:
-                    $splitStr = str_split((string)$bc);
-                    $bcComp = 'BC '. implode('.',$splitStr);
+                    $splitStr = str_split((string) $bc);
+                    $bcComp = 'BC ' . implode('.', $splitStr);
 
                     break;
             }
 
             // return $getDetilPerusahanPenerima;
 
-            $fileName = $bcComp.' '.$noAju.'.xlsx';
+            $fileName = $bcComp . ' ' . $noAju . '.xlsx';
 
             if ($isStore) {
-                Storage::put('public/ceisa40storage/'.$fileName, $getDetilPerusahanPenerima);
-                return 'storage/app/public/ceisa40storage/'.$fileName;
+                Storage::put('public/ceisa40storage/' . $fileName, $getDetilPerusahanPenerima);
+                return 'storage/app/public/ceisa40storage/' . $fileName;
             } else {
-                Storage::put('public/upload_ceisa40/'.$fileName, $getDetilPerusahanPenerima);
-                return 'storage/upload_ceisa40/'.$fileName;
+                Storage::put('public/upload_ceisa40/' . $fileName, $getDetilPerusahanPenerima);
+                return 'storage/upload_ceisa40/' . $fileName;
             }
         } else {
             return $this->handleError('Failed fetching data from Portal Ceisa 4.0 !!');
