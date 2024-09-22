@@ -8,4 +8,16 @@ use Illuminate\Database\Eloquent\Model;
 class ApprovalHistDetail extends Model
 {
     use HasFactory;
+    protected $connection = 'sqlsrv_ams';
+    protected $table = 'ams_apprv_hist_det';
+
+    protected $fillable = [
+        'p_u_username',
+        'amsm_id',
+        'amshd_token',
+        'amshd_username',
+        'amshd_username_apprv',
+        'amshd_stat',
+        'amshd_remarks',
+    ];
 }

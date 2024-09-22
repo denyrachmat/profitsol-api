@@ -8,13 +8,17 @@ use App\Imports\STXI\LOG\ImportHSCodeForm;
 use Excel;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 use Illuminate\Http\File;
+use Illuminate\Support\Facades\Http;
+
 use App\Models\STXI\LOG\HSCodeUplMaster;
 use App\Models\STXI\LOG\HSCodeGroupBeaDetail;
 
 use App\Exports\STXI\LOG\ExportHSCodeReport;
+use App\Traits\AMS\ApprovalActionTraits;
 
 class HSCodeUploadController extends BaseController
 {
+    use ApprovalActionTraits;
     /**
      * Display a listing of the resource.
      */
@@ -96,7 +100,7 @@ class HSCodeUploadController extends BaseController
 
     public function exportData(Request $request)
     {
-        Excel::store(new ExportHSCodeReport(), 'export_hscode.xlsx', 'public');
+        Excel::store(new ExportHSCodeReport($request->filter), 'export_hscode.xlsx', 'public');
 
         return 'storage/app/public/export_hscode.xlsx';
     }
@@ -173,5 +177,21 @@ class HSCodeUploadController extends BaseController
         }
 
         return $submitedData;
+    }
+
+    public function HSCodeFilter(Request $request) {
+        $data = HSCodeUplMaster::join('CRPTWEB.dbo.VIEW_MITM_TBL', 'MITM_ITMCD', 'HSCD_ITMCD');
+
+        if (count($request->filter) > 0 && count(array_filter($request->filter, function($f){ return !empty($f['value']);} )) > 0) {
+            foreach ($request->filter as $key => $value) {
+                $data->where($value['cols'], $value['param'], $value['param'] === 'like' ? "%{$value['value']}%" : $value['value']);
+            }
+        }
+
+        return $data->get();
+    }
+
+    public function sendApproval(Request $request) {
+        return $this->approveAction($request);
     }
 }

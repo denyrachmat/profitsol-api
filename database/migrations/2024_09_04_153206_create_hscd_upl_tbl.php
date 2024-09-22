@@ -13,6 +13,7 @@ return new class extends Migration
     {
         Schema::connection('sqlsrv_log')->create('HSCD_UPL_TBL', function (Blueprint $table) {
             $table->id();
+            $table->string('p_u_username');
             $table->string('HSCD_DOCNO');
             $table->string('HSCD_BG');
             $table->string('HSCD_ITMCD');

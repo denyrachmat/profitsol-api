@@ -19,9 +19,11 @@ class ApprovalController extends BaseController
      */
     public function index()
     {
-        return ApprovalMaster::with(['det.userDet' => function($f) {
-            $f->select('portal_users_det.*', DB::raw("CONCAT(pud_first_name, ' ', pud_last_name) AS fullname"));
-        }])->get();
+        return ApprovalMaster::with([
+            'det.userDet' => function ($f) {
+                $f->select('portal_users_det.*', DB::raw("CONCAT(pud_first_name, ' ', pud_last_name) AS fullname"));
+            }
+        ])->with('apprvSet')->get();
     }
 
     /**
@@ -41,10 +43,10 @@ class ApprovalController extends BaseController
 
         $id = '';
         if (empty($cekLastApprv)) {
-            $id = "APV{date('Ymd')}0001";
+            $id = "APV" . date('ymd') . "0001";
         } else {
             $getLastNumAdd = substr($cekLastApprv->ams_idapv, -4);
-            $id = "APV".date('ymd')."{sprintf('%04d', ((int)$getLastNumAdd + 1))}";
+            $id = "APV" . date('ymd') . "{sprintf('%04d', ((int)$getLastNumAdd + 1))}";
         }
 
         $createMaster = ApprovalMaster::create([
@@ -87,21 +89,21 @@ class ApprovalController extends BaseController
      */
     public function update(Request $request, string $id)
     {
-        $createMaster = ApprovalMaster::where('id', $id)->update([
-            'p_u_username' => $request->header('username'),
-            'ams_idapv' => $request->ams_idapv,
-            'ams_title' => $request->title,
-        ]);
+        $createMaster = ApprovalMaster::where('id', $id)->update(array_merge([
+            'p_u_username' => $request->header('username')
+        ], $request->updateHead));
 
-        ApprovalMapDetail::where('amsm_id', $id)->delete();
-        foreach ($request->det as $key => $value) {
-            ApprovalMapDetail::create([
-                'p_u_username' => $request->header('username'),
-                'amsm_id' => $id,
-                'amsmd_username' => $value['amsmd_username'],
-                'amsmd_order' => $value['amsmd_order'],
-                'amsmd_reqaprv' => $value['amsmd_reqaprv'],
-            ]);
+        if ($request->has('det') && count($request->det) > 0) {
+            ApprovalMapDetail::where('amsm_id', $id)->delete();
+            foreach ($request->det as $key => $value) {
+                ApprovalMapDetail::create([
+                    'p_u_username' => $request->header('username'),
+                    'amsm_id' => $id,
+                    'amsmd_username' => $value['amsmd_username'],
+                    'amsmd_order' => $value['amsmd_order'],
+                    'amsmd_reqaprv' => $value['amsmd_reqaprv'],
+                ]);
+            }
         }
 
         return $this->handleResponse($createMaster, 'Approval has been updated');

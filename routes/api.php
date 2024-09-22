@@ -87,6 +87,10 @@ Route::group(['prefix' => 'portal', 'middleware' => 'auth:sanctum', 'verify' => 
 Route::group(['prefix' => 'ams'], function () {
     Route::resource('approval', ApprovalController::class);
     Route::resource('approvalSettings', ApprovalSettingsController::class);
+
+    // For sending approval
+    Route::post('approveAction', [DocumentController::class, 'approveAction']);
+    Route::post('approveHist', [DocumentController::class, 'approveHist']);
 });
 
 Route::group(['prefix' => 'dms'], function () {
@@ -264,6 +268,7 @@ Route::group(['prefix' => 'div'], function () {
         Route::get('syncStatusCeisaAll', [Ceisa40UploaderController::class, 'syncStatusCeisaAll']);
 
         Route::resource('HSCode', HSCodeUploadController::class);
+        Route::post('HSCodeFilter', [HSCodeUploadController::class, 'HSCodeFilter']);
         Route::get('testRecurs', [HSCodeUploadController::class, 'testHeaderData']);
         Route::post('exportData', [HSCodeUploadController::class, 'exportData']);
     });

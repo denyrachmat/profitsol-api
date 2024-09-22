@@ -15,7 +15,8 @@ return new class extends Migration
             $table->id();
             $table->string('p_u_username');
             $table->integer('amsm_id');
-            $table->string('amshd_username');
+            $table->string('amshd_token');
+            // $table->string('amshd_username');
             $table->string('amshd_username_apprv');
             $table->string('amshd_stat');
             $table->text('amshd_remarks')->nullable();

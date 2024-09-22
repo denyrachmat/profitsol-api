@@ -20,4 +20,8 @@ class ApprovalMaster extends Model
     public function det() {
         return $this->hasMany(ApprovalMapDetail::class, 'amsm_id', 'id');
     }
+
+    public function apprvSet() {
+        return $this->hasOne(ApprovalSetDetail::class, 'amsm_id', 'id');
+    }
 }

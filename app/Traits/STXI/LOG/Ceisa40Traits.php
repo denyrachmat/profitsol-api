@@ -89,7 +89,7 @@ trait Ceisa40Traits
                     'body' => json_encode($paramBody)
                 ]);
             }
-            // return 'masuk sini';
+            // return $headers;
 
             $content['PARAM'] = $paramBody;
             $content['CODE'] = $res->getStatusCode();

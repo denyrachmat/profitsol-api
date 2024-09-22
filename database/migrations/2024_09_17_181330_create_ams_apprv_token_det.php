@@ -16,9 +16,12 @@ return new class extends Migration
             $table->string('p_u_username');
             $table->integer('amsm_id');
             $table->string('amstd_token');
-            $table->string('amstd_emailto')->nullable();
+            $table->datetime('amstd_expired')->nullable();
+            $table->datetime('deleted_at')->nullable();
             $table->timestamps();
         });
+
+        // php artisan migrate:refresh --path=/database/migrations/2024_09_17_181330_create_ams_apprv_token_det.php
     }
 
     /**

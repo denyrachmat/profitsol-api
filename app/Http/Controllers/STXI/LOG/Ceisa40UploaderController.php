@@ -145,6 +145,8 @@ class Ceisa40UploaderController extends BaseController
             true
         );
 
+        return $getStatus;
+
         if (!empty($getStatus)) {
             foreach ($getStatus['data'] as $key => $value) {
                 $getAJU = CEISARESPON::select('NOMOR_AJU', 'ID_HEADER')

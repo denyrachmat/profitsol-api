@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use App\Http\Requests\AMS\ApprovalSettingsRequest;
 use App\Models\AMS\ApprovalSetDetail;
 use App\Models\AMS\ApprovalTokenDetail;
+use Illuminate\Support\Str;
 
 class ApprovalSettingsController extends BaseController
 {
@@ -33,7 +34,7 @@ class ApprovalSettingsController extends BaseController
     {
         $createMaster = ApprovalSetDetail::updateOrCreate([
             'amsm_id' => $request->id,
-        ],[
+        ], [
             'p_u_username' => $request->header('username'),
             'amsm_id' => $request->id,
             'amssd_quotkn' => $request->amssd_quotkn,
@@ -46,6 +47,18 @@ class ApprovalSettingsController extends BaseController
             'amssd_autorun' => $request->amssd_autorun,
             'amssd_autorun_chktime' => $request->amssd_autorun_chktime,
         ]);
+
+        if ($request->has('amssd_quotkn') && $request->amssd_quotkn > 0) {
+            ApprovalTokenDetail::where('amsm_id',$request->id)->delete();
+            for ($i = 0; $i < $request->amssd_quotkn; $i++) {
+                ApprovalTokenDetail::create([
+                    'p_u_username' => $request->header('username'),
+                    'amsm_id' => $request->id,
+                    'amstd_token' => Str::random(50),
+                    'amstd_emailto' => '',
+                ]);
+            }
+        }
 
         return $this->handleResponse($createMaster, 'Approval setting, setted up !');
     }
