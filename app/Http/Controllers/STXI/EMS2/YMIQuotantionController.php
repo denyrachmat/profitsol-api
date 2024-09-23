@@ -129,16 +129,24 @@ class YMIQuotantionController extends BaseController
 
         if ($req->has('filter')) {
             foreach ($req->filter as $key => $value) {
-                if (strpos(strtolower($value['cols']), 'date') !== false) {
-                    $data->where($value['cols'], $value['value']);
-                } else {
-                    if ($value['cols'] === 'YQMT_ITMCD') {
-                        $colsnya = 'A.YQMT_ITMCD';
+                if (!empty($value['value'])) {
+                    if ($value['param'] === 'range') {
+                        $data->whereBetween($value['cols'], $value['param'], $value['param'] == 'like' ? "%{$value['value']}%": $value['value']);
                     } else {
-                        $colsnya = $value['cols'];
+                        $data->where($value['cols'], $value['param'], $value['param'] == 'like' ? "%{$value['value']}%": $value['value']);
                     }
-                    $data->where($colsnya, 'LIKE', $value['value'] . '%');
                 }
+
+                // if (strpos(strtolower($value['cols']), 'date') !== false) {
+                //     $data->where($value['cols'], $value['value']);
+                // } else {
+                //     if ($value['cols'] === 'YQMT_ITMCD') {
+                //         $colsnya = 'A.YQMT_ITMCD';
+                //     } else {
+                //         $colsnya = $value['cols'];
+                //     }
+                //     $data->where($colsnya, 'LIKE', $value['value'] . '%');
+                // }
             }
         }
 
