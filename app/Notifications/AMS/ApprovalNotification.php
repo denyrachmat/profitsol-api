@@ -32,7 +32,7 @@ class ApprovalNotification extends Notification
      */
     public function via(object $notifiable): array
     {
-        return $notifiable->prefers_sms ? ['vonage'] : ['mail', 'database'];
+        return ['mail'];
     }
 
     /**

@@ -200,7 +200,7 @@ class HSCodeUploadController extends BaseController
                 'amsm_id' => 1,
                 'stat' => 1,
                 'remarks' => 'Sending approval hs code!!',
-            ]))->all();
+            ]))->getOriginalContent();
         }
 
         return $hasil;
