@@ -18,12 +18,14 @@ trait ApprovalActionTraits
 {
     public function approveAction(ApprovalRunningApproveActionRequest $request)
     {
-        $dataMaster = ApprovalMaster::where('id', $request->amsm_id)->with([
-            'det' => function ($f) {
+        $dataMaster = ApprovalMaster::where('id', $request->amsm_id)->with(
+            'det',
+            function ($f) {
                 $f->orderBy('amsmd_order');
                 $f->whereDoesntHave('hist');
             }
-        ], 'apprvSet')
+        )
+            ->with('apprvSet')
             ->first();
 
         // Check if quota more than 0 then using quota
@@ -41,7 +43,7 @@ trait ApprovalActionTraits
                 'amstd_token' => $useToken,
             ]);
         }
-
+        $hist = [];
         foreach ($dataMaster->det as $keyDet => $valueDet) {
             $checkLatest = ApprovalHistDetail::where('amsm_id', $request->amsm_id)
                 ->where('amsmd_id', $valueDet['id'])

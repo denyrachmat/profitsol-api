@@ -22,8 +22,4 @@ class ApprovalHistDetail extends Model
         'amshd_stat',
         'amshd_remarks',
     ];
-
-    public function hist() {
-        return $this->hasMany(ApprovalHistDetail::class, 'id', 'amsmd_id');
-    }
 }

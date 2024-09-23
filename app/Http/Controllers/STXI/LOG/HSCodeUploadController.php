@@ -15,6 +15,7 @@ use App\Models\STXI\LOG\HSCodeGroupBeaDetail;
 
 use App\Exports\STXI\LOG\ExportHSCodeReport;
 use App\Traits\AMS\ApprovalActionTraits;
+use App\Http\Requests\AMS\ApprovalRunningApproveActionRequest;
 
 class HSCodeUploadController extends BaseController
 {
@@ -194,12 +195,12 @@ class HSCodeUploadController extends BaseController
     public function sendApproval(Request $request): array {
         $hasil = [];
         foreach ($request->data as $key => $value) {
-            $hasil[] = $this->approveAction(new Request([
+            $hasil[] = $this->approveAction(new ApprovalRunningApproveActionRequest([
                 'username' => $request->username,
                 'amsm_id' => 1,
                 'stat' => 1,
                 'remarks' => 'Sending approval hs code!!',
-            ]));
+            ]))->all();
         }
 
         return $hasil;

@@ -24,4 +24,8 @@ class ApprovalMapDetail extends Model
     public function userDet() {
         return $this->setConnection('sqlsrv')->hasOne(PortalUserDet::class, 'u_username', 'amsmd_username');
     }
+
+    public function hist() {
+        return $this->hasMany(ApprovalHistDetail::class, 'amsmd_id', 'id');
+    }
 }
