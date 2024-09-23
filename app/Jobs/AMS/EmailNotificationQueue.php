@@ -38,8 +38,7 @@ class EmailNotificationQueue implements ShouldQueue
         // Mail::to($this->to)
         //     ->cc($this->cc)
         //     ->send(new EmailNotification($this->subject, $this->content));
-
-        Notification::send($this, new ApprovalNotification(
+        Notification::route('mail', $this->to)->notify(new ApprovalNotification(
             $this->to,
             $this->subject,
             $this->isApprove,
