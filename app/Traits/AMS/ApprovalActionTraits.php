@@ -5,30 +5,79 @@ namespace App\Traits\AMS;
 use App\Http\Controllers\API\PORTAL\BaseController;
 use App\Models\AMS\ApprovalTokenDetail;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
+
 use App\Http\Requests\AMS\ApprovalRunningApproveActionRequest;
 
 use App\Models\AMS\ApprovalMaster;
 use App\Models\AMS\ApprovalHistDetail;
-use App\Models\AMS\ApprovalSetDetail;
+
+use App\Jobs\AMS\EmailNotificationQueue;
 
 trait ApprovalActionTraits
 {
     public function approveAction(ApprovalRunningApproveActionRequest $request)
     {
-        $useToken = ApprovalTokenDetail::where('amsm_id', $request->amsm_id)->first();
+        $dataMaster = ApprovalMaster::where('id', $request->amsm_id)->with([
+            'det' => function ($f) {
+                $f->orderBy('amsmd_order');
+                $f->whereDoesntHave('hist');
+            }
+        ], 'apprvSet')
+            ->first();
 
-        if (empty($useToken)) {
-            return $this->handleError('Your quota is empty, please consult administrator !!');
+        // Check if quota more than 0 then using quota
+        if ($dataMaster->apprvSet->amssd_quotkn > 0) {
+            $useToken = ApprovalTokenDetail::where('amsm_id', $request->amsm_id)->first();
+
+            if (empty($useToken)) {
+                return $this->handleError('Your quota is empty, please consult administrator !!');
+            }
+        } else {
+            $useToken = Str::random(50);
+            ApprovalTokenDetail::create([
+                'p_u_username' => $request->username,
+                'amsm_id' => $request->amsm_id,
+                'amstd_token' => $useToken,
+            ]);
         }
 
-        $hist = ApprovalHistDetail::create([
-            'p_u_username' => $request->header('username'),
-            'amsm_id' => $request->amsm_id,
-            'amshd_token' => $useToken->amstd_token,
-            'amshd_username_apprv' => $request->header('username'),
-            'amshd_stat' => $request->stat,
-            'amshd_remarks' => $request->remarks,
-        ]);
+        foreach ($dataMaster->det as $keyDet => $valueDet) {
+            $checkLatest = ApprovalHistDetail::where('amsm_id', $request->amsm_id)
+                ->where('amsmd_id', $valueDet['id'])
+                ->orderBy('created_at', 'desc')
+                ->withTrashed()
+                ->first();
+
+            $nextStat = 'sent';
+            if (!empty($checkLatest)) {
+                $nextStat = match ($checkLatest->amshd_stat && $request->stat === 1) {
+                    'sent' && $request->stat === 1 => 'approve',
+                    'sent' && $request->stat === 0 => 'reject',
+                    'approve', 'reject' => 'sent'
+                };
+            }
+
+            $hist = ApprovalHistDetail::create([
+                'p_u_username' => $request->username,
+                'amsm_id' => $request->amsm_id,
+                'amsmd_id' => $valueDet['id'],
+                'amshd_token' => $dataMaster->apprvSet->amssd_quotkn > 0 ? $useToken->amstd_token : $useToken,
+                'amshd_username_apprv' => $valueDet['amsmd_username'],
+                'amshd_stat' => $nextStat,
+                'amshd_remarks' => $request->remarks,
+            ]);
+        }
+
+        // If Email notification is on
+        if ($dataMaster->apprvSet->amssd_isemail) {
+            $queueSet = new EmailNotificationQueue(
+                to: 'deny-rachmat@sumitronics.co.jp',
+                content: $dataMaster->ams_content
+            );
+
+            dispatch($queueSet)->onQueue('sendEmailQueue');
+        }
 
         return $this->handleResponse($hist, 'Success');
     }
@@ -50,7 +99,8 @@ trait ApprovalActionTraits
         }
     }
 
-    public function approveListForNotif($uname) {
+    public function approveListForNotif($uname)
+    {
         return ApprovalHistDetail::where('amshd_username_apprv', $uname)->get();
     }
 }

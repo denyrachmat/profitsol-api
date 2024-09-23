@@ -15,6 +15,7 @@ return new class extends Migration
             $table->id();
             $table->string('p_u_username');
             $table->integer('amsm_id');
+            $table->integer('amsmd_id');
             $table->string('amshd_token');
             // $table->string('amshd_username');
             $table->string('amshd_username_apprv');

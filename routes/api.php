@@ -1,5 +1,6 @@
 <?php
 use App\Http\Controllers\API\AMS\ApprovalController;
+use App\Http\Controllers\API\AMS\ApprovalRunningController;
 use App\Http\Controllers\API\AMS\ApprovalSettingsController;
 use App\Http\Controllers\STXI\EMS2\TYOAutoBarcodeController;
 use App\Http\Controllers\STXI\EMS2\YPODailyConfController;
@@ -89,8 +90,8 @@ Route::group(['prefix' => 'ams'], function () {
     Route::resource('approvalSettings', ApprovalSettingsController::class);
 
     // For sending approval
-    Route::post('approveAction', [DocumentController::class, 'approveAction']);
-    Route::post('approveHist', [DocumentController::class, 'approveHist']);
+    Route::post('approveAction', [ApprovalRunningController::class, 'approveAction']);
+    Route::post('approveHist', [ApprovalRunningController::class, 'approveHist']);
 });
 
 Route::group(['prefix' => 'dms'], function () {
@@ -267,10 +268,12 @@ Route::group(['prefix' => 'div'], function () {
         Route::get('syncStatusCeisaByIDHeader/{id}', [Ceisa40UploaderController::class, 'syncStatusCeisaByIDHeader']);
         Route::get('syncStatusCeisaAll', [Ceisa40UploaderController::class, 'syncStatusCeisaAll']);
 
+        // Upload Data HS Code
         Route::resource('HSCode', HSCodeUploadController::class);
         Route::post('HSCodeFilter', [HSCodeUploadController::class, 'HSCodeFilter']);
         Route::get('testRecurs', [HSCodeUploadController::class, 'testHeaderData']);
         Route::post('exportData', [HSCodeUploadController::class, 'exportData']);
+        Route::post('HSCodeSendApproval', [HSCodeUploadController::class, 'sendApproval']);
     });
 
     Route::group(['prefix' => 'pu'], function () {

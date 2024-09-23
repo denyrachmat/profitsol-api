@@ -23,6 +23,8 @@ return new class extends Migration
             $table->string('HSCD_UPLTYFORM');
             $table->datetime('HSCD_ISSDT')->nullable();
             $table->datetime('HSCD_APPRVDT')->nullable();
+            $table->boolean('HSCD_APRVSTAT')->default(0);
+            $table->string('HSCD_REMARK')->nullable();
             $table->datetime('deleted_at')->nullable();
             $table->timestamps();
         });

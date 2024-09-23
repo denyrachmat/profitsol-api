@@ -19,6 +19,7 @@ class HSCodeUplMaster extends Model
         'HSCD_MKHSCD',
         'HSCD_STXICD',
         'HSCD_UPLTYFORM',
-        'HSCD_ISSDT'
+        'HSCD_ISSDT',
+        'p_u_username'
     ];
 }

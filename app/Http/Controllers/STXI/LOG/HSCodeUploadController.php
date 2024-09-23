@@ -59,7 +59,7 @@ class HSCodeUploadController extends BaseController
             $writer->save('/public/upload_hs_code_form/' . $nama_file);
         }
 
-        $importer = new ImportHSCodeForm();
+        $importer = new ImportHSCodeForm($request->username);
 
         Excel::import($importer, public_path('/storage/upload_hs_code_form/' . $nama_file));
 
@@ -179,7 +179,7 @@ class HSCodeUploadController extends BaseController
         return $submitedData;
     }
 
-    public function HSCodeFilter(Request $request) {
+    public function HSCodeFilter(Request $request): array {
         $data = HSCodeUplMaster::join('CRPTWEB.dbo.VIEW_MITM_TBL', 'MITM_ITMCD', 'HSCD_ITMCD');
 
         if (count($request->filter) > 0 && count(array_filter($request->filter, function($f){ return !empty($f['value']);} )) > 0) {
@@ -188,10 +188,20 @@ class HSCodeUploadController extends BaseController
             }
         }
 
-        return $data->get();
+        return $data->get()->toArray();
     }
 
-    public function sendApproval(Request $request) {
-        return $this->approveAction($request);
+    public function sendApproval(Request $request): array {
+        $hasil = [];
+        foreach ($request->data as $key => $value) {
+            $hasil[] = $this->approveAction(new Request([
+                'username' => $request->username,
+                'amsm_id' => 1,
+                'stat' => 1,
+                'remarks' => 'Sending approval hs code!!',
+            ]));
+        }
+
+        return $hasil;
     }
 }

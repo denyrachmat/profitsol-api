@@ -16,9 +16,10 @@ use App\Traits\STXI\LOG\INSWTraits;
 class ImportHSCodeForm implements ToModel
 {
     use INSWTraits;
-    protected $issdate, $keys, $doc, $type, $keysFordoc, $item, $bg, $series, $mkhscd, $stxihscd;
-    function __construct($issdate = '', $keys = 0, $doc = '', $type = '', $keysFordoc = 0, $item = '', $bg = '', $series = '', $mkhscd = '', $stxihscd = '')
+    protected $username, $issdate, $keys, $doc, $type, $keysFordoc, $item, $bg, $series, $mkhscd, $stxihscd;
+    function __construct($username, $issdate = '', $keys = 0, $doc = '', $type = '', $keysFordoc = 0, $item = '', $bg = '', $series = '', $mkhscd = '', $stxihscd = '')
     {
+        $this->username = $username;
         $this->issdate = $issdate;
         $this->keys = $keys;
         $this->keysFordoc = $keysFordoc;
@@ -86,6 +87,7 @@ class ImportHSCodeForm implements ToModel
             if ($this->keys === 63) {
                 HSCodeUplMaster::where('HSCD_BG', $this->bg)->where('HSCD_ITMCD', $this->item)->delete();
                 HSCodeUplMaster::create([
+                    'p_u_username' => $this->username,
                     'HSCD_DOCNO' => $this->doc,
                     'HSCD_BG' => $this->bg,
                     'HSCD_ITMCD' => $this->item,
@@ -119,6 +121,7 @@ class ImportHSCodeForm implements ToModel
                     ->delete();
 
                 HSCodeUplMaster::create([
+                    'p_u_username' => $this->username,
                     'HSCD_DOCNO' => trim(str_replace(':', '', $this->doc)),
                     'HSCD_BG' => $this->bg,
                     'HSCD_ITMCD' => $row[1],
