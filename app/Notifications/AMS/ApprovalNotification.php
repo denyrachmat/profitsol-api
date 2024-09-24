@@ -18,10 +18,22 @@ class ApprovalNotification extends Notification
      */
     public function __construct($to, $subject, $isApprove, $content, $token)
     {
+        $getUsers = PortalUserDet::where('u_username', $to)->first();
+
+        // Convert fullname variable
+        $convertContent = str_replace(search: "{{fullname}}", replace: $to, subject: $content);
+        if (!empty($getUsers)) {
+            $convertContent = str_replace(search: "{{fullname}}", replace: "{$getUsers->pud_first_name} {$getUsers->pud_first_name}", subject: $content);
+        }
+
+        $convertContent = str_replace(search: "{{linkapproval}}", replace: "{env('FE_URL')}/approvalAction/{$token}", subject: $content);
+
+        // "or using this URL to view detail : {env('FE_URL')}/approvalAction/{$this->token}"
+
         $this->to = $to;
         $this->subject = $subject;
         $this->isApprove = $isApprove;
-        $this->content = $content;
+        $this->content = $convertContent;
         $this->token = $token;
     }
 
@@ -43,18 +55,12 @@ class ApprovalNotification extends Notification
         $getUsers = PortalUserDet::where('u_username', $this->to)->first();
         return (new MailMessage)
                     ->subject($this->subject)
-                    ->greeting('Hello '. empty($getUsers) ? $this->to : "{$getUsers->pud_first_name} {$getUsers->pud_first_name}")
-                    ->line($this->isApprove ? 'You have new approval.' : 'This is notification from portal.')
-                    ->line($this->content)
-                    ->line($this->isApprove ? 'Please choose action below :' : '')
                     ->markdown('AMS.AMSEmailTemplate',[
                         'users' => $getUsers,
                         'data' => $this,
                         'approve' => url('/'),
                         'reject' => url('/')
-                    ])
-                    ->line("or using this URL to view detail : {env('FE_URL')}/approvalAction/{$this->token}")
-                    ->line('Thank you for using our application!');
+                    ]);
     }
 
     /**
