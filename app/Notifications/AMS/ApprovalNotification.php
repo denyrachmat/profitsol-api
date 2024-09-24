@@ -26,7 +26,7 @@ class ApprovalNotification extends Notification
             $convertContent = str_replace(search: "{{fullname}}", replace: "{$getUsers->pud_first_name} {$getUsers->pud_first_name}", subject: $content);
         }
 
-        $convertContent = str_replace(search: "{{linkapproval}}", replace: "{env('FE_URL')}/approvalAction/{$token}", subject: $content);
+        $convertContent = str_replace(search: "{{linkapproval}}", replace: env('FE_URL')."/approvalAction/{$token}", subject: $content);
 
         $this->to = $to;
         $this->subject = $subject;

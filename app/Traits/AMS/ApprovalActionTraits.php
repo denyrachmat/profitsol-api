@@ -30,7 +30,7 @@ trait ApprovalActionTraits
 
         // Check if quota more than 0 then using quota
         if ($dataMaster->apprvSet->amssd_quotkn > 0) {
-            $useToken = ApprovalTokenDetail::where('amsm_id', $request->amsm_id)->first();
+            $useToken = ApprovalTokenDetail::where('amsm_id', $request->amsm_id)->first()->amstd_token;
 
             if (empty($useToken)) {
                 return $this->handleError('Your quota is empty, please consult administrator !!');
@@ -44,41 +44,51 @@ trait ApprovalActionTraits
             ]);
         }
         $hist = [];
+        $getfirstOrder = 0;
         foreach ($dataMaster->det as $keyDet => $valueDet) {
-            $checkLatest = ApprovalHistDetail::where('amsm_id', $request->amsm_id)
-                ->where('amsmd_id', $valueDet['id'])
-                ->orderBy('created_at', 'desc')
-                ->withTrashed()
-                ->first();
-
-            $nextStat = 'sent';
-            if (!empty($checkLatest)) {
-                $nextStat = match ($checkLatest->amshd_stat && $request->stat === 1) {
-                    'sent' && $request->stat === 1 => 'approve',
-                    'sent' && $request->stat === 0 => 'reject',
-                    'approve', 'reject' => 'sent'
-                };
+            if ($keyDet === 0) {
+                $getfirstOrder = $valueDet['amsmd_order'];
             }
 
-            $hist = ApprovalHistDetail::create([
-                'p_u_username' => $request->username,
-                'amsm_id' => $request->amsm_id,
-                'amsmd_id' => $valueDet['id'],
-                'amshd_token' => $dataMaster->apprvSet->amssd_quotkn > 0 ? $useToken->amstd_token : $useToken,
-                'amshd_username_apprv' => $valueDet['amsmd_username'],
-                'amshd_stat' => $nextStat,
-                'amshd_remarks' => $request->remarks,
-            ]);
-        }
+            if ($valueDet['amsmd_order'] === $getfirstOrder) {
+                $checkLatest = ApprovalHistDetail::where('amsm_id', $request->amsm_id)
+                    ->where('amsmd_id', $valueDet['id'])
+                    ->orderBy('created_at', 'desc')
+                    ->withTrashed()
+                    ->first();
 
-        // If Email notification is on
-        if ($dataMaster->apprvSet->amssd_isemail) {
-            $queueSet = new EmailNotificationQueue(
-                to: 'deny-rachmat@sumitronics.co.jp',
-                content: $dataMaster->ams_content
-            );
+                $nextStat = 'sent';
+                if (!empty($checkLatest)) {
+                    $nextStat = match ($checkLatest->amshd_stat && $request->stat === 1) {
+                        'sent' && $request->stat === 1 => 'approve',
+                        'sent' && $request->stat === 0 => 'reject',
+                        'approve', 'reject' => 'sent'
+                    };
+                }
 
-            dispatch($queueSet)->onQueue('sendEmailQueue');
+                $hist = ApprovalHistDetail::create([
+                    'p_u_username' => $request->username,
+                    'amsm_id' => $request->amsm_id,
+                    'amsmd_id' => $valueDet['id'],
+                    'amshd_token' => $dataMaster->apprvSet->amssd_quotkn > 0 ? $useToken->amstd_token : $useToken,
+                    'amshd_username_apprv' => $valueDet['amsmd_username'],
+                    'amshd_stat' => $nextStat,
+                    'amshd_remarks' => $request->remarks,
+                ]);
+
+                // If Email notification is on
+                if ($dataMaster->apprvSet->amssd_isemail) {
+                    $queueSet = new EmailNotificationQueue(
+                        'deny-rachmat@sumitronics.co.jp',
+                        'AMS Approval & Notification',
+                        $valueDet->amsmd_reqaprv,
+                        $dataMaster->ams_content,
+                        $useToken
+                    );
+
+                    dispatch($queueSet)->onQueue('sendEmailQueue');
+                }
+            }
         }
 
         return $this->handleResponse($hist, 'Success');
