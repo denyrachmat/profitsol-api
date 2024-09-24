@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\Notification;
 
 use App\Mail\AMS\EmailNotification;
 use App\Notifications\AMS\ApprovalNotification;
+use App\Models\PORTAL\PortalUserDet;
 
 class EmailNotificationQueue implements ShouldQueue
 {
@@ -38,6 +39,17 @@ class EmailNotificationQueue implements ShouldQueue
         // Mail::to($this->to)
         //     ->cc($this->cc)
         //     ->send(new EmailNotification($this->subject, $this->content));
+
+        $getUsers = PortalUserDet::where('u_username', $this->to)->first();
+
+        // Convert fullname variable
+        $convertContent = str_replace(search: "{{fullname}}", replace: $this->to, subject: $this->content);
+        if (!empty($getUsers)) {
+            $convertContent = str_replace(search: "{{fullname}}", replace: "{$getUsers->pud_first_name} {$getUsers->pud_first_name}", subject: $this->content);
+        }
+
+        $convertContent = str_replace(search: "{{linkapproval}}", replace: env('FE_URL')."/approvalAction/{$this->token}", subject: $this->content);
+
         Notification::route('mail', $this->to)->notify(new ApprovalNotification(
             $this->to,
             $this->subject,

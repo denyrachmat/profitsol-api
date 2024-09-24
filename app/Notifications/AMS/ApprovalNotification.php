@@ -18,20 +18,10 @@ class ApprovalNotification extends Notification
      */
     public function __construct($to, $subject, $isApprove, $content, $token)
     {
-        $getUsers = PortalUserDet::where('u_username', $to)->first();
-
-        // Convert fullname variable
-        $convertContent = str_replace(search: "{{fullname}}", replace: $to, subject: $content);
-        if (!empty($getUsers)) {
-            $convertContent = str_replace(search: "{{fullname}}", replace: "{$getUsers->pud_first_name} {$getUsers->pud_first_name}", subject: $content);
-        }
-
-        $convertContent = str_replace(search: "{{linkapproval}}", replace: env('FE_URL')."/approvalAction/{$token}", subject: $content);
-
         $this->to = $to;
         $this->subject = $subject;
         $this->isApprove = $isApprove;
-        $this->content = $convertContent;
+        $this->content = $content;
         $this->token = $token;
     }
 

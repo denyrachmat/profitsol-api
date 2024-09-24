@@ -70,7 +70,7 @@ trait ApprovalActionTraits
                     'p_u_username' => $request->username,
                     'amsm_id' => $request->amsm_id,
                     'amsmd_id' => $valueDet['id'],
-                    'amshd_token' => $dataMaster->apprvSet->amssd_quotkn > 0 ? $useToken->amstd_token : $useToken,
+                    'amshd_token' => $useToken,
                     'amshd_username_apprv' => $valueDet['amsmd_username'],
                     'amshd_stat' => $nextStat,
                     'amshd_remarks' => $request->remarks,
