@@ -28,8 +28,6 @@ class ApprovalNotification extends Notification
 
         $convertContent = str_replace(search: "{{linkapproval}}", replace: "{env('FE_URL')}/approvalAction/{$token}", subject: $content);
 
-        // "or using this URL to view detail : {env('FE_URL')}/approvalAction/{$this->token}"
-
         $this->to = $to;
         $this->subject = $subject;
         $this->isApprove = $isApprove;

@@ -1,11 +1,11 @@
 @component('mail::message')
   # Introduction
   {!!$data->content!!}
-  @component('mail::button', ['url' => $approve])
+  <!-- @component('mail::button', ['url' => $approve])
   Approve
   @endcomponent
 
   @component('mail::button', ['url' => $reject])
   Reject
-  @endcomponent
+  @endcomponent -->
 @endcomponent
