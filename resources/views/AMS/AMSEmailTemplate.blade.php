@@ -1,5 +1,5 @@
 @component('mail::message')
-  # Introduction
+  # {{$data->subject}}
   {!!$data->content!!}
   <!-- @component('mail::button', ['url' => $approve])
   Approve

@@ -24,6 +24,7 @@ return new class extends Migration
             $table->integer('amssd_unread_chktime')->default(0);
             $table->boolean('amssd_autorun')->default(0);
             $table->integer('amssd_autorun_chktime')->default(0);
+            $table->text('amssd_content')->nullable();
             $table->timestamps();
         });
     }

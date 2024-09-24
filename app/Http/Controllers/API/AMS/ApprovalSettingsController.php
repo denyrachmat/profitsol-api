@@ -46,6 +46,7 @@ class ApprovalSettingsController extends BaseController
             'amssd_unread_chktime' => $request->amssd_unread_chktime,
             'amssd_autorun' => $request->amssd_autorun,
             'amssd_autorun_chktime' => $request->amssd_autorun_chktime,
+            'amssd_content' => $request->amssd_content,
         ]);
 
         if ($request->has('amssd_quotkn') && $request->amssd_quotkn > 0) {
@@ -54,8 +55,7 @@ class ApprovalSettingsController extends BaseController
                 ApprovalTokenDetail::create([
                     'p_u_username' => $request->header('username'),
                     'amsm_id' => $request->id,
-                    'amstd_token' => Str::random(50),
-                    'amstd_emailto' => '',
+                    'amstd_token' => Str::random(50)
                 ]);
             }
         }

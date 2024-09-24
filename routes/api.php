@@ -92,6 +92,8 @@ Route::group(['prefix' => 'ams'], function () {
     // For sending approval
     Route::post('approveAction', [ApprovalRunningController::class, 'approveAction']);
     Route::post('approveHist', [ApprovalRunningController::class, 'approveHist']);
+    Route::get('getMasterApprovalByToken/{token}', [ApprovalRunningController::class, 'getMasterApprovalByToken']);
+
 });
 
 Route::group(['prefix' => 'dms'], function () {

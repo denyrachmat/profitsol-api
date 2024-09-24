@@ -21,14 +21,15 @@ class EmailNotificationQueue implements ShouldQueue
     /**
      * Create a new job instance.
      */
-    public $to, $subject, $isApprove, $content, $token;
-    public function __construct($to, $subject = 'AMS Notification', $isApprove = 0, $content = '', $token = '')
+    public $to, $subject, $isApprove, $content, $token, $dataVar;
+    public function __construct($to, $subject = 'AMS Notification', $isApprove = 0, $content = '', $token = '', $dataVar = [])
     {
         $this->to = $to;
         $this->subject = $subject;
         $this->isApprove = $isApprove;
         $this->content = $content;
         $this->token = $token;
+        $this->dataVar = $dataVar;
     }
 
     /**
@@ -45,17 +46,22 @@ class EmailNotificationQueue implements ShouldQueue
         // Convert fullname variable
         $convertContent = str_replace(search: "{{fullname}}", replace: $this->to, subject: $this->content);
         if (!empty($getUsers)) {
-            $convertContent = str_replace(search: "{{fullname}}", replace: "{$getUsers->pud_first_name} {$getUsers->pud_first_name}", subject: $this->content);
+            $convertContent = str_replace(search: "{{fullname}}", replace: "{$getUsers->pud_first_name} {$getUsers->pud_last_name}", subject: $this->content);
         }
 
-        $convertContent = str_replace(search: "{{linkapproval}}", replace: env('FE_URL')."/approvalAction/{$this->token}", subject: $convertContent);
+        $convertContent = str_replace(search: "{{linkapproval}}", replace: env('FE_URL')."/ams/approvalAction/{$this->token}", subject: $convertContent);
+
+        foreach ($this->dataVar as $keyVar => $valueVar) {
+            $convertContent = str_replace(search: "{{".$keyVar."}}", replace: $valueVar, subject: $convertContent);
+        }
 
         Notification::route('mail', $this->to)->notify(new ApprovalNotification(
             $this->to,
             $this->subject,
             $this->isApprove,
             $convertContent,
-            $this->token
+            $this->token,
+            $this->dataVar
         ));
     }
 }

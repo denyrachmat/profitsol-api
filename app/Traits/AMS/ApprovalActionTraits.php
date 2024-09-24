@@ -28,6 +28,25 @@ trait ApprovalActionTraits
             ->with('apprvSet')
             ->first();
 
+        preg_match_all("/\{{(.*?)\}}/", $dataMaster->apprvSet->amssd_content, $matches);
+        $listVariable = array_values(array_filter($matches[1], function ($fc) {
+            return !str_contains($fc, 'fullname');
+        }));
+
+        if (count($listVariable) > 0) {
+            if ($request->has('data')) {
+                $checkFil = array_values(array_filter($listVariable, function($f) use ($request) {
+                    return !in_array($f, $request->data);
+                }));
+
+                if (count($checkFil) > 0) {
+                    return $this->handleError("you hasn't provide all data keys on request!!", $checkFil);
+                }
+            } else {
+                return $this->handleError("you hasn't provide data keys on request!!", $listVariable);
+            }
+        }
+
         // Check if quota more than 0 then using quota
         if ($dataMaster->apprvSet->amssd_quotkn > 0) {
             $useToken = ApprovalTokenDetail::where('amsm_id', $request->amsm_id)->first()->amstd_token;
@@ -43,6 +62,7 @@ trait ApprovalActionTraits
                 'amstd_token' => $useToken,
             ]);
         }
+
         $hist = [];
         $getfirstOrder = 0;
         foreach ($dataMaster->det as $keyDet => $valueDet) {
@@ -114,5 +134,16 @@ trait ApprovalActionTraits
     public function approveListForNotif($uname)
     {
         return ApprovalHistDetail::where('amshd_username_apprv', $uname)->get();
+    }
+
+    public function getMasterApprovalByToken($token)
+    {
+        $cekToken = ApprovalTokenDetail::where('amstd_token', $token)->first();
+
+        if (!empty($cekToken)) {
+            return $this->handleResponse(ApprovalMaster::where('id', $cekToken->amsm_id)->with('det')->first(), 'Token found !!');
+        }
+
+        return $this->handleError('Token not found !! please check again !!');
     }
 }

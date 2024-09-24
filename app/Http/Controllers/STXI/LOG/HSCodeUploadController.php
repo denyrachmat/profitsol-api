@@ -200,6 +200,13 @@ class HSCodeUploadController extends BaseController
                 'amsm_id' => 1,
                 'stat' => 1,
                 'remarks' => 'Sending approval hs code!!',
+                'data' => [
+                    'itemcode' => $value['HSCD_ITMCD'],
+                    'part_name' => $value['MITM_SPTNO'],
+                    'item_desc' => $value['MITM_ITMD1'],
+                    'mk_hscode' => $value['HSCD_MKHSCD'],
+                    'stxi_hscode' => $value['HSCD_STXICD']
+                ]
             ]))->getOriginalContent();
 
             break;
