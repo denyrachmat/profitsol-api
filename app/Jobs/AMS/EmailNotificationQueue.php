@@ -48,7 +48,7 @@ class EmailNotificationQueue implements ShouldQueue
             $convertContent = str_replace(search: "{{fullname}}", replace: "{$getUsers->pud_first_name} {$getUsers->pud_first_name}", subject: $this->content);
         }
 
-        $convertContent = str_replace(search: "{{linkapproval}}", replace: env('FE_URL')."/approvalAction/{$this->token}", subject: $this->content);
+        $convertContent = str_replace(search: "{{linkapproval}}", replace: env('FE_URL')."/approvalAction/{$this->token}", subject: $convertContent);
 
         Notification::route('mail', $this->to)->notify(new ApprovalNotification(
             $this->to,
