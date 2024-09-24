@@ -54,7 +54,7 @@ class EmailNotificationQueue implements ShouldQueue
             $this->to,
             $this->subject,
             $this->isApprove,
-            $this->content,
+            $convertContent,
             $this->token
         ));
     }
