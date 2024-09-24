@@ -47,8 +47,12 @@ class ApprovalNotification extends Notification
                     ->line($this->isApprove ? 'You have new approval.' : 'This is notification from portal.')
                     ->line($this->content)
                     ->line($this->isApprove ? 'Please choose action below :' : '')
-                    ->action('Approve', url('/'))
-                    ->action('Reject', url('/'))
+                    ->markdown('AMS.AMSEmailTemplate',[
+                        'users' => $getUsers,
+                        'data' => $this,
+                        'approve' => url('/'),
+                        'reject' => url('/')
+                    ])
                     ->line("or using this URL to view detail : {env('FE_URL')}/approvalAction/{$this->token}")
                     ->line('Thank you for using our application!');
     }

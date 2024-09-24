@@ -201,6 +201,8 @@ class HSCodeUploadController extends BaseController
                 'stat' => 1,
                 'remarks' => 'Sending approval hs code!!',
             ]))->getOriginalContent();
+
+            break;
         }
 
         return $hasil;
