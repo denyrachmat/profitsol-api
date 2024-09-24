@@ -99,6 +99,7 @@ trait ApprovalActionTraits
                 // If Email notification is on
                 if ($dataMaster->apprvSet->amssd_isemail) {
                     $queueSet = new EmailNotificationQueue(
+                        $request->username,
                         'deny-rachmat@sumitronics.co.jp',
                         'AMS Approval & Notification',
                         $valueDet->amsmd_reqaprv,

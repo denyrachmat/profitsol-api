@@ -21,9 +21,10 @@ class EmailNotificationQueue implements ShouldQueue
     /**
      * Create a new job instance.
      */
-    public $to, $subject, $isApprove, $content, $token, $dataVar;
-    public function __construct($to, $subject = 'AMS Notification', $isApprove = 0, $content = '', $token = '', $dataVar = [])
+    public $from, $to, $subject, $isApprove, $content, $token, $dataVar;
+    public function __construct($from, $to, $subject = 'AMS Notification', $isApprove = 0, $content = '', $token = '', $dataVar = [])
     {
+        $this->from = $from;
         $this->to = $to;
         $this->subject = $subject;
         $this->isApprove = $isApprove;
@@ -41,10 +42,17 @@ class EmailNotificationQueue implements ShouldQueue
         //     ->cc($this->cc)
         //     ->send(new EmailNotification($this->subject, $this->content));
 
+        $getUsersFrom = PortalUserDet::where('u_username', $this->from)->first();
         $getUsers = PortalUserDet::where('u_username', $this->to)->first();
 
-        // Convert fullname variable
-        $convertContent = str_replace(search: "{{fullname}}", replace: $this->to, subject: $this->content);
+        // Convert fullname Recepient variable
+        $convertContent = str_replace(search: "{{recipient_fullname}}", replace: $this->to, subject: $this->content);
+        if (!empty($getUsers)) {
+            $convertContent = str_replace(search: "{{recipient_fullname}}", replace: "{$getUsers->pud_first_name} {$getUsers->pud_last_name}", subject: $this->content);
+        }
+
+        // Convert fullname sender variable
+        $convertContent = str_replace(search: "{{fullname}}", replace: $this->from, subject: $this->content);
         if (!empty($getUsers)) {
             $convertContent = str_replace(search: "{{fullname}}", replace: "{$getUsers->pud_first_name} {$getUsers->pud_last_name}", subject: $this->content);
         }
@@ -60,8 +68,7 @@ class EmailNotificationQueue implements ShouldQueue
             $this->subject,
             $this->isApprove,
             $convertContent,
-            $this->token,
-            $this->dataVar
+            $this->token
         ));
     }
 }
