@@ -16,11 +16,13 @@ return new class extends Migration
             $table->string('p_u_username');
             $table->integer('amsm_id');
             $table->integer('amsmd_id');
-            $table->string('amshd_token');
-            // $table->string('amshd_username');
+            $table->string('amstd_token'); //Token flow
+            $table->string('amshd_token'); //Token Hist
             $table->string('amshd_username_apprv');
             $table->string('amshd_stat');
             $table->text('amshd_remarks')->nullable();
+            $table->text('amshd_paramstore')->nullable();
+            $table->datetime('readed_at')->nullable();
             $table->datetime('deleted_at')->nullable();
             $table->timestamps();
         });

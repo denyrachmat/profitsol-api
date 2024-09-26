@@ -50,8 +50,13 @@ class ApprovalSettingsController extends BaseController
         ]);
 
         if ($request->has('amssd_quotkn') && $request->amssd_quotkn > 0) {
-            ApprovalTokenDetail::where('amsm_id',$request->id)->delete();
-            for ($i = 0; $i < $request->amssd_quotkn; $i++) {
+            $cekTokenTotNow = ApprovalTokenDetail::where('amsm_id',$request->id)->count();
+
+            if ($cekTokenTotNow === 0) {
+                ApprovalTokenDetail::where('amsm_id',$request->id)->forceDelete();
+            }
+
+            for ($i = 0; $i < ($request->amssd_quotkn - $cekTokenTotNow); $i++) {
                 ApprovalTokenDetail::create([
                     'p_u_username' => $request->header('username'),
                     'amsm_id' => $request->id,

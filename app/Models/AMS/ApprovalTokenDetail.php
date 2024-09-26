@@ -4,10 +4,11 @@ namespace App\Models\AMS;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class ApprovalTokenDetail extends Model
 {
-    use HasFactory;
+    use HasFactory, SoftDeletes;
     protected $connection = 'sqlsrv_ams';
     protected $table = 'ams_apprv_token_det';
 
@@ -17,4 +18,12 @@ class ApprovalTokenDetail extends Model
         'amstd_token',
         'amstd_emailto',
     ];
+
+    public function hist() {
+        return $this->hasMany(ApprovalHistDetail::class, 'amstd_token', 'amstd_token');
+    }
+
+    public function firstHist() {
+        return $this->hasOne(ApprovalHistDetail::class, 'amsm_id', 'amsm_id')->orderBy('id');
+    }
 }
