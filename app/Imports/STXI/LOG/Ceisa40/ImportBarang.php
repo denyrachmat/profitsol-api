@@ -67,7 +67,7 @@ class ImportBarang implements ToModel, WithHeadingRow, SkipsEmptyRows
                             'BCTYPE' => $cekTempData['TYPE_BC'],
                             'BCDOCNO' => $noDaftar,
                             'BCDOCDT' => $cekTempData['TGL_DAFTAR'],
-                            'BSGRP' => empty($cekHeaderMega) ? 'LAIN NYA' : (
+                            'BSGRP' => trim($row['kode_barang']) == 'PALLET' || empty($cekHeaderMega) ? 'LAIN NYA' : (
                                 !empty($cekHeaderMega->FIFO_BSGRP)
                                 ? $cekHeaderMega->FIFO_BSGRP
                                 : $cekHeaderMega->CBCDOC_BSGRP
@@ -411,7 +411,7 @@ class ImportBarang implements ToModel, WithHeadingRow, SkipsEmptyRows
                                     'BCTYPE' => $cekTempData['TYPE_BC'],
                                     'BCDOCNO' => $noDaftar,
                                     'BCDOCDT' => $cekTempData['TGL_DAFTAR'],
-                                    'BSGRP' => empty($cekHeaderMega) ? 'LAIN NYA' : (
+                                    'BSGRP' => trim($row['kode_barang']) == 'PALLET' || empty($cekHeaderMega) ? 'LAIN NYA' : (
                                         !empty($cekHeaderMega->FIFO_BSGRP)
                                         ? $cekHeaderMega->FIFO_BSGRP
                                         : $cekHeaderMega->CBCDOC_BSGRP
