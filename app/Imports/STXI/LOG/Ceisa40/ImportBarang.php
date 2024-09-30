@@ -397,7 +397,7 @@ class ImportBarang implements ToModel, WithHeadingRow, SkipsEmptyRows
                             $cekHeaderMega = DB::connection('sqlsrv_mega_db')
                                 ->table('Z_STXI_VW_CBCDOC')
                                 ->where('CBCDOC_BCDOCNO', $noDaftar)
-                                ->where('CBCDOC_BCTYPE', $cekTempData['TYPE_BC'])
+                                ->where('CBCDOC_BCTYPE', 'like', $cekTempData['TYPE_BC'].'%')
                                 ->first();
 
                             $insert = ITINVOutgoing::create(
