@@ -56,6 +56,7 @@ class ImportBarang implements ToModel, WithHeadingRow, SkipsEmptyRows
                             ->table('Z_STXI_VW_CBCDOC')
                             ->where('CBCDOC_BCDOCNO', $noDaftar)
                             ->where('CBCDOC_BCDOCDT', $cekTempData['TGL_DAFTAR'])
+                            ->where('DB', $cekItemMega->DB)
                             ->first();
 
                         $insert = ITINVIncoming::create([
