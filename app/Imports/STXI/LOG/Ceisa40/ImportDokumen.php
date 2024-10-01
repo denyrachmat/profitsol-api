@@ -207,7 +207,7 @@ class ImportDokumen implements ToModel, WithHeadingRow, SkipsEmptyRows
                 }
 
                 // EX-BC
-                if (($row['kode_dokumen'] == 16 || $row['kode_dokumen'] == 33) && $jumlahInv === 0) {
+                if (($row['kode_dokumen'] == 33) && $jumlahInv === 0) {
                     if ($this->incout == 'OUT') {
                         $cekOutgoing = (clone $baseDoc)
                             ->where('BCTYPE', 'P3BET')
