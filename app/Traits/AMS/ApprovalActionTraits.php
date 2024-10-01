@@ -19,11 +19,23 @@ trait ApprovalActionTraits
 {
     public function approveAction(ApprovalRunningApproveActionRequest $request)
     {
+        $checkLatestOrder = 0;
+        if ($request->has('token') && !empty($request->token)) {
+            $checkLatestOrder = ApprovalHistDetail::where('amsm_id', $request->amsm_id)
+                ->where('amshd_token', $request->token)
+                ->with('mapdet')
+                ->first()->mapdet->amsmd_order;
+        }
+
+        // Fetch Approval map
         $dataMaster = ApprovalMaster::where('id', $request->amsm_id)->with(
             'det',
-            function ($f) {
+            function ($f) use ($checkLatestOrder) {
                 $f->orderBy('amsmd_order');
-                $f->whereDoesntHave('hist');
+
+                // if ($checkLatestOrder > 0) {
+                //     $f->where('amsmd_order', '>', $checkLatestOrder);
+                // }
             }
         )
             ->with('apprvSet')
@@ -51,7 +63,12 @@ trait ApprovalActionTraits
 
         // Check if quota more than 0 then using quota
         if ($dataMaster->apprvSet->amssd_quotkn > 0) {
-            $useToken = ApprovalTokenDetail::where('amsm_id', $request->amsm_id)->first()->amstd_token;
+            $getToken = ApprovalTokenDetail::where('amsm_id', $request->amsm_id);
+            if ($request->has('token') && !empty($request->token)) {
+                $useToken = (clone $getToken)->first()->amstd_token;
+            } else {
+                $useToken = (clone $getToken)->whereDoesntHave('hist')->first()->amstd_token;
+            }
 
             if (empty($useToken)) {
                 return $this->handleError('Your quota is empty, please consult administrator !!');
@@ -68,18 +85,18 @@ trait ApprovalActionTraits
         $hist = [];
         $getfirstOrder = 0;
         foreach ($dataMaster->det as $keyDet => $valueDet) {
-            if ($keyDet === 0) {
+            if ($keyDet == 0) {
                 $getfirstOrder = $valueDet['amsmd_order'];
             }
 
             // Get Only latest order
-            if ($valueDet['amsmd_order'] === $getfirstOrder) {
-                $checkLatest = ApprovalHistDetail::where('amsm_id', $request->amsm_id)
+            if ($valueDet['amsmd_order'] == $getfirstOrder) {
+                $checkLatestToken = ApprovalHistDetail::where('amsm_id', $request->amsm_id)
                     ->with('mapdet')
-                    // ->where('amsmd_id', $valueDet['id'])
+                    ->where('amstd_token', $useToken)
                     // ->where('p_u_username', $request->username)
-                    ->orderBy('id', 'desc')
-                    ->first();
+                    ->orderBy('id', 'desc');
+                $checkLatest = (clone $checkLatestToken)->first();
 
                 $nextStat = 'sent';
                 if (!empty($checkLatest)) {
@@ -119,10 +136,25 @@ trait ApprovalActionTraits
                     'amshd_paramstore' => json_encode($request->data)
                 ]);
 
-                if (!isset($dataMaster->det[$keyDet + 1])) {
+                if (!isset($dataMaster->det[$keyDet + 1]) && $nextStat === 'sent') {
                     $useTokenCreate = ApprovalTokenDetail::where('amstd_token', $useToken)->first();
                     // Delete used token
                     ApprovalTokenDetail::where('id', $useTokenCreate->id)->delete();
+                }
+
+                if ($request->has('onApproval') && count($request->onApproval) > 0) {
+                    $this->apiPointData(
+                        $request->onApproval['url'],
+                        $request->onApproval['methods'],
+                        $request->onApproval['params'] ?? [],
+                        $request->onApproval['headers'] ?? [],
+                        [
+                            'approval' => [
+                                'status' => $nextStat,
+                                'remarks' => $request->remarks,
+                            ]
+                        ]
+                    );
                 }
 
                 // If Email notification is on
@@ -133,7 +165,7 @@ trait ApprovalActionTraits
                         'AMS Approval & Notification',
                         $valueDet->amsmd_reqaprv,
                         $dataMaster->ams_content,
-                        $useToken.'/'.$histToken
+                        $useToken . '/' . $histToken
                     );
 
                     // dispatch($queueSet)->onQueue('sendEmailQueue');
@@ -174,22 +206,50 @@ trait ApprovalActionTraits
         return ApprovalHistDetail::where('amshd_username_apprv', $uname)->get();
     }
 
-    public function getMasterApprovalByToken($token, $tokenHist)
+    public function getMasterApprovalByToken($token, $tokenHist, $isView = false)
     {
-        $cekToken = ApprovalTokenDetail::with(['hist' => function ($f) use ($tokenHist) {
-                $f->where('amshd_token', $tokenHist)
-                ->orderBy('id', 'asc')
-                ->get()
-                ->toArray();
-            }])
+        $cekToken = ApprovalTokenDetail::with([
+            'hist' => function ($f) use ($tokenHist) {
+                $f->with('mapdet')
+                    ->orderBy('id', 'asc')
+                    ->get()
+                    ->toArray();
+            }
+        ])
+            ->with([
+                'selectedHist' => function ($f) use ($tokenHist) {
+                    $f->with('mapdet')
+                        ->where('amshd_token', $tokenHist)
+                        ->orderBy('id', 'asc')
+                        ->get()
+                        ->toArray();
+                },
+            ])
             ->where('amstd_token', $token)
             ->first();
 
         // return $cekToken;
 
-        if (!empty($cekToken) && !empty($cekToken->hist)) {
-            $getSender = array_values(array_filter((clone $cekToken)->toArray()['hist'], function($f) { return $f['amshd_stat'] !== 'receive';}))[0];
-            $getReceiver = array_values(array_filter((clone $cekToken)->toArray()['hist'], function($f) { return $f['amshd_stat'] === 'receive';}))[0];
+        // If token is not deleted and if latest token order same with current token order or if not view mode
+        if (
+            (
+                !empty($cekToken) &&
+                !empty($cekToken->selectedHist) &&
+                $cekToken->hist[count($cekToken->hist) - 1]['mapdet']['amsmd_order'] === $cekToken->selectedHist[count($cekToken->selectedHist) - 1]['mapdet']['amsmd_order']
+            ) || $isView == 1) {
+            // Update Readed hist if read only
+            if ($isView == 1) {
+                foreach ($cekToken->selectedHist as $keyRead => $valueRead) {
+                    $this->readUpdateFlag($valueRead->id);
+                }
+            }
+
+            $getSender = array_values(array_filter((clone $cekToken)->toArray()['selected_hist'], function ($f) {
+                return $f['amshd_stat'] !== 'receive';
+            }))[0];
+            $getReceiver = array_values(array_filter((clone $cekToken)->toArray()['selected_hist'], function ($f) {
+                return $f['amshd_stat'] === 'receive';
+            }))[0];
 
             $hasil = ApprovalMaster::where('id', $cekToken['amsm_id'])->with('det')->with('apprvSet', function ($f) {
                 $f->get();
@@ -244,5 +304,53 @@ trait ApprovalActionTraits
         }
 
         return $convertContent;
+    }
+
+    public function readUpdateFlag($id) {
+        $update = ApprovalHistDetail::where('id', $id)->update([
+            'readed_at' => date('Y-m-d H:i:s')
+        ]);
+
+        return $this->handleResponse($update, 'Notif readed');
+    }
+
+    public function readAllNotif() {
+        $update = ApprovalHistDetail::whereNull('readed_at')->update([
+            'readed_at' => date('Y-m-d H:i:s')
+        ]);
+
+        return $this->handleResponse($update, 'Notif readed');
+    }
+
+    public function apiPointData($url, $method, $param = [], $headers = [], $optionalReturn = [])
+    {
+        $guzz = new \GuzzleHttp\Client();
+
+        try {
+            $result = $guzz->request($method, $url, [
+                'verify' => false,
+                'headers' => array_merge([
+                    'Content-Type' => 'application/json',
+                    'Accept' => 'application/json'
+                ], $headers),
+                'decode_content' => false,
+                'body' => count($param) > 0 ? json_encode(array_merge($param, $optionalReturn)) : [],
+            ]);
+
+            // logger(json_encode(array_merge($param, $optionalReturn)));
+
+            // $hasil = [
+            //     'code' => $result->getStatusCode(),
+            //     'param' => $param
+            // ];
+
+            return json_decode($result->getBody(), true);
+        } catch (\GuzzleHttp\Exception\ClientException $e) {
+            $response = $e->getResponse();
+
+            $responseBodyAsString = $response->getBody()->getContents();
+            // logger(message: $responseBodyAsString);
+            return json_decode($responseBodyAsString, true);
+        }
     }
 }

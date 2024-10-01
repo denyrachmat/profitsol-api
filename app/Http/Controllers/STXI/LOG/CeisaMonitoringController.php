@@ -135,4 +135,34 @@ class CeisaMonitoringController extends BaseController
     public function mergeDownloadCeisa40(){
 
     }
+
+    public function searchApi(Request $request)
+    {
+        $data = viewCeisaRespon::orderBy('TGL_DAFTAR', 'DESC');
+
+        if (
+            count($request->filter) > 0 && count(array_filter($request->filter, function ($f) {
+                return !empty($f['value']) || ($f['param'] == 'range' && count($f['value']) > 0);
+            })) > 0
+        ) {
+            $hasilExp = [];
+            foreach ($request->filter as $key => $value) {
+                if ($value['param'] === 'multiple') {
+                    $explodeVal = explode(',',$value['value']);
+
+                    foreach ($explodeVal as $key => $valueExp) {
+                        $hasilExp[] = "{$valueExp}";
+                    }
+
+                    $data->whereIn($value['cols'], $hasilExp);
+                } elseif ($value['param'] === 'range') {
+                    $data->whereBetween($value['cols'], $value['value']);
+                } else {
+                    $data->where($value['cols'], $value['param'], $value['param'] === 'like' ? "%{$value['value']}%" : $value['value']);
+                }
+            }
+        }
+
+        return $this->handleResponse($data->get(), 'Data fetched ');
+    }
 }

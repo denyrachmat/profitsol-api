@@ -82,6 +82,7 @@ trait Ceisa40Traits
             } else {
                 $res = $guzz->request($method, $endpoint, [
                     'verify' => false,
+                    'decode_content' => false,
                     'headers' => [
                         'Content-Type' => 'application/json',
                         'Accept' => 'application/json'

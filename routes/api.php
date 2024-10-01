@@ -92,7 +92,8 @@ Route::group(['prefix' => 'ams'], function () {
     // For sending approval
     Route::post('approveAction', [ApprovalRunningController::class, 'approveAction']);
     Route::post('approveHist', [ApprovalRunningController::class, 'approveHist']);
-    Route::get('getMasterApprovalByToken/{token}/{tokenHist}', [ApprovalRunningController::class, 'getMasterApprovalByToken']);
+    Route::get('getMasterApprovalByToken/{token}/{tokenHist}/{isView?}', [ApprovalRunningController::class, 'getMasterApprovalByToken']);
+    Route::get('readAllNotif', [ApprovalRunningController::class, 'readAllNotif']);
 
 });
 
@@ -260,6 +261,7 @@ Route::group(['prefix' => 'div'], function () {
         Route::get('syncCeisa/{noAju}/{bc}/{id}', [Ceisa40UploaderController::class, 'syncCeisaToWebBased']);
 
         Route::resource('ceisaMon', CeisaMonitoringController::class);
+        Route::post('searchApi', [CeisaMonitoringController::class, 'searchApi']);
         Route::get('ceisaMonDet/{noAju}/{noDaftar}/{idHeader?}', [CeisaMonitoringController::class, 'show']);
 
         Route::get('testData/{db}/{data}', [Ceisa40UploaderController::class, 'test']);
@@ -276,6 +278,7 @@ Route::group(['prefix' => 'div'], function () {
         Route::get('testRecurs', [HSCodeUploadController::class, 'testHeaderData']);
         Route::post('exportData', [HSCodeUploadController::class, 'exportData']);
         Route::post('HSCodeSendApproval', [HSCodeUploadController::class, 'sendApproval']);
+        Route::post('updateApprovalHSCode', [HSCodeUploadController::class, 'updateApprovalHSCode']);
     });
 
     Route::group(['prefix' => 'pu'], function () {

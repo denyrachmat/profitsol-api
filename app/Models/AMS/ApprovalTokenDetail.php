@@ -23,6 +23,10 @@ class ApprovalTokenDetail extends Model
         return $this->hasMany(ApprovalHistDetail::class, 'amstd_token', 'amstd_token');
     }
 
+    public function selectedHist() {
+        return $this->hasMany(ApprovalHistDetail::class, 'amstd_token', 'amstd_token');
+    }
+
     public function firstHist() {
         return $this->hasOne(ApprovalHistDetail::class, 'amsm_id', 'amsm_id')->orderBy('id');
     }

@@ -155,7 +155,7 @@ class HSCodeUploadController extends BaseController
                 $initPushArr = $forInitHeader = [];
                 $initPushArr[] = $nowData['HSCD_BEADOCNM'];
 
-                for ($i=0; $i < count($forInitHeader); $i++) {
+                for ($i = 0; $i < count($forInitHeader); $i++) {
                     $forInitHeader[] = '';
                 }
 
@@ -180,10 +180,15 @@ class HSCodeUploadController extends BaseController
         return $submitedData;
     }
 
-    public function HSCodeFilter(Request $request): array {
+    public function HSCodeFilter(Request $request): array
+    {
         $data = HSCodeUplMaster::join('CRPTWEB.dbo.VIEW_MITM_TBL', 'MITM_ITMCD', 'HSCD_ITMCD');
 
-        if (count($request->filter) > 0 && count(array_filter($request->filter, function($f){ return !empty($f['value']);} )) > 0) {
+        if (
+            count($request->filter) > 0 && count(array_filter($request->filter, function ($f) {
+                return !empty($f['value']);
+            })) > 0
+        ) {
             foreach ($request->filter as $key => $value) {
                 $data->where($value['cols'], $value['param'], $value['param'] === 'like' ? "%{$value['value']}%" : $value['value']);
             }
@@ -192,7 +197,8 @@ class HSCodeUploadController extends BaseController
         return $data->get()->toArray();
     }
 
-    public function sendApproval(Request $request): array {
+    public function sendApproval(Request $request): array
+    {
         $hasil = [];
         foreach ($request->data as $key => $value) {
             $hasil[] = $this->approveAction(new ApprovalRunningApproveActionRequest([
@@ -206,12 +212,37 @@ class HSCodeUploadController extends BaseController
                     'item_desc' => $value['MITM_ITMD1'],
                     'mk_hscode' => $value['HSCD_MKHSCD'],
                     'stxi_hscode' => $value['HSCD_STXICD']
+                ],
+                'onApproval' => [
+                    'methods' => 'post',
+                    'params' => [
+                        'HSCD_DOCNO' => $value['HSCD_DOCNO'],
+                        'HSCD_ITMCD' => $value['HSCD_ITMCD'],
+                        'MITM_SPTNO' => $value['MITM_SPTNO'],
+                        'MITM_ITMD1' => $value['MITM_ITMD1'],
+                        'HSCD_MKHSCD' => $value['HSCD_MKHSCD'],
+                        'HSCD_STXICD' => $value['HSCD_STXICD']
+                    ],
+                    'url' => 'http://localhost/STX/stx-api/public/api/div/log/updateApprovalHSCode'
                 ]
             ]))->getOriginalContent();
-
-            break;
         }
 
         return $hasil;
+    }
+
+    public function updateApprovalHSCode(Request $request)
+    {
+        logger(json_encode($request->all()));
+        // return $request->all();
+        $data = HSCodeUplMaster::where('HSCD_DOCNO', $request->HSCD_DOCNO)
+            ->where('HSCD_ITMCD', $request->HSCD_ITMCD)
+            ->update([
+                'HSCD_APRVSTAT' => $request->approval['status'] == 'sent' || $request->approval['status'] == 'receive' ? 0 : ($request->approval['status'] == 'approve' ? 1 : 0),
+                'HSCD_REMARK' => $request->approval['remarks'],
+                'HSCD_APPRVDT' => date('Y-m-d H:i:s')
+            ]);
+
+        return $this->handleResponse($data, 'Update done !!');
     }
 }
