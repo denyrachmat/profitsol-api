@@ -21,6 +21,7 @@ class HSCodeUplMaster extends Model
         'HSCD_UPLTYFORM',
         'HSCD_ISSDT',
         'HSCD_REMARK',
+        'HSCD_APRVSTAT',
         'p_u_username'
     ];
 }

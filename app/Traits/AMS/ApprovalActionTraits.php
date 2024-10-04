@@ -33,9 +33,9 @@ trait ApprovalActionTraits
             function ($f) use ($checkLatestOrder) {
                 $f->orderBy('amsmd_order');
 
-                // if ($checkLatestOrder > 0) {
-                //     $f->where('amsmd_order', '>', $checkLatestOrder);
-                // }
+                if ($checkLatestOrder > 0) {
+                    $f->where('amsmd_order', '>=', $checkLatestOrder);
+                }
             }
         )
             ->with('apprvSet')
@@ -89,27 +89,28 @@ trait ApprovalActionTraits
                 $getfirstOrder = $valueDet['amsmd_order'];
             }
 
+            $checkLatestToken = ApprovalHistDetail::where('amsm_id', $request->amsm_id)
+                ->with('mapdet')
+                ->where('amstd_token', $useToken);
+
+            $checkLatest = (clone $checkLatestToken)->orderBy('id', 'desc')->first();
+            $checkFirst = (clone $checkLatestToken)->orderBy('id', 'asc')->first();
+
+            $nextStat = 'sent';
+            if (!empty($checkLatest)) {
+                $nextStat = $valueDet['amsmd_order'] != $checkLatest->mapdet->amsmd_order && $request->stat === 1
+                    ? 'approve'
+                    : (
+                        $valueDet['amsmd_order'] != $checkLatest->mapdet->amsmd_order && $request->stat === 0
+                        ? 'reject'
+                        : 'sent'
+                    );
+            }
+
+            $histToken = Str::random(50);
+
             // Get Only latest order
-            if ($valueDet['amsmd_order'] == $getfirstOrder) {
-                $checkLatestToken = ApprovalHistDetail::where('amsm_id', $request->amsm_id)
-                    ->with('mapdet')
-                    ->where('amstd_token', $useToken)
-                    // ->where('p_u_username', $request->username)
-                    ->orderBy('id', 'desc');
-                $checkLatest = (clone $checkLatestToken)->first();
-
-                $nextStat = 'sent';
-                if (!empty($checkLatest)) {
-                    $nextStat = $valueDet['amsmd_order'] != $checkLatest->mapdet->amsmd_order && $request->stat === 1
-                        ? 'approve'
-                        : (
-                            $valueDet['amsmd_order'] != $checkLatest->mapdet->amsmd_order && $request->stat === 0
-                            ? 'reject'
-                            : 'sent'
-                        );
-                }
-
-                $histToken = Str::random(50);
+            if ($valueDet['amsmd_order'] > $getfirstOrder) {
                 // Sent Notif
                 $hist = ApprovalHistDetail::create([
                     'p_u_username' => $request->username,
@@ -117,10 +118,16 @@ trait ApprovalActionTraits
                     'amsmd_id' => $valueDet['id'],
                     'amshd_token' => $histToken,
                     'amstd_token' => $useToken,
-                    'amshd_username_apprv' => $valueDet['amsmd_username'],
+                    'amshd_username_apprv' => !isset($dataMaster->det[$keyDet + 1]) && $nextStat === 'sent' // IF Approval Complete send back to requestor
+                        ? $checkFirst->p_u_username
+                        : $valueDet['amsmd_username'],
                     'amshd_stat' => $nextStat,
                     'amshd_remarks' => $request->remarks,
-                    'amshd_paramstore' => json_encode($request->data)
+                    'amshd_paramstore' => json_encode([
+                        'data' => $request->data,
+                        'onApproval' => $request->has('onApproval') ? $request->onApproval : [],
+                        'onDone' => $request->has('onDone') ? $request->onDone : [],
+                    ])
                 ]);
 
                 // Receive Notif
@@ -133,14 +140,19 @@ trait ApprovalActionTraits
                     'amshd_username_apprv' => '',
                     'amshd_stat' => 'receive',
                     'amshd_remarks' => $request->remarks,
-                    'amshd_paramstore' => json_encode($request->data)
+                    'amshd_paramstore' => json_encode([
+                        'data' => $request->data,
+                        'onApproval' => $request->has('onApproval') ? $request->onApproval : [],
+                        'onDone' => $request->has('onDone') ? $request->onDone : [],
+                    ])
                 ]);
 
-                if (!isset($dataMaster->det[$keyDet + 1]) && $nextStat === 'sent') {
-                    $useTokenCreate = ApprovalTokenDetail::where('amstd_token', $useToken)->first();
-                    // Delete used token
-                    ApprovalTokenDetail::where('id', $useTokenCreate->id)->delete();
-                }
+                // // IF Approval Complete send back to requestor
+                // if (!isset($dataMaster->det[$keyDet + 1]) && $nextStat === 'sent') {
+
+                // } else {
+
+                // }
 
                 if ($request->has('onApproval') && count($request->onApproval) > 0) {
                     $this->apiPointData(
@@ -170,6 +182,57 @@ trait ApprovalActionTraits
 
                     // dispatch($queueSet)->onQueue('sendEmailQueue');
                 }
+            } else {
+                if ($request->has('onDone') && count($request->onDone) > 0) {
+                    $this->apiPointData(
+                        $request->onDone['url'],
+                        $request->onDone['methods'],
+                        $request->onDone['params'] ?? [],
+                        $request->onDone['headers'] ?? [],
+                        [
+                            'approval' => [
+                                'status' => $nextStat,
+                                'remarks' => $request->remarks,
+                            ]
+                        ]
+                    );
+                }
+
+                $hist = ApprovalHistDetail::create([
+                    'p_u_username' => $request->username,
+                    'amsm_id' => $request->amsm_id,
+                    'amsmd_id' => $valueDet['id'],
+                    'amshd_token' => $histToken,
+                    'amstd_token' => $useToken,
+                    'amshd_username_apprv' => $checkFirst->p_u_username,
+                    'amshd_stat' => $nextStat,
+                    'amshd_remarks' => $request->remarks,
+                    'amshd_paramstore' => json_encode([
+                        'data' => $request->data,
+                        'onApproval' => $request->has('onApproval') ? $request->onApproval : [],
+                        'onDone' => $request->has('onDone') ? $request->onDone : [],
+                    ])
+                ]);
+                // Receive Notif
+                $hist = ApprovalHistDetail::create([
+                    'p_u_username' => $checkFirst->p_u_username,
+                    'amsm_id' => $request->amsm_id,
+                    'amsmd_id' => $valueDet['id'],
+                    'amshd_token' => $histToken,
+                    'amstd_token' => $useToken,
+                    'amshd_username_apprv' => '',
+                    'amshd_stat' => 'receive',
+                    'amshd_remarks' => $request->remarks,
+                    'amshd_paramstore' => json_encode([
+                        'data' => $request->data,
+                        'onApproval' => $request->has('onApproval') ? $request->onApproval : [],
+                        'onDone' => $request->has('onDone') ? $request->onDone : [],
+                    ])
+                ]);
+
+                $useTokenCreate = ApprovalTokenDetail::where('amstd_token', $useToken)->first();
+                // Delete used token
+                ApprovalTokenDetail::where('id', $useTokenCreate->id)->delete();
             }
         }
 
@@ -226,6 +289,7 @@ trait ApprovalActionTraits
                 },
             ])
             ->where('amstd_token', $token)
+            ->withTrashed()
             ->first();
 
         // return $cekToken;
@@ -236,7 +300,8 @@ trait ApprovalActionTraits
                 !empty($cekToken) &&
                 !empty($cekToken->selectedHist) &&
                 $cekToken->hist[count($cekToken->hist) - 1]['mapdet']['amsmd_order'] === $cekToken->selectedHist[count($cekToken->selectedHist) - 1]['mapdet']['amsmd_order']
-            ) || $isView == 1) {
+            ) || $isView == 1
+        ) {
             // Update Readed hist if read only
             if ($isView == 1) {
                 foreach ($cekToken->selectedHist as $keyRead => $valueRead) {
@@ -262,7 +327,7 @@ trait ApprovalActionTraits
                     $hasil->apprvSet->amssd_content,
                     $getSender['p_u_username'],
                     $getReceiver['p_u_username'],
-                    json_decode($getReceiver['amshd_paramstore']),
+                    json_decode($getReceiver['amshd_paramstore'])->data,
                 );
                 $hasilnya = $hasil->toArray();
             } else {
@@ -306,7 +371,8 @@ trait ApprovalActionTraits
         return $convertContent;
     }
 
-    public function readUpdateFlag($id) {
+    public function readUpdateFlag($id)
+    {
         $update = ApprovalHistDetail::where('id', $id)->update([
             'readed_at' => date('Y-m-d H:i:s')
         ]);
@@ -314,7 +380,8 @@ trait ApprovalActionTraits
         return $this->handleResponse($update, 'Notif readed');
     }
 
-    public function readAllNotif() {
+    public function readAllNotif()
+    {
         $update = ApprovalHistDetail::whereNull('readed_at')->update([
             'readed_at' => date('Y-m-d H:i:s')
         ]);

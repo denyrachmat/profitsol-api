@@ -224,6 +224,19 @@ class HSCodeUploadController extends BaseController
                         'HSCD_STXICD' => $value['HSCD_STXICD']
                     ],
                     'url' => 'http://localhost/STX/stx-api/public/api/div/log/updateApprovalHSCode'
+                ],
+                'onDone' => [
+                    'methods' => 'post',
+                    'params' => [
+                        'HSCD_DOCNO' => $value['HSCD_DOCNO'],
+                        'HSCD_ITMCD' => $value['HSCD_ITMCD'],
+                        'MITM_SPTNO' => $value['MITM_SPTNO'],
+                        'MITM_ITMD1' => $value['MITM_ITMD1'],
+                        'HSCD_MKHSCD' => $value['HSCD_MKHSCD'],
+                        'HSCD_STXICD' => $value['HSCD_STXICD'],
+                        'ISDONE' => 1
+                    ],
+                    'url' => 'http://localhost/STX/stx-api/public/api/div/log/updateApprovalHSCode'
                 ]
             ]))->getOriginalContent();
         }
@@ -238,7 +251,7 @@ class HSCodeUploadController extends BaseController
         $data = HSCodeUplMaster::where('HSCD_DOCNO', $request->HSCD_DOCNO)
             ->where('HSCD_ITMCD', $request->HSCD_ITMCD)
             ->update([
-                'HSCD_APRVSTAT' => $request->approval['status'] == 'sent' || $request->approval['status'] == 'receive' ? 0 : ($request->approval['status'] == 'approve' ? 1 : 0),
+                'HSCD_APRVSTAT' => $request->has('ISDONE') && $request->ISDONE == 1 ? 1 : 0,
                 'HSCD_REMARK' => $request->approval['remarks'],
                 'HSCD_APPRVDT' => date('Y-m-d H:i:s')
             ]);

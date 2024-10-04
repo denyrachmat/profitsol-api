@@ -6,10 +6,11 @@ use App\Models\PORTAL\PortalUserDet;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Awobaz\Compoships\Compoships;
 
 class ApprovalHistDetail extends Model
 {
-    use HasFactory, SoftDeletes;
+    use HasFactory, SoftDeletes, Compoships;
     protected $connection = 'sqlsrv_ams';
     protected $table = 'ams_apprv_hist_det';
 

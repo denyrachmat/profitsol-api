@@ -13,7 +13,7 @@ use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Events\AfterSheet;
 use Maatwebsite\Excel\Concerns\WithEvents;
 
-class ExportHSCodeReport implements FromCollection, WithHeadings,WithEvents
+class ExportHSCodeReport implements FromCollection, WithHeadings, WithEvents
 {
     use RegistersEventListeners, Exportable;
     public $data;
@@ -23,7 +23,7 @@ class ExportHSCodeReport implements FromCollection, WithHeadings,WithEvents
     }
     public function startRow(): int
     {
-        return 2;
+        return 4;
     }
 
     public function headings(): array
@@ -49,6 +49,12 @@ class ExportHSCodeReport implements FromCollection, WithHeadings,WithEvents
             'Cukai (%)',
             'UoM'
         ];
+
+        $cekDataOsOnly = array_values(array_filter($this->data, fn($f) => $f['cols'] == 'HSCD_APRVSTAT' && $f['param'] == '<>' && $f['value'] == '1'));
+
+        if (count($cekDataOsOnly) > 0) {
+            return $firstPart;
+        }
 
         $getBCData = INSWDataDocBeaMaster::whereNotIn('ZIDBD_DOCCD', [611, 632])->get();
         $cols1 = [
@@ -135,18 +141,33 @@ class ExportHSCodeReport implements FromCollection, WithHeadings,WithEvents
      */
     public function collection()
     {
-        $data = DB::connection('sqlsrv_log')->table('V_HSCODE_SYS');
+        $cekDataOsOnly = array_values(array_filter($this->data, fn($f) => $f['cols'] == 'HSCD_APRVSTAT' && $f['param'] == '<>' && $f['value'] == '1'));
+        $data = DB::connection('sqlsrv_log')->table(count($cekDataOsOnly) > 0 ? 'V_HSCODE_SYS' : 'V_HSCODE_SYS_DONE');
 
-        if (count($this->data) > 0) {
-            foreach ($this->data as $key => $valueCols) {
-                $data->where($valueCols['cols'], $valueCols['param'], $valueCols['param'] === 'like' ? "%{$valueCols['value']}%" : $valueCols['value']);
+        if (
+            count($this->data) > 0 && count(array_filter($this->data, function ($f) {
+                return !empty($f['value']);
+            })) > 0
+        ) {
+            foreach ($this->data as $key => $value) {
+                if ($value['cols'] !== 'HSCD_APRVSTAT') {
+                    $data->where($value['cols'], $value['param'], $value['param'] === 'like' ? "%{$value['value']}%" : $value['value']);
+                }
             }
         }
 
-        $hasil = [];
-        foreach ($data->get() as $key => $value) {
-            $hasil[] = $value;
-        }
+        return $data->get();
+
+        $hasil = json_decode(json_encode($data->get()), true);
+        // $hasil = [];
+        // foreach (json_decode(json_encode($data->get()), true) as $key => $value) {
+        //     // $hasil[] = $value;
+        //     foreach ($value as $keyCols => $valueCols) {
+        //         if ($keyCols !== 'HSCD_APRVSTAT') {
+        //             $hasil[$key][$keyCols] = $valueCols;
+        //         }
+        //     }
+        // }
 
         return collect($hasil);
     }
@@ -181,35 +202,15 @@ class ExportHSCodeReport implements FromCollection, WithHeadings,WithEvents
                     ->setOrientation(\PhpOffice\PhpSpreadsheet\Worksheet\PageSetup::ORIENTATION_LANDSCAPE)
                     ->setPaperSize(\PhpOffice\PhpSpreadsheet\Worksheet\PageSetup::PAPERSIZE_A4);
 
-                $event->sheet->getStyle("A1:{$highestColumn}3")->applyFromArray([
+                $event->sheet->getStyle("A1:{$highestColumn}1")->applyFromArray([
                     'font' => [
                         'size' => '11',
                         'bold' => true
                     ]
                 ]);
 
-                for ($i=0; $i < 19; $i++) {
-                    $event->sheet->getDelegate()->mergeCells("{$this->toAlpha($i)}1:{$this->toAlpha($i)}3");
-                }
-
-                $event->sheet->getDelegate()->mergeCells("T1:Z1");
-                $event->sheet->getDelegate()->mergeCells("T2:U2");
-                $event->sheet->getDelegate()->mergeCells("W2:X2");
-                $event->sheet->getDelegate()->mergeCells("Y2:Z2");
-                $event->sheet->getDelegate()->mergeCells("AA2:AB2");
-                $event->sheet->getDelegate()->mergeCells("AD2:AE2");
-                $event->sheet->getDelegate()->mergeCells("AF2:AG2");
-                $event->sheet->getDelegate()->mergeCells("AA1:AG1");
-
-                for ($i=33; $i < 45; $i++) {
-                    $event->sheet->getDelegate()->mergeCells("{$this->toAlpha($i)}1:{$this->toAlpha($i)}3");
-                }
-
-                $event->sheet->getStyle("A1:{$highestColumn}3")->getAlignment()->setHorizontal('center');
-                $event->sheet->getStyle("A1:{$highestColumn}3")->getAlignment()->setVertical('center');
-
                 $event->sheet->styleCells(
-                    'A1:'.$highestColumn.$highestRow,
+                    'A1:' . $highestColumn . $highestRow,
                     [
                         'borders' => [
                             'allBorders' => [
@@ -218,6 +219,36 @@ class ExportHSCodeReport implements FromCollection, WithHeadings,WithEvents
                         ]
                     ]
                 );
+
+                $cekDataOsOnly = array_values(array_filter($this->data, fn($f) => $f['cols'] == 'HSCD_APRVSTAT' && $f['param'] == '<>' && $f['value'] == '1'));
+
+                if (count($cekDataOsOnly) === 0) {
+                    $event->sheet->getStyle("A1:{$highestColumn}3")->applyFromArray([
+                        'font' => [
+                            'size' => '11',
+                            'bold' => true
+                        ]
+                    ]);
+                    for ($i = 0; $i < 19; $i++) {
+                        $event->sheet->getDelegate()->mergeCells("{$this->toAlpha($i)}1:{$this->toAlpha($i)}3");
+                    }
+
+                    $event->sheet->getDelegate()->mergeCells("T1:Z1");
+                    $event->sheet->getDelegate()->mergeCells("T2:U2");
+                    $event->sheet->getDelegate()->mergeCells("W2:X2");
+                    $event->sheet->getDelegate()->mergeCells("Y2:Z2");
+                    $event->sheet->getDelegate()->mergeCells("AA2:AB2");
+                    $event->sheet->getDelegate()->mergeCells("AD2:AE2");
+                    $event->sheet->getDelegate()->mergeCells("AF2:AG2");
+                    $event->sheet->getDelegate()->mergeCells("AA1:AG1");
+
+                    for ($i = 33; $i < 45; $i++) {
+                        $event->sheet->getDelegate()->mergeCells("{$this->toAlpha($i)}1:{$this->toAlpha($i)}3");
+                    }
+
+                    $event->sheet->getStyle("A1:{$highestColumn}3")->getAlignment()->setHorizontal('center');
+                    $event->sheet->getStyle("A1:{$highestColumn}3")->getAlignment()->setVertical('center');
+                }
             }
         ];
     }
