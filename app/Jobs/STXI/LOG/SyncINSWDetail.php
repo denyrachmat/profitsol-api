@@ -233,11 +233,11 @@ class SyncINSWDetail implements ShouldQueue
                         $dataInsert = [
                             'ZID_HSCODE' => $getHSCode,
                             'ZIRD_TYPE' => 'export_regulation',
-                            'ZIRD_NMIJIN' => $valueExport['nama_ijin'] ?? $valueExport['name'],
-                            'ZIRD_KDIJIN' => $valueExport['kd_ijin'] ?? $valueExport['kode_ijin'],
-                            'ZIRD_DESC' => $valueExport['desc'] ?? $valueExport['deskripsi'],
-                            'ZIRD_BEALIST' => json_encode($valueExport['dok_pabean']) ?? '',
-                            'ZIRD_LEGAL' => $valueExport['legal'] ?? '',
+                            'ZIRD_NMIJIN' => $valueExport['name'],
+                            'ZIRD_KDIJIN' => '',
+                            'ZIRD_DESC' => $valueExport['deskripsi'],
+                            'ZIRD_BEALIST' => '',
+                            'ZIRD_LEGAL' => $valueExport['legal'],
                             'ZIRD_MODUL' => $valueExport['modul'],
                             'ZIRD_SKEPNO' => $valueExport['nomor_skep'] ?? ''
                         ];
