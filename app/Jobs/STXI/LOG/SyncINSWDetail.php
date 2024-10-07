@@ -223,7 +223,7 @@ class SyncINSWDetail implements ShouldQueue
                             'ZIRD_MODUL' => $valueRegPostBord['modul'],
                             'ZIRD_SKEPNO' => $valueRegPostBord['nomor_skep'] ?? ''
                         ];
-                        logger(json_encode($dataInsert));
+                        // logger(json_encode($dataInsert));
                         $dataRegCreate[] = INSWDataRegDet::create($dataInsert);
                     }
 
@@ -239,9 +239,10 @@ class SyncINSWDetail implements ShouldQueue
                             'ZIRD_MODUL' => $valueExport['modul'],
                             'ZIRD_SKEPNO' => $valueExport['nomor_skep'] ?? ''
                         ];
-                        logger(json_encode($dataInsert));
                         $dataRegCreate[] = INSWDataRegDet::create($dataInsert);
                     }
+
+                    logger(json_encode($dataRegCreate));
 
                     foreach ($dataDetailGet['dok_kepabean_import_border'] as $key5 => $valueDoc) {
                         INSWDataDocBeaMaster::updateOrCreate([
