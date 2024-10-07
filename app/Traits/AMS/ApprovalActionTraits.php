@@ -6,6 +6,7 @@ use App\Http\Controllers\API\PORTAL\BaseController;
 use App\Models\AMS\ApprovalTokenDetail;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
+use Redis;
 
 use App\Http\Requests\AMS\ApprovalRunningApproveActionRequest;
 
@@ -91,6 +92,8 @@ trait ApprovalActionTraits
 
             $checkLatestToken = ApprovalHistDetail::where('amsm_id', $request->amsm_id)
                 ->with('mapdet')
+                ->with('senderUser')
+                ->with('receiveUser')
                 ->where('amstd_token', $useToken);
 
             $checkLatest = (clone $checkLatestToken)->orderBy('id', 'desc')->first();
@@ -108,6 +111,7 @@ trait ApprovalActionTraits
             }
 
             $histToken = Str::random(50);
+            $toEmail = '';
 
             // Get Only latest order
             if ($valueDet['amsmd_order'] > $getfirstOrder) {
@@ -130,6 +134,8 @@ trait ApprovalActionTraits
                     ])
                 ]);
 
+                $toEmail = $valueDet['amsmd_username'];
+
                 // Receive Notif
                 $hist = ApprovalHistDetail::create([
                     'p_u_username' => $valueDet['amsmd_username'],
@@ -147,13 +153,6 @@ trait ApprovalActionTraits
                     ])
                 ]);
 
-                // // IF Approval Complete send back to requestor
-                // if (!isset($dataMaster->det[$keyDet + 1]) && $nextStat === 'sent') {
-
-                // } else {
-
-                // }
-
                 if ($request->has('onApproval') && count($request->onApproval) > 0) {
                     $this->apiPointData(
                         $request->onApproval['url'],
@@ -169,19 +168,16 @@ trait ApprovalActionTraits
                     );
                 }
 
-                // If Email notification is on
-                if ($dataMaster->apprvSet->amssd_isemail) {
-                    $queueSet = new EmailNotificationQueue(
-                        $request->username,
-                        'deny-rachmat@sumitronics.co.jp',
-                        'AMS Approval & Notification',
-                        $valueDet->amsmd_reqaprv,
-                        $dataMaster->ams_content,
-                        $useToken . '/' . $histToken
-                    );
+                $getSender = PortalUserDet::where('u_username', $request->username)->first();
 
-                    // dispatch($queueSet)->onQueue('sendEmailQueue');
-                }
+                Redis::publish('portalv2', json_encode([
+                    'app' => 'portal_notif',
+                    'message' => "You have new notification from {$getSender->pud_first_name} {$getSender->pud_last_name}",
+                    'type' => 'info',
+                    'data' => [
+                        'username_dest' => $valueDet['amsmd_username']
+                    ]
+                ]));
             } else {
                 if ($request->has('onDone') && count($request->onDone) > 0) {
                     $this->apiPointData(
@@ -198,6 +194,8 @@ trait ApprovalActionTraits
                     );
                 }
 
+                $toEmail = $checkFirst->p_u_username;
+
                 $hist = ApprovalHistDetail::create([
                     'p_u_username' => $request->username,
                     'amsm_id' => $request->amsm_id,
@@ -213,6 +211,7 @@ trait ApprovalActionTraits
                         'onDone' => $request->has('onDone') ? $request->onDone : [],
                     ])
                 ]);
+
                 // Receive Notif
                 $hist = ApprovalHistDetail::create([
                     'p_u_username' => $checkFirst->p_u_username,
@@ -230,9 +229,34 @@ trait ApprovalActionTraits
                     ])
                 ]);
 
+                $getSender = PortalUserDet::where('u_username', $request->username)->first();
+
+                Redis::publish('portalv2', json_encode([
+                    'app' => 'portal_notif',
+                    'message' => "You have new notification from {$getSender->pud_first_name} {$getSender->pud_last_name}",
+                    'type' => 'info',
+                    'data' => [
+                        'username_dest' => $checkFirst->p_u_username
+                    ]
+                ]));
+
                 $useTokenCreate = ApprovalTokenDetail::where('amstd_token', $useToken)->first();
                 // Delete used token
                 ApprovalTokenDetail::where('id', $useTokenCreate->id)->delete();
+            }
+
+            // If Email notification is on
+            if ($dataMaster->apprvSet->amssd_isemail) {
+                $queueSet = new EmailNotificationQueue(
+                    $request->username,
+                    $toEmail,
+                    'AMS Approval & Notification',
+                    $valueDet->amsmd_reqaprv,
+                    $dataMaster->ams_content,
+                    $useToken . '/' . $histToken
+                );
+
+                dispatch($queueSet)->onQueue('sendEmailQueue');
             }
         }
 

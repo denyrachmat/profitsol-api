@@ -180,12 +180,11 @@ class ExportHSCodeReport implements FromCollection, WithHeadings, WithEvents
                     'ZIRD_KDIJIN',
                     'ZIRD_BEALIST',
                     'ZIRD_MODUL'
-                )
-                ->get();
+                );
 
             $listReg = [];
-            if (count($checkReg) > 0) {
-                foreach ($checkReg as $key => $valueReg) {
+            if ((clone $checkReg)->count() > 0) {
+                foreach ($checkReg->get() as $key => $valueReg) {
                     $getParseJsonBeaList = json_decode($valueReg->ZIRD_BEALIST);
 
                     // Tataniaga Border
@@ -205,21 +204,22 @@ class ExportHSCodeReport implements FromCollection, WithHeadings, WithEvents
                             $listReg['TPB-' . $valueHeader] = '-';
                         }
                     }
+                }
 
-                    // Tataniaga Export
-                    foreach ($this->headerDet as $keyHeader => $valueHeader) {
-                        for ($i = 0; $i < 3; $i++) {
-                            if ($i === 2) {
-                                $listReg['TE-' . $i . $valueHeader] = '';
-                            }
-                        }
-
-                        if (in_array($valueHeader, $getParseJsonBeaList) && $valueReg->ZIRD_TYPE === 'export_regulation') {
-                            $listReg['TE-' . $valueHeader] = $valueReg->ZIRD_MODUL;
-                        } else {
-                            $listReg['TE-' . $valueHeader] = '-';
-                        }
+                // Check for export restriction
+                $checkRegExport = (clone $checkReg)->where('ZIRD_TYPE', 'export_regulation')->first();
+                if (empty($checkRegExport)) {
+                    for ($i = 0; $i < 3; $i++) {
+                        $listReg['TEK-' . $i] = '';
                     }
+
+                    $listReg['TES-' . $key] = '-';
+                } else {
+                    for ($i = 0; $i < 3; $i++) {
+                        $listReg['TEK-' . $i] = '';
+                    }
+
+                    $listReg['TES-' . $checkRegExport->ZIRD_MODUL] = $checkRegExport->ZIRD_MODUL;
                 }
             } else {
                 // Tataniaga Border
@@ -234,19 +234,13 @@ class ExportHSCodeReport implements FromCollection, WithHeadings, WithEvents
 
                 // Export Restriction
                 for ($i = 0; $i < 3; $i++) {
-                    if ($i === 2) {
-                        $listReg['TE-' . $i . $valueHeader] = '';
-                    }
+                    $listReg['TEK-' . $i] = '';
                 }
-                $listReg['TE' . $valueHeader] = '-';
+
+                $listReg['TES'] = '-';
             }
 
             $hasil[] = array_merge($value, $listReg);
-            // foreach ($value as $keyCols => $valueCols) {
-            //     if ($keyCols !== 'HSCD_APRVSTAT') {
-            //         $hasil[$key][$keyCols] = $valueCols;
-            //     }
-            // }
         }
 
         return collect($hasil);
