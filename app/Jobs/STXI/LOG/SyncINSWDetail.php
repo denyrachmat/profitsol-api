@@ -211,6 +211,8 @@ class SyncINSWDetail implements ShouldQueue
                         ]);
                     }
 
+                    logger($dataDetailGet['export_regulation']);
+
                     foreach ($dataDetailGet['import_regulation_post_border'] as $key3 => $valueRegPostBord) {
                         $dataInsert = [
                             'ZID_HSCODE' => $getHSCode,
