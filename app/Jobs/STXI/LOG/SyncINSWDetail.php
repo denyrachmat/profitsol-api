@@ -228,7 +228,7 @@ class SyncINSWDetail implements ShouldQueue
                     }
 
                     foreach ($dataDetailGet['export_regulation'] as $key4 => $valueExport) {
-                        $dataRegCreate[] = INSWDataRegDet::create([
+                        $dataInsert = [
                             'ZID_HSCODE' => $getHSCode,
                             'ZIRD_TYPE' => 'export_regulation',
                             'ZIRD_NMIJIN' => $valueExport['nama_ijin'] ?? $valueExport['name'],
@@ -238,7 +238,9 @@ class SyncINSWDetail implements ShouldQueue
                             'ZIRD_LEGAL' => $valueExport['legal'] ?? '',
                             'ZIRD_MODUL' => $valueExport['modul'],
                             'ZIRD_SKEPNO' => $valueExport['nomor_skep'] ?? ''
-                        ]);
+                        ];
+                        logger(json_encode($dataInsert));
+                        $dataRegCreate[] = INSWDataRegDet::create($dataInsert);
                     }
 
                     foreach ($dataDetailGet['dok_kepabean_import_border'] as $key5 => $valueDoc) {
