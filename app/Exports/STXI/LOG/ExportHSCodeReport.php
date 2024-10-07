@@ -13,6 +13,8 @@ use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Events\AfterSheet;
 use Maatwebsite\Excel\Concerns\WithEvents;
 
+use App\Models\STXI\LOG\INSWDataRegDet;
+
 class ExportHSCodeReport implements FromCollection, WithHeadings, WithEvents
 {
     use RegistersEventListeners, Exportable;
@@ -20,6 +22,7 @@ class ExportHSCodeReport implements FromCollection, WithHeadings, WithEvents
     function __construct($data = [])
     {
         $this->data = $data;
+        $this->headerDet = [];
     }
     public function startRow(): int
     {
@@ -95,10 +98,12 @@ class ExportHSCodeReport implements FromCollection, WithHeadings, WithEvents
             ]
         );
 
-        $listPLB = ['16', '28'];
         $listGenImport = ['20'];
-        $listTPB = ['23', '25'];
+        $listPLB = ['16', '28'];
+        $listTPB = ['25', '23'];
         $listFTZ = ['511', '513'];
+
+        $this->headerDet = array_merge($listGenImport, $listPLB, $listTPB, $listFTZ);
 
         $colsDet1 = [];
         for ($i = 0; $i < count($listPLB); $i++) {
@@ -156,18 +161,93 @@ class ExportHSCodeReport implements FromCollection, WithHeadings, WithEvents
             }
         }
 
-        return $data->get();
+        // return $data->get();
 
-        $hasil = json_decode(json_encode($data->get()), true);
-        // $hasil = [];
-        // foreach (json_decode(json_encode($data->get()), true) as $key => $value) {
-        //     // $hasil[] = $value;
-        //     foreach ($value as $keyCols => $valueCols) {
-        //         if ($keyCols !== 'HSCD_APRVSTAT') {
-        //             $hasil[$key][$keyCols] = $valueCols;
-        //         }
-        //     }
-        // }
+        // $hasil = json_decode(json_encode($data->get()), true);
+        $hasil = [];
+        foreach (json_decode(json_encode($data->get()), true) as $key => $value) {
+            $checkReg = INSWDataRegDet::select(
+                'ZID_HSCODE',
+                'ZIRD_TYPE',
+                'ZIRD_KDIJIN',
+                'ZIRD_BEALIST',
+                'ZIRD_MODUL'
+            )
+                ->where('ZID_HSCODE', $value['HSCD_STXICD'])
+                ->groupBy(
+                    'ZID_HSCODE',
+                    'ZIRD_TYPE',
+                    'ZIRD_KDIJIN',
+                    'ZIRD_BEALIST',
+                    'ZIRD_MODUL'
+                )
+                ->get();
+
+            $listReg = [];
+            if (count($checkReg) > 0) {
+                foreach ($checkReg as $key => $valueReg) {
+                    $getParseJsonBeaList = json_decode($valueReg->ZIRD_BEALIST);
+
+                    // Tataniaga Border
+                    foreach ($this->headerDet as $keyHeader => $valueHeader) {
+                        if (in_array($valueHeader, $getParseJsonBeaList) && $valueReg->ZIRD_TYPE === 'import_regulation_border') {
+                            $listReg['TB-' . $valueHeader] = $valueReg->ZIRD_KDIJIN;
+                        } else {
+                            $listReg['TB-' . $valueHeader] = '-';
+                        }
+                    }
+
+                    // Tataniaga Post Border
+                    foreach ($this->headerDet as $keyHeader => $valueHeader) {
+                        if (in_array($valueHeader, $getParseJsonBeaList) && $valueReg->ZIRD_TYPE === 'import_regulation_post_border') {
+                            $listReg['TPB-' . $valueHeader] = $valueReg->ZIRD_KDIJIN;
+                        } else {
+                            $listReg['TPB-' . $valueHeader] = '-';
+                        }
+                    }
+
+                    // Tataniaga Export
+                    foreach ($this->headerDet as $keyHeader => $valueHeader) {
+                        for ($i = 0; $i < 3; $i++) {
+                            if ($i === 2) {
+                                $listReg['TE-' . $i . $valueHeader] = '';
+                            }
+                        }
+
+                        if (in_array($valueHeader, $getParseJsonBeaList) && $valueReg->ZIRD_TYPE === 'export_regulation') {
+                            $listReg['TE-' . $valueHeader] = $valueReg->ZIRD_MODUL;
+                        } else {
+                            $listReg['TE-' . $valueHeader] = '-';
+                        }
+                    }
+                }
+            } else {
+                // Tataniaga Border
+                foreach ($this->headerDet as $keyHeader => $valueHeader) {
+                    $listReg['TB-' . $valueHeader] = '-';
+                }
+
+                // Tataniaga Post Border
+                foreach ($this->headerDet as $keyHeader => $valueHeader) {
+                    $listReg['TPB' . $valueHeader] = '-';
+                }
+
+                // Export Restriction
+                for ($i = 0; $i < 3; $i++) {
+                    if ($i === 2) {
+                        $listReg['TE-' . $i . $valueHeader] = '';
+                    }
+                }
+                $listReg['TE' . $valueHeader] = '-';
+            }
+
+            $hasil[] = array_merge($value, $listReg);
+            // foreach ($value as $keyCols => $valueCols) {
+            //     if ($keyCols !== 'HSCD_APRVSTAT') {
+            //         $hasil[$key][$keyCols] = $valueCols;
+            //     }
+            // }
+        }
 
         return collect($hasil);
     }
