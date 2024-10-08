@@ -356,6 +356,13 @@ Route::get('testredis', function () {
     //     'data' => []
     // ]));
 
+    Redis::publish('portalv2', json_encode([
+        'app' => 'testing',
+        'message' => "You have new notification Testing notif",
+        'type' => 'info',
+        'data' => []
+    ]));
+
     Redis::publish('test-channel', 'a test message');
 
     $prefix = config('database.redis.options.prefix');
