@@ -3,10 +3,12 @@
 namespace App\Traits\AMS;
 
 use App\Http\Controllers\API\PORTAL\BaseController;
+use App\Models\AMS\ApprovalMapDetail;
 use App\Models\AMS\ApprovalTokenDetail;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Redis;
+use DB;
 
 use App\Http\Requests\AMS\ApprovalRunningApproveActionRequest;
 
@@ -411,6 +413,59 @@ trait ApprovalActionTraits
         ]);
 
         return $this->handleResponse($update, 'Notif readed');
+    }
+
+    public function viewListSentApproval(Request $request)
+    {
+        $data = ApprovalHistDetail::select(
+            'p_u_username',
+            'amstd_token',
+            'amshd_paramstore',
+            'amsm_id',
+            DB::raw('MAX(created_at) as created_at')
+        );
+
+        if ($request->has('filter') && count($request->filter) > 0) {
+            foreach ($request->filter as $key => $value) {
+                if (!empty($value['value'])) {
+                    if (isset($value['step']) && $value['step'] === 'or') {
+                        $data->orwhere($value['cols'], $value['param'], $value['param'] === 'like' ? "%{$value['value']}%" : $value['value']);
+                    } else {
+                        $data->where($value['cols'], $value['param'], $value['param'] === 'like' ? "%{$value['value']}%" : $value['value']);
+                    }
+                }
+            }
+        }
+
+        $data->groupBy(
+            'p_u_username',
+            'amstd_token',
+            'amshd_paramstore',
+            'amsm_id'
+        );
+
+        $hasil = [];
+        foreach ($data->get()->toArray() as $key => $value) {
+            $cekLast = ApprovalHistDetail::with('mapdet')
+                    ->where('amshd_stat', 'receive')
+                    ->where('amstd_token', $value['amstd_token'])
+                    ->orderBy('created_at', 'desc')
+                    ->first();
+
+            $cekDet = ApprovalMapDetail::select('amsmd_order')->where('amsm_id', (int)$value['amsm_id'])->groupBy('amsmd_order')->get();
+            $hasilDet = 0;
+            foreach ($cekDet as $key => $valueDet) {
+                if ((int)$valueDet->amsmd_order <= (int)$cekLast->mapdet->amsmd_order) {
+                    $hasilDet += 1;
+                }
+            }
+
+            $hasil[] = array_merge($value, [
+                'percent' => $hasilDet / count($cekDet) * 100
+            ]);
+        }
+
+        return $this->handleResponse($hasil, 'Data Fetched');
     }
 
     public function apiPointData($url, $method, $param = [], $headers = [], $optionalReturn = [])

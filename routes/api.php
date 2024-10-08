@@ -59,14 +59,14 @@ use App\Http\Controllers\API\PORTAL\RoleController;
 //     // });
 // });
 
-Route::get('phpinfo', function() {
+Route::get('phpinfo', function () {
     return phpinfo();
 });
 
 Route::group(['prefix' => 'portal', 'middleware' => 'auth:sanctum', 'verify' => true], function () {
 
     // Settings Menu
-    Route::group(['prefix' => 'users'], function() {
+    Route::group(['prefix' => 'users'], function () {
         Route::resource('', UsersController::class);
         Route::get('ActiveOnly', [UsersController::class, 'userActiveOnly']);
     });
@@ -94,7 +94,7 @@ Route::group(['prefix' => 'ams'], function () {
     Route::post('approveHist', [ApprovalRunningController::class, 'approveHist']);
     Route::get('getMasterApprovalByToken/{token}/{tokenHist}/{isView?}', [ApprovalRunningController::class, 'getMasterApprovalByToken']);
     Route::get('readAllNotif', [ApprovalRunningController::class, 'readAllNotif']);
-
+    Route::post('viewListSentApproval', [ApprovalRunningController::class, 'viewListSentApproval']);
 });
 
 Route::group(['prefix' => 'dms'], function () {
@@ -239,7 +239,7 @@ Route::group(['prefix' => 'div'], function () {
 
         // Start Auto create barcode TYO
         Route::resource('tyoAutoBarcode', TYOAutoBarcodeController::class);
-        Route::group(['prefix' => 'tyoAutoBarcodes'], function() {
+        Route::group(['prefix' => 'tyoAutoBarcodes'], function () {
             Route::post('downloadExcel/{id}', [TYOAutoBarcodeController::class, 'downloadExcel']);
             Route::post('downloadBarcodeRange/{fdate}/{ldate}/{type}', [TYOAutoBarcodeController::class, 'downloadBarcodebyDate']);
         });
@@ -265,7 +265,7 @@ Route::group(['prefix' => 'div'], function () {
         Route::get('ceisaMonDet/{noAju}/{noDaftar}/{idHeader?}', [CeisaMonitoringController::class, 'show']);
 
         Route::get('testData/{db}/{data}', [Ceisa40UploaderController::class, 'test']);
-        Route::get('interfaceBC',[CeisaMonitoringController::class, 'interfaceBCDOCMEGAtoWEB']);
+        Route::get('interfaceBC', [CeisaMonitoringController::class, 'interfaceBCDOCMEGAtoWEB']);
         Route::get('interfaceByDate/{fdate}/{ldate}/{isInterMega?}/{isInterCeisa?}', [Ceisa40UploaderController::class, 'syncByDate']);
         Route::get('syncBCNo/{bcno}/{bcdate}', [Ceisa40UploaderController::class, 'syncBCNo']);
 
@@ -309,7 +309,7 @@ Route::group(['prefix' => 'div'], function () {
         // CirtenUpdateController
     });
 
-    Route::group(['prefix' => 'pc'], function() {
+    Route::group(['prefix' => 'pc'], function () {
         Route::get('syncBOMtoPSI', [autoSyncBOMtoPSIController::class, 'syncBOM']);
         Route::get('syncBOMtoPSIByItem/{item}', [autoSyncBOMtoPSIController::class, 'syncBOMbyItem']);
         Route::post('syncBOMMultipleItem', [autoSyncBOMtoPSIController::class, 'syncWithoutJobs']);
@@ -338,10 +338,10 @@ Route::post('forgot-password', [AuthController::class, 'forgot_password']);
 Route::post('reset-password/{token}', [AuthController::class, 'submitResetPasswordForm']);
 
 Route::get('redis', function () {
-    try{
-        $redis=\Redis::connect('192.168.100.32',6379);
+    try {
+        $redis = \Redis::connect('192.168.100.32', 6379);
         return response('redis working');
-    }catch(\Predis\Connection\ConnectionException $e){
+    } catch (\Predis\Connection\ConnectionException $e) {
         return $e;
         return response('error connection redis');
     }
@@ -371,5 +371,6 @@ Route::get('testredis', function () {
     return "Done. (published on $channel)";
 });
 
-Route::get('local/temp/{path}', function (string $path){
-    return Storage::disk('local')->download($path);})->name('local.temp');
+Route::get('local/temp/{path}', function (string $path) {
+    return Storage::disk('local')->download($path);
+})->name('local.temp');
