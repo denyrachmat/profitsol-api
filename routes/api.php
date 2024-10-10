@@ -2,6 +2,7 @@
 use App\Http\Controllers\API\AMS\ApprovalController;
 use App\Http\Controllers\API\AMS\ApprovalRunningController;
 use App\Http\Controllers\API\AMS\ApprovalSettingsController;
+use App\Http\Controllers\API\PORTAL\DomainController;
 use App\Http\Controllers\STXI\EMS2\TYOAutoBarcodeController;
 use App\Http\Controllers\STXI\EMS2\YPODailyConfController;
 use App\Http\Controllers\STXI\LOG\CeisaMonitoringController;
@@ -84,6 +85,8 @@ Route::group(['prefix' => 'portal', 'middleware' => 'auth:sanctum', 'verify' => 
     Route::get('countryList', [ProfileController::class, 'getCountryList']);
     Route::resource('notif', NotifController::class);
 });
+
+Route::resource('domain', DomainController::class);
 
 Route::group(['prefix' => 'ams'], function () {
     Route::resource('approval', ApprovalController::class);
