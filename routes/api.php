@@ -6,6 +6,7 @@ use App\Http\Controllers\API\PORTAL\DomainController;
 use App\Http\Controllers\STXI\EMS2\TYOAutoBarcodeController;
 use App\Http\Controllers\STXI\EMS2\YPODailyConfController;
 use App\Http\Controllers\STXI\LOG\CeisaMonitoringController;
+use App\Http\Controllers\STXI\LOG\HSCodeReportController;
 use App\Http\Controllers\STXI\LOG\HSCodeUploadController;
 use App\Http\Controllers\STXI\PC\autoEmailWMSConfirmation;
 use App\Http\Controllers\STXI\PC\autoSyncBOMtoPSIController;
@@ -282,6 +283,12 @@ Route::group(['prefix' => 'div'], function () {
         Route::post('exportData', [HSCodeUploadController::class, 'exportData']);
         Route::post('HSCodeSendApproval', [HSCodeUploadController::class, 'sendApproval']);
         Route::post('updateApprovalHSCode', [HSCodeUploadController::class, 'updateApprovalHSCode']);
+
+        Route::resource('HSCode', HSCodeReportController::class);
+        Route::post('HSCodeINSWFilter', [HSCodeReportController::class, 'HSCodeFilter']);
+        Route::get('HSCodeBeaDetail', [HSCodeReportController::class, 'HSCodeBeaDetail']);
+        Route::get('HSCodeRegulationDet/{hsCode}', [HSCodeReportController::class, 'HSCodeRegulationDet']);
+
     });
 
     Route::group(['prefix' => 'pu'], function () {
