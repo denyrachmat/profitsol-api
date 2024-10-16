@@ -32,6 +32,7 @@ class DomainController extends BaseController
     public function store(Request $request)
     {
         $insert = PortalDomain::create(array_merge(['p_u_username' => $request->header('username')], $request->all()));
+
         return $this->handleResponse($insert, 'Data Found');
     }
 
