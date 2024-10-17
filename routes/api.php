@@ -2,9 +2,11 @@
 use App\Http\Controllers\API\AMS\ApprovalController;
 use App\Http\Controllers\API\AMS\ApprovalRunningController;
 use App\Http\Controllers\API\AMS\ApprovalSettingsController;
+use App\Http\Controllers\API\PORTAL\DomainController;
 use App\Http\Controllers\STXI\EMS2\TYOAutoBarcodeController;
 use App\Http\Controllers\STXI\EMS2\YPODailyConfController;
 use App\Http\Controllers\STXI\LOG\CeisaMonitoringController;
+use App\Http\Controllers\STXI\LOG\HSCodeReportController;
 use App\Http\Controllers\STXI\LOG\HSCodeUploadController;
 use App\Http\Controllers\STXI\PC\autoEmailWMSConfirmation;
 use App\Http\Controllers\STXI\PC\autoSyncBOMtoPSIController;
@@ -84,6 +86,8 @@ Route::group(['prefix' => 'portal', 'middleware' => 'auth:sanctum', 'verify' => 
     Route::get('countryList', [ProfileController::class, 'getCountryList']);
     Route::resource('notif', NotifController::class);
 });
+
+Route::resource('domain', DomainController::class);
 
 Route::group(['prefix' => 'ams'], function () {
     Route::resource('approval', ApprovalController::class);
@@ -279,6 +283,12 @@ Route::group(['prefix' => 'div'], function () {
         Route::post('exportData', [HSCodeUploadController::class, 'exportData']);
         Route::post('HSCodeSendApproval', [HSCodeUploadController::class, 'sendApproval']);
         Route::post('updateApprovalHSCode', [HSCodeUploadController::class, 'updateApprovalHSCode']);
+
+        Route::resource('HSCode', HSCodeReportController::class);
+        Route::post('HSCodeINSWFilter', [HSCodeReportController::class, 'HSCodeFilter']);
+        Route::get('HSCodeBeaDetail', [HSCodeReportController::class, 'HSCodeBeaDetail']);
+        Route::get('HSCodeRegulationDet/{hsCode}', [HSCodeReportController::class, 'HSCodeRegulationDet']);
+
     });
 
     Route::group(['prefix' => 'pu'], function () {

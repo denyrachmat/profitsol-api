@@ -14,7 +14,7 @@ use App\Models\STXI\LOG\ITINVOutgoing;
 use App\Models\STXI\LOG\ITINVUploadTemp;
 use App\Models\STXI\CEISA40\viewCeisaRespon;
 
-class ImportBarangNew implements ToModel, WithHeadingRow, SkipsEmptyRows
+class ImportBarangCeisaOnly implements ToModel, WithHeadingRow, SkipsEmptyRows
 {
     private $incout;
 
@@ -65,6 +65,19 @@ class ImportBarangNew implements ToModel, WithHeadingRow, SkipsEmptyRows
                 } else {
                     $insert = ITINVOutgoing::create($data);
                 }
+
+                Redis::publish('portalv2', json_encode([
+                    'app' => 'it_inv_checker',
+                    'message' => $noDaftar . ' on date bc : ' . $cekTempData["TGL_DAFTAR"] . ' - Update Data on progress',
+                    'type' => 'info',
+                    'status' => 'progress_bc_sync_item_inc_not_exists_w_mega',
+                    'data' => [
+                        'NOMOR_DAFTAR' => $noDaftar,
+                        'TGL_DAFTAR' => $cekTempData["TGL_DAFTAR"],
+                        'updatedItem' => trim($row['kode_barang']),
+                        'data' => $insert
+                    ]
+                ]));
             }
         }
     }
