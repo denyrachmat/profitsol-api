@@ -15,7 +15,12 @@ return new class extends Migration
             $table->id();
             $table->string('p_u_username');
             $table->string('pd_name');
-            $table->string('pd_desc');
+            $table->text('pd_desc');
+            $table->string('pd_dbtype');
+            $table->string('pd_host');
+            $table->string('pd_port');
+            $table->string('pd_username');
+            $table->string('pd_password');
             $table->string('pd_prefix_db')->unique();
             $table->string('pd_img')->nullable();
             $table->string('pd_base_color')->nullable();
