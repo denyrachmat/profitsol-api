@@ -2,6 +2,7 @@
 use App\Http\Controllers\API\AMS\ApprovalController;
 use App\Http\Controllers\API\AMS\ApprovalRunningController;
 use App\Http\Controllers\API\AMS\ApprovalSettingsController;
+use App\Http\Controllers\API\DMS\DocumenRootController;
 use App\Http\Controllers\API\PORTAL\DomainController;
 use App\Http\Controllers\STXI\EMS2\TYOAutoBarcodeController;
 use App\Http\Controllers\STXI\EMS2\YPODailyConfController;
@@ -103,6 +104,12 @@ Route::group(['prefix' => 'ams'], function () {
 
 Route::group(['prefix' => 'dms'], function () {
     Route::resource('documents', DocumentController::class);
+
+    Route::resource('documentsRoot', DocumenRootController::class);
+    Route::group(['prefix' => 'documentsRoots'], function () {
+        Route::post('getDataFilter', [DocumenRootController::class, 'getDataFilter']);
+    });
+
     Route::get('documents/getSourceOnly/{id}', [DocumentController::class, 'sourceOnly']);
 
     Route::resource('folders', FolderController::class);
