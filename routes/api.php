@@ -4,6 +4,7 @@ use App\Http\Controllers\API\AMS\ApprovalRunningController;
 use App\Http\Controllers\API\AMS\ApprovalSettingsController;
 use App\Http\Controllers\API\DMS\DocumenRootController;
 use App\Http\Controllers\API\PORTAL\DomainController;
+use App\Http\Controllers\STXI\EMS2\labelPrintController;
 use App\Http\Controllers\STXI\EMS2\TYOAutoBarcodeController;
 use App\Http\Controllers\STXI\EMS2\YPODailyConfController;
 use App\Http\Controllers\STXI\LOG\CeisaMonitoringController;
@@ -108,11 +109,18 @@ Route::group(['prefix' => 'dms'], function () {
     Route::resource('documentsRoot', DocumenRootController::class);
     Route::group(['prefix' => 'documentsRoots'], function () {
         Route::post('getDataFilter', [DocumenRootController::class, 'getDataFilter']);
+        Route::get('getMapping/{root}', [DocumenRootController::class, 'getMapping']);
+        Route::post('storeMappingRoot', [DocumenRootController::class, 'storeMappingRoot']);
+        Route::get('getRegisteredRoot/{users}', [DocumenRootController::class, 'getRegisteredRoot']);
+        Route::get('installDisk/{id}', [DocumenRootController::class, 'installDisk']);
     });
 
     Route::get('documents/getSourceOnly/{id}', [DocumentController::class, 'sourceOnly']);
 
     Route::resource('folders', FolderController::class);
+    Route::group(['prefix' => 'folderList'], function() {
+        Route::get('list/{username}/{root}', [FolderController::class, 'showList']);
+    });
     Route::get('migrateToDB/{users}/{path?}/{isCheck?}', [FolderController::class, 'migrateRealFileToDB']);
     // Tester
     Route::get('checkFolders/{users}', [FolderController::class, 'checkPerm']);
@@ -253,6 +261,11 @@ Route::group(['prefix' => 'div'], function () {
         Route::group(['prefix' => 'tyoAutoBarcodes'], function () {
             Route::post('downloadExcel/{id}', [TYOAutoBarcodeController::class, 'downloadExcel']);
             Route::post('downloadBarcodeRange/{fdate}/{ldate}/{type}', [TYOAutoBarcodeController::class, 'downloadBarcodebyDate']);
+        });
+
+        Route::resource('labelPrint', labelPrintController::class);
+        Route::group(['prefix' => 'labelPrints'], function () {
+            Route::post('search', [labelPrintController::class, 'searchItems']);
         });
     });
 

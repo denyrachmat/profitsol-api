@@ -14,7 +14,8 @@ class DMSFolderMstr extends Model
     protected $fillable = [
         'p_u_username',
         'dfm_folder_name',
-        'dfm_parent_id'
+        'dfm_parent_id',
+        'dfm_root_mstr'
     ];
 
     public function doc()

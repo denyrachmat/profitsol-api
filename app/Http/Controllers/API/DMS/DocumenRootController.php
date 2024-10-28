@@ -7,6 +7,9 @@ use App\Models\DMS\DMSDocRootMstr;
 use App\Http\Controllers\API\PORTAL\BaseController;
 use App\Http\Requests\DMS\DocumentRootStoreRequest;
 use Illuminate\Filesystem\FilesystemManager;
+use App\Models\DMS\DMSFolderRootMstr;
+use Storage;
+use Config;
 
 class DocumenRootController extends BaseController
 {
@@ -15,8 +18,7 @@ class DocumenRootController extends BaseController
      */
     public function index()
     {
-        $data = DMSDocRootMstr::get()
-            ->toArray();
+        $data = DMSDocRootMstr::get()->toArray();
 
         return $this->handleResponse($data, 'Data Found !!');
     }
@@ -35,22 +37,6 @@ class DocumenRootController extends BaseController
     public function store(DocumentRootStoreRequest $request)
     {
         $insert = DMSDocRootMstr::create($request->all());
-
-        $fsMgr = new FilesystemManager(app());
-
-        switch ($request->ddrm_driver) {
-            case 'local':
-                $fsMgr->createLocalDriver([
-                    'root' => $request->ddrm_root
-                ]);
-                break;
-            default :
-                $fsMgr->createFtpDriver([
-                    'host' => $request->ddrm_host,
-                    'username' => $request->ddrm_username,
-                    'password' => $request->ddrm_password,
-                ]);
-        }
 
         return $this->handleResponse($insert, 'Document Root Created !!');
     }
@@ -87,7 +73,8 @@ class DocumenRootController extends BaseController
         //
     }
 
-    public function getDataFilter(Request $request) {
+    public function getDataFilter(Request $request)
+    {
         $hist = new DMSDocRootMstr;
 
         if ($request->has('filter') && count($request->filter) > 0) {
@@ -104,11 +91,95 @@ class DocumenRootController extends BaseController
             $datanya = (clone $hist)
                 ->orderBy('created_at', 'desc')
                 ->take(10)
-                ->get();
+                ->get()
+                ->toArray();
 
-            return $this->handleResponse($datanya, 'Data Fetched');
+            $hasil = [];
+            foreach ($datanya as $key => $value) {
+                try {
+                    $this->installDisk($value['id']);
+
+                    $check = Storage::disk($value['ddrm_name'])->exists('');
+                    $status = true;
+                } catch (\Throwable $th) {
+                    $status = false;
+                }
+
+                $hasil[] = array_merge($value, [
+                    'config_status' => $status,
+                    'check_config' => Config::get('filesystems.disks')
+                ]);
+            }
+
+            return $this->handleResponse($hasil, 'Data Fetched');
         } else {
             return $this->handleError('No data found !!', []);
         }
+    }
+
+    public function getMapping($rootName)
+    {
+        $data = DMSFolderRootMstr::where('dudrm_source', $rootName)->get()->pluck('p_u_username');
+
+        if (count($data) > 0) {
+            return $this->handleResponse($data, 'Data Found');
+        }
+
+        return $this->handleError('No data found !!');
+    }
+
+    public function storeMappingRoot(Request $request)
+    {
+        $insert = [];
+        foreach ($request->det as $key => $value) {
+            $insert[] = DMSFolderRootMstr::updateOrCreate([
+                'p_u_username' => $value,
+                'dudrm_source' => $request->ddrm_name,
+            ], [
+                'p_u_username' => $value,
+                'dudrm_path' => '',
+                'dudrm_source' => $request->ddrm_name,
+                'dudrm_use_real_nm' => '',
+                'dudrm_alias_username' => '',
+            ]);
+        }
+
+        return $this->handleResponse($insert, 'Data Updated');
+    }
+
+    public function getRegisteredRoot($users)
+    {
+        $getListRoot = DMSFolderRootMstr::where('p_u_username', $users)->join('dms_doc_root_mstr', 'ddrm_name', 'dudrm_source')->get();
+
+        if (count($getListRoot) > 0) {
+            return $this->handleResponse($getListRoot, 'Data Found');
+        }
+
+        return $this->handleError('Data not found !!');
+    }
+
+    public function installDisk($id)
+    {
+        $getListRoot = DMSDocRootMstr::where('id', $id)->first();
+
+        if ($getListRoot->ddrm_driver == 'local') {
+            $result = config([
+                'filesystems.disks.' . $getListRoot->ddrm_name => [
+                    'driver' => 'local',
+                    'root' => $getListRoot->ddrm_root
+                ]
+            ]);
+        } else {
+            $result = config([
+                'filesystems.disks.' . $getListRoot->ddrm_name => [
+                    'driver' => $getListRoot->ddrm_driver,
+                    'host' => $getListRoot->ddrm_host,
+                    'username' => $getListRoot->ddrm_username,
+                    'password' => $getListRoot->ddrm_password
+                ]
+            ]);
+        }
+
+        return $this->handleResponse($result, 'Disk installed');
     }
 }
