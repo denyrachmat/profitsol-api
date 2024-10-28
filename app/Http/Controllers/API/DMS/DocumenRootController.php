@@ -10,9 +10,11 @@ use Illuminate\Filesystem\FilesystemManager;
 use App\Models\DMS\DMSFolderRootMstr;
 use Storage;
 use Config;
+use App\Traits\DMS\FolderDocumentTraits;
 
 class DocumenRootController extends BaseController
 {
+    use FolderDocumentTraits;
     /**
      * Display a listing of the resource.
      */
@@ -107,7 +109,8 @@ class DocumenRootController extends BaseController
 
                 $hasil[] = array_merge($value, [
                     'config_status' => $status,
-                    'check_config' => Config::get('filesystems.disks')
+                    'check_config' => Config::get('filesystems.disks'),
+                    'check_list' => $this->checkPerm('deny-rachmat@sumitronics.co.jp', $value['ddrm_name'])
                 ]);
             }
 
