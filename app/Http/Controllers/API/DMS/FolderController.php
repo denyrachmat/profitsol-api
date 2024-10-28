@@ -42,19 +42,23 @@ class FolderController extends BaseController
             'p_u_username' => $this->getAliasFolderbyAuthor($request->p_u_username, 'user'),
             'dfm_folder_name' => $request->dfm_folder_name,
             'dfm_parent_id' => $request->dfm_parent_id,
+            'dfm_root_mstr' => $request->dfm_root_mstr,
         ]);
 
         $data = DMSFolderMstr::where('id', $stored->id)->with('parentFolders')->first()->toArray();
 
-        $createRealFolder = $this->createNewFolder($this->getAliasFolderbyAuthor($request->p_u_username, 'user'), $this->pathCreator($data));
-
-        if (!$createRealFolder) {
+        try {
+            $createRealFolder = $this->createNewFolder($this->getAliasFolderbyAuthor($request->p_u_username, 'user'), $this->pathCreator($data));
+            return $this->handleResponse([
+                'stored' => $stored,
+                'store_real_folder' => $createRealFolder
+            ], 'Folder created successfully !');
+        } catch (\Throwable $th) {
             DMSFolderMstr::where('id', $stored->id)->delete();
+
+            return $this->handleError($th->getMessage());
         }
-        return $this->handleResponse([
-            'stored' => $stored,
-            'store_real_folder' => $createRealFolder
-        ], 'Folder created successfully !');
+
     }
 
     /**
@@ -66,6 +70,13 @@ class FolderController extends BaseController
     public function show($id)
     {
         $files = $this->getFolder($id);
+
+        return $this->handleResponse($files, 'Data Found !!');
+    }
+
+    public function showList($id, $root)
+    {
+        $files = $this->getFolder($id, null, $root);
 
         return $this->handleResponse($files, 'Data Found !!');
     }

@@ -82,9 +82,9 @@ class DomainController extends BaseController
             'MRS'
         ];
 
-        // foreach ($listDataBases as $key => $value) {
-        //     DB::statement("CREATE DATABASE {$request->pd_prefix_db}_{$value}");
-        // }
+        foreach ($listDataBases as $key => $value) {
+            DB::statement("CREATE DATABASE {$domain->pd_prefix_db}_{$value}");
+        }
 
         config([
             "database.connections." => [

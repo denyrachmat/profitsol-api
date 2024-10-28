@@ -10,15 +10,26 @@ use Illuminate\Support\Str;
 
 trait FolderDocumentTraits
 {
-    public function getFolder($author, $id = null)
+    public function getFolder($author, $id = null, $root = '')
     {
         $users = $this->getAliasFolderbyAuthor($author, 'user');
 
         // return $users;
-        $dataFolder = DMSFolderMstr::with(['childFolders' => function ($q) {
-            $q->orderBy('dfm_folder_name');
-        }])->with('doc')->where('p_u_username', $users)->whereNull('dfm_parent_id')->orderBy('dfm_folder_name');
+        $dataFolder = DMSFolderMstr::with([
+            'childFolders' => function ($q) {
+                $q->orderBy('dfm_folder_name');
+            }
+        ])->with('doc')
+            ->where('p_u_username', $users)
+            ->whereNull('dfm_parent_id')
+            ->orderBy('dfm_folder_name');
+
         $dataFiles = DMSDocMstr::where('p_u_username', $users);
+
+        if (!empty($root)) {
+            $dataFolder->where('dfm_root_mstr', $root);
+            $dataFiles->where('dfm_root_mstr', $root);
+        }
 
         return !empty($id)
             ? [
@@ -36,8 +47,9 @@ trait FolderDocumentTraits
         return Storage::disk($this->getAliasFolderbyAuthor($author, 'root'))->allFiles();
     }
 
-    public function getAliasFolderbyAuthor($author, $data = 'path')
+    public function getAliasFolderbyAuthor($author, $data = 'path', $root = '')
     {
+
         $checkRootAliasTest = DMSFolderRootMstr::where('p_u_username', $author)->first();
         $checkRootAlias = $checkRootAliasTest;
 
@@ -45,7 +57,6 @@ trait FolderDocumentTraits
             $checkRootAlias = DMSFolderRootMstr::where('p_u_username', $checkRootAliasTest->dudrm_alias_username)->first();
         }
 
-        logger($checkRootAlias);
         $users = empty($checkRootAlias)
             ? 'DMS/' . $author
             : ($data === 'user'
@@ -53,15 +64,14 @@ trait FolderDocumentTraits
                 : ($checkRootAlias->dudrm_path)
             );
 
-        logger('check root di alias');
-        logger($checkRootAlias);
-        $root = empty($checkRootAlias->dudrm_source)
-            ? 'data_folder'
-            : $checkRootAlias->dudrm_source;
+
+        if (empty($root)) {
+            $root = empty($checkRootAlias->dudrm_source)
+                ? 'data_folder'
+                : $checkRootAlias->dudrm_source;
+        }
 
 
-            logger('check root');
-        logger($root);
         $isUseRealNameFile = empty($checkRootAlias)
             ? 0
             : $checkRootAlias->dudrm_use_real_nm;
@@ -84,27 +94,27 @@ trait FolderDocumentTraits
         return $hasil;
     }
 
-    public function createNewFolder($author, $path)
+    public function createNewFolder($author, $path, $root = '')
     {
-        return Storage::disk($this->getAliasFolderbyAuthor($author, 'root'))->makeDirectory($this->getAliasFolderbyAuthor($author) . '/' . $path);
+        return Storage::disk($this->getAliasFolderbyAuthor($author, 'root', $root))->makeDirectory($this->getAliasFolderbyAuthor($author) . '/' . $path);
     }
 
-    public function deleteFolder($author, $path)
+    public function deleteFolder($author, $path, $root = '')
     {
-        return Storage::disk($this->getAliasFolderbyAuthor($author, 'root'))->deleteDirectory($this->getAliasFolderbyAuthor($author) . '/' . $path);
+        return Storage::disk($this->getAliasFolderbyAuthor($author, 'root', $root))->deleteDirectory($this->getAliasFolderbyAuthor($author) . '/' . $path);
     }
 
-    public function deleteFiles($author, $path, $file)
+    public function deleteFiles($author, $path, $file, $root = '')
     {
-        return Storage::disk($this->getAliasFolderbyAuthor($author, 'root'))->delete($this->getAliasFolderbyAuthor($author) . '/' . $path . '/' . $file);
+        return Storage::disk($this->getAliasFolderbyAuthor($author, 'root', $root))->delete($this->getAliasFolderbyAuthor($author) . '/' . $path . '/' . $file);
     }
 
-    public function openFiles($author, $path, $file)
+    public function openFiles($author, $path, $file, $root = '')
     {
         // logger($this->getAliasFolderbyAuthor($author) . '/' . $path . '/' . $file);
         // return $this->getAliasFolderbyAuthor($author, 'path') . '/' . $path . '/' . $file;
-        $files = Storage::disk($this->getAliasFolderbyAuthor($author, 'root'))->get($this->getAliasFolderbyAuthor($author) . '/' . $path . '/' . $file);
-        $mime = Storage::disk($this->getAliasFolderbyAuthor($author, 'root'))->mimeType($this->getAliasFolderbyAuthor($author) . '/' . $path . '/' . $file);
+        $files = Storage::disk($this->getAliasFolderbyAuthor($author, 'root', $root))->get($this->getAliasFolderbyAuthor($author) . '/' . $path . '/' . $file);
+        $mime = Storage::disk($this->getAliasFolderbyAuthor($author, 'root', $root))->mimeType($this->getAliasFolderbyAuthor($author) . '/' . $path . '/' . $file);
         $ext = explode('.', $file)[1];
         return [
             'file' => $files,
@@ -114,17 +124,17 @@ trait FolderDocumentTraits
         ];
     }
 
-    public function uploadFiles($author, $path, $file, $contents)
+    public function uploadFiles($author, $path, $file, $contents, $root = '')
     {
-        return storage::disk($this->getAliasFolderbyAuthor($author, 'root'))->put($this->getAliasFolderbyAuthor($author) . '/' . $path . '/' . $file, $contents);
+        return storage::disk($this->getAliasFolderbyAuthor($author, 'root', $root))->put($this->getAliasFolderbyAuthor($author) . '/' . $path . '/' . $file, $contents);
     }
 
-    public function getSizeFiles($author, $path, $file)
+    public function getSizeFiles($author, $path, $file, $root = '')
     {
-        return Storage::disk($this->getAliasFolderbyAuthor($author, 'root'))->size($this->getAliasFolderbyAuthor($author) . '/' . $path . '/' . $file);
+        return Storage::disk($this->getAliasFolderbyAuthor($author, 'root', $root))->size($this->getAliasFolderbyAuthor($author) . '/' . $path . '/' . $file);
     }
 
-    public function convertFolderPathToArray($author, $path = '', $parentKey = 0, $hasil = [])
+    public function convertFolderPathToArray($author, $path = '', $parentKey = 0, $hasil = [], $root = '')
     {
         // return [$this->getAliasFolderbyAuthor($author, 'root'), $path === '' ? $this->getAliasFolderbyAuthor($author) : $path];
         $data = Storage::disk($this->getAliasFolderbyAuthor($author, 'root'))->directories($path === '' ? $this->getAliasFolderbyAuthor($author) : $path);
@@ -139,7 +149,7 @@ trait FolderDocumentTraits
                 'key' => $parentKey + $kunci,
                 'folders_name' => $value,
                 'list_files' => Storage::disk($this->getAliasFolderbyAuthor($author, 'root'))->files($value),
-                'children' => $this->convertFolderPathToArray($author, $value, $kunci, [])
+                'children' => $this->convertFolderPathToArray($author, $value, $kunci, [], $root)
             ];
 
             $kunci++;
@@ -157,22 +167,17 @@ trait FolderDocumentTraits
         return $hasil;
     }
 
-    public function migrateFolderToDB($author, $path = '', $data = [], $isRoot = true)
+    public function migrateFolderToDB($author, $path = '', $data = [], $root ='')
     {
         if (count($data) === 0) {
             $data = $path === ''
-                ? $this->convertFolderPathToArray($author, $path)
-                : [$this->convertFolderPathToArray($author, $path)];
-
-            // return $data;
+                ? $this->convertFolderPathToArray($author, $path,0 ,[], $root)
+                : [$this->convertFolderPathToArray($author, $path,0 ,[], $root)];
         }
 
         $hasil = [];
         foreach ($data as $key => $value) {
             $expFolder = explode('/', $value['folders_name']);
-
-            // $delete = DMSFolderMstr::where('p_u_username', $author)->where('dfm_folder_name', $expFolder[count($expFolder) - 1])->delete();
-            // DMSDocMstr::where('p_u_username', $author)->where('dfm_folder_name', $expFolder[count($expFolder) - 1])->delete();
 
             $dataDBFolder = DMSFolderMstr::where('dfm_folder_name', $expFolder[count($expFolder) - 1])->first();
 
@@ -228,7 +233,7 @@ trait FolderDocumentTraits
                     [
                         'status' => 'Alredy exists !',
                         'update' => $update,
-                        'children' =>  count($value['children']) > 0 ? $this->migrateFolderToDB($author, '', $value['children'], false) : []
+                        'children' => count($value['children']) > 0 ? $this->migrateFolderToDB($author, '', $value['children'], false) : []
                     ]
                 );
             }
@@ -348,5 +353,7 @@ trait FolderDocumentTraits
         return $hasil;
     }
 
-    public function shareFileFolder($id) {}
+    public function shareFileFolder($id)
+    {
+    }
 }

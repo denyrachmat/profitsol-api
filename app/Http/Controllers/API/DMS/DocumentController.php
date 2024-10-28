@@ -73,6 +73,7 @@ class DocumentController extends BaseController
                             : $fileNameFormat
                     ),
                     'ddm_doc_flag' => $req->ddm_doc_flag,
+                    'dfm_root_mstr' => $req->dfm_root_mstr
                 ]);
 
                 $result[] = $stored;
@@ -102,7 +103,8 @@ class DocumentController extends BaseController
             !empty($getData['folder']) ? $this->pathCreator($getData['folder']) : '',
             $this->getAliasFolderbyAuthor($getData['p_u_username'], 'source') == 1
                 ? $getData['ddm_doc_real_name']
-                : $getData['ddm_doc_name']
+                : $getData['ddm_doc_name'],
+            $getData['folder']['dfm_root_mstr']
         );
 
         $hasil = [

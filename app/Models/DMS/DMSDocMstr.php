@@ -19,6 +19,7 @@ class DMSDocMstr extends Model
         'ddm_doc_real_name',
         'ddm_doc_size',
         'ddm_doc_flag',
+        'dfm_root_mstr'
     ];
 
     public function folder()
