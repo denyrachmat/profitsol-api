@@ -48,7 +48,7 @@ class FolderController extends BaseController
         $data = DMSFolderMstr::where('id', $stored->id)->with('parentFolders')->first()->toArray();
 
         try {
-            $createRealFolder = $this->createNewFolder($this->getAliasFolderbyAuthor($request->p_u_username, 'user'), $this->pathCreator($data));
+            $createRealFolder = $this->createNewFolder($this->getAliasFolderbyAuthor($request->p_u_username, 'user'), $this->pathCreator($data), $request->dfm_root_mstr);
             return $this->handleResponse([
                 'stored' => $stored,
                 'store_real_folder' => $createRealFolder
@@ -118,7 +118,7 @@ class FolderController extends BaseController
         // return $data;
         $deleteRealFolder = [];
         foreach ($data as $key => $value) {
-            $delete = $this->deleteFolder($this->getAliasFolderbyAuthor($value['p_u_username'], 'user'), $this->pathCreator($value));
+            $delete = $this->deleteFolder($this->getAliasFolderbyAuthor($value['p_u_username'], 'user'), $this->pathCreator($value), $value['dfm_root_mstr']);
 
             if ($delete) {
                 DMSFolderMstr::where('id', $value['id'])->delete();
