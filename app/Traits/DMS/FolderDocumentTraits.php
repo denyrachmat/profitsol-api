@@ -5,8 +5,11 @@ namespace App\Traits\DMS;
 use App\Models\DMS\DMSFolderMstr;
 use App\Models\DMS\DMSDocMstr;
 use App\Models\DMS\DMSFolderRootMstr;
+use App\Models\DMS\DMSDocRootMstr;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use Config;
+use Illuminate\Http\Request;
 
 trait FolderDocumentTraits
 {
@@ -69,6 +72,9 @@ trait FolderDocumentTraits
             $root = empty($checkRootAlias->dudrm_source)
                 ? 'data_folder'
                 : $checkRootAlias->dudrm_source;
+        } else {
+            $checkID = DMSDocRootMstr::where('ddrm_name', $root)->first();
+            $this->installDisk($checkID->id);
         }
 
         $isUseRealNameFile = empty($checkRootAlias)
@@ -95,6 +101,7 @@ trait FolderDocumentTraits
 
     public function createNewFolder($author, $path, $root = '')
     {
+        // return Config::get('filesystems.disks');
         return Storage::disk($this->getAliasFolderbyAuthor($author, 'root', $root))->makeDirectory($this->getAliasFolderbyAuthor($author) . '/' . $path);
     }
 
@@ -166,12 +173,12 @@ trait FolderDocumentTraits
         return $hasil;
     }
 
-    public function migrateFolderToDB($author, $path = '', $data = [], $root ='')
+    public function migrateFolderToDB($author, $path = '', $data = [], $root = '')
     {
         if (count($data) === 0) {
             $data = $path === ''
-                ? $this->convertFolderPathToArray($author, $path,0 ,[], $root)
-                : [$this->convertFolderPathToArray($author, $path,0 ,[], $root)];
+                ? $this->convertFolderPathToArray($author, $path, 0, [], $root)
+                : [$this->convertFolderPathToArray($author, $path, 0, [], $root)];
         }
 
         $hasil = [];
@@ -354,5 +361,77 @@ trait FolderDocumentTraits
 
     public function shareFileFolder($id)
     {
+    }
+
+    public function installDisk($id)
+    {
+        $getListRoot = DMSDocRootMstr::where('id', $id)->first();
+
+        if ($getListRoot->ddrm_driver == 'local') {
+            $result = config([
+                'filesystems.disks.' . $getListRoot->ddrm_name => [
+                    'driver' => 'local',
+                    'root' => $getListRoot->ddrm_root
+                ]
+            ]);
+        } else {
+            $result = config([
+                'filesystems.disks.' . $getListRoot->ddrm_name => [
+                    'driver' => $getListRoot->ddrm_driver,
+                    'host' => $getListRoot->ddrm_host,
+                    'username' => $getListRoot->ddrm_username,
+                    'password' => $getListRoot->ddrm_password
+                ]
+            ]);
+        }
+
+        return $this->handleResponse($result, 'Disk installed');
+    }
+
+
+
+    public function getDataFilter(Request $request)
+    {
+        $hist = new DMSDocRootMstr;
+
+        if ($request->has('filter') && count($request->filter) > 0) {
+            foreach ($request->filter as $key => $value) {
+                if (isset($value['step']) && $value['step'] === 'or') {
+                    $hist = (clone $hist)->orwhere($value['cols'], $value['param'], $value['param'] === 'like' ? "%{$value['value']}%" : $value['value']);
+                } else {
+                    $hist = (clone $hist)->where($value['cols'], $value['param'], $value['param'] === 'like' ? "%{$value['value']}%" : $value['value']);
+                }
+            }
+        }
+
+        if ((clone $hist)->count() > 0) {
+            $datanya = (clone $hist)
+                ->orderBy('created_at', 'desc')
+                ->take(10)
+                ->get()
+                ->toArray();
+
+            $hasil = [];
+            foreach ($datanya as $key => $value) {
+                try {
+                    $this->installDisk($value['id']);
+
+                    $check = Storage::disk($value['ddrm_name'])->exists('');
+                    $status = true;
+                } catch (\Throwable $th) {
+                    $status = false;
+                }
+
+                $hasil[] = array_merge($value, [
+                    'config_status' => $status,
+                    'check_config' => Config::get('filesystems.disks'),
+                    'check_list' => $this->checkPerm('deny-rachmat@sumitronics.co.jp', $value['ddrm_name'])
+                ]);
+            }
+
+            return $this->handleResponse($hasil, 'Data Fetched');
+        } else {
+            return $this->handleError('No data found !!', []);
+        }
     }
 }
