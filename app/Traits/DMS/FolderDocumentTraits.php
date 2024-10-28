@@ -42,9 +42,9 @@ trait FolderDocumentTraits
             ];
     }
 
-    public function getAllFolder($author)
+    public function getAllFolder($author, $root = '')
     {
-        return Storage::disk($this->getAliasFolderbyAuthor($author, 'root'))->allFiles();
+        return Storage::disk($this->getAliasFolderbyAuthor($author, 'root', $root))->allFiles();
     }
 
     public function getAliasFolderbyAuthor($author, $data = 'path', $root = '')
@@ -70,7 +70,6 @@ trait FolderDocumentTraits
                 ? 'data_folder'
                 : $checkRootAlias->dudrm_source;
         }
-
 
         $isUseRealNameFile = empty($checkRootAlias)
             ? 0
@@ -137,7 +136,7 @@ trait FolderDocumentTraits
     public function convertFolderPathToArray($author, $path = '', $parentKey = 0, $hasil = [], $root = '')
     {
         // return [$this->getAliasFolderbyAuthor($author, 'root'), $path === '' ? $this->getAliasFolderbyAuthor($author) : $path];
-        $data = Storage::disk($this->getAliasFolderbyAuthor($author, 'root'))->directories($path === '' ? $this->getAliasFolderbyAuthor($author) : $path);
+        $data = Storage::disk($this->getAliasFolderbyAuthor($author, 'root', $root))->directories($path === '' ? $this->getAliasFolderbyAuthor($author) : $path);
         // return $path === '' ? $this->getAliasFolderbyAuthor($author) : $path;
 
         // return $data;
@@ -148,7 +147,7 @@ trait FolderDocumentTraits
             $hasil[] = [
                 'key' => $parentKey + $kunci,
                 'folders_name' => $value,
-                'list_files' => Storage::disk($this->getAliasFolderbyAuthor($author, 'root'))->files($value),
+                'list_files' => Storage::disk($this->getAliasFolderbyAuthor($author, 'root', $root))->files($value),
                 'children' => $this->convertFolderPathToArray($author, $value, $kunci, [], $root)
             ];
 
@@ -159,7 +158,7 @@ trait FolderDocumentTraits
             return [
                 'key' => 0,
                 'folders_name' => $path,
-                'list_files' => Storage::disk($this->getAliasFolderbyAuthor($author, 'root'))->files($pathDet),
+                'list_files' => Storage::disk($this->getAliasFolderbyAuthor($author, 'root', $root))->files($pathDet),
                 'children' => $hasil
             ];
         }
@@ -294,13 +293,13 @@ trait FolderDocumentTraits
         return $hasil;
     }
 
-    public function dbSyncToRealDoc($author)
+    public function dbSyncToRealDoc($author, $root = '')
     {
         $data = DMSFolderMstr::with('parentFolders')->with('doc')->where('p_u_username', $author)->where('dfm_parent_id', '<>', NULL)->get()->toArray();
 
         $hasil = [];
         foreach ($data as $key => $value) {
-            $getFolder = Storage::disk($this->getAliasFolderbyAuthor($author, 'root'))->directories($this->pathCreator($value));
+            $getFolder = Storage::disk($this->getAliasFolderbyAuthor($author, 'root', $root))->directories($this->pathCreator($value));
 
             if (!$getFolder) {
                 $hasil[] = $value;
@@ -329,14 +328,14 @@ trait FolderDocumentTraits
         return $files;
     }
 
-    public function checkPerm($author)
+    public function checkPerm($author, $root = '')
     {
-        return Storage::disk($this->getAliasFolderbyAuthor($author, 'root'))->allDirectories();
+        return Storage::disk($this->getAliasFolderbyAuthor($author, 'root', $root))->allDirectories();
     }
 
-    public function syncRootFiles($author)
+    public function syncRootFiles($author, $root = '')
     {
-        $data = Storage::disk($this->getAliasFolderbyAuthor($author, 'root'))->files();
+        $data = Storage::disk($this->getAliasFolderbyAuthor($author, 'root', $root))->files();
         $hasil = [];
         foreach ($data as $key => $value) {
             $docName = 'DMS_' . Str::random(50) . '.' . explode(".", $value)[count(explode(".", $value)) - 1];
