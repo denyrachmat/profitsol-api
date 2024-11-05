@@ -5,6 +5,8 @@ namespace App\Http\Controllers\API\DMS;
 use Illuminate\Http\Request;
 use App\Models\DMS\DMSDocRootMstr;
 use App\Models\DMS\DMSFolderRootMstr;
+use App\Models\DMS\DMSFolderMstr;
+use App\Models\DMS\DMSDocMstr;
 use App\Http\Controllers\API\PORTAL\BaseController;
 use App\Http\Requests\DMS\DocumentRootStoreRequest;
 use Storage;
@@ -113,5 +115,12 @@ class DocumenRootController extends BaseController
         }
 
         return $this->handleError('Data not found !!');
+    }
+
+    public function folderFilesSync($users, $root) {
+        DMSFolderMstr::where('dfm_root_mstr', $root)->delete();
+        DMSDocMstr::where('dfm_root_mstr', $root)->delete();
+
+        return $this->migrateFolderToDB($users, '', [], $root);
     }
 }

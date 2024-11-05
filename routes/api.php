@@ -113,13 +113,17 @@ Route::group(['prefix' => 'dms'], function () {
         Route::post('storeMappingRoot', [DocumenRootController::class, 'storeMappingRoot']);
         Route::get('getRegisteredRoot/{users}', [DocumenRootController::class, 'getRegisteredRoot']);
         Route::get('installDisk/{id}', [DocumenRootController::class, 'installDisk']);
+        Route::get('resyncFolderToDB/{users}/{root}', [DocumenRootController::class, 'folderFilesSync']);
+        Route::post('shareFileFolder', [DocumenRootController::class, 'shareFileFolder']);
+        Route::get('getSharedToken/{token}/{id?}/{users?}', [DocumenRootController::class, 'getSharedToken']);
+
     });
 
     Route::get('documents/getSourceOnly/{id}', [DocumentController::class, 'sourceOnly']);
 
     Route::resource('folders', FolderController::class);
     Route::group(['prefix' => 'folderList'], function() {
-        Route::get('list/{username}/{root}', [FolderController::class, 'showList']);
+        Route::get('list/{username}/{root}/{id?}', [FolderController::class, 'showList']);
     });
     Route::get('migrateToDB/{users}/{path?}/{isCheck?}', [FolderController::class, 'migrateRealFileToDB']);
     // Tester
@@ -333,6 +337,8 @@ Route::group(['prefix' => 'div'], function () {
         Route::get('generateDocumentUp/{ten}', [CirtenUpdateController::class, 'generateDocument']);
         Route::get('cekViewPrint/{ten}', [CirtenUpdateController::class, 'cekViewPrint']);
         Route::get('cekFilePDF/{ten}', [CirtenUpdateController::class, 'cekFilePDF']);
+
+        Route::get('sendToDMSNew/{ten}', [CircullarTenController::class, 'sendToDMSNew']);
 
         Route::get('viewListItemDesc/{ten}', [CirtenUpdateController::class, 'viewListItemDesc']);
 

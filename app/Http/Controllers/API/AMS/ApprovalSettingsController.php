@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use App\Http\Requests\AMS\ApprovalSettingsRequest;
 use App\Models\AMS\ApprovalSetDetail;
 use App\Models\AMS\ApprovalTokenDetail;
+use App\Models\AMS\ApprovalAttachSet;
 use Illuminate\Support\Str;
 
 class ApprovalSettingsController extends BaseController
@@ -47,13 +48,14 @@ class ApprovalSettingsController extends BaseController
             'amssd_autorun' => $request->amssd_autorun,
             'amssd_autorun_chktime' => $request->amssd_autorun_chktime,
             'amssd_content' => $request->amssd_content,
+            'amssd_attachment' => $request->amssd_attachment
         ]);
 
         if ($request->has('amssd_quotkn') && $request->amssd_quotkn > 0) {
-            $cekTokenTotNow = ApprovalTokenDetail::where('amsm_id',$request->id)->count();
+            $cekTokenTotNow = ApprovalTokenDetail::where('amsm_id', $request->id)->count();
 
             if ($cekTokenTotNow === 0) {
-                ApprovalTokenDetail::where('amsm_id',$request->id)->forceDelete();
+                ApprovalTokenDetail::where('amsm_id', $request->id)->forceDelete();
             }
 
             for ($i = 0; $i < ($request->amssd_quotkn - $cekTokenTotNow); $i++) {
@@ -61,6 +63,22 @@ class ApprovalSettingsController extends BaseController
                     'p_u_username' => $request->header('username'),
                     'amsm_id' => $request->id,
                     'amstd_token' => Str::random(50)
+                ]);
+            }
+        }
+
+        if ($request->has('attch') && count($request->attch) > 0) {
+            foreach ($request->attch as $key => $valueAttch) {
+                ApprovalAttachSet::updateOrCreate([
+                    'aasd_id' => $request->id,
+                    'aats_name' => $valueAttch['aats_name'],
+                ], [
+                    'aasd_id' => $request->id,
+                    'aats_name' => $valueAttch['aats_name'],
+                    'aats_method' => $valueAttch['aats_method'],
+                    'aats_host' => $valueAttch['aats_host'],
+                    'aats_header' => $valueAttch['aats_header'],
+                    'aats_param' => $valueAttch['aats_param'],
                 ]);
             }
         }
