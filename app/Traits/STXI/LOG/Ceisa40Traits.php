@@ -19,7 +19,8 @@ trait Ceisa40Traits
         $source = 'nle',
         $useToken = false,
         $useAuthX = false,
-        $isFile = false
+        $isFile = false,
+        $usePortalAuth = true
     ) {
         $endpoint = $source === 'nle'
             ? /* 'https://nlehub.kemenkeu.go.id/' */ 'https://apis-gw.beacukai.go.id/' . $url
@@ -44,8 +45,9 @@ trait Ceisa40Traits
         $guzz = new \GuzzleHttp\Client();
 
         try {
+
             if ($useToken) {
-                $getToken = $this->cekToken();
+                $getToken = $this->cekToken($usePortalAuth);
 
                 if (!empty($getToken)) {
                     if ($useAuthX) {
@@ -63,9 +65,10 @@ trait Ceisa40Traits
                             'Beacukai-Api-Key' => '6222a75e-1dbb-493e-9461-27f721097e9c'
                         ];
                     }
+                    // logger(json_encode($headers));
 
                     $res = $guzz->request($method, $endpoint, [
-                        'verify' => false,
+                        // 'verify' => false,
                         'headers' => $headers,
                         'body' => json_encode($paramBody),
                     ]);
@@ -110,12 +113,17 @@ trait Ceisa40Traits
         }
     }
 
-    public function cekToken()
+    public function cekToken($usePortalAuth)
     {
         $getToken = CeisaToken::orderBy('created_at', 'desc');
         // Jika DB kosong
         if (empty(with(clone $getToken)->first())) {
-            $login = $this->login();
+            if ($usePortalAuth) {
+                $login = $this->loginPortal();
+            } else {
+                $login = $this->login();
+            }
+            // logger($login);
             if ($login['status']) {
                 $cekToken = with(clone $getToken)->first();
 
@@ -129,16 +137,18 @@ trait Ceisa40Traits
             $minutes = round(abs($to_time - $from_time) / 60, 2);
 
             if ($minutes >= 5) {
-                $cekLogin = $this->login();
-
-                // logger('Cek Login : '. $cekLogin);
+                // Refresh Token
+                if ($usePortalAuth) {
+                    $this->loginPortal();
+                } else {
+                    $this->login();
+                }
 
                 $cekTokenNya = with(clone $getToken)->first();
 
-                // logger('token succes : ' . $cekTokenNya->access_token);
-
                 return $cekTokenNya->access_token;
             } else {
+                // logger($cekLogin);
                 return $dataToken->access_token;
             }
         }
@@ -146,11 +156,40 @@ trait Ceisa40Traits
 
     public function login()
     {
-
         try {
             $sendData = $this->apiPointData(
-                // 'auth-amws/v1/user/login',
                 'nle-oauth/v1/user/login',
+                'POST',
+                [
+                    'username' => 'erwinstx',
+                    'password' => 'Erwin0123'
+                ]
+            );
+
+            // logger($sendData);
+
+            CeisaToken::create([
+                'access_token' => $sendData['item']['access_token'],
+                'refresh_token' => $sendData['item']['refresh_token'],
+            ]);
+
+            return $sendData;
+        } catch (\Throwable $th) {
+            // logger('Login Error!');
+            // logger($th);
+            return [
+                'status' => 'failed',
+                'message' => 'Login Error : ' . $th->getMessage()
+            ];
+            //throw $th;
+        }
+    }
+
+    public function loginPortal()
+    {
+        try {
+            $sendData = $this->apiPointData(
+                'v2/authws/user/login',
                 'POST',
                 [
                     'username' => 'erwinstx',
@@ -402,16 +441,20 @@ trait Ceisa40Traits
 
     public function downloadExcel($noAju, $bc, $id, $isStore = true)
     {
-        logger(json_encode([$noAju, $bc, $id, $isStore]));
+        // logger(json_encode([$noAju, $bc, $id, $isStore]));
         $getDetilPerusahanPenerima = $this->apiPointData(
             'ekspor-xml/Xlsx?nomorAju=' . $noAju . '&idUser=adf9ea0f-de99-444d-b502-e4a474670624&kodeDokumen=' . $bc,
             'GET',
             [],
             'excel-service',
             true,
-            true,
+            false,
             true
         );
+
+        if (is_array($getDetilPerusahanPenerima) && isset($getDetilPerusahanPenerima['Exception'])) {
+            return $this->handleError($getDetilPerusahanPenerima['Exception']);
+        }
 
         if (!empty($getDetilPerusahanPenerima)) {
             switch ($bc) {
@@ -436,8 +479,6 @@ trait Ceisa40Traits
 
                     break;
             }
-
-            // return $getDetilPerusahanPenerima;
 
             $fileName = $bcComp . ' ' . $noAju . '.xlsx';
 

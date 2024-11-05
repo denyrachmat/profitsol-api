@@ -28,15 +28,22 @@ class ApprovalHistDetail extends Model
         'readed_at'
     ];
 
-    public function senderUser() {
+    public function senderUser()
+    {
         return $this->setConnection('sqlsrv')->hasOne(PortalUserDet::class, 'u_username', 'p_u_username');
     }
 
-    public function receiveUser() {
+    public function receiveUser()
+    {
         return $this->setConnection('sqlsrv')->hasOne(PortalUserDet::class, 'u_username', 'amshd_username_apprv');
     }
 
-    public function mapdet() {
+    public function mapdet()
+    {
         return $this->hasOne(ApprovalMapDetail::class, 'id', 'amsmd_id');
+    }
+    public function attch()
+    {
+        return $this->hasMany(ApprovalAttachHist::class, 'amshd_id', 'id');
     }
 }

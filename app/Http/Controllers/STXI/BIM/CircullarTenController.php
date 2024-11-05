@@ -37,7 +37,7 @@ class CircullarTenController extends BaseController
     {
         ini_set('max_execution_time', '300');
         $data = Storage::disk('local')->allDirectories('public/circular_ten');
-        
+
         $hasil = [];
         foreach ($data as $key => $value) {
             $path = $value;
@@ -213,9 +213,9 @@ class CircullarTenController extends BaseController
             $storedTen = CircularTenMstr::updateOrCreate([
                 'CIRTEN_NO' => $req->ten_no
             ], [
-                    'CIRTEN_NO' => $req->ten_no,
-                    'CIRTEN_MAILDT' => $req->emailDate,
-                ]);
+                'CIRTEN_NO' => $req->ten_no,
+                'CIRTEN_MAILDT' => $req->emailDate,
+            ]);
 
             $getModelList = $this->generateDocument($req->ten_no, false);
 
@@ -273,7 +273,9 @@ class CircullarTenController extends BaseController
         $hasil = $this->listModelFromHTM($ten)['SUBCONT'];
         // return $hasil;
 
-        $cekDataModel = CircularTenModelDet::where('CM_ID', $data->id)->get();
+        $cekDataModel = CircularTenModelDet::where('CM_ID', $data->id)
+            ->join('MGSVR.VMI_DB.dbo.Z_STXI_VW_MITM', 'CIM_ITMCD', 'MITM_ITMCD')
+            ->get();
         $listModel = [];
         if (count($cekDataModel) > 0) {
             foreach ($cekDataModel as $keyMdl => $valueMdl) {
@@ -287,9 +289,9 @@ class CircullarTenController extends BaseController
                     'PARTNO' => $getDataItem->MITM_SPTNO,
                     'SUBCD' => $getDataItem->MITM_SUPCD,
                 ];
-                
-                $hasil[(empty($getDataItem->MITM_SUPCD) 
-                    ? substr($getDataItem->MITM_ITMTY, 0, 3) 
+
+                $hasil[(empty($getDataItem->MITM_SUPCD)
+                    ? substr($getDataItem->MITM_ITMTY, 0, 3)
                     : substr($getDataItem->MITM_SUPCD, 0, 3))
                 ] = (empty($getDataItem->MITM_SUPCD) ? substr($getDataItem->MITM_ITMTY, 0, 3) : substr($getDataItem->MITM_SUPCD, 0, 3));
             }
@@ -303,34 +305,35 @@ class CircullarTenController extends BaseController
             'ori_list_item' => $getModel['ori_list_item'],
             'model' => array_values($hasil),
             'list_model' => array_values($listModel),
-            'content' => isset($getModel['list_content'][0]) 
+            'content' => isset($getModel['list_content'][0])
                 ? (
-                    count($getModel['list_content']) > 1 
+                    count($getModel['list_content']) > 1
                     ? str_replace(["\n", "\r", "\\"], "", $getModel['list_content'][1])
                     : str_replace(["\n", "\r", "\\"], "", $getModel['list_content'][0])
-                ) 
+                )
                 : '',
             'real_content' => $getModel,
-            'subject' => count($getModel['subject']) > 1 
-                ? $getModel['subject'][1] 
+            'subject' => count($getModel['subject']) > 1
+                ? $getModel['subject'][1]
                 : (
-                    count($getModel['subject']) > 0 
+                    count($getModel['subject']) > 0
                     ? $getModel['subject'][0]
                     : ''
                 ),
             'list_files' => $filesData,
-            'exec_sch' => count($getModel['exec_sch']) > 2 
-                ? $getModel['exec_sch'][2] 
+            'exec_sch' => count($getModel['exec_sch']) > 2
+                ? $getModel['exec_sch'][2]
                 : (count($getModel['exec_sch']) == 1
-                    ? substr(strstr($getModel['exec_sch'][0],":"), 1)
+                    ? substr(strstr($getModel['exec_sch'][0], ":"), 1)
                     : ''
                 ),
-            'reason' => count($getModel['reason']) > 1 
-                ? $getModel['reason'][1] 
+            'reason' => count($getModel['reason']) > 1
+                ? $getModel['reason'][1]
                 : (count($getModel['reason']) == 1
                     ? $getModel['reason'][0]
                     : ''
-                )
+            ),
+            'registered_model' => $cekDataModel
         ];
 
         if ($isExport) {
@@ -356,8 +359,8 @@ class CircullarTenController extends BaseController
             return $value->extract(['_text'])[0];
         });
 
-        $realItem = count($listItem) > 0 ? $listItem : $getListItem; 
-        
+        $realItem = count($listItem) > 0 ? $listItem : $getListItem;
+
         $getModel = [];
         foreach ($realItem as $key => $value) {
             if (!empty($value)) {
@@ -417,14 +420,14 @@ class CircullarTenController extends BaseController
             'list_item' => $getModel,
             'ori_list_item' => $getListItem,
             'list_content' => count($getContent) > 0
-            ? $getContent
-            : (
-                count($getRevisedDoc) > 0
-                ? $getRevisedDoc
-                : $getContentWoTable
-            ),
-            'subject' => count($getSubject) === 0 
-                ? $getSubject2 
+                ? $getContent
+                : (
+                    count($getRevisedDoc) > 0
+                    ? $getRevisedDoc
+                    : $getContentWoTable
+                ),
+            'subject' => count($getSubject) === 0
+                ? $getSubject2
                 : $getSubject,
             'exec_sch' => $getExecSchedule,
             'reason' => $getReason
@@ -503,10 +506,10 @@ class CircullarTenController extends BaseController
                 $getDataItem = DB::connection('sqlsrv_mega_sme')->table('MITM_TBL')
                     ->where('MITM_ITMCD', 'like', $valueMdl->CIM_ITMCD . '%')
                     ->first();
-                    // logger([$getDataItem->MITM_ITMD1, $getDataItem->MITM_ITMTY, $getDataItem->MITM_SUPCD]);
+                // logger([$getDataItem->MITM_ITMD1, $getDataItem->MITM_ITMTY, $getDataItem->MITM_SUPCD]);
                 if (!empty($getDataItem)) {
-                    $hasil[(empty($getDataItem->MITM_SUPCD) 
-                        ? substr($getDataItem->MITM_ITMTY, 0, 3) 
+                    $hasil[(empty($getDataItem->MITM_SUPCD)
+                        ? substr($getDataItem->MITM_ITMTY, 0, 3)
                         : substr($getDataItem->MITM_SUPCD, 0, 3))
                     ] = (empty($getDataItem->MITM_SUPCD) ? substr($getDataItem->MITM_ITMTY, 0, 3) : substr($getDataItem->MITM_SUPCD, 0, 3));
                     $hasilItem[] = [
@@ -549,9 +552,9 @@ class CircullarTenController extends BaseController
             'CM_ID' => $mainTen->id,
             'CIM_ITMCD' => $item
         ], [
-                'CM_ID' => $mainTen->id,
-                'CIM_ITMCD' => $item
-            ]);
+            'CM_ID' => $mainTen->id,
+            'CIM_ITMCD' => $item
+        ]);
 
         return $this->handleResponse($cekDataModel, 'Update data Sukses ' . $item . ' on TEN ' . $ten);
     }
@@ -617,6 +620,94 @@ class CircullarTenController extends BaseController
                 ]);
 
                 return $this->handleResponse($resApproveDoc, 'TEN has been uploaded to DMS, please check DMS Apps !');
+            } else {
+                return $this->handleError('Some data for ten is not recognized yet !!', [
+                    'model' => $model,
+                    'sch' => $sch,
+                    'reason' => $reason,
+                    'content' => $content,
+                ]);
+            }
+        } catch (ClientException $e) {
+            return $this->handleError(Psr7\Message::toString($e->getResponse()));
+        }
+    }
+
+    public function sendToDMSNew($ten, $username = 'deny-rachmat@sumitronics.co.jp')
+    {
+        // Upload PDF to DMS
+        $pdf = $this->generateDocument($ten, true);
+        $storepdf = Storage::disk('local')->put('/public/circular_ten/' . $ten . '/' . $ten . '.pdf', $pdf);
+        $target_url = 'http://localhost/STX/stx-api/public/api'; // Write your URL here
+        $pathFile = '../storage/app/public/circular_ten/' . $ten . '/' . $ten . '.pdf';
+
+        $client = new Client();
+        // approveAction
+        try {
+            $getModelList = $this->generateDocument($ten, false);
+            $model = $getModelList['model'];
+            $sch = $getModelList['exec_sch'];
+            $reason = $getModelList['reason'];
+            $content = $getModelList['content'];
+
+            if (!empty($model) && !empty($sch) && !empty($reason)) {
+                $res = $client->request('POST', 'http://localhost/STX/stx-api/public/api/ams/approveAction', [
+                    'multipart' => [
+                        [
+                            'name' => 'username',
+                            'contents' => $username,
+                            'headers' => ['Content-Type' => 'application/json']
+                        ],
+                        [
+                            'name' => 'amsm_id',
+                            'contents' => 5,
+                            'headers' => ['Content-Type' => 'application/json']
+                        ],
+                        [
+                            'name' => 'stat',
+                            'contents' => 1,
+                            'headers' => ['Content-Type' => 'application/json']
+                        ],
+                        [
+                            'name' => 'remarks',
+                            'contents' => 'Sending approval tester!!',
+                            'headers' => ['Content-Type' => 'application/json']
+                        ],
+                        [
+                            'name' => 'data',
+                            'contents' => json_encode([
+                                'dfm_id' => 5149,
+                                'ten_no' => $ten,
+                                'dfm_root_mstr' => 'root_dms',
+                                'p_u_username' => $username,
+                                'subject' => $getModelList['subject'],
+                                'models' => $getModelList['registered_model'],
+                            ]),
+                            'headers' => ['Content-Type' => 'application/json']
+                        ],
+                        [
+                            'name' => 'file[]',
+                            'contents' => Psr7\Utils::tryFopen($pathFile, 'r'),
+                            'headers' => ['Content-Type' => 'application/pdf']
+                        ],
+                        [
+                            'name' => 'downloadLinks[]',
+                            'contents' => json_encode([
+                                'method' => 'get',
+                                'url' => 'http://localhost/STX/stx-api/public/api/dms/documents/{{$id}}',
+                            ]),
+                            'headers' => ['Content-Type' => 'application/json']
+                        ],
+                        [
+                            'name' => 'msgkey',
+                            'contents' => 'ten_no',
+                            'headers' => ['Content-Type' => 'application/json']
+                        ]
+                    ]
+                ]);
+                $uploadResult = $res->getBody();
+
+                return $this->handleResponse($uploadResult, 'TEN has been uploaded to DMS, please check DMS Apps !');
             } else {
                 return $this->handleError('Some data for ten is not recognized yet !!', [
                     'model' => $model,

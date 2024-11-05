@@ -23,7 +23,7 @@ class ApprovalController extends BaseController
             'det.userDet' => function ($f) {
                 $f->select('portal_users_det.*', DB::raw("CONCAT(pud_first_name, ' ', pud_last_name) AS fullname"));
             }
-        ])->with('apprvSet')->get();
+        ])->with('apprvSet.attch')->get();
     }
 
     /**

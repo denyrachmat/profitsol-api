@@ -6,6 +6,7 @@ use App\Models\DMS\DMSFolderMstr;
 use App\Models\DMS\DMSDocMstr;
 use App\Models\DMS\DMSFolderRootMstr;
 use App\Models\DMS\DMSDocRootMstr;
+use App\Models\DMS\DMSShareDet;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Config;
@@ -22,12 +23,14 @@ trait FolderDocumentTraits
             'childFolders' => function ($q) {
                 $q->orderBy('dfm_folder_name');
             }
-        ])->with('doc')
+        ])
+        ->with('doc.shared')
+        ->with('shared')
             ->where('p_u_username', $users)
             ->whereNull('dfm_parent_id')
             ->orderBy('dfm_folder_name');
 
-        $dataFiles = DMSDocMstr::where('p_u_username', $users);
+        $dataFiles = DMSDocMstr::where('p_u_username', $users)->with('shared');
 
         if (!empty($root)) {
             $dataFolder->where('dfm_root_mstr', $root);
@@ -137,7 +140,8 @@ trait FolderDocumentTraits
 
     public function getSizeFiles($author, $path, $file, $root = '')
     {
-        return Storage::disk($this->getAliasFolderbyAuthor($author, 'root', $root))->size($this->getAliasFolderbyAuthor($author) . '/' . $path . '/' . $file);
+        logger(Storage::disk($this->getAliasFolderbyAuthor($author, 'root', $root))->path($this->getAliasFolderbyAuthor($author) . '/' . $path . '/' . $file));
+        return storage::disk($this->getAliasFolderbyAuthor($author, 'root', $root))->size($this->getAliasFolderbyAuthor($author) . '/' . $path . '/' . $file);
     }
 
     public function convertFolderPathToArray($author, $path = '', $parentKey = 0, $hasil = [], $root = '')
@@ -176,72 +180,68 @@ trait FolderDocumentTraits
     public function migrateFolderToDB($author, $path = '', $data = [], $root = '')
     {
         if (count($data) === 0) {
-            $data = $path === ''
-                ? $this->convertFolderPathToArray($author, $path, 0, [], $root)
-                : [$this->convertFolderPathToArray($author, $path, 0, [], $root)];
+            $data = [$this->convertFolderPathToArray($author, $path, 0, [], $root)];
         }
 
         $hasil = [];
         foreach ($data as $key => $value) {
-            $expFolder = explode('/', $value['folders_name']);
-
-            $dataDBFolder = DMSFolderMstr::where('dfm_folder_name', $expFolder[count($expFolder) - 1])->first();
-
-            $cekParent = null;
-            if (count($expFolder) > 1) {
-                $cekParent = DMSFolderMstr::where('dfm_folder_name', $expFolder[count($expFolder) - 2])->orderBy('id', 'desc')->first();
-            }
-
-            $checkParent = !empty($cekParent) && count($expFolder) > 1
-                ? $cekParent->id
-                : NULL;
-
-            if (empty($dataDBFolder)) {
-                $insert = DMSFolderMstr::create([
-                    'p_u_username' => $author,
-                    'dfm_folder_name' => $expFolder[count($expFolder) - 1],
-                    'dfm_parent_id' => $checkParent
-                ]);
-                $idFolder = $insert->id;
-                $hasilTemp = array_merge(
-                    $insert->toArray(),
-                    [
-                        'status' => 'Inserted successfully !',
-                        'children' => count($value['children']) > 0 ? $this->migrateFolderToDB($author, '', $value['children'], false) : []
-                    ]
-                );
+            if (empty($value['folders_name'])) {
+                $idFolder = null;
+                $hasilTemp = [
+                    'status' => 'Inserted successfully !',
+                    'children' => count($value['children']) > 0 ? $this->migrateFolderToDB($author, '', $value['children'], $root) : []
+                ];
             } else {
-                $idFolder = $dataDBFolder->id;
-                $checkParent2 = DMSFolderMstr::where('id', $idFolder)->where('dfm_parent_id', $checkParent)->first();
 
-                $update = DMSFolderMstr::create([
-                    'p_u_username' => $author,
-                    'dfm_folder_name' => $expFolder[count($expFolder) - 1],
-                    'dfm_parent_id' => $checkParent
-                ]);
+                $expFolder = explode('/', $value['folders_name']);
 
-                $idFolder = $update->id;
-                // if (empty($checkParent2)) {
-                //     $update = DMSFolderMstr::insert([
-                //         'p_u_username' => $author,
-                //         'dfm_folder_name' => $expFolder[count($expFolder) - 1],
-                //         'dfm_parent_id' => $checkParent
-                //     ]);
-                // } else {
-                //     $update = DMSFolderMstr::where('id', $idFolder)->update([
-                //         'p_u_username' => $author,
-                //         'dfm_folder_name' => $expFolder[count($expFolder) - 1],
-                //         'dfm_parent_id' => $checkParent
-                //     ]);
-                // }
-                $hasilTemp = array_merge(
-                    $dataDBFolder->toArray(),
-                    [
-                        'status' => 'Alredy exists !',
-                        'update' => $update,
-                        'children' => count($value['children']) > 0 ? $this->migrateFolderToDB($author, '', $value['children'], false) : []
-                    ]
-                );
+                $dataDBFolder = DMSFolderMstr::where('dfm_folder_name', $expFolder[count($expFolder) - 1])->first();
+
+                $cekParent = null;
+                if (count($expFolder) > 1) {
+                    $cekParent = DMSFolderMstr::where('dfm_folder_name', $expFolder[count($expFolder) - 2])->orderBy('id', 'desc')->first();
+                }
+
+                $checkParent = !empty($cekParent) && count($expFolder) > 1
+                    ? $cekParent->id
+                    : NULL;
+
+                if (empty($dataDBFolder)) {
+                    $insert = DMSFolderMstr::create([
+                        'p_u_username' => $author,
+                        'dfm_folder_name' => $expFolder[count($expFolder) - 1],
+                        'dfm_parent_id' => $checkParent,
+                        'dfm_root_mstr' => $root
+                    ]);
+                    $idFolder = $insert->id;
+                    $hasilTemp = array_merge(
+                        $insert->toArray(),
+                        [
+                            'status' => 'Inserted successfully !',
+                            'children' => count($value['children']) > 0 ? $this->migrateFolderToDB($author, '', $value['children'], $root) : []
+                        ]
+                    );
+                } else {
+                    $idFolder = $dataDBFolder->id;
+                    $checkParent2 = DMSFolderMstr::where('id', $idFolder)->where('dfm_parent_id', $checkParent)->first();
+
+                    $update = DMSFolderMstr::create([
+                        'p_u_username' => $author,
+                        'dfm_folder_name' => $expFolder[count($expFolder) - 1],
+                        'dfm_parent_id' => $checkParent,
+                        'dfm_root_mstr' => $root
+                    ]);
+
+                    $idFolder = $update->id;
+                    $hasilTemp = array_merge(
+                        $dataDBFolder->toArray(),
+                        [
+                            'status' => 'Alredy exists !',
+                            'update' => $update,
+                            'children' => count($value['children']) > 0 ? $this->migrateFolderToDB($author, '', $value['children'], $root) : []
+                        ]
+                    );
+                }
             }
 
             $files = [];
@@ -252,11 +252,6 @@ trait FolderDocumentTraits
                 $getRealName = $expFile[count($expFile) - 1];
                 $docName = 'DMS_' . Str::random(50) . '.' . explode(".", $getRealName)[count(explode(".", $getRealName)) - 1];
                 if (empty($dataDBFile)) {
-                    // $dataFolder = DMSFolderMstr::where('id', $idFolder)->with('parentFolders')->first()->toArray();
-
-                    // logger(json_encode($dataFolder));
-                    // logger($this->getAliasFolderbyAuthor($author) . '/' . $this->pathCreator($dataFolder) . '/' . $getRealName);
-                    // logger(json_encode(Storage::disk($this->getAliasFolderbyAuthor($author, 'root'))->files($this->pathCreator($dataFolder))));
                     $insertFile = DMSDocMstr::create([
                         'p_u_username' => $author,
                         'dfm_id' => $idFolder,
@@ -264,6 +259,7 @@ trait FolderDocumentTraits
                         'ddm_doc_real_name' => $getRealName,
                         'ddm_doc_size' => 0,
                         'ddm_doc_flag' => 0,
+                        'dfm_root_mstr' => $root
                     ]);
                     $files[] = array_merge(
                         $insertFile->toArray(),
@@ -279,6 +275,7 @@ trait FolderDocumentTraits
                         'ddm_doc_real_name' => $getRealName,
                         'ddm_doc_size' => 0,
                         'ddm_doc_flag' => 0,
+                        'dfm_root_mstr' => $root
                     ]);
                     $files[] = array_merge(
                         $dataDBFile->toArray(),
@@ -359,8 +356,38 @@ trait FolderDocumentTraits
         return $hasil;
     }
 
-    public function shareFileFolder($id)
+    public function shareFileFolder(Request $request)
     {
+        if ($request->has('ddfus_token') && !empty($request->ddfus_token)) {
+            $token = $request->ddfus_token;
+        } else {
+            $token = Str::random(30);
+        }
+
+        $result = [];
+        foreach ($request->det as $key => $value){
+            foreach ($request->ddfus_p_u_username as $keyUsers => $valueUsers) {
+                $result[] = DMSShareDet::updateOrCreate(
+                    [
+                        'ddm_id' => $value['type'] === 'files' ? $value['id'] : null,
+                        'dfm_id' => $value['type'] === 'folder' ? $value['id'] : null,
+                        'ddfus_p_u_username' => $request->ddfus_p_u_username,
+                        'ddfus_token' => $token,
+                    ],
+                    [
+                        'p_u_username' => $request->header('username'),
+                        'ddm_id' => $value['type'] === 'files' ? $value['id'] : null,
+                        'dfm_id' => $value['type'] === 'folder' ? $value['id'] : null,
+                        'ddfus_p_u_username' => $valueUsers,
+                        'ddfus_read' => $request->ddfus_read,
+                        'ddfus_write' => $request->ddfus_write,
+                        'ddfus_token' => $token,
+                    ]
+                );
+            }
+        }
+
+        return $result;
     }
 
     public function installDisk($id)
@@ -387,8 +414,6 @@ trait FolderDocumentTraits
 
         return $this->handleResponse($result, 'Disk installed');
     }
-
-
 
     public function getDataFilter(Request $request)
     {
@@ -433,5 +458,16 @@ trait FolderDocumentTraits
         } else {
             return $this->handleError('No data found !!', []);
         }
+    }
+
+    public function getSharedToken($token, $id = '', $users = 'all') {
+        $data = DMSShareDet::where('ddfus_token', $token)->with('folder')->with('file')
+        ->where('ddfus_p_u_username', $users);
+
+        if (!empty($id)) {
+            $data->where('dfm_id', $id);
+        }
+
+        return $data->get();
     }
 }

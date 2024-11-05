@@ -9,11 +9,13 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Redis;
 use DB;
-
+use Blade;
 use App\Http\Requests\AMS\ApprovalRunningApproveActionRequest;
 
 use App\Models\AMS\ApprovalMaster;
 use App\Models\AMS\ApprovalHistDetail;
+use App\Models\AMS\ApprovalAttachSet;
+use App\Models\AMS\ApprovalAttachHist;
 
 use App\Jobs\AMS\EmailNotificationQueue;
 use App\Models\PORTAL\PortalUserDet;
@@ -45,19 +47,20 @@ trait ApprovalActionTraits
             ->first();
 
         // Check if there is any content using variable on recepient
-        preg_match_all("/\{{(.*?)\}}/", $dataMaster->apprvSet->amssd_content, $matches);
+        preg_match_all("/\{{(.*?)\}}/", str_replace('$', '', $dataMaster->apprvSet->amssd_content), $matches);
         $listVariable = array_values(array_filter($matches[1], function ($fc) {
-            return !str_contains($fc, 'fullname');
+            return !str_contains($fc, 'fullname') && !str_contains($fc, "['");
         }));
 
         if (count($listVariable) > 0) {
             if ($request->has('data')) {
                 $checkFil = array_values(array_filter($listVariable, function ($f) use ($request) {
-                    return !in_array($f, array_keys($request->data));
+                    $checkJSON = is_string($request->data) ? json_decode($request->data, true) : $request->data;
+                    return !in_array($f, array_keys($checkJSON));
                 }));
 
                 if (count($checkFil) > 0) {
-                    return $this->handleError("you hasn't provide all data keys on request!!", $checkFil);
+                    return $this->handleError("you hasn't provide some data keys on request!!", $checkFil);
                 }
             } else {
                 return $this->handleError("you hasn't provide data keys on request!!", $listVariable);
@@ -67,14 +70,17 @@ trait ApprovalActionTraits
         // Check if quota more than 0 then using quota
         if ($dataMaster->apprvSet->amssd_quotkn > 0) {
             $getToken = ApprovalTokenDetail::where('amsm_id', $request->amsm_id);
+
             if ($request->has('token') && !empty($request->token)) {
                 $useToken = (clone $getToken)->first()->amstd_token;
             } else {
-                $useToken = (clone $getToken)->whereDoesntHave('hist')->first()->amstd_token;
-            }
+                $useTokenTest = (clone $getToken)->whereDoesntHave('hist')->first();
 
-            if (empty($useToken)) {
-                return $this->handleError('Your quota is empty, please consult administrator !!');
+                if (empty($useTokenTest)) {
+                    return $this->handleError('Your quota is empty, please consult administrator !!');
+                } else {
+                    $useToken = $useTokenTest->amstd_token;
+                }
             }
         } else {
             $useToken = Str::random(50);
@@ -116,7 +122,7 @@ trait ApprovalActionTraits
             $toEmail = '';
 
             // Get Only latest order
-            if ($valueDet['amsmd_order'] > $getfirstOrder) {
+            if ($valueDet['amsmd_order'] > $getfirstOrder || empty($checkFirst)) {
                 // Sent Notif
                 $hist = ApprovalHistDetail::create([
                     'p_u_username' => $request->username,
@@ -124,15 +130,16 @@ trait ApprovalActionTraits
                     'amsmd_id' => $valueDet['id'],
                     'amshd_token' => $histToken,
                     'amstd_token' => $useToken,
-                    'amshd_username_apprv' => !isset($dataMaster->det[$keyDet + 1]) && $nextStat === 'sent' // IF Approval Complete send back to requestor
+                    'amshd_username_apprv' => !isset($dataMaster->det[$keyDet + 1]) && $nextStat === 'sent' && !empty($checkFirst) // IF Approval Complete send back to requestor
                         ? $checkFirst->p_u_username
                         : $valueDet['amsmd_username'],
                     'amshd_stat' => $nextStat,
                     'amshd_remarks' => $request->remarks,
                     'amshd_paramstore' => json_encode([
-                        'data' => $request->data,
+                        'data' => is_string($request->data) ? json_decode($request->data, true) : $request->data,
                         'onApproval' => $request->has('onApproval') ? $request->onApproval : [],
                         'onDone' => $request->has('onDone') ? $request->onDone : [],
+                        'msgkey' => $request->has('msgkey') ? $request->msgkey : ''
                     ])
                 ]);
 
@@ -149,9 +156,10 @@ trait ApprovalActionTraits
                     'amshd_stat' => 'receive',
                     'amshd_remarks' => $request->remarks,
                     'amshd_paramstore' => json_encode([
-                        'data' => $request->data,
+                        'data' => is_string($request->data) ? json_decode($request->data, true) : $request->data,
                         'onApproval' => $request->has('onApproval') ? $request->onApproval : [],
                         'onDone' => $request->has('onDone') ? $request->onDone : [],
+                        'msgkey' => $request->has('msgkey') ? $request->msgkey : ''
                     ])
                 ]);
 
@@ -171,15 +179,6 @@ trait ApprovalActionTraits
                 }
 
                 $getSender = PortalUserDet::where('u_username', $request->username)->first();
-
-                Redis::publish('portalv2', json_encode([
-                    'app' => 'portal_notif',
-                    'message' => "You have new notification from {$getSender->pud_first_name} {$getSender->pud_last_name}",
-                    'type' => 'info',
-                    'data' => [
-                        'username_dest' => $valueDet['amsmd_username']
-                    ]
-                ]));
             } else {
                 if ($request->has('onDone') && count($request->onDone) > 0) {
                     $this->apiPointData(
@@ -233,18 +232,64 @@ trait ApprovalActionTraits
 
                 $getSender = PortalUserDet::where('u_username', $request->username)->first();
 
-                Redis::publish('portalv2', json_encode([
-                    'app' => 'portal_notif',
-                    'message' => "You have new notification from {$getSender->pud_first_name} {$getSender->pud_last_name}",
-                    'type' => 'info',
-                    'data' => [
-                        'username_dest' => $checkFirst->p_u_username
-                    ]
-                ]));
-
                 $useTokenCreate = ApprovalTokenDetail::where('amstd_token', $useToken)->first();
                 // Delete used token
                 ApprovalTokenDetail::where('id', $useTokenCreate->id)->delete();
+            }
+
+            if ($dataMaster->apprvSet->amssd_attachment) {
+                $cekSettingAttch = ApprovalAttachSet::where('aasd_id', $dataMaster->apprvSet->id)->get();
+                $storeData = [];
+
+                foreach ($cekSettingAttch as $keyAttch => $valueAttch) {
+                    $cekParam = json_decode(str_replace(search: "{{username}}", replace: $request->username, subject: $valueAttch->aats_param));
+                    foreach (json_decode($valueAttch->aats_param) as $keyParam => $valueParam) {
+                        // $dataReq = json_decode($request->data);
+                        $dataReq = is_string($request->data) ? json_decode($request->data, true) : $request->data;
+                        if (isset($dataReq->{$keyParam})) {
+                            $cekParam->{$keyParam} = $dataReq->{$keyParam};
+                        } else {
+                            return $this->handleError('Param ' . $keyParam . ' is needed, please consult administrator !!');
+                        }
+                    }
+
+                    // logger($cekParam);
+                    foreach ($request->file('file') as $keyFiles => $valueFiles) {
+                        $storeDataCek = $this->apiPointData(
+                            $valueAttch->aats_host,
+                            $valueAttch->aats_method,
+                            $cekParam,
+                            $valueAttch->aats_header,
+                            [],
+                            $valueFiles,
+                            $valueFiles->getClientOriginalName()
+                        );
+
+                        if ($storeDataCek) {
+                            if ($request->has('downloadLinks') && count($request->downloadLinks) > 0) {
+                                $linkDownload = $request->downloadLinks[$keyFiles];
+                                $convLink = $this->convertValuetoContent($linkDownload, $valueDet['amsmd_username'], $valueDet['amsmd_username'], $storeDataCek['data'], '');
+                            } else {
+                                $convLink = '';
+                            }
+                            // Jika menggunakan DMS Sebagai Storage
+                            if (str_contains($valueAttch->aats_name, 'DMS')) {
+                                $storeData[] = $storeDataCek;
+                                ApprovalAttachHist::updateOrCreate([
+                                    'amshd_id' => $hist->id,
+                                    'amaad_source' => $storeDataCek['data']['dfm_id'],
+                                ], [
+                                    'amshd_id' => $hist->id,
+                                    'amaad_source' => $storeDataCek['data']['dfm_id'],
+                                    'amaad_filename' => $valueFiles->getClientOriginalName(),
+                                    'amaad_path' => $storeDataCek['data']['path'],
+                                    'amaad_size' => $storeDataCek['data']['ddm_doc_size'],
+                                    'amaad_dl_link' => $convLink
+                                ]);
+                            }
+                        }
+                    }
+                }
             }
 
             // If Email notification is on
@@ -260,6 +305,15 @@ trait ApprovalActionTraits
 
                 dispatch($queueSet)->onQueue('sendEmailQueue');
             }
+
+            Redis::publish('portalv2', json_encode([
+                'app' => 'portal_notif',
+                'message' => "You have new notification from {$getSender->pud_first_name} {$getSender->pud_last_name}",
+                'type' => 'info',
+                'data' => [
+                    'username_dest' => empty($checkFirst) ? $valueDet['amsmd_username'] : $checkFirst->p_u_username
+                ]
+            ]));
         }
 
         return $this->handleResponse($hist, 'Success');
@@ -307,7 +361,10 @@ trait ApprovalActionTraits
         ])
             ->with([
                 'selectedHist' => function ($f) use ($tokenHist) {
-                    $f->with('mapdet')
+                    $f->with(
+                        'mapdet',
+                        'attch'
+                    )
                         ->where('amshd_token', $tokenHist)
                         ->orderBy('id', 'asc')
                         ->get()
@@ -348,12 +405,13 @@ trait ApprovalActionTraits
 
             if (!empty($hasil->apprvSet->amssd_content)) {
                 $hasilnya = $hasil->apprvSet->amssd_content;
+                $checkJSON = is_string($getReceiver['amshd_paramstore']) ? json_decode($getReceiver['amshd_paramstore'], true)['data'] : $getReceiver['amshd_paramstore']['data'];
 
                 $hasil->apprvSet->amssd_content = $this->convertValuetoContent(
                     $hasil->apprvSet->amssd_content,
                     $getSender['p_u_username'],
                     $getReceiver['p_u_username'],
-                    json_decode($getReceiver['amshd_paramstore'])->data,
+                    $checkJSON,
                 );
                 $hasilnya = $hasil->toArray();
             } else {
@@ -371,28 +429,39 @@ trait ApprovalActionTraits
         $getUsersFrom = PortalUserDet::where('u_username', $fromUname)->first();
         $getUsers = PortalUserDet::where('u_username', $toUname)->first();
 
+        // logger("{$getUsers->pud_first_name} {$getUsers->pud_last_name}");
         // Convert fullname Recepient variable
-        $convertContent = str_replace(search: "{{recipient_fullname}}", replace: $toUname, subject: $content);
 
         // If user exists then use fullname instead
-        if (!empty($getUsers)) {
-            $convertContent = str_replace(search: "{{recipient_fullname}}", replace: "{$getUsers->pud_first_name} {$getUsers->pud_last_name}", subject: $content);
-        }
+        // if (!empty($getUsers)) {
+        //     $convertContent = str_replace(search: "{{recipient_fullname}}", replace: "{$getUsers->pud_first_name} {$getUsers->pud_last_name}", subject: $content);
+        // } else {
+        //     $convertContent = str_replace(search: "{{recipient_fullname}}", replace: $toUname, subject: $content);
+        // }
 
-        // Convert fullname sender variable
+        // // Convert fullname sender variable
 
-        // If user exists then use fullname instead
-        if (!empty($getUsersFrom)) {
-            $convertContent = str_replace(search: "{{fullname}}", replace: "{$getUsersFrom->pud_first_name} {$getUsersFrom->pud_last_name}", subject: $convertContent);
-        } else {
-            $convertContent = str_replace(search: "{{fullname}}", replace: $fromUname, subject: $convertContent);
-        }
+        // // If user exists then use fullname instead
+        // if (!empty($getUsersFrom)) {
+        //     $convertContent = str_replace(search: "{{fullname}}", replace: "{$getUsersFrom->pud_first_name} {$getUsersFrom->pud_last_name}", subject: $convertContent);
+        // } else {
+        //     $convertContent = str_replace(search: "{{fullname}}", replace: $fromUname, subject: $convertContent);
+        // }
 
-        $convertContent = str_replace(search: "{{linkapproval}}", replace: env('FE_URL') . "/ams/approvalAction/{$token}", subject: $convertContent);
+        // $convertContent = str_replace(search: "{{linkapproval}}", replace: env('FE_URL') . "/ams/approvalAction/{$token}", subject: $convertContent);
 
+        // logger($param);
+
+        $params = [];
         foreach ($param as $keyVar => $valueVar) {
-            $convertContent = str_replace(search: "{{" . $keyVar . "}}", replace: $valueVar, subject: $convertContent);
+            $params[$keyVar] = $valueVar;
+            // $convertContent = str_replace(search: "{{" . $keyVar . "}}", replace: $valueVar, subject: $convertContent);
         }
+
+        $convertContent = Blade::render($content, array_merge([
+            'recipient_fullname' => !empty($getUsers) ? "{$getUsers->pud_first_name} {$getUsers->pud_last_name}" : $toUname,
+            'fullname' => !empty($getUsersFrom) ? "{$getUsersFrom->pud_first_name} {$getUsersFrom->pud_last_name}" : $fromUname
+        ], $params));
 
         return $convertContent;
     }
@@ -447,15 +516,15 @@ trait ApprovalActionTraits
         $hasil = [];
         foreach ($data->get()->toArray() as $key => $value) {
             $cekLast = ApprovalHistDetail::with('mapdet')
-                    ->where('amshd_stat', 'receive')
-                    ->where('amstd_token', $value['amstd_token'])
-                    ->orderBy('created_at', 'desc')
-                    ->first();
+                ->where('amshd_stat', 'receive')
+                ->where('amstd_token', $value['amstd_token'])
+                ->orderBy('created_at', 'desc')
+                ->first();
 
-            $cekDet = ApprovalMapDetail::select('amsmd_order')->where('amsm_id', (int)$value['amsm_id'])->groupBy('amsmd_order')->get();
+            $cekDet = ApprovalMapDetail::select('amsmd_order')->where('amsm_id', (int) $value['amsm_id'])->groupBy('amsmd_order')->get();
             $hasilDet = 0;
             foreach ($cekDet as $key => $valueDet) {
-                if ((int)$valueDet->amsmd_order <= (int)$cekLast->mapdet->amsmd_order) {
+                if ((int) $valueDet->amsmd_order <= (int) $cekLast->mapdet->amsmd_order) {
                     $hasilDet += 1;
                 }
             }
@@ -468,27 +537,51 @@ trait ApprovalActionTraits
         return $this->handleResponse($hasil, 'Data Fetched');
     }
 
-    public function apiPointData($url, $method, $param = [], $headers = [], $optionalReturn = [])
+    public function apiPointData($url, $method, $param = [], $headers = [], $optionalReturn = [], $file = null, $filename = '')
     {
         $guzz = new \GuzzleHttp\Client();
 
         try {
-            $result = $guzz->request($method, $url, [
-                'verify' => false,
-                'headers' => array_merge([
-                    'Content-Type' => 'application/json',
-                    'Accept' => 'application/json'
-                ], $headers),
-                'decode_content' => false,
-                'body' => count($param) > 0 ? json_encode(array_merge($param, $optionalReturn)) : [],
-            ]);
+            $multipart = [];
+            if ($file) {
+                $multipart = [];
+                foreach ($param as $key => $value) {
+                    $multipart['multipart'][] = [
+                        'name' => $key,
+                        'contents' => $value,
+                        'headers' => json_decode($headers, true)
+                    ];
+                }
 
-            // logger(json_encode(array_merge($param, $optionalReturn)));
+                $expForExt = explode('.', $filename);
+                $getExt = $expForExt[count($expForExt) - 1];
 
-            // $hasil = [
-            //     'code' => $result->getStatusCode(),
-            //     'param' => $param
-            // ];
+                $multipart['multipart'][] = [
+                    'name' => 'file',
+                    'contents' => $file,
+                    'headers' => ['Content-Type' => $file->getMimeType()]
+                ];
+
+                $multipart['multipart'][] = [
+                    'name' => 'filename',
+                    'contents' => $filename,
+                    'headers' => ['Content-Type' => 'application/json']
+                ];
+
+                $params = $multipart;
+            } else {
+                $params = [
+                    'verify' => false,
+                    'headers' => array_merge([
+                        'Content-Type' => 'application/json',
+                        'Accept' => 'application/json'
+                    ], $headers),
+                    'decode_content' => false,
+                    'body' => count($param) > 0 ? json_encode(array_merge($param, $optionalReturn)) : [],
+                ];
+            }
+
+            $result = $guzz->request($method, $url, $params);
 
             return json_decode($result->getBody(), true);
         } catch (\GuzzleHttp\Exception\ClientException $e) {
