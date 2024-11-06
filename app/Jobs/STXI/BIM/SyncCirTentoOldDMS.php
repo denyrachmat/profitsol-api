@@ -474,4 +474,158 @@ class SyncCirTentoOldDMS implements ShouldQueue
             ]));
         }
     }
+
+    public function extractCirtenCover($path)
+    {
+        // return $path;
+        $filenya = Storage::disk('local')->get($path);
+        $crawler = new Crawler($filenya);
+
+        $listItem = $crawler->filterXPath('//*[@class="NaiyoTblE1"]/tbody/tr/td/font')->extract(['_text']);
+
+        $getListItem = $crawler->filterXPath('//*[@class="NaiyoCel"]')->each(function ($value) {
+            return $value->extract(['_text'])[0];
+        });
+
+        $realItem = count($listItem) > 0 ? $listItem : $getListItem;
+
+        $getModel = [];
+        foreach ($realItem as $key => $value) {
+            if (!empty($value)) {
+                $itemCodeFixRemoveArrow = explode(" -> ", $value);
+                if (count($itemCodeFixRemoveArrow) > 0) {
+                    $itemCodeFixStrip = explode("-", $itemCodeFixRemoveArrow[0]);
+                    if (count($itemCodeFixStrip) > 1) {
+                        $itemCode = $itemCodeFixStrip[0] . $itemCodeFixStrip[1];
+
+                        $getModel[] = str_replace('*', 'X', $itemCode);
+                    }
+                }
+            }
+        }
+
+        $getContent = $crawler->filterXPath('//*[@class="NaiyoTblE2"]')->each(function ($value) {
+            return $value->html();
+        });
+
+        $getContentWoTable = $crawler->filterXPath("//*[text()[contains(.,'Content')]]")->each(function ($value) {
+            return $value->html();
+        });
+
+        $getSubject = $crawler->filterXPath('//table/tbody/tr[@valign="top"]/td[@width="64%"]/b/*')->each(function ($value) {
+            return $value->text();
+        });
+
+        $getSubject2 = $crawler->filterXPath('//*[@width="64%"]')->each(function ($value) {
+            return $value->text();
+        });
+
+        $getRevisedDoc = $crawler->filterXPath('//*[@class="NaiyoTblCmt"]')->each(function ($value) {
+            return $value->html();
+        });
+
+        // $getExecSchedule = $crawler->filterXPath('//table[@style="border:1px solid #333;"]/tbody/tr[@valign="top"]/td[@width="100%"]/*')->each(function ($value) {
+        //     return $value->text();
+        // });
+
+        $getExecSchedule = $crawler->filterXPath("//*[text()[contains(.,'Exec')]]/parent::td")->each(function ($value) {
+            return $value->text();
+        });
+
+        $getExecSchedule2 = $crawler->filterXPath('//table[@frame="void"]/tbody/tr[@valign="top"]/td[@width="100%"]/*')->each(function ($value) {
+            return $value->text();
+        });
+
+        // $getReason = $crawler->filterXPath('//table[@style="border:1px solid #333;border-top-style: hidden;"]/tbody/tr[@valign="top"]/td[@width="100%"]/*')->each(function ($value) {
+        //     return $value->text();
+        // });
+
+        $getReason = $crawler->filterXPath("//*[text()[contains(.,'Reason')]]/parent::td")->each(function ($value) {
+            return $value->text();
+        });
+
+        return [
+            'list_item' => $getModel,
+            'ori_list_item' => $getListItem,
+            'list_content' => count($getContent) > 0
+                ? $getContent
+                : (
+                    count($getRevisedDoc) > 0
+                    ? $getRevisedDoc
+                    : $getContentWoTable
+                ),
+            'subject' => count($getSubject) === 0
+                ? $getSubject2
+                : $getSubject,
+            'exec_sch' => $getExecSchedule,
+            'reason' => $getReason
+        ];
+    }
+
+    public function listModelFromHTM($ten)
+    {
+        $data = CircularTenMstr::where('CIRTEN_NO', $ten)->first();
+        $files = '';
+        $filesData = Storage::disk('local')->files('public/circular_ten/' . $ten);
+        foreach ($filesData as $file) {
+            if (pathinfo($file, PATHINFO_EXTENSION) == 'htm' || pathinfo($file, PATHINFO_EXTENSION) == 'html') {
+                $files = $file;
+                break;
+            }
+        }
+
+        $getModel = $this->extractCirtenCover($files);
+
+        // return $getModel;
+
+        $hasil = [];
+        $hasilItem = [];
+        if (count($getModel['list_item']) > 0) {
+            foreach ($getModel['list_item'] as $key => $value) {
+                $getDataItem = DB::connection('sqlsrv_mega_sme')->table('MITM_TBL')
+                    ->where('MITM_ITMCD', 'like', $value . '%')
+                    ->first();
+
+                if (!empty($getDataItem)) {
+                    $hasilItem[] = [
+                        'MDLCD' => $value,
+                        'DESC' => trim($getDataItem->MITM_ITMD1),
+                        'PARTNO' => trim($getDataItem->MITM_SPTNO)
+                    ];
+                    $hasil[(empty($getDataItem->MITM_SUPCD) ? substr($getDataItem->MITM_ITMTY, 0, 3) : substr($getDataItem->MITM_SUPCD, 0, 3))] = (empty($getDataItem->MITM_SUPCD) ? substr($getDataItem->MITM_ITMTY, 0, 3) : substr($getDataItem->MITM_SUPCD, 0, 3));
+                }
+            }
+        } else {
+            logger('cek item 1 - start');
+            $cekDataModel = CircularTenModelDet::where('CM_ID', $data->id)->get();
+
+            if ($ten == 'TEN1060366') {
+                logger($data);
+                logger($cekDataModel);
+            }
+
+            foreach ($cekDataModel as $keyMdl => $valueMdl) {
+                $getDataItem = DB::connection('sqlsrv_mega_sme')->table('MITM_TBL')
+                    ->where('MITM_ITMCD', 'like', $valueMdl->CIM_ITMCD . '%')
+                    ->first();
+                // logger([$getDataItem->MITM_ITMD1, $getDataItem->MITM_ITMTY, $getDataItem->MITM_SUPCD]);
+                if (!empty($getDataItem)) {
+                    $hasil[(empty($getDataItem->MITM_SUPCD)
+                        ? substr($getDataItem->MITM_ITMTY, 0, 3)
+                        : substr($getDataItem->MITM_SUPCD, 0, 3))
+                    ] = (empty($getDataItem->MITM_SUPCD) ? substr($getDataItem->MITM_ITMTY, 0, 3) : substr($getDataItem->MITM_SUPCD, 0, 3));
+                    $hasilItem[] = [
+                        'MDLCD' => $valueMdl->CIM_ITMCD,
+                        'DESC' => trim($getDataItem->MITM_ITMD1),
+                        'PARTNO' => trim($getDataItem->MITM_SPTNO),
+                        'SUPCD' => trim($getDataItem->MITM_SUPCD),
+                        'TEST' => $getDataItem
+                    ];
+                }
+            }
+            logger('cek item 1 - end');
+        }
+
+        return ['SUBCONT' => $hasil, 'ITEM' => $hasilItem];
+    }
 }
