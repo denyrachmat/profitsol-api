@@ -169,7 +169,7 @@ class CirtenUpdateController extends BaseController
             Excel::import($importer, $cirtenMstr->CIRTEN_FILEPATH, 'ten_bim');
 
             // return $this->handleError('Re-sync TEN ' . $id . ' Failed', $importer);
-            // return $importer;
+            return $importer->data;
             if (!empty($importer->data) && isset($importer->data) && isset($importer->data['send_data']) && !empty($importer->data['send_data'])) {
 
                 SyncCirTentoOldDMS::dispatch($importer->data['send_data'])->onQueue('SyncCirTentoOldDMS');
