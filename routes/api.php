@@ -105,6 +105,7 @@ Route::group(['prefix' => 'ams'], function () {
 
 Route::group(['prefix' => 'dms'], function () {
     Route::resource('documents', DocumentController::class);
+    Route::get('documents/getSourceOnly/{id}', [DocumentController::class, 'sourceOnly']);
 
     Route::resource('documentsRoot', DocumenRootController::class);
     Route::group(['prefix' => 'documentsRoots'], function () {
@@ -118,8 +119,6 @@ Route::group(['prefix' => 'dms'], function () {
         Route::get('getSharedToken/{token}/{id?}/{users?}', [DocumenRootController::class, 'getSharedToken']);
 
     });
-
-    Route::get('documents/getSourceOnly/{id}', [DocumentController::class, 'sourceOnly']);
 
     Route::resource('folders', FolderController::class);
     Route::group(['prefix' => 'folderList'], function() {
