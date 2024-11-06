@@ -139,7 +139,7 @@ class DocumentController extends BaseController
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function show($id)
+    public function show($id, $fileOnly = false)
     {
         $getData = DMSDocMstr::where('id', $id)->with('folder.parentFolders')->first()->toArray();
 
@@ -158,15 +158,20 @@ class DocumentController extends BaseController
             'base64Files' => 'data:' . $files['mime'] . ';base64,' . base64_encode($files['file']),
             'mime' => $files['mime'],
             'ext' => $files['ext'],
+            'filename' => $getData['ddm_doc_real_name']
         ];
+
         // return $files;
+        if ($fileOnly) {
+            return $hasil;
+        }
 
         return $this->handleResponse($hasil, 'Data Found !!');
     }
 
     public function sourceOnly($id)
     {
-        return $this->show($id)['data'];
+        return $this->show($id, true);
     }
 
     /**

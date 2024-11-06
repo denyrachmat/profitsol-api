@@ -11,6 +11,7 @@ use Redis;
 use DB;
 use Blade;
 use App\Http\Requests\AMS\ApprovalRunningApproveActionRequest;
+use Storage;
 
 use App\Models\AMS\ApprovalMaster;
 use App\Models\AMS\ApprovalHistDetail;
@@ -102,6 +103,7 @@ trait ApprovalActionTraits
                 ->with('mapdet')
                 ->with('senderUser')
                 ->with('receiveUser')
+                ->with('attch')
                 ->where('amstd_token', $useToken);
 
             $checkLatest = (clone $checkLatestToken)->orderBy('id', 'desc')->first();
@@ -210,6 +212,7 @@ trait ApprovalActionTraits
                         'data' => $request->data,
                         'onApproval' => $request->has('onApproval') ? $request->onApproval : [],
                         'onDone' => $request->has('onDone') ? $request->onDone : [],
+                        'msgkey' => $request->has('msgkey') ? $request->msgkey : ''
                     ])
                 ]);
 
@@ -227,6 +230,7 @@ trait ApprovalActionTraits
                         'data' => $request->data,
                         'onApproval' => $request->has('onApproval') ? $request->onApproval : [],
                         'onDone' => $request->has('onDone') ? $request->onDone : [],
+                        'msgkey' => $request->has('msgkey') ? $request->msgkey : ''
                     ])
                 ]);
 
@@ -245,16 +249,40 @@ trait ApprovalActionTraits
                     $cekParam = json_decode(str_replace(search: "{{username}}", replace: $request->username, subject: $valueAttch->aats_param));
                     foreach (json_decode($valueAttch->aats_param) as $keyParam => $valueParam) {
                         // $dataReq = json_decode($request->data);
-                        $dataReq = is_string($request->data) ? json_decode($request->data, true) : $request->data;
-                        if (isset($dataReq->{$keyParam})) {
+                        $dataReq = is_string($request->data) ? json_decode($request->data, true) : (object) $request->data;
+                        if (isset($dataReq->{$keyParam}) && is_object($dataReq)) {
                             $cekParam->{$keyParam} = $dataReq->{$keyParam};
                         } else {
+                            ApprovalHistDetail::where('amshd_token', $histToken)->delete();
                             return $this->handleError('Param ' . $keyParam . ' is needed, please consult administrator !!');
                         }
                     }
 
-                    // logger($cekParam);
-                    foreach ($request->file('file') as $keyFiles => $valueFiles) {
+                    $filenya = [];
+                    if ($request->has('file')) {
+                        $filenya = $request->file('file');
+                    } else {
+                        $checkHistory = $checkLatest->attch;
+
+                        if (!empty($checkHistory)) {
+                            foreach ($checkHistory as $keyFiles => $valueFiles) {
+
+                                $getURLLink = json_decode($valueFiles->amaad_dl_link);
+                                $getFile = $this->apiPointData(
+                                    $getURLLink->url,
+                                    $getURLLink->method,
+                                    $getURLLink->param ?? [],
+                                    $getURLLink->header ?? []
+                                );
+
+                                logger($getFile['base64Files']);
+
+                                $filenya[] = file_get_contents($this->openFileBase64($getFile['base64Files']));
+                            }
+                        }
+                    }
+
+                    foreach ($filenya as $keyFiles => $valueFiles) {
                         $storeDataCek = $this->apiPointData(
                             $valueAttch->aats_host,
                             $valueAttch->aats_method,
@@ -577,7 +605,7 @@ trait ApprovalActionTraits
                         'Accept' => 'application/json'
                     ], $headers),
                     'decode_content' => false,
-                    'body' => count($param) > 0 ? json_encode(array_merge($param, $optionalReturn)) : [],
+                    'body' => count($param) > 0 ? json_encode(array_merge($param, $optionalReturn)) : json_encode([]),
                 ];
             }
 
@@ -591,5 +619,24 @@ trait ApprovalActionTraits
             // logger(message: $responseBodyAsString);
             return json_decode($responseBodyAsString, true);
         }
+    }
+
+    public function openFileBase64($base64File)
+    {
+        $extension = explode('/', explode(':', substr($base64File, 0, strpos($base64File, ';')))[1])[1];   // .jpg .png .pdf
+
+        $replace = substr($base64File, 0, strpos($base64File, ',') + 1);
+
+        // find substring fro replace here eg: data:image/png;base64,
+
+        $image = str_replace($replace, '', $base64File);
+
+        $image = str_replace(' ', '+', $image);
+
+        $imageName = Str::random(10) . '.' . $extension;
+
+        Storage::disk('public')->put($imageName, base64_decode($image));
+
+        return Storage::disk('public')->url($imageName);
     }
 }

@@ -73,7 +73,14 @@ class CirtenUpdateController extends BaseController
 
                 // $submit = SyncActionCirten::dispatch($value['tenNum'], $value['tenNumEpson'], $filehtm, $file)->onQueue('SyncCirTentoOldDMS');
 
-                $importer = new ImportCircularTen($value['tenNum'], $filehtm, $value['tenNumEpson'], 2, $file);
+                $importer = new ImportCircularTen(
+                    $value['tenNum'],
+                    $filehtm,
+                    $value['tenNumEpson'],
+                    2,
+                    $file,
+                    $request->has('username') ? $request->username : 'deny-rachmat@sumitronics.co.jp'
+                );
 
                 Excel::import($importer, $file, 'ten_bim');
 
