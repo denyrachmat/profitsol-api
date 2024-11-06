@@ -325,6 +325,7 @@ Route::group(['prefix' => 'div'], function () {
         Route::get('generateDocument/{ten}/{isExport?}', [CircullarTenController::class, 'generateDocument']);
         Route::get('listModelFromHTM/{ten}', [CircullarTenController::class, 'listModelFromHTM']);
         Route::get('sendToDMS/{ten}', [CircullarTenController::class, 'sendToDMS']);
+        Route::get('sendToDMSNew/{ten}', [CircullarTenController::class, 'sendToDMSNew']);
         Route::get('findModelCode/{item}', [CircullarTenController::class, 'findItem']);
         Route::get('addModelDetail/{ten}/{item}', [CircullarTenController::class, 'addModelDetail']);
 
