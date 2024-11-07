@@ -173,7 +173,7 @@ class SyncCirTentoOldDMS implements ShouldQueue
             if (empty($cekData)) {
 
                 try {
-                    $getModelList = $this->generateDocument($emailDate);
+                    $getModelList = $this->generateDocument($ten);
                     $model = $getModelList['model'];
                     $sch = empty($getModelList['exec_sch']) ? '-' : $getModelList['exec_sch'];
                     $reason = empty($getModelList['reason']) ? '-' : $getModelList['reason'];
@@ -321,7 +321,7 @@ class SyncCirTentoOldDMS implements ShouldQueue
             if (empty($cekData)) {
 
                 try {
-                    $getModelList = $this->generateDocument($emailDate);
+                    $getModelList = $this->generateDocument($ten);
                     $model = $getModelList['model'];
                     $sch = empty($getModelList['exec_sch']) ? '-' : $getModelList['exec_sch'];
                     $reason = empty($getModelList['reason']) ? '-' : $getModelList['reason'];
@@ -601,11 +601,6 @@ class SyncCirTentoOldDMS implements ShouldQueue
             logger('cek item 1 - start');
             $cekDataModel = CircularTenModelDet::where('CM_ID', $data->id)->get();
             logger($data);
-
-            if ($ten == 'TEN1060366') {
-                logger($data);
-                logger($cekDataModel);
-            }
 
             foreach ($cekDataModel as $keyMdl => $valueMdl) {
                 $getDataItem = DB::connection('sqlsrv_mega_sme')->table('MITM_TBL')
