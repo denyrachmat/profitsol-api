@@ -60,7 +60,7 @@ class SyncCirTentoOldDMS implements ShouldQueue
 
     public function generateDocument($ten, $isExport = false)
     {
-        $data = CircularTenMstr::where('CIRTEN_NO', $ten)->first();
+        $data = CircularTenMstr::where('CIRTEN_TENIEI', $ten)->first();
         $files = '';
         $filesData = Storage::disk('local')->files('public/circular_ten/' . $ten);
 
