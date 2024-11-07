@@ -597,6 +597,7 @@ class SyncCirTentoOldDMS implements ShouldQueue
                 }
             }
         } else {
+            logger($ten);
             logger('cek item 1 - start');
             $cekDataModel = CircularTenModelDet::where('CM_ID', $data->id)->get();
             logger($data);
