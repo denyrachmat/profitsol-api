@@ -154,7 +154,7 @@ class SyncCirTentoOldDMS implements ShouldQueue
     {
         try {
             // Upload PDF to DMS
-            $pdf = $this->generateDocument($emailDate, true);
+            $pdf = $this->generateDocument($ten, true);
             $storepdf = Storage::disk('local')->put('/public/circular_ten/' . $ten . '/' . $ten . '.pdf', $pdf);
             $target_url = 'http://192.168.100.32:8081/stx_api/public/api/'; // Write your URL here
             // $pathFile = '../storage/app/public/circular_ten/' . $ten . '/' . $ten . '.pdf';
@@ -565,7 +565,7 @@ class SyncCirTentoOldDMS implements ShouldQueue
 
     public function listModelFromHTM($ten)
     {
-        $data = CircularTenMstr::where('CIRTEN_NO', $ten)->first();
+        $data = CircularTenMstr::where('CIRTEN_TENIEI', $ten)->first();
         $files = '';
         $filesData = Storage::disk('local')->files('public/circular_ten/' . $ten);
         foreach ($filesData as $file) {
