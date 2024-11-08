@@ -570,7 +570,7 @@ class SyncCirTentoOldDMS implements ShouldQueue
     {
         $data = CircularTenMstr::where('CIRTEN_TENIEI', $ten)->first();
         $files = '';
-        $filesData = Storage::disk('local')->files('public/circular_ten/' . $ten);
+        $filesData = Storage::disk('local')->files('public/circular_ten/' . $data->CIRTEN_NO);
         foreach ($filesData as $file) {
             if (pathinfo($file, PATHINFO_EXTENSION) == 'htm' || pathinfo($file, PATHINFO_EXTENSION) == 'html') {
                 $files = $file;
