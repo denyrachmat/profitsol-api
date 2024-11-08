@@ -92,6 +92,7 @@ trait ApprovalActionTraits
             ]);
         }
 
+        // Start Calculating approval
         $hist = [];
         $getfirstOrder = 0;
         foreach ($dataMaster->det as $keyDet => $valueDet) {
@@ -344,6 +345,8 @@ trait ApprovalActionTraits
                     'username_dest' => empty($checkFirst) ? $valueDet['amsmd_username'] : $checkFirst->p_u_username
                 ]
             ]));
+
+            break;
         }
 
         return $this->handleResponse($hist, 'Success');
