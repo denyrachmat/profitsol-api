@@ -253,7 +253,7 @@ trait ApprovalActionTraits
                         if (isset($dataReq->{$keyParam})) {
                             $cekParam->{$keyParam} = $dataReq->{$keyParam};
                         } else {
-                            // logger(json_encode($dataReq));
+                            logger(json_encode($dataReq));
                             ApprovalHistDetail::where('amshd_token', $histToken)->delete();
                             return $this->handleError('Param ' . $keyParam . ' is needed, please consult administrator !!');
                         }
