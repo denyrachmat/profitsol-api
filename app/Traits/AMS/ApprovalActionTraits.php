@@ -250,10 +250,10 @@ trait ApprovalActionTraits
                     foreach (json_decode($valueAttch->aats_param) as $keyParam => $valueParam) {
                         // $dataReq = json_decode($request->data);
                         $dataReq = is_string($request->data) ? json_decode($request->data, true) : (object) $request->data;
-                        if (isset($dataReq->{$keyParam}) && is_object($dataReq)) {
+                        if (isset($dataReq->{$keyParam})) {
                             $cekParam->{$keyParam} = $dataReq->{$keyParam};
                         } else {
-                            logger(json_encode($dataReq));
+                            // logger(json_encode($dataReq));
                             ApprovalHistDetail::where('amshd_token', $histToken)->delete();
                             return $this->handleError('Param ' . $keyParam . ' is needed, please consult administrator !!');
                         }
