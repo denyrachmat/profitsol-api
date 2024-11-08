@@ -393,7 +393,7 @@ class SyncCirTentoOldDMS implements ShouldQueue
                         $uploadResult = $res->getBody();
                         $resApproveDoc = $client->request('GET', 'dms/toggleapprovedocflag/' . $uploadResult . '/1');
 
-                        CircularTenMstr::where('CIRTEN_NO', $ten)->update([
+                        CircularTenMstr::where('CIRTEN_TENIEI', $ten)->update([
                             'CIRTEN_DMS_DOC_ID' => $uploadResult
                         ]);
 
