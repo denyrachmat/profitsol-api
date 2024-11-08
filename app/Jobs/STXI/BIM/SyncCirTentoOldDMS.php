@@ -579,16 +579,18 @@ class SyncCirTentoOldDMS implements ShouldQueue
             }
         }
 
-        logger('getModel');
-        logger(json_encode($filesData));
-        logger($files);
+        // logger('getModel');
+        // logger(json_encode($filesData));
+        // logger($files);
         $getModel = $this->extractCirtenCover($files);
 
         // return $getModel;
+        logger(json_encode($getModel));
 
         $hasil = [];
         $hasilItem = [];
         if (count($getModel['list_item']) > 0) {
+            logger('model was found on extracted files');
             foreach ($getModel['list_item'] as $key => $value) {
                 $getDataItem = DB::connection('sqlsrv_mega_sme')->table('MITM_TBL')
                     ->where('MITM_ITMCD', 'like', $value . '%')
@@ -604,8 +606,7 @@ class SyncCirTentoOldDMS implements ShouldQueue
                 }
             }
         } else {
-            logger($ten);
-            logger('cek item 1 - start');
+            logger(message: 'model not found on extracted files, start checking database');
             $cekDataModel = CircularTenModelDet::where('CM_ID', $data->id)->get();
             logger($data);
 
