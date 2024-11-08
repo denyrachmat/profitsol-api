@@ -286,6 +286,7 @@ trait ApprovalActionTraits
 
                         foreach ($filenya as $keyFiles => $valueFiles) {
                             logger($valueFiles->getClientOriginalName());
+                            // Store attachment to storage
                             $storeDataCek = $this->apiPointData(
                                 $valueAttch->aats_host,
                                 $valueAttch->aats_method,
@@ -295,11 +296,13 @@ trait ApprovalActionTraits
                                 $valueFiles,
                                 $valueFiles->getClientOriginalName()
                             );
+                            logger(json_encode($storeDataCek));
 
                             if ($storeDataCek) {
                                 if ($request->has('downloadLinks') && count($request->downloadLinks) > 0) {
                                     $linkDownload = $request->downloadLinks[$keyFiles];
                                     $convLink = $this->convertValuetoContent($linkDownload, $valueDet['amsmd_username'], $valueDet['amsmd_username'], $storeDataCek['data'], '');
+                                    logger($linkDownload );
                                 } else {
                                     $convLink = '';
                                 }
