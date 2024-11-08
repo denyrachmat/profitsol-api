@@ -328,6 +328,7 @@ class SyncCirTentoOldDMS implements ShouldQueue
                     $content = $getModelList['content'];
 
                     if (!empty($model) && !empty($sch) && !empty($reason) && !empty($content)) {
+                        logger('start send to AMS');
                         $res = $client->request('POST', 'http://192.168.100.32/public/api/ams/approveAction', [
                             'multipart' => [
                                 [
@@ -443,8 +444,6 @@ class SyncCirTentoOldDMS implements ShouldQueue
                     ]));
                 }
             } else {
-                $resApproveDoc = $client->request('GET', 'dms/toggleapprovedocflag/' . $cekData->doc_id . '/1');
-
                 CircularTenMstr::where('CIRTEN_TENIEI', $ten)->update([
                     'CIRTEN_DMS_DOC_ID' => $cekData->doc_id,
                     'CIRTEN_STATUS' => '',
