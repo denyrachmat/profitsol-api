@@ -249,12 +249,10 @@ trait ApprovalActionTraits
                     $cekParam = json_decode(str_replace(search: "{{username}}", replace: $request->username, subject: $valueAttch->aats_param));
                     foreach (json_decode($valueAttch->aats_param) as $keyParam => $valueParam) {
                         // $dataReq = json_decode($request->data);
-                        $dataReq = is_string($request->data) ? json_decode($request->data, true) : (object) $request->data;
+                        $dataReq = is_string($request->data) ? (object)json_decode($request->data, true) : (object) $request->data;
                         if (isset($dataReq->{$keyParam})) {
                             $cekParam->{$keyParam} = $dataReq->{$keyParam};
                         } else {
-                            logger(json_encode($dataReq));
-                            logger(json_encode($dataReq[$keyParam]));
                             ApprovalHistDetail::where('amshd_token', $histToken)->delete();
                             return $this->handleError('Param ' . $keyParam . ' is needed, please consult administrator !!');
                         }
