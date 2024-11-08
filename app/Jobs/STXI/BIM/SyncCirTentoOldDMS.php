@@ -508,7 +508,7 @@ class SyncCirTentoOldDMS implements ShouldQueue
             }
         }
 
-        $getContent = $crawler->filterXPath('//*[@class="NaiyoTblE2"]')->each(function ($value) {
+        $getContent = $crawler->filterXPath('//*[@class="ng-tns-c34-11"]')->each(function ($value) {
             return $value->html();
         });
 
