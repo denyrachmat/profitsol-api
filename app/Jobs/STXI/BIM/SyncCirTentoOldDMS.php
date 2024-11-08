@@ -143,7 +143,7 @@ class SyncCirTentoOldDMS implements ShouldQueue
                 : (count($getModel['reason']) == 1
                     ? $getModel['reason'][0]
                     : ''
-            ),
+                ),
         ];
 
         if ($isExport) {
@@ -306,19 +306,18 @@ class SyncCirTentoOldDMS implements ShouldQueue
 
     public function sendToDMSNew($ten, $emailDate, $username = '')
     {
+        logger('send to dms new');
+        // Upload PDF to DMS
+        $pdf = $this->generateDocument($ten, true);
+        $dataMstr = CircularTenMstr::where('CIRTEN_TENIEI', $ten)->first();
+        $storepdf = Storage::disk('local')->put('/public/circular_ten/' . $dataMstr->CIRTEN_NO . '/' . $ten . '.pdf', $pdf);
+        $target_url = 'http://192.168.100.32/public/api/'; // Write your URL here
+        $pathFile = 'http://192.168.100.32/public/storage/circular_ten/' . $dataMstr->CIRTEN_NO . '/' . $ten . '.pdf';
+
+        $cekData = DB::connection('sqlsrv_dms_old')->table('dms_doc_mstr')->where('doc_real_name', $ten . '.pdf')->first();
+
+        $client = new Client();
         try {
-            logger('send to dms new');
-            // Upload PDF to DMS
-            $pdf = $this->generateDocument($ten, true);
-            $dataMstr = CircularTenMstr::where('CIRTEN_TENIEI', $ten)->first();
-            $storepdf = Storage::disk('local')->put('/public/circular_ten/' . $dataMstr->CIRTEN_NO . '/' . $ten . '.pdf', $pdf);
-            $target_url = 'http://192.168.100.32/public/api/'; // Write your URL here
-            $pathFile = 'http://192.168.100.32/public/storage/circular_ten/' . $dataMstr->CIRTEN_NO . '/' . $ten . '.pdf';
-
-            $cekData = DB::connection('sqlsrv_dms_old')->table('dms_doc_mstr')->where('doc_real_name', $ten . '.pdf')->first();
-
-            $client = new Client();
-
             if (empty($cekData)) {
                 try {
                     $getModelList = $this->generateDocument($ten);
