@@ -38,7 +38,7 @@ class SyncCirTentoOldDMS implements ShouldQueue
     public function handle(): void
     {
         try {
-            if (isset($this->data['username'])) {
+            if (isset($this->data['username']) && !empty($this->data['username'])) {
                 $this->sendToDMSNew($this->data['ten'], $this->data['mail_date'], $this->data['username']);
             } else {
                 $this->sendToDMS($this->data['ten'], $this->data['mail_date']);
@@ -106,8 +106,8 @@ class SyncCirTentoOldDMS implements ShouldQueue
             $listModel = $this->listModelFromHTM($ten)['ITEM'];
         }
 
-        logger('check content');
-        logger($getModel['list_content']);
+        // logger('check content');
+        // logger($getModel['list_content']);
 
         $data = [
             'registered_model' => $cekDataModel,
@@ -390,8 +390,6 @@ class SyncCirTentoOldDMS implements ShouldQueue
                         ]);
 
                         $uploadResult = $res->getBody();
-                        $resApproveDoc = $client->request('GET', 'dms/toggleapprovedocflag/' . $uploadResult . '/1');
-
                         CircularTenMstr::where('CIRTEN_TENIEI', $ten)->update([
                             'CIRTEN_DMS_DOC_ID' => $uploadResult
                         ]);
@@ -401,7 +399,7 @@ class SyncCirTentoOldDMS implements ShouldQueue
                             'message' => 'TEN ' . $this->data['ten'] . ' : has been uploaded to DMS, please check DMS Apps !',
                             'type' => 'green',
                             'status' => 'success',
-                            'check' => $resApproveDoc,
+                            'check' => $uploadResult,
                             'data' => [
                                 'secTenNo' => $this->data['ten'],
                             ]
@@ -587,12 +585,12 @@ class SyncCirTentoOldDMS implements ShouldQueue
         $getModel = $this->extractCirtenCover($files);
 
         // return $getModel;
-        logger(json_encode($getModel));
+        // logger(json_encode($getModel));
 
         $hasil = [];
         $hasilItem = [];
         if (count($getModel['list_item']) > 0) {
-            logger('model was found on extracted files');
+            // logger('model was found on extracted files');
             foreach ($getModel['list_item'] as $key => $value) {
                 $getDataItem = DB::connection('sqlsrv_mega_sme')->table('MITM_TBL')
                     ->where('MITM_ITMCD', 'like', $value . '%')
@@ -608,9 +606,9 @@ class SyncCirTentoOldDMS implements ShouldQueue
                 }
             }
         } else {
-            logger(message: 'model not found on extracted files, start checking database');
+            // logger(message: 'model not found on extracted files, start checking database');
             $cekDataModel = CircularTenModelDet::where('CM_ID', $data->id)->get();
-            logger($data);
+            // logger($data);
 
             foreach ($cekDataModel as $keyMdl => $valueMdl) {
                 $getDataItem = DB::connection('sqlsrv_mega_sme')->table('MITM_TBL')
@@ -631,7 +629,7 @@ class SyncCirTentoOldDMS implements ShouldQueue
                     ];
                 }
             }
-            logger('cek item 1 - end');
+            // logger('cek item 1 - end');
         }
 
         return ['SUBCONT' => $hasil, 'ITEM' => $hasilItem];

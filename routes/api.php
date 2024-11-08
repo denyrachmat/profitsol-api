@@ -331,7 +331,7 @@ Route::group(['prefix' => 'div'], function () {
 
         Route::resource('cirtenUpdate', CirtenUpdateController::class);
 
-        Route::get('resubmitCirten/{ten}', [CirtenUpdateController::class, 'resubmitCirten']);
+        Route::get('resubmitCirten/{ten}/{username?}', [CirtenUpdateController::class, 'resubmitCirten']);
         Route::get('tenList/{date}', [CirtenUpdateController::class, 'showByDateTen']);
         Route::get('syncTenList/{date}', [CirtenUpdateController::class, 'syncTenList']);
         Route::get('generateDocumentUp/{ten}', [CirtenUpdateController::class, 'generateDocument']);
