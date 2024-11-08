@@ -305,7 +305,8 @@ class SyncCirTentoOldDMS implements ShouldQueue
         try {
             // Upload PDF to DMS
             $pdf = $this->generateDocument($ten, true);
-            $storepdf = Storage::disk('local')->put('/public/circular_ten/' . $ten . '/' . $ten . '.pdf', $pdf);
+            $dataMstr = CircularTenMstr::where('CIRTEN_TENIEI', $ten)->first();
+            $storepdf = Storage::disk('local')->put('/public/circular_ten/' . $dataMstr->CIRTEN_NO . '/' . $ten . '.pdf', $pdf);
             $target_url = 'http://192.168.100.32:8081/stx_api/public/api/'; // Write your URL here
             // $pathFile = '../storage/app/public/circular_ten/' . $ten . '/' . $ten . '.pdf';
             // $pathFile = Storage::url('circular_ten/' . $ten . '/' . $ten . '.pdf');
