@@ -328,7 +328,6 @@ class SyncCirTentoOldDMS implements ShouldQueue
 
                 try {
                     $getModelList = $this->generateDocument($ten);
-                    logger(json_encode($getModelList));
                     $model = $getModelList['model'];
                     $sch = empty($getModelList['exec_sch']) ? '-' : $getModelList['exec_sch'];
                     $reason = empty($getModelList['reason']) ? '-' : $getModelList['reason'];
@@ -361,7 +360,7 @@ class SyncCirTentoOldDMS implements ShouldQueue
                                     'name' => 'data',
                                     'contents' => json_encode([
                                         'dfm_id' => 5149,
-                                        'ten_no' => $ten,
+                                        'ten_no' => $dataMstr->CIRTEN_NO,
                                         'dfm_root_mstr' => 'root_dms',
                                         'p_u_username' => $username,
                                         'subject' => $getModelList['subject'],
