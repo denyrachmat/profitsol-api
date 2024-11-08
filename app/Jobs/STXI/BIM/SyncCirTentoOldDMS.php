@@ -106,6 +106,9 @@ class SyncCirTentoOldDMS implements ShouldQueue
             $listModel = $this->listModelFromHTM($ten)['ITEM'];
         }
 
+        logger('check content');
+        logger($getModel['list_content']);
+
         $data = [
             'registered_model' => $cekDataModel,
             'ten' => $ten,
