@@ -157,21 +157,20 @@ class CirtenUpdateController extends BaseController
      * Show the form for editing the specified resource.
      * For Resubmit Data
      */
-    public function resubmitCirten(string $id)
+    public function resubmitCirten(string $id, string $username = '')
     {
         $cirtenMstr = CircularTenMstr::where('CIRTEN_NO', $id)->first();
 
         if (!empty($cirtenMstr)) {
             // $submit = SyncActionCirten::dispatch($id, $cirtenMstr->CIRTEN_TENIEI, $cirtenMstr->CIRTEN_HTMFILEPATH, $cirtenMstr->CIRTEN_FILEPATH)->onQueue('SyncCirTentoOldDMS');
 
-            $importer = new ImportCircularTen($id, $cirtenMstr->CIRTEN_HTMFILEPATH, $cirtenMstr->CIRTEN_TENIEI, 2, $cirtenMstr->CIRTEN_FILEPATH);
+            $importer = new ImportCircularTen($id, $cirtenMstr->CIRTEN_HTMFILEPATH, $cirtenMstr->CIRTEN_TENIEI, 2, $cirtenMstr->CIRTEN_FILEPATH, $username);
 
             Excel::import($importer, $cirtenMstr->CIRTEN_FILEPATH, 'ten_bim');
 
             // return $this->handleError('Re-sync TEN ' . $id . ' Failed', $importer);
             // return $importer->data;
             if (!empty($importer->data) && isset($importer->data) && isset($importer->data['send_data']) && !empty($importer->data['send_data'])) {
-
                 SyncCirTentoOldDMS::dispatch($importer->data['send_data'])->onQueue('SyncCirTentoOldDMS');
 
                 Redis::publish('portalv2', json_encode([

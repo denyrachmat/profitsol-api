@@ -38,7 +38,7 @@ class SyncCirTentoOldDMS implements ShouldQueue
     public function handle(): void
     {
         try {
-            if (isset($this->data['username'])) {
+            if (isset($this->data['username']) && !empty($this->data['username'])) {
                 $this->sendToDMSNew($this->data['ten'], $this->data['mail_date'], $this->data['username']);
             } else {
                 $this->sendToDMS($this->data['ten'], $this->data['mail_date']);
@@ -390,8 +390,6 @@ class SyncCirTentoOldDMS implements ShouldQueue
                         ]);
 
                         $uploadResult = $res->getBody();
-                        // $resApproveDoc = $client->request('GET', 'dms/toggleapprovedocflag/' . $uploadResult . '/1');
-
                         CircularTenMstr::where('CIRTEN_TENIEI', $ten)->update([
                             'CIRTEN_DMS_DOC_ID' => $uploadResult
                         ]);
