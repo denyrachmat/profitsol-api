@@ -317,15 +317,9 @@ class SyncCirTentoOldDMS implements ShouldQueue
 
             $cekData = DB::connection('sqlsrv_dms_old')->table('dms_doc_mstr')->where('doc_real_name', $ten . '.pdf')->first();
 
-            $client = new Client([
-                // Base URI is used with relative requests
-                'base_uri' => $target_url,
-                // You can set any number of default request options.
-                'timeout' => 2.0,
-            ]);
+            $client = new Client();
 
             if (empty($cekData)) {
-
                 try {
                     $getModelList = $this->generateDocument($ten);
                     $model = $getModelList['model'];
