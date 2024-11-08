@@ -579,6 +579,7 @@ class SyncCirTentoOldDMS implements ShouldQueue
         }
 
         logger('getModel');
+        logger(json_encode($filesData));
         logger($files);
         $getModel = $this->extractCirtenCover($files);
 
