@@ -62,7 +62,7 @@ class SyncCirTentoOldDMS implements ShouldQueue
     {
         $data = CircularTenMstr::where('CIRTEN_TENIEI', $ten)->first();
         $files = '';
-        $filesData = Storage::disk('local')->files('public/circular_ten/' . $ten);
+        $filesData = Storage::disk('local')->files('public/circular_ten/' . $data->CIRTEN_NO);
 
         // return $filesData;
         foreach ($filesData as $file) {
