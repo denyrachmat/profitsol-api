@@ -82,6 +82,7 @@ class SyncCirTentoOldDMS implements ShouldQueue
         $cekDataModel = CircularTenModelDet::where('CM_ID', $data->id)
             ->join('MGSVR.VMI_DB.dbo.Z_STXI_VW_MITM', 'CIM_ITMCD', 'MITM_ITMCD')
             ->get();
+
         $listModel = [];
         if (count($cekDataModel) > 0) {
             foreach ($cekDataModel as $keyMdl => $valueMdl) {
@@ -106,6 +107,7 @@ class SyncCirTentoOldDMS implements ShouldQueue
         }
 
         $data = [
+            'registered_model' => $cekDataModel,
             'ten' => $ten,
             'mail_date' => $data,
             'ori_list_item' => $getModel['ori_list_item'],
@@ -139,7 +141,6 @@ class SyncCirTentoOldDMS implements ShouldQueue
                     ? $getModel['reason'][0]
                     : ''
             ),
-            'registered_model' => $cekDataModel
         ];
         if ($isExport) {
             $pdf = Pdf::loadView('STXI/BIM/circularTenLayout', $this->data);
