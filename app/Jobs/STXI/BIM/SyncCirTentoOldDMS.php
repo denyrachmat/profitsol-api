@@ -142,13 +142,14 @@ class SyncCirTentoOldDMS implements ShouldQueue
                     : ''
             ),
         ];
+
         if ($isExport) {
             $pdf = Pdf::loadView('STXI/BIM/circularTenLayout', $this->data);
 
             return $pdf->download($this->data['ten'] . '.pdf');
         }
 
-        return $this->data;
+        return $data;
     }
 
     public function sendToDMS($ten, $emailDate)
