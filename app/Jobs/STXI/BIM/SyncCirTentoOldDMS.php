@@ -335,7 +335,7 @@ class SyncCirTentoOldDMS implements ShouldQueue
                     $content = $getModelList['content'];
 
                     if (!empty($model) && !empty($sch) && !empty($reason) && !empty($content)) {
-                        $res = $client->request('POST', 'http://localhost/STX/stx-api/public/api/ams/approveAction', [
+                        $res = $client->request('POST', 'http://192.168.100.32/public/api/ams/approveAction', [
                             'multipart' => [
                                 [
                                     'name' => 'username',
