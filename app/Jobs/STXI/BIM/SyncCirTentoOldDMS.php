@@ -378,7 +378,7 @@ class SyncCirTentoOldDMS implements ShouldQueue
                                     'name' => 'downloadLinks[]',
                                     'contents' => json_encode([
                                         'method' => 'get',
-                                        'url' => 'http://localhost/STX/stx-api/public/api/dms/documents/{{$id}}',
+                                        'url' => 'http://192.168.100.32/public/api/dms/documents/{{$id}}',
                                     ]),
                                     'headers' => ['Content-Type' => 'application/json']
                                 ],
@@ -393,7 +393,7 @@ class SyncCirTentoOldDMS implements ShouldQueue
                         $uploadResult = $res->getBody();
                         $resApproveDoc = $client->request('GET', 'dms/toggleapprovedocflag/' . $uploadResult . '/1');
 
-                        CircularTenMstr::where('CIRTEN_NO', $ten)->update([
+                        CircularTenMstr::where('CIRTEN_TENIEI', $ten)->update([
                             'CIRTEN_DMS_DOC_ID' => $uploadResult
                         ]);
 
