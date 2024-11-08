@@ -277,8 +277,6 @@ trait ApprovalActionTraits
                                         $getURLLink->header ?? []
                                     );
 
-                                    logger($getFile['base64Files']);
-
                                     $filenya[] = file_get_contents($this->openFileBase64($getFile['base64Files']));
                                 }
                             }
@@ -287,6 +285,7 @@ trait ApprovalActionTraits
                         logger(json_encode($filenya));
 
                         foreach ($filenya as $keyFiles => $valueFiles) {
+                            logger($valueFiles->getClientOriginalName());
                             $storeDataCek = $this->apiPointData(
                                 $valueAttch->aats_host,
                                 $valueAttch->aats_method,
@@ -490,6 +489,8 @@ trait ApprovalActionTraits
             $params[$keyVar] = $valueVar;
             // $convertContent = str_replace(search: "{{" . $keyVar . "}}", replace: $valueVar, subject: $convertContent);
         }
+
+        logger(json_encode($params[$keyVar]));
 
         $convertContent = Blade::render($content, array_merge([
             'recipient_fullname' => !empty($getUsers) ? "{$getUsers->pud_first_name} {$getUsers->pud_last_name}" : $toUname,
