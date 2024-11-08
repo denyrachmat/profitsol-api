@@ -282,6 +282,8 @@ trait ApprovalActionTraits
                         }
                     }
 
+                    logger(json_encode($filenya));
+
                     foreach ($filenya as $keyFiles => $valueFiles) {
                         $storeDataCek = $this->apiPointData(
                             $valueAttch->aats_host,
