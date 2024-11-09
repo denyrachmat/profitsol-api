@@ -93,7 +93,9 @@ class SyncCirTentoOldDMS implements ShouldQueue
                         'MITM_ITMD1',
                         'MITM_ITMD2',
                         'MITM_STKUOM',
-                        'MITM_SPTNO'
+                        'MITM_SPTNO',
+                        'MITM_SUPCD',
+                        'MITM_ITMTY'
                     )
                     ->where('MITM_ITMCD', 'like', $valueMdl->CIM_ITMCD . '%')
                     ->groupBy(
@@ -101,7 +103,9 @@ class SyncCirTentoOldDMS implements ShouldQueue
                         'MITM_ITMD1',
                         'MITM_ITMD2',
                         'MITM_STKUOM',
-                        'MITM_SPTNO'
+                        'MITM_SPTNO',
+                        'MITM_SUPCD',
+                        'MITM_ITMTY'
                     )
                     ->first();
 
