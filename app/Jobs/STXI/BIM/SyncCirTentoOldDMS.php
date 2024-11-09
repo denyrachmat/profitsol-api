@@ -86,8 +86,23 @@ class SyncCirTentoOldDMS implements ShouldQueue
         $listModel = [];
         if (count($cekDataModel) > 0) {
             foreach ($cekDataModel as $keyMdl => $valueMdl) {
-                $getDataItem = DB::connection('sqlsrv_mega_sme')->table('MITM_TBL')
+                $getDataItem = DB::connection('sqlsrv_mega_sme')
+                    ->table('MITM_TBL')
+                    ->select(
+                        'MITM_ITMCD',
+                        'MITM_ITMD1',
+                        'MITM_ITMD2',
+                        'MITM_STKUOM',
+                        'MITM_SPTNO'
+                    )
                     ->where('MITM_ITMCD', 'like', $valueMdl->CIM_ITMCD . '%')
+                    ->groupBy(
+                        'MITM_ITMCD',
+                        'MITM_ITMD1',
+                        'MITM_ITMD2',
+                        'MITM_STKUOM',
+                        'MITM_SPTNO'
+                    )
                     ->first();
 
                 $listModel[] = [

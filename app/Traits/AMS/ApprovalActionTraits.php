@@ -80,7 +80,25 @@ trait ApprovalActionTraits
                 if (empty($useTokenTest)) {
                     return $this->handleError('Your quota is empty, please consult administrator !!');
                 } else {
-                    $useToken = $useTokenTest->amstd_token;
+                    // Check if key already running
+                    $useTokenCheckRunning = (clone $getToken)->with('hist', function($f) {
+                        $f->where('amshd_stat', 'receive');
+                    })->whereHas('hist')->get();
+
+                    if (!empty($useTokenCheck)) {
+                        $runningToken = [];
+                        foreach ($useTokenCheckRunning as $keyTokenCheck => $valueTokenCheck) {
+                            $dataSent = $valueTokenCheck->hist;
+                            foreach ($dataSent as $keySent => $valueSent) {
+                                $runningToken[] = $valueSent;
+                            }
+                        }
+
+                        logger(json_encode($runningToken));
+                        $useToken = $useTokenTest->amstd_token;
+                    } else {
+                        $useToken = $useTokenTest->amstd_token;
+                    }
                 }
             }
         } else {
