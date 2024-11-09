@@ -384,6 +384,8 @@ class SyncCirTentoOldDMS implements ShouldQueue
                         ]);
 
                         $uploadResult = $res->getBody();
+
+                        logger($uploadResult);
                         CircularTenMstr::where('CIRTEN_TENIEI', $ten)->update([
                             'CIRTEN_DMS_DOC_ID' => $uploadResult
                         ]);
