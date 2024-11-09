@@ -518,6 +518,10 @@ class SyncCirTentoOldDMS implements ShouldQueue
             return $value->html();
         });
 
+        $subjects = $crawler->filter('tr:contains("Subject")')->each(function (Crawler $node) {
+            return $node->filter('div.comment-box')->text();
+        });
+
         $getSubject = $crawler->filterXPath('//table/tbody/tr[@valign="top"]/td[@width="64%"]/b/*')->each(function ($value) {
             return $value->text();
         });
@@ -560,9 +564,9 @@ class SyncCirTentoOldDMS implements ShouldQueue
                     ? $getRevisedDoc
                     : $getContentWoTable
                 ),
-            'subject' => count($getSubject) === 0
-                ? $getSubject2
-                : $getSubject,
+            'subject' => count($subjects) === 0
+                ? ''
+                : $subjects[1] ?? $subjects[0],
             'exec_sch' => $getExecSchedule,
             'reason' => $getReason
         ];
