@@ -87,8 +87,6 @@ trait ApprovalActionTraits
                     ->get()
                     ->toArray();
 
-                    logger('check exists token 1');
-                    logger(json_encode($useTokenCheckRunning));
                     if (!empty($useTokenCheckRunning)) {
                         $runningToken = [];
                         foreach ($useTokenCheckRunning as $keyTokenCheck => $valueTokenCheck) {
@@ -112,9 +110,6 @@ trait ApprovalActionTraits
                         if (count($runningToken) > 0) {
                             return $this->handleError('you already send Approval, please d');
                         }
-
-                        logger('check exists token 2');
-                        logger(json_encode($runningToken));
                         $useToken = $useTokenTest->amstd_token;
                     } else {
                         $useToken = $useTokenTest->amstd_token;
