@@ -92,7 +92,16 @@ trait ApprovalActionTraits
                         foreach ($useTokenCheckRunning as $keyTokenCheck => $valueTokenCheck) {
                             $dataSent = $valueTokenCheck->hist;
                             foreach ($dataSent as $keySent => $valueSent) {
-                                $runningToken[] = $valueSent;
+                                $getParam = json_decode($valueSent['amshd_paramstore']);
+
+                                if (isset($getParam->msgkey)) {
+                                    $cekValue = $getParam->data->{$getParam->msgkey};
+                                    $checkJSON = is_string($request->data) ? json_decode($request->data, true) : $request->data;
+
+                                    if ($cekValue == $checkJSON->{$getParam->msgkey}) {
+                                        $runningToken[] = $valueSent;
+                                    }
+                                }
                             }
                         }
 
