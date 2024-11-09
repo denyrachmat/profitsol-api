@@ -80,7 +80,25 @@ class SyncCirTentoOldDMS implements ShouldQueue
         // return $hasil;
 
         $cekDataModel = CircularTenModelDet::where('CM_ID', $data->id)
+            ->select(
+                'CIM_ITMCD',
+                'MITM_ITMCD',
+                'MITM_ITMD1',
+                'MITM_ITMD2',
+                'MITM_STKUOM',
+                'MITM_SPTNO',
+                'MITM_ITMTY'
+            )
             ->join('MGSVR.VMI_DB.dbo.Z_STXI_VW_MITM', 'CIM_ITMCD', 'MITM_ITMCD')
+            ->groupBy(
+                'CIM_ITMCD',
+                'MITM_ITMCD',
+                'MITM_ITMD1',
+                'MITM_ITMD2',
+                'MITM_STKUOM',
+                'MITM_SPTNO',
+                'MITM_ITMTY'
+            )
             ->get();
 
         $listModel = [];
