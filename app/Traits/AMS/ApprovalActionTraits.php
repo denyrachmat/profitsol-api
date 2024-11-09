@@ -98,7 +98,7 @@ trait ApprovalActionTraits
                                     $cekValue = $getParam->data->{$getParam->msgkey};
                                     $checkJSON = is_string($request->data) ? json_decode($request->data, true) : $request->data;
 
-                                    if ($cekValue == $checkJSON->{$getParam->msgkey}) {
+                                    if ($cekValue == $checkJSON[$getParam->msgkey]) {
                                         $runningToken[] = $valueSent;
                                     }
                                 }
