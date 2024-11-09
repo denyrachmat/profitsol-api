@@ -161,13 +161,7 @@ class SyncCirTentoOldDMS implements ShouldQueue
                 )
                 : '',
             'real_content' => $getModel,
-            'subject' => count($getModel['subject']) > 1
-                ? $getModel['subject'][1]
-                : (
-                    count($getModel['subject']) > 0
-                    ? $getModel['subject'][0]
-                    : ''
-                ),
+            'subject' => $getModel['subject'],
             'list_files' => $filesData,
             'exec_sch' => count($getModel['exec_sch']) > 2
                 ? $getModel['exec_sch'][2]
