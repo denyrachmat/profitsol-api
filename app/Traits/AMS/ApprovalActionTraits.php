@@ -83,14 +83,16 @@ trait ApprovalActionTraits
                     // Check if key already running
                     $useTokenCheckRunning = (clone $getToken)->with('hist', function($f) {
                         $f->where('amshd_stat', 'receive');
-                    })->whereHas('hist')->get();
+                    })->whereHas('hist')
+                    ->get()
+                    ->toArray();
 
                     logger('check exists token 1');
                     logger(json_encode($useTokenCheckRunning));
                     if (!empty($useTokenCheckRunning)) {
                         $runningToken = [];
                         foreach ($useTokenCheckRunning as $keyTokenCheck => $valueTokenCheck) {
-                            $dataSent = $valueTokenCheck->hist;
+                            $dataSent = $valueTokenCheck['hist'];
                             foreach (array_values($dataSent) as $keySent => $valueSent) {
                                 $getParam = json_decode($valueSent['amshd_paramstore']);
 
