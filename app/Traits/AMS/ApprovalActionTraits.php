@@ -91,7 +91,7 @@ trait ApprovalActionTraits
                         $runningToken = [];
                         foreach ($useTokenCheckRunning as $keyTokenCheck => $valueTokenCheck) {
                             $dataSent = $valueTokenCheck->hist;
-                            foreach ($dataSent as $keySent => $valueSent) {
+                            foreach (array_values($dataSent) as $keySent => $valueSent) {
                                 $getParam = json_decode($valueSent['amshd_paramstore']);
 
                                 if (isset($getParam->msgkey)) {
@@ -99,10 +99,16 @@ trait ApprovalActionTraits
                                     $checkJSON = is_string($request->data) ? json_decode($request->data, true) : $request->data;
 
                                     if ($cekValue == $checkJSON[$getParam->msgkey]) {
-                                        $runningToken[] = $valueSent;
+                                        $runningToken[] = $checkJSON[$getParam->msgkey];
                                     }
+                                } else {
+                                    $runningToken[] = $getParam['data'][array_keys($getParam['data'])[0]];
                                 }
                             }
+                        }
+
+                        if (count($runningToken) > 0) {
+                            return $this->handleError('you already send Approval, please d');
                         }
 
                         logger('check exists token 2');
