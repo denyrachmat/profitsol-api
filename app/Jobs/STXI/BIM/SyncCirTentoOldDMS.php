@@ -314,151 +314,121 @@ class SyncCirTentoOldDMS implements ShouldQueue
         $target_url = 'http://192.168.100.32/public/api/'; // Write your URL here
         $pathFile = 'http://192.168.100.32/public/storage/circular_ten/' . $dataMstr->CIRTEN_NO . '/' . $ten . '.pdf';
 
-        $cekData = DB::connection('sqlsrv_dms_old')->table('dms_doc_mstr')->where('doc_real_name', $ten . '.pdf')->first();
+        // $cekData = DB::connection('sqlsrv_dms_old')->table('dms_doc_mstr')->where('doc_real_name', $ten . '.pdf')->first();
 
         $client = new Client();
         try {
-            if (empty($cekData)) {
-                try {
-                    $getModelList = $this->generateDocument($ten);
-                    $model = $getModelList['model'];
-                    $sch = empty($getModelList['exec_sch']) ? '-' : $getModelList['exec_sch'];
-                    $reason = empty($getModelList['reason']) ? '-' : $getModelList['reason'];
-                    $content = $getModelList['content'];
+            $getModelList = $this->generateDocument($ten);
+            $model = $getModelList['model'];
+            $sch = empty($getModelList['exec_sch']) ? '-' : $getModelList['exec_sch'];
+            $reason = empty($getModelList['reason']) ? '-' : $getModelList['reason'];
+            $content = $getModelList['content'];
 
-                    if (!empty($model) && !empty($sch) && !empty($reason) && !empty($content)) {
-                        logger('start send to AMS');
-                        $res = $client->request('POST', 'http://192.168.100.32/public/api/ams/approveAction', [
-                            'multipart' => [
-                                [
-                                    'name' => 'username',
-                                    'contents' => $username,
-                                    'headers' => ['Content-Type' => 'application/json']
-                                ],
-                                [
-                                    'name' => 'amsm_id',
-                                    'contents' => 5,
-                                    'headers' => ['Content-Type' => 'application/json']
-                                ],
-                                [
-                                    'name' => 'stat',
-                                    'contents' => 1,
-                                    'headers' => ['Content-Type' => 'application/json']
-                                ],
-                                [
-                                    'name' => 'remarks',
-                                    'contents' => 'Sending approval tester!!',
-                                    'headers' => ['Content-Type' => 'application/json']
-                                ],
-                                [
-                                    'name' => 'data',
-                                    'contents' => json_encode([
-                                        'dfm_id' => 5149,
-                                        'ten_no' => $dataMstr->CIRTEN_NO,
-                                        'dfm_root_mstr' => 'root_dms',
-                                        'p_u_username' => $username,
-                                        'subject' => $getModelList['subject'],
-                                        'models' => $getModelList['registered_model'],
-                                    ]),
-                                    'headers' => ['Content-Type' => 'application/json']
-                                ],
-                                [
-                                    'name' => 'file[]',
-                                    'contents' => Psr7\Utils::tryFopen($pathFile, 'r'),
-                                    'headers' => ['Content-Type' => 'application/pdf']
-                                ],
-                                [
-                                    'name' => 'downloadLinks[]',
-                                    'contents' => json_encode([
-                                        'method' => 'get',
-                                        'url' => 'http://192.168.100.32/public/api/dms/documents/{{$id}}',
-                                    ]),
-                                    'headers' => ['Content-Type' => 'application/json']
-                                ],
-                                [
-                                    'name' => 'msgkey',
-                                    'contents' => 'ten_no',
-                                    'headers' => ['Content-Type' => 'application/json']
-                                ]
-                            ]
-                        ]);
-
-                        $uploadResult = $res->getBody();
-
-                        logger($uploadResult);
-                        CircularTenMstr::where('CIRTEN_TENIEI', $ten)->update([
-                            'CIRTEN_DMS_DOC_ID' => $uploadResult
-                        ]);
-
-                        Redis::publish('portalv2', json_encode([
-                            'app' => 'cirten',
-                            'message' => 'TEN ' . $this->data['ten'] . ' : has been uploaded to DMS, please check DMS Apps !',
-                            'type' => 'green',
-                            'status' => 'success',
-                            'check' => $uploadResult,
-                            'data' => [
-                                'secTenNo' => $this->data['ten'],
-                            ]
-                        ]));
-                    } else {
-                        $initMsg = 'TEN ' . $this->data['ten'] . ' : Some data for ten is not recognized yet !!!';
-
-                        if (empty($model)) {
-                            $initMsg .= '<br>Model not found !!';
-                        }
-
-                        if (empty($sch)) {
-                            $initMsg .= '<br>Schedule section not found !!';
-                        }
-
-                        if (empty($reason)) {
-                            $initMsg .= '<br>Reason section not found !!';
-                        }
-
-                        if (empty($content)) {
-                            $initMsg .= '<br>Content on Excel not found !!';
-                        }
-
-                        Redis::publish('portalv2', json_encode([
-                            'app' => 'cirten',
-                            'message' => $initMsg,
-                            'data' => [
-                                'secTenNo' => $this->data['ten'],
-                                'model' => $model,
-                                'sch' => $sch,
-                                'reason' => $reason,
-                                'content' => $content,
-                            ],
-                            'type' => 'red',
-                            'status' => 'failed',
-                        ]));
-                    }
-                } catch (ClientException $e) {
-                    Redis::publish('portalv2', json_encode([
-                        'app' => 'cirten',
-                        'message' => 'TEN ' . $this->data['ten'] . ' : sync failed server (' . $e->getMessage() . ')',
-                        'type' => 'red',
-                        'status' => 'failed',
-                        'data' => [
-                            'secTenNo' => $this->data['ten'],
+            if (!empty($model) && !empty($sch) && !empty($reason) && !empty($content)) {
+                logger('start send to AMS');
+                $res = $client->request('POST', 'http://192.168.100.32/public/api/ams/approveAction', [
+                    'multipart' => [
+                        [
+                            'name' => 'username',
+                            'contents' => $username,
+                            'headers' => ['Content-Type' => 'application/json']
+                        ],
+                        [
+                            'name' => 'amsm_id',
+                            'contents' => 5,
+                            'headers' => ['Content-Type' => 'application/json']
+                        ],
+                        [
+                            'name' => 'stat',
+                            'contents' => 1,
+                            'headers' => ['Content-Type' => 'application/json']
+                        ],
+                        [
+                            'name' => 'remarks',
+                            'contents' => 'Sending approval tester!!',
+                            'headers' => ['Content-Type' => 'application/json']
+                        ],
+                        [
+                            'name' => 'data',
+                            'contents' => json_encode([
+                                'dfm_id' => 5149,
+                                'ten_no' => $dataMstr->CIRTEN_NO,
+                                'dfm_root_mstr' => 'root_dms',
+                                'p_u_username' => $username,
+                                'subject' => $getModelList['subject'],
+                                'models' => $getModelList['registered_model'],
+                            ]),
+                            'headers' => ['Content-Type' => 'application/json']
+                        ],
+                        [
+                            'name' => 'file[]',
+                            'contents' => Psr7\Utils::tryFopen($pathFile, 'r'),
+                            'headers' => ['Content-Type' => 'application/pdf']
+                        ],
+                        [
+                            'name' => 'downloadLinks[]',
+                            'contents' => json_encode([
+                                'method' => 'get',
+                                'url' => 'http://192.168.100.32/public/api/dms/documents/{{$id}}',
+                            ]),
+                            'headers' => ['Content-Type' => 'application/json']
+                        ],
+                        [
+                            'name' => 'msgkey',
+                            'contents' => 'ten_no',
+                            'headers' => ['Content-Type' => 'application/json']
                         ]
-                    ]));
-                }
-            } else {
+                    ]
+                ]);
+
+                $uploadResult = $res->getBody();
+
+                logger($uploadResult);
                 CircularTenMstr::where('CIRTEN_TENIEI', $ten)->update([
-                    'CIRTEN_DMS_DOC_ID' => $cekData->doc_id,
-                    'CIRTEN_STATUS' => '',
-                    'CIRTEN_STATUSFLG' => 0
+                    'CIRTEN_DMS_DOC_ID' => $uploadResult
                 ]);
 
                 Redis::publish('portalv2', json_encode([
                     'app' => 'cirten',
-                    'message' => 'TEN ' . $this->data['ten'] . ' : already uploaded to DMS, please check to DMS App!',
+                    'message' => 'TEN ' . $this->data['ten'] . ' : has been uploaded to DMS, please check DMS Apps !',
                     'type' => 'green',
                     'status' => 'success',
+                    'check' => $uploadResult,
                     'data' => [
                         'secTenNo' => $this->data['ten'],
                     ]
+                ]));
+            } else {
+                $initMsg = 'TEN ' . $this->data['ten'] . ' : Some data for ten is not recognized yet !!!';
+
+                if (empty($model)) {
+                    $initMsg .= '<br>Model not found !!';
+                }
+
+                if (empty($sch)) {
+                    $initMsg .= '<br>Schedule section not found !!';
+                }
+
+                if (empty($reason)) {
+                    $initMsg .= '<br>Reason section not found !!';
+                }
+
+                if (empty($content)) {
+                    $initMsg .= '<br>Content on Excel not found !!';
+                }
+
+                Redis::publish('portalv2', json_encode([
+                    'app' => 'cirten',
+                    'message' => $initMsg,
+                    'data' => [
+                        'secTenNo' => $this->data['ten'],
+                        'model' => $model,
+                        'sch' => $sch,
+                        'reason' => $reason,
+                        'content' => $content,
+                    ],
+                    'type' => 'red',
+                    'status' => 'failed',
                 ]));
             }
         } catch (ClientException $e) {
