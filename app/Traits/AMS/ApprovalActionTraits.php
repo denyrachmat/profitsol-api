@@ -85,6 +85,8 @@ trait ApprovalActionTraits
                         $f->where('amshd_stat', 'receive');
                     })->whereHas('hist')->get();
 
+                    logger('check exists token 1');
+                    logger(json_encode($useTokenCheckRunning));
                     if (!empty($useTokenCheck)) {
                         $runningToken = [];
                         foreach ($useTokenCheckRunning as $keyTokenCheck => $valueTokenCheck) {
@@ -94,7 +96,7 @@ trait ApprovalActionTraits
                             }
                         }
 
-                        logger('check exists token');
+                        logger('check exists token 2');
                         logger(json_encode($runningToken));
                         $useToken = $useTokenTest->amstd_token;
                     } else {
