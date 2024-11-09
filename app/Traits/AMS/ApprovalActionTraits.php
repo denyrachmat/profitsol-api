@@ -87,7 +87,7 @@ trait ApprovalActionTraits
 
                     logger('check exists token 1');
                     logger(json_encode($useTokenCheckRunning));
-                    if (!empty($useTokenCheck)) {
+                    if (!empty($useTokenCheckRunning)) {
                         $runningToken = [];
                         foreach ($useTokenCheckRunning as $keyTokenCheck => $valueTokenCheck) {
                             $dataSent = $valueTokenCheck->hist;
