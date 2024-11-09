@@ -10,6 +10,7 @@ use Maatwebsite\Excel\Facades\Excel;
 use Illuminate\Support\Facades\DB;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 use Illuminate\Http\File;
+use Redis;
 
 use App\Models\STXI\BIM\CircularTenMstr;
 use App\Models\STXI\BIM\CircularTenModelDet;
@@ -318,7 +319,7 @@ class CircullarTenController extends BaseController
                 : (
                     count($getModel['subject']) > 0
                     ? $getModel['subject'][0]
-                    : ''
+                    : $getModel['subject']
                 ),
             'list_files' => $filesData,
             'exec_sch' => count($getModel['exec_sch']) > 2
@@ -332,7 +333,7 @@ class CircullarTenController extends BaseController
                 : (count($getModel['reason']) == 1
                     ? $getModel['reason'][0]
                     : ''
-            ),
+                ),
             'registered_model' => $cekDataModel
         ];
 
@@ -384,6 +385,10 @@ class CircullarTenController extends BaseController
             return $value->html();
         });
 
+        $subjects = $crawler->filter('tr:contains("Subject")')->each(function (Crawler $node) {
+            return $node->filter('div.comment-box')->text();
+        });
+
         $getSubject = $crawler->filterXPath('//table/tbody/tr[@valign="top"]/td[@width="64%"]/b/*')->each(function ($value) {
             return $value->text();
         });
@@ -428,16 +433,17 @@ class CircullarTenController extends BaseController
                 ),
             'subject' => count($getSubject) === 0
                 ? $getSubject2
-                : $getSubject,
+                : '',
             'exec_sch' => $getExecSchedule,
-            'reason' => $getReason
+            'reason' => $getReason,
+            'real_subject' => $subjects
         ];
     }
 
     public function newExtractCirtenCover($path)
     {
         $filenya = Storage::disk('local')->get($path);
-        return $filenya;
+        // return $filenya;
         $crawler = new Crawler($filenya);
 
         $listItem = $crawler->filterXPath('//*[@class="NaiyoTblE1"]/tbody/tr/td/font')->extract(['_text']);
@@ -524,7 +530,7 @@ class CircullarTenController extends BaseController
             logger('cek item 1 - end');
         }
 
-        return ['SUBCONT' => $hasil, 'ITEM' => $hasilItem];
+        return ['SUBCONT' => $hasil, 'ITEM' => $hasilItem, 'extracted_data' => $getModel];
     }
 
     public function findItem($item)
@@ -633,25 +639,33 @@ class CircullarTenController extends BaseController
         }
     }
 
-    public function sendToDMSNew($ten, $username = 'deny-rachmat@sumitronics.co.jp')
+    public function sendToDMSNew($ten, $emailDate, $username = '')
     {
+        logger('send to dms new');
         // Upload PDF to DMS
-        $pdf = $this->generateDocument($ten, true);
-        $storepdf = Storage::disk('local')->put('/public/circular_ten/' . $ten . '/' . $ten . '.pdf', $pdf);
-        $target_url = 'http://localhost/STX/stx-api/public/api'; // Write your URL here
-        $pathFile = '../storage/app/public/circular_ten/' . $ten . '/' . $ten . '.pdf';
+        $pdf = $this->generateDocument($ten, false);
+
+        return $pdf;
+        $dataMstr = CircularTenMstr::where('CIRTEN_TENIEI', $ten)->first();
+        $storepdf = Storage::disk('local')->put('/public/circular_ten/' . $dataMstr->CIRTEN_NO . '/' . $ten . '.pdf', $pdf);
+        $target_url = 'http://192.168.100.32/public/api/'; // Write your URL here
+        $pathFile = 'http://192.168.100.32/public/storage/circular_ten/' . $dataMstr->CIRTEN_NO . '/' . $ten . '.pdf';
+
+        // $cekData = DB::connection('sqlsrv_dms_old')->table('dms_doc_mstr')->where('doc_real_name', $ten . '.pdf')->first();
 
         $client = new Client();
-        // approveAction
         try {
-            $getModelList = $this->generateDocument($ten, false);
+            $getModelList = $this->generateDocument($ten);
+
+            return $getModelList;
             $model = $getModelList['model'];
-            $sch = $getModelList['exec_sch'];
-            $reason = $getModelList['reason'];
+            $sch = empty($getModelList['exec_sch']) ? '-' : $getModelList['exec_sch'];
+            $reason = empty($getModelList['reason']) ? '-' : $getModelList['reason'];
             $content = $getModelList['content'];
 
-            if (!empty($model) && !empty($sch) && !empty($reason)) {
-                $res = $client->request('POST', 'http://localhost/STX/stx-api/public/api/ams/approveAction', [
+            if (!empty($model) && !empty($sch) && !empty($reason) && !empty($content)) {
+                logger('start send to AMS');
+                $res = $client->request('POST', 'http://192.168.100.32/public/api/ams/approveAction', [
                     'multipart' => [
                         [
                             'name' => 'username',
@@ -677,7 +691,7 @@ class CircullarTenController extends BaseController
                             'name' => 'data',
                             'contents' => json_encode([
                                 'dfm_id' => 5149,
-                                'ten_no' => $ten,
+                                'ten_no' => $dataMstr->CIRTEN_NO,
                                 'dfm_root_mstr' => 'root_dms',
                                 'p_u_username' => $username,
                                 'subject' => $getModelList['subject'],
@@ -694,7 +708,7 @@ class CircullarTenController extends BaseController
                             'name' => 'downloadLinks[]',
                             'contents' => json_encode([
                                 'method' => 'get',
-                                'url' => 'http://localhost/STX/stx-api/public/api/dms/documents/{{$id}}',
+                                'url' => 'http://192.168.100.32/public/api/dms/documents/{{$id}}',
                             ]),
                             'headers' => ['Content-Type' => 'application/json']
                         ],
@@ -705,19 +719,38 @@ class CircullarTenController extends BaseController
                         ]
                     ]
                 ]);
+
                 $uploadResult = $res->getBody();
 
-                return $this->handleResponse($uploadResult, 'TEN has been uploaded to DMS, please check DMS Apps !');
-            } else {
-                return $this->handleError('Some data for ten is not recognized yet !!', [
-                    'model' => $model,
-                    'sch' => $sch,
-                    'reason' => $reason,
-                    'content' => $content,
+                logger($uploadResult);
+                CircularTenMstr::where('CIRTEN_TENIEI', $ten)->update([
+                    'CIRTEN_DMS_DOC_ID' => $uploadResult
                 ]);
+
+                return $uploadResult;
+            } else {
+                $initMsg = 'TEN ' . $ten . ' : Some data for ten is not recognized yet !!!';
+
+                if (empty($model)) {
+                    $initMsg .= '<br>Model not found !!';
+                }
+
+                if (empty($sch)) {
+                    $initMsg .= '<br>Schedule section not found !!';
+                }
+
+                if (empty($reason)) {
+                    $initMsg .= '<br>Reason section not found !!';
+                }
+
+                if (empty($content)) {
+                    $initMsg .= '<br>Content on Excel not found !!';
+                }
+
+                return $initMsg;
             }
         } catch (ClientException $e) {
-            return $this->handleError(Psr7\Message::toString($e->getResponse()));
+            return $e->getMessage();
         }
     }
 }
