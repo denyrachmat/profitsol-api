@@ -94,6 +94,7 @@ trait ApprovalActionTraits
                             }
                         }
 
+                        logger('check exists token');
                         logger(json_encode($runningToken));
                         $useToken = $useTokenTest->amstd_token;
                     } else {
