@@ -313,12 +313,12 @@ trait ApprovalActionTraits
                                         $getURLLink->header ?? []
                                     );
 
-                                    $filenya[] = file_get_contents($this->openFileBase64($getFile['base64Files']));
+                                    // logger(json_encode($getFile['base64Files']));
+
+                                    $filenya[] = file_get_contents($this->openFileBase64($getFile['data']['base64Files']));
                                 }
                             }
                         }
-
-                        logger(json_encode($filenya));
 
                         foreach ($filenya as $keyFiles => $valueFiles) {
                             logger($valueFiles->getClientOriginalName());
