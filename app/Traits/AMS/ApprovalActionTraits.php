@@ -81,11 +81,11 @@ trait ApprovalActionTraits
                     return $this->handleError('Your quota is empty, please consult administrator !!');
                 } else {
                     // Check if key already running
-                    $useTokenCheckRunning = (clone $getToken)->with('hist', function($f) {
+                    $useTokenCheckRunning = (clone $getToken)->with('hist', function ($f) {
                         $f->where('amshd_stat', 'receive');
                     })->whereHas('hist')
-                    ->get()
-                    ->toArray();
+                        ->get()
+                        ->toArray();
 
                     if (!empty($useTokenCheckRunning)) {
                         $runningToken = [];
@@ -272,8 +272,11 @@ trait ApprovalActionTraits
                     $getSender = PortalUserDet::where('u_username', $request->username)->first();
 
                     $useTokenCreate = ApprovalTokenDetail::where('amstd_token', $useToken)->first();
-                    // Delete used token
-                    ApprovalTokenDetail::where('id', $useTokenCreate->id)->delete();
+
+                    if (!isset($dataMaster->det[count($dataMaster->det) - 1])) {
+                        // Delete used token
+                        ApprovalTokenDetail::where('id', $useTokenCreate->id)->delete();
+                    }
                 }
 
                 if ($dataMaster->apprvSet->amssd_attachment) {
@@ -335,7 +338,7 @@ trait ApprovalActionTraits
                                 if ($request->has('downloadLinks') && count($request->downloadLinks) > 0) {
                                     $linkDownload = $request->downloadLinks[$keyFiles];
                                     $convLink = $this->convertValuetoContent($linkDownload, $valueDet['amsmd_username'], $valueDet['amsmd_username'], $storeDataCek['data'], '');
-                                    logger($linkDownload );
+                                    logger($linkDownload);
                                 } else {
                                     $convLink = '';
                                 }
