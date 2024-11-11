@@ -23,6 +23,11 @@ class ApprovalSetDetail extends Model
         'amssd_unread_chktime',
         'amssd_autorun',
         'amssd_autorun_chktime',
-        'amssd_content'
+        'amssd_content',
+        'amssd_attachment'
     ];
+
+    public function attch () {
+        return $this->hasMany(ApprovalAttachSet::class, 'aasd_id', 'id');
+    }
 }

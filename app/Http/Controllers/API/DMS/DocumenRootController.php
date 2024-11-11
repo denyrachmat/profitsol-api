@@ -4,19 +4,24 @@ namespace App\Http\Controllers\API\DMS;
 
 use Illuminate\Http\Request;
 use App\Models\DMS\DMSDocRootMstr;
+use App\Models\DMS\DMSFolderRootMstr;
+use App\Models\DMS\DMSFolderMstr;
+use App\Models\DMS\DMSDocMstr;
 use App\Http\Controllers\API\PORTAL\BaseController;
 use App\Http\Requests\DMS\DocumentRootStoreRequest;
-use Illuminate\Filesystem\FilesystemManager;
+use Storage;
+use Config;
+use App\Traits\DMS\FolderDocumentTraits;
 
 class DocumenRootController extends BaseController
 {
+    use FolderDocumentTraits;
     /**
      * Display a listing of the resource.
      */
     public function index()
     {
-        $data = DMSDocRootMstr::get()
-            ->toArray();
+        $data = DMSDocRootMstr::get()->toArray();
 
         return $this->handleResponse($data, 'Data Found !!');
     }
@@ -35,22 +40,6 @@ class DocumenRootController extends BaseController
     public function store(DocumentRootStoreRequest $request)
     {
         $insert = DMSDocRootMstr::create($request->all());
-
-        $fsMgr = new FilesystemManager(app());
-
-        switch ($request->ddrm_driver) {
-            case 'local':
-                $fsMgr->createLocalDriver([
-                    'root' => $request->ddrm_root
-                ]);
-                break;
-            default :
-                $fsMgr->createFtpDriver([
-                    'host' => $request->ddrm_host,
-                    'username' => $request->ddrm_username,
-                    'password' => $request->ddrm_password,
-                ]);
-        }
 
         return $this->handleResponse($insert, 'Document Root Created !!');
     }
@@ -87,28 +76,51 @@ class DocumenRootController extends BaseController
         //
     }
 
-    public function getDataFilter(Request $request) {
-        $hist = new DMSDocRootMstr;
+    public function getMapping($rootName)
+    {
+        $data = DMSFolderRootMstr::where('dudrm_source', $rootName)->get()->pluck('p_u_username');
 
-        if ($request->has('filter') && count($request->filter) > 0) {
-            foreach ($request->filter as $key => $value) {
-                if (isset($value['step']) && $value['step'] === 'or') {
-                    $hist = (clone $hist)->orwhere($value['cols'], $value['param'], $value['param'] === 'like' ? "%{$value['value']}%" : $value['value']);
-                } else {
-                    $hist = (clone $hist)->where($value['cols'], $value['param'], $value['param'] === 'like' ? "%{$value['value']}%" : $value['value']);
-                }
-            }
+        if (count($data) > 0) {
+            return $this->handleResponse($data, 'Data Found');
         }
 
-        if ((clone $hist)->count() > 0) {
-            $datanya = (clone $hist)
-                ->orderBy('created_at', 'desc')
-                ->take(10)
-                ->get();
+        return $this->handleError('No data found !!');
+    }
 
-            return $this->handleResponse($datanya, 'Data Fetched');
-        } else {
-            return $this->handleError('No data found !!', []);
+    public function storeMappingRoot(Request $request)
+    {
+        $insert = [];
+        foreach ($request->det as $key => $value) {
+            $insert[] = DMSFolderRootMstr::updateOrCreate([
+                'p_u_username' => $value,
+                'dudrm_source' => $request->ddrm_name,
+            ], [
+                'p_u_username' => $value,
+                'dudrm_path' => '',
+                'dudrm_source' => $request->ddrm_name,
+                'dudrm_use_real_nm' => '',
+                'dudrm_alias_username' => '',
+            ]);
         }
+
+        return $this->handleResponse($insert, 'Data Updated');
+    }
+
+    public function getRegisteredRoot($users)
+    {
+        $getListRoot = DMSFolderRootMstr::where('p_u_username', $users)->join('dms_doc_root_mstr', 'ddrm_name', 'dudrm_source')->get();
+
+        if (count($getListRoot) > 0) {
+            return $this->handleResponse($getListRoot, 'Data Found');
+        }
+
+        return $this->handleError('Data not found !!');
+    }
+
+    public function folderFilesSync($users, $root) {
+        DMSFolderMstr::where('dfm_root_mstr', $root)->delete();
+        DMSDocMstr::where('dfm_root_mstr', $root)->delete();
+
+        return $this->migrateFolderToDB($users, '', [], $root);
     }
 }

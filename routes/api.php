@@ -4,6 +4,7 @@ use App\Http\Controllers\API\AMS\ApprovalRunningController;
 use App\Http\Controllers\API\AMS\ApprovalSettingsController;
 use App\Http\Controllers\API\DMS\DocumenRootController;
 use App\Http\Controllers\API\PORTAL\DomainController;
+use App\Http\Controllers\STXI\EMS2\labelPrintController;
 use App\Http\Controllers\STXI\EMS2\TYOAutoBarcodeController;
 use App\Http\Controllers\STXI\EMS2\YPODailyConfController;
 use App\Http\Controllers\STXI\LOG\CeisaMonitoringController;
@@ -104,15 +105,25 @@ Route::group(['prefix' => 'ams'], function () {
 
 Route::group(['prefix' => 'dms'], function () {
     Route::resource('documents', DocumentController::class);
+    Route::get('documents/getSourceOnly/{id}', [DocumentController::class, 'sourceOnly']);
 
     Route::resource('documentsRoot', DocumenRootController::class);
     Route::group(['prefix' => 'documentsRoots'], function () {
         Route::post('getDataFilter', [DocumenRootController::class, 'getDataFilter']);
+        Route::get('getMapping/{root}', [DocumenRootController::class, 'getMapping']);
+        Route::post('storeMappingRoot', [DocumenRootController::class, 'storeMappingRoot']);
+        Route::get('getRegisteredRoot/{users}', [DocumenRootController::class, 'getRegisteredRoot']);
+        Route::get('installDisk/{id}', [DocumenRootController::class, 'installDisk']);
+        Route::get('resyncFolderToDB/{users}/{root}', [DocumenRootController::class, 'folderFilesSync']);
+        Route::post('shareFileFolder', [DocumenRootController::class, 'shareFileFolder']);
+        Route::get('getSharedToken/{token}/{id?}/{users?}', [DocumenRootController::class, 'getSharedToken']);
+
     });
 
-    Route::get('documents/getSourceOnly/{id}', [DocumentController::class, 'sourceOnly']);
-
     Route::resource('folders', FolderController::class);
+    Route::group(['prefix' => 'folderList'], function() {
+        Route::get('list/{username}/{root}/{id?}', [FolderController::class, 'showList']);
+    });
     Route::get('migrateToDB/{users}/{path?}/{isCheck?}', [FolderController::class, 'migrateRealFileToDB']);
     // Tester
     Route::get('checkFolders/{users}', [FolderController::class, 'checkPerm']);
@@ -254,6 +265,12 @@ Route::group(['prefix' => 'div'], function () {
             Route::post('downloadExcel/{id}', [TYOAutoBarcodeController::class, 'downloadExcel']);
             Route::post('downloadBarcodeRange/{fdate}/{ldate}/{type}', [TYOAutoBarcodeController::class, 'downloadBarcodebyDate']);
         });
+
+        Route::resource('labelPrint', labelPrintController::class);
+        Route::group(['prefix' => 'labelPrints'], function () {
+            Route::post('search', [labelPrintController::class, 'searchItems']);
+            Route::post('searchGIT', [labelPrintController::class, 'searchGIT']);
+        });
     });
 
     Route::group(['prefix' => 'log'], function () {
@@ -309,17 +326,20 @@ Route::group(['prefix' => 'div'], function () {
         Route::get('generateDocument/{ten}/{isExport?}', [CircullarTenController::class, 'generateDocument']);
         Route::get('listModelFromHTM/{ten}', [CircullarTenController::class, 'listModelFromHTM']);
         Route::get('sendToDMS/{ten}', [CircullarTenController::class, 'sendToDMS']);
+        Route::get('sendToDMSNew/{ten}', [CircullarTenController::class, 'sendToDMSNew']);
         Route::get('findModelCode/{item}', [CircullarTenController::class, 'findItem']);
         Route::get('addModelDetail/{ten}/{item}', [CircullarTenController::class, 'addModelDetail']);
 
         Route::resource('cirtenUpdate', CirtenUpdateController::class);
 
-        Route::get('resubmitCirten/{ten}', [CirtenUpdateController::class, 'resubmitCirten']);
+        Route::get('resubmitCirten/{ten}/{username?}', [CirtenUpdateController::class, 'resubmitCirten']);
         Route::get('tenList/{date}', [CirtenUpdateController::class, 'showByDateTen']);
         Route::get('syncTenList/{date}', [CirtenUpdateController::class, 'syncTenList']);
         Route::get('generateDocumentUp/{ten}', [CirtenUpdateController::class, 'generateDocument']);
         Route::get('cekViewPrint/{ten}', [CirtenUpdateController::class, 'cekViewPrint']);
         Route::get('cekFilePDF/{ten}', [CirtenUpdateController::class, 'cekFilePDF']);
+
+        Route::get('sendToDMSNew/{ten}', [CircullarTenController::class, 'sendToDMSNew']);
 
         Route::get('viewListItemDesc/{ten}', [CirtenUpdateController::class, 'viewListItemDesc']);
 

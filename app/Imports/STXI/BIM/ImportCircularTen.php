@@ -19,11 +19,11 @@ use App\Models\STXI\BIM\CircularTenModelDet;
 
 class ImportCircularTen implements ToModel
 {
-    public $data, $pdf, $dataForPDF, $tenNo, $tenEpsonNo, $options, $filepathExcel;
+    public $data, $pdf, $dataForPDF, $tenNo, $tenEpsonNo, $options, $filepathExcel, $username;
     /**
      * @param Collection $collection
      */
-    public function __construct($tenNo, $htmlEpson, $tenEpsonNo, $options = 0, $filepathExcel = '')
+    public function __construct($tenNo, $htmlEpson, $tenEpsonNo, $options = 0, $filepathExcel = '', $username = '')
     {
         $this->nowRows = -1;
         $this->statusGetData = '';
@@ -41,6 +41,7 @@ class ImportCircularTen implements ToModel
         $this->contentArray = [];
         $this->options = $options;
         $this->filepathExcel = $filepathExcel;
+        $this->username = $username;
     }
 
     public function model(array $row)
@@ -194,6 +195,7 @@ class ImportCircularTen implements ToModel
                 'list_files' => [$this->tenEpsonNo . '.html'],
                 'exec_sch' => $this->data['exec'],
                 'reason' => $this->data['reason'],
+                'username' => $this->username
             ];
             $this->pdf = $this->generateDocument($this->data['mail_date'], $datas, true);
         }
@@ -276,6 +278,7 @@ class ImportCircularTen implements ToModel
                     'list_files' => [$this->tenEpsonNo . '.html'],
                     'exec_sch' => $this->data['exec'],
                     'reason' => $this->data['reason'],
+                    'username' => $this->username
                 ];
 
                 foreach ($this->data['model_cek'] as $keyMdl => $valueMdl) {
@@ -302,6 +305,7 @@ class ImportCircularTen implements ToModel
                 'list_files' => [$this->tenEpsonNo . '.html'],
                 'exec_sch' => $this->data['exec'],
                 'reason' => $this->data['reason'],
+                'username' => $this->username
             ];
             $this->dataForPDF = $datas;
         }

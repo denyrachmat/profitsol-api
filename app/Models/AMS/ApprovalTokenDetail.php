@@ -30,4 +30,5 @@ class ApprovalTokenDetail extends Model
     public function firstHist() {
         return $this->hasOne(ApprovalHistDetail::class, 'amsm_id', 'amsm_id')->orderBy('id');
     }
+
 }

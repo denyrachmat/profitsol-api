@@ -19,10 +19,16 @@ class DMSDocMstr extends Model
         'ddm_doc_real_name',
         'ddm_doc_size',
         'ddm_doc_flag',
+        'dfm_root_mstr'
     ];
 
     public function folder()
     {
-        return $this->hasOne('App\Models\DMS\DMSFolderMstr','id','dfm_id');
+        return $this->hasOne('App\Models\DMS\DMSFolderMstr', 'id', 'dfm_id');
+    }
+
+    public function shared()
+    {
+        return $this->hasMany(DMSShareDet::class, 'ddm_id', 'id');
     }
 }

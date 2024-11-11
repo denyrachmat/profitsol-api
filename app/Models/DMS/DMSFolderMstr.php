@@ -14,7 +14,8 @@ class DMSFolderMstr extends Model
     protected $fillable = [
         'p_u_username',
         'dfm_folder_name',
-        'dfm_parent_id'
+        'dfm_parent_id',
+        'dfm_root_mstr'
     ];
 
     public function doc()
@@ -29,7 +30,7 @@ class DMSFolderMstr extends Model
 
     public function childFolders()
     {
-        return $this->child()->with('childFolders')->with('doc');
+        return $this->child()->with('childFolders')->with('doc.shared')->with('shared');
     }
 
     public function parent()
@@ -39,6 +40,10 @@ class DMSFolderMstr extends Model
 
     public function parentFolders()
     {
-        return $this->parent()->with('parentFolders')->with('doc');
+        return $this->parent()->with('parentFolders')->with('doc.shared')->with('shared');
+    }
+
+    public function shared() {
+        return $this->hasMany(DMSShareDet::class, 'dfm_id', 'id');
     }
 }
