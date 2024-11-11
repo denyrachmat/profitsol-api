@@ -66,10 +66,19 @@ class labelPrintController extends BaseController
             DB::raw("CONCAT(RTRIM(MITM_ITMCD), '( ' , MITM_ITMD1, ' )') AS MITM_ITMD1"),
             'MITM_STKUOM',
             'MITM_SPTNO',
-            'PGIT_RCVQT'
+            DB::raw('sum(PGIT_RCVQT) as PGIT_RCVQT')
         )
         ->join('MITM_TBL', 'MITM_ITMCD', 'PGIT_ITMCD')
-        ->join('PGITSHP_TBL', 'PGITSHP_DOCNO', 'PGIT_SUPNO');
+        ->join('PGITSHP_TBL', 'PGITSHP_DOCNO', 'PGIT_SUPNO')
+        ->groupBy(
+            'PGIT_SUPNO',
+            'PGIT_ITMCD',
+            'PGITSHP_SHPREFNO',
+            DB::raw("CONCAT(RTRIM(MITM_ITMCD), '( ' , MITM_ITMD1, ' )')"),
+            'MITM_STKUOM',
+            'MITM_SPTNO',
+            'PGIT_LUPDT'
+        );
 
         if ($request->has('filter') && count($request->filter) > 0) {
             foreach ($request->filter as $key => $value) {
