@@ -23,7 +23,7 @@ class importRawPO implements ToModel, WithStartRow
         ini_set("memory_limit","3G");
         $countDate = 1;
         foreach ($row as $key => $value) {
-            if ($key > 12 && $key < 75 && $key % 2 === 0) {
+            if ($key > 12 && $key < 75 && $key % 2 === 0 && !empty($value)) {
                 $checkDate = date('Y-m', strtotime($this->date)).'-'.$countDate;
 
                 // Jika hari minggu tambah 1 hari ke hari senin

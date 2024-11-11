@@ -315,7 +315,7 @@ trait ApprovalActionTraits
 
                                     // logger(json_encode($getFile['base64Files']));
 
-                                    $filenya[] = $this->openFileBase64($getFile['data']['base64Files']);
+                                    $filenya[] = file_get_contents($this->openFileBase64($getFile['data']['base64Files']));
                                 }
                             }
                         }
