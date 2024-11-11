@@ -380,6 +380,11 @@ class SyncCirTentoOldDMS implements ShouldQueue
                             'headers' => ['Content-Type' => 'application/json']
                         ],
                         [
+                            'name' => 'subject',
+                            'contents' => 'Circular TEN Approval',
+                            'headers' => ['Content-Type' => 'application/json']
+                        ],
+                        [
                             'name' => 'data',
                             'contents' => json_encode([
                                 'dfm_id' => 5149,
