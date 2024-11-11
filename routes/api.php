@@ -269,6 +269,7 @@ Route::group(['prefix' => 'div'], function () {
         Route::resource('labelPrint', labelPrintController::class);
         Route::group(['prefix' => 'labelPrints'], function () {
             Route::post('search', [labelPrintController::class, 'searchItems']);
+            Route::post('searchGIT', [labelPrintController::class, 'searchGIT']);
         });
     });
 

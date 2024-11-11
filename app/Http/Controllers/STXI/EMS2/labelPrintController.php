@@ -57,6 +57,49 @@ class labelPrintController extends BaseController
         }
     }
 
+    public function searchGIT(Request $request) {
+        $hist = DB::connection('sqlsrv_mega_exim')->table('PGIT_TBL')
+        ->select(
+            'PGIT_SUPNO',
+            'PGIT_ITMCD',
+            'PGITSHP_SHPREFNO',
+            DB::raw("CONCAT(RTRIM(MITM_ITMCD), '( ' , MITM_ITMD1, ' )') AS MITM_ITMD1"),
+            'MITM_STKUOM',
+            'MITM_SPTNO',
+            'PGIT_RCVQT'
+        )
+        ->join('MITM_TBL', 'MITM_ITMCD', 'PGIT_ITMCD')
+        ->join('PGITSHP_TBL', 'PGITSHP_DOCNO', 'PGIT_SUPNO');
+
+        if ($request->has('filter') && count($request->filter) > 0) {
+            foreach ($request->filter as $key => $value) {
+                if (!empty($value['value'])) {
+                    if (isset($value['step']) && $value['step'] === 'or') {
+                        $hist->orwhere($value['cols'], $value['param'], $value['param'] === 'like' ? "%{$value['value']}%" : $value['value']);
+                    } else {
+                        $hist->where($value['cols'], $value['param'], $value['param'] === 'like' ? "%{$value['value']}%" : $value['value']);
+                    }
+                }
+            }
+        }
+
+        if ((clone $hist)->count() > 0) {
+            $datanya = (clone $hist)->orderBy('PGIT_LUPDT', 'desc')
+                ->limit(50)
+                ->get()
+                ->toArray();
+            $hasil = [];
+            foreach (@json_decode(json_encode($datanya), true) as $key => $value) {
+                $hasil[$value['PGITSHP_SHPREFNO']]['PGITSHP_SHPREFNO'] = $value['PGITSHP_SHPREFNO'];
+                $hasil[$value['PGITSHP_SHPREFNO']]['det'][] = $value;
+            }
+
+            return $this->handleResponse(array_values($hasil), 'Data Fetched');
+        } else {
+            return $this->handleError('No data found !!', []);
+        }
+    }
+
     /**
      * Show the form for creating a new resource.
      */
