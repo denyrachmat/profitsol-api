@@ -21,6 +21,7 @@ class ExportDOChecker implements FromCollection, WithHeadings, WithEvents
     {
         $this->data = $data;
     }
+
     public function headings(): array
     {
         return [
