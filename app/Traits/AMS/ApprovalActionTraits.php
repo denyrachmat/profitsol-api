@@ -165,7 +165,7 @@ trait ApprovalActionTraits
             // If First or now order more than last order
             if ((int) $valueDet['amsmd_order'] > $getfirstOrder || empty($checkFirst)) {
                 // If Next Order
-                if ($valueDet['amsmd_order'] == (int) $checkLatestOrder + 1) {
+                if ($valueDet['amsmd_order'] == (int) $checkLatestOrder + 1 || empty($checkFirst)) {
 
                     // Sent Notif
                     $hist = ApprovalHistDetail::create([
@@ -371,8 +371,7 @@ trait ApprovalActionTraits
                 if ($dataMaster->apprvSet->amssd_isemail) {
                     $queueSet = new EmailNotificationQueue(
                         $request->username,
-                        // $toEmail,
-                        'deny-rachmat@sumitronics.co.jp',
+                        $toEmail,
                         $request->subject ?? 'AMS Approval & Notification',
                         $valueDet->amsmd_reqaprv,
                         $dataMaster->ams_content,

@@ -41,6 +41,7 @@ class ApprovalNotification extends Notification
     public function toMail(object $notifiable): MailMessage
     {
         $getUsers = PortalUserDet::where('u_username', $this->to)->first();
+
         return (new MailMessage)
                     ->subject($this->subject)
                     ->markdown('AMS.AMSEmailTemplate',[
