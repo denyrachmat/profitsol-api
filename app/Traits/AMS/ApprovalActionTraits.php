@@ -207,9 +207,145 @@ trait ApprovalActionTraits
                             'msgkey' => $request->has('msgkey') ? $request->msgkey : ''
                         ])
                     ]);
+
+
+
+                    // If using on Approval method trigger
+                    if ($request->has('onApproval') && count($request->onApproval) > 0) {
+                        $this->apiPointData(
+                            $request->onApproval['url'],
+                            $request->onApproval['methods'],
+                            $request->onApproval['params'] ?? [],
+                            $request->onApproval['headers'] ?? [],
+                            [
+                                'approval' => [
+                                    'status' => $nextStat,
+                                    'remarks' => $request->remarks,
+                                ]
+                            ]
+                        );
+                    }
+
+                    // If Attachment setting is setted up
+                    if ($dataMaster->apprvSet->amssd_attachment) {
+                        $cekSettingAttch = ApprovalAttachSet::where('aasd_id', $dataMaster->apprvSet->id)->get();
+                        $storeData = [];
+
+                        foreach ($cekSettingAttch as $keyAttch => $valueAttch) {
+                            $cekParam = json_decode(str_replace(search: "{{username}}", replace: $request->username, subject: $valueAttch->aats_param));
+                            foreach (json_decode($valueAttch->aats_param) as $keyParam => $valueParam) {
+                                // $dataReq = json_decode($request->data);
+                                $dataReq = is_string($request->data) ? (object) json_decode($request->data, true) : (object) $request->data;
+                                if (isset($dataReq->{$keyParam})) {
+                                    $cekParam->{$keyParam} = $dataReq->{$keyParam};
+                                } else {
+                                    ApprovalHistDetail::where('amshd_token', $histToken)->delete();
+                                    return $this->handleError('Param ' . $keyParam . ' is needed, please consult administrator !!');
+                                }
+                            }
+
+                            $filenya = [];
+                            if ($request->has('file')) {
+                                $filenya = $request->file('file');
+                            } else {
+                                $checkHistory = $checkLatest->attch;
+
+                                if (!empty($checkHistory)) {
+                                    foreach ($checkHistory as $keyFiles => $valueFiles) {
+
+                                        $getURLLink = json_decode($valueFiles->amaad_dl_link);
+                                        $getFile = $this->apiPointData(
+                                            $getURLLink->url,
+                                            $getURLLink->method,
+                                            $getURLLink->param ?? [],
+                                            $getURLLink->header ?? []
+                                        );
+
+                                        if ($getFile) {
+                                            ApprovalAttachHist::updateOrCreate([
+                                                'amshd_id' => $hist->id,
+                                                'amaad_source' => $valueFiles->amaad_source,
+                                            ], [
+                                                'amshd_id' => $hist->id,
+                                                'amaad_source' => $valueFiles->amaad_source,
+                                                'amaad_filename' => $valueFiles->amaad_filename,
+                                                'amaad_path' => $valueFiles->amaad_path,
+                                                'amaad_size' => $valueFiles->amaad_size,
+                                                'amaad_dl_link' => $valueFiles->amaad_dl_link,
+                                            ]);
+                                        }
+                                    }
+                                }
+                            }
+
+                            // IF First Time send approval
+                            if (!$request->has('token') || empty($request->token)) {
+                                foreach ($filenya as $keyFiles => $valueFiles) {
+                                    // Store attachment to storage
+                                    $storeDataCek = $this->apiPointData(
+                                        $valueAttch->aats_host,
+                                        $valueAttch->aats_method,
+                                        $cekParam,
+                                        $valueAttch->aats_header,
+                                        [],
+                                        $valueFiles,
+                                        $valueFiles->getClientOriginalName()
+                                    );
+
+                                    if ($storeDataCek) {
+                                        if ($request->has('downloadLinks') && count($request->downloadLinks) > 0) {
+                                            $linkDownload = $request->downloadLinks[$keyFiles];
+                                            $convLink = $this->convertValuetoContent($linkDownload, $valueDet['amsmd_username'], $valueDet['amsmd_username'], $storeDataCek['data'], '');
+                                            logger($linkDownload);
+                                        } else {
+                                            $convLink = '';
+                                        }
+                                        // Jika menggunakan DMS Sebagai Storage
+                                        if (str_contains($valueAttch->aats_name, 'DMS')) {
+                                            $storeData[] = $storeDataCek;
+                                            ApprovalAttachHist::updateOrCreate([
+                                                'amshd_id' => $hist->id,
+                                                'amaad_source' => $storeDataCek['data']['dfm_id'],
+                                            ], [
+                                                'amshd_id' => $hist->id,
+                                                'amaad_source' => $storeDataCek['data']['dfm_id'],
+                                                'amaad_filename' => $valueFiles->getClientOriginalName(),
+                                                'amaad_path' => $storeDataCek['data']['path'],
+                                                'amaad_size' => $storeDataCek['data']['ddm_doc_size'],
+                                                'amaad_dl_link' => $convLink
+                                            ]);
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    // If Email notification is on
+                    if ($dataMaster->apprvSet->amssd_isemail) {
+                        $queueSet = new EmailNotificationQueue(
+                            $request->username,
+                            $toEmail,
+                            $request->subject ?? 'AMS Approval & Notification',
+                            $valueDet->amsmd_reqaprv,
+                            $dataMaster->ams_content,
+                            $useToken . '/' . $histToken
+                        );
+
+                        dispatch($queueSet)->onQueue('sendEmailQueue');
+                    }
+
+                    Redis::publish('portalv2', json_encode([
+                        'app' => 'portal_notif',
+                        'message' => "You have new notification from {$getSender->pud_first_name} {$getSender->pud_last_name}",
+                        'type' => 'info',
+                        'data' => [
+                            'username_dest' => empty($checkFirst) ? $valueDet['amsmd_username'] : $checkFirst->p_u_username
+                        ]
+                    ]));
                 } else {
                     // If last approval
-                    if (!isset($dataMaster->det[$keyDet + 1])) {
+                    if (!isset($dataMaster->det[$checkLatestOrder])) {
                         // Sent Notif
                         $hist = ApprovalHistDetail::create([
                             'p_u_username' => $request->username,
@@ -247,144 +383,148 @@ trait ApprovalActionTraits
                                 'msgkey' => $request->has('msgkey') ? $request->msgkey : ''
                             ])
                         ]);
+
+
+
+                        // If using on Approval method trigger
+                        if ($request->has('onApproval') && count($request->onApproval) > 0) {
+                            $this->apiPointData(
+                                $request->onApproval['url'],
+                                $request->onApproval['methods'],
+                                $request->onApproval['params'] ?? [],
+                                $request->onApproval['headers'] ?? [],
+                                [
+                                    'approval' => [
+                                        'status' => $nextStat,
+                                        'remarks' => $request->remarks,
+                                    ]
+                                ]
+                            );
+                        }
+
+                        // If Attachment setting is setted up
+                        if ($dataMaster->apprvSet->amssd_attachment) {
+                            $cekSettingAttch = ApprovalAttachSet::where('aasd_id', $dataMaster->apprvSet->id)->get();
+                            $storeData = [];
+
+                            foreach ($cekSettingAttch as $keyAttch => $valueAttch) {
+                                $cekParam = json_decode(str_replace(search: "{{username}}", replace: $request->username, subject: $valueAttch->aats_param));
+                                foreach (json_decode($valueAttch->aats_param) as $keyParam => $valueParam) {
+                                    // $dataReq = json_decode($request->data);
+                                    $dataReq = is_string($request->data) ? (object) json_decode($request->data, true) : (object) $request->data;
+                                    if (isset($dataReq->{$keyParam})) {
+                                        $cekParam->{$keyParam} = $dataReq->{$keyParam};
+                                    } else {
+                                        ApprovalHistDetail::where('amshd_token', $histToken)->delete();
+                                        return $this->handleError('Param ' . $keyParam . ' is needed, please consult administrator !!');
+                                    }
+                                }
+
+                                $filenya = [];
+                                if ($request->has('file')) {
+                                    $filenya = $request->file('file');
+                                } else {
+                                    $checkHistory = $checkLatest->attch;
+
+                                    if (!empty($checkHistory)) {
+                                        foreach ($checkHistory as $keyFiles => $valueFiles) {
+
+                                            $getURLLink = json_decode($valueFiles->amaad_dl_link);
+                                            $getFile = $this->apiPointData(
+                                                $getURLLink->url,
+                                                $getURLLink->method,
+                                                $getURLLink->param ?? [],
+                                                $getURLLink->header ?? []
+                                            );
+
+                                            if ($getFile) {
+                                                ApprovalAttachHist::updateOrCreate([
+                                                    'amshd_id' => $hist->id,
+                                                    'amaad_source' => $valueFiles->amaad_source,
+                                                ], [
+                                                    'amshd_id' => $hist->id,
+                                                    'amaad_source' => $valueFiles->amaad_source,
+                                                    'amaad_filename' => $valueFiles->amaad_filename,
+                                                    'amaad_path' => $valueFiles->amaad_path,
+                                                    'amaad_size' => $valueFiles->amaad_size,
+                                                    'amaad_dl_link' => $valueFiles->amaad_dl_link,
+                                                ]);
+                                            }
+                                        }
+                                    }
+                                }
+
+                                // IF First Time send approval
+                                if (!$request->has('token') || empty($request->token)) {
+                                    foreach ($filenya as $keyFiles => $valueFiles) {
+                                        // Store attachment to storage
+                                        $storeDataCek = $this->apiPointData(
+                                            $valueAttch->aats_host,
+                                            $valueAttch->aats_method,
+                                            $cekParam,
+                                            $valueAttch->aats_header,
+                                            [],
+                                            $valueFiles,
+                                            $valueFiles->getClientOriginalName()
+                                        );
+
+                                        if ($storeDataCek) {
+                                            if ($request->has('downloadLinks') && count($request->downloadLinks) > 0) {
+                                                $linkDownload = $request->downloadLinks[$keyFiles];
+                                                $convLink = $this->convertValuetoContent($linkDownload, $valueDet['amsmd_username'], $valueDet['amsmd_username'], $storeDataCek['data'], '');
+                                                logger($linkDownload);
+                                            } else {
+                                                $convLink = '';
+                                            }
+                                            // Jika menggunakan DMS Sebagai Storage
+                                            if (str_contains($valueAttch->aats_name, 'DMS')) {
+                                                $storeData[] = $storeDataCek;
+                                                ApprovalAttachHist::updateOrCreate([
+                                                    'amshd_id' => $hist->id,
+                                                    'amaad_source' => $storeDataCek['data']['dfm_id'],
+                                                ], [
+                                                    'amshd_id' => $hist->id,
+                                                    'amaad_source' => $storeDataCek['data']['dfm_id'],
+                                                    'amaad_filename' => $valueFiles->getClientOriginalName(),
+                                                    'amaad_path' => $storeDataCek['data']['path'],
+                                                    'amaad_size' => $storeDataCek['data']['ddm_doc_size'],
+                                                    'amaad_dl_link' => $convLink
+                                                ]);
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                        // If Email notification is on
+                        if ($dataMaster->apprvSet->amssd_isemail) {
+                            $queueSet = new EmailNotificationQueue(
+                                $request->username,
+                                $toEmail,
+                                $request->subject ?? 'AMS Approval & Notification',
+                                $valueDet->amsmd_reqaprv,
+                                $dataMaster->ams_content,
+                                $useToken . '/' . $histToken
+                            );
+
+                            dispatch($queueSet)->onQueue('sendEmailQueue');
+                        }
+
+                        Redis::publish('portalv2', json_encode([
+                            'app' => 'portal_notif',
+                            'message' => "You have new notification from {$getSender->pud_first_name} {$getSender->pud_last_name}",
+                            'type' => 'info',
+                            'data' => [
+                                'username_dest' => empty($checkFirst) ? $valueDet['amsmd_username'] : $checkFirst->p_u_username
+                            ]
+                        ]));
                         // Delete used token
                         ApprovalTokenDetail::where('id', $useTokenCreate->id)->delete();
+                    } else {
+                        break;
                     }
                 }
-
-                // If using on Approval method trigger
-                if ($request->has('onApproval') && count($request->onApproval) > 0) {
-                    $this->apiPointData(
-                        $request->onApproval['url'],
-                        $request->onApproval['methods'],
-                        $request->onApproval['params'] ?? [],
-                        $request->onApproval['headers'] ?? [],
-                        [
-                            'approval' => [
-                                'status' => $nextStat,
-                                'remarks' => $request->remarks,
-                            ]
-                        ]
-                    );
-                }
-
-                // If Attachment setting is setted up
-                if ($dataMaster->apprvSet->amssd_attachment) {
-                    $cekSettingAttch = ApprovalAttachSet::where('aasd_id', $dataMaster->apprvSet->id)->get();
-                    $storeData = [];
-
-                    foreach ($cekSettingAttch as $keyAttch => $valueAttch) {
-                        $cekParam = json_decode(str_replace(search: "{{username}}", replace: $request->username, subject: $valueAttch->aats_param));
-                        foreach (json_decode($valueAttch->aats_param) as $keyParam => $valueParam) {
-                            // $dataReq = json_decode($request->data);
-                            $dataReq = is_string($request->data) ? (object) json_decode($request->data, true) : (object) $request->data;
-                            if (isset($dataReq->{$keyParam})) {
-                                $cekParam->{$keyParam} = $dataReq->{$keyParam};
-                            } else {
-                                ApprovalHistDetail::where('amshd_token', $histToken)->delete();
-                                return $this->handleError('Param ' . $keyParam . ' is needed, please consult administrator !!');
-                            }
-                        }
-
-                        $filenya = [];
-                        if ($request->has('file')) {
-                            $filenya = $request->file('file');
-                        } else {
-                            $checkHistory = $checkLatest->attch;
-
-                            if (!empty($checkHistory)) {
-                                foreach ($checkHistory as $keyFiles => $valueFiles) {
-
-                                    $getURLLink = json_decode($valueFiles->amaad_dl_link);
-                                    $getFile = $this->apiPointData(
-                                        $getURLLink->url,
-                                        $getURLLink->method,
-                                        $getURLLink->param ?? [],
-                                        $getURLLink->header ?? []
-                                    );
-
-                                    if ($getFile) {
-                                        ApprovalAttachHist::updateOrCreate([
-                                            'amshd_id' => $hist->id,
-                                            'amaad_source' => $valueFiles->amaad_source,
-                                        ], [
-                                            'amshd_id' => $hist->id,
-                                            'amaad_source' => $valueFiles->amaad_source,
-                                            'amaad_filename' => $valueFiles->amaad_filename,
-                                            'amaad_path' => $valueFiles->amaad_path,
-                                            'amaad_size' => $valueFiles->amaad_size,
-                                            'amaad_dl_link' => $valueFiles->amaad_dl_link,
-                                        ]);
-                                    }
-                                }
-                            }
-                        }
-
-                        // IF First Time send approval
-                        if (!$request->has('token') || empty($request->token)) {
-                            foreach ($filenya as $keyFiles => $valueFiles) {
-                                // Store attachment to storage
-                                $storeDataCek = $this->apiPointData(
-                                    $valueAttch->aats_host,
-                                    $valueAttch->aats_method,
-                                    $cekParam,
-                                    $valueAttch->aats_header,
-                                    [],
-                                    $valueFiles,
-                                    $valueFiles->getClientOriginalName()
-                                );
-
-                                if ($storeDataCek) {
-                                    if ($request->has('downloadLinks') && count($request->downloadLinks) > 0) {
-                                        $linkDownload = $request->downloadLinks[$keyFiles];
-                                        $convLink = $this->convertValuetoContent($linkDownload, $valueDet['amsmd_username'], $valueDet['amsmd_username'], $storeDataCek['data'], '');
-                                        logger($linkDownload);
-                                    } else {
-                                        $convLink = '';
-                                    }
-                                    // Jika menggunakan DMS Sebagai Storage
-                                    if (str_contains($valueAttch->aats_name, 'DMS')) {
-                                        $storeData[] = $storeDataCek;
-                                        ApprovalAttachHist::updateOrCreate([
-                                            'amshd_id' => $hist->id,
-                                            'amaad_source' => $storeDataCek['data']['dfm_id'],
-                                        ], [
-                                            'amshd_id' => $hist->id,
-                                            'amaad_source' => $storeDataCek['data']['dfm_id'],
-                                            'amaad_filename' => $valueFiles->getClientOriginalName(),
-                                            'amaad_path' => $storeDataCek['data']['path'],
-                                            'amaad_size' => $storeDataCek['data']['ddm_doc_size'],
-                                            'amaad_dl_link' => $convLink
-                                        ]);
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-
-                // If Email notification is on
-                if ($dataMaster->apprvSet->amssd_isemail) {
-                    $queueSet = new EmailNotificationQueue(
-                        $request->username,
-                        $toEmail,
-                        $request->subject ?? 'AMS Approval & Notification',
-                        $valueDet->amsmd_reqaprv,
-                        $dataMaster->ams_content,
-                        $useToken . '/' . $histToken
-                    );
-
-                    dispatch($queueSet)->onQueue('sendEmailQueue');
-                }
-
-                Redis::publish('portalv2', json_encode([
-                    'app' => 'portal_notif',
-                    'message' => "You have new notification from {$getSender->pud_first_name} {$getSender->pud_last_name}",
-                    'type' => 'info',
-                    'data' => [
-                        'username_dest' => empty($checkFirst) ? $valueDet['amsmd_username'] : $checkFirst->p_u_username
-                    ]
-                ]));
             }
             // else {
             //     if ($request->has('onDone') && count($request->onDone) > 0) {
@@ -401,6 +541,7 @@ trait ApprovalActionTraits
             //             ]
             //         );
             //     }
+
 
             //     $toEmail = $checkFirst->p_u_username;
 
