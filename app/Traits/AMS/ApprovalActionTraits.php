@@ -170,8 +170,6 @@ trait ApprovalActionTraits
             $histToken = Str::random(50);
             $toEmail = '';
 
-
-            $getSender = PortalUserDet::where('u_username', $request->username)->first();
             $useTokenCreate = ApprovalTokenDetail::where('amstd_token', $useToken)->first();
 
             // If First or now order more than last order
@@ -306,6 +304,7 @@ trait ApprovalActionTraits
 
     public function sendingApproval($request, $dataMaster, $checkFirst, $keyDet, $valueDet, $histToken, $useToken, $nextStat, $isLast = false)
     {
+        $getSender = PortalUserDet::where('u_username', $request->username)->first();
         // Sent Notif
         $hist = ApprovalHistDetail::create([
             'p_u_username' => $request->username,
