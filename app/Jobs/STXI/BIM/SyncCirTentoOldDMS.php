@@ -471,6 +471,7 @@ class SyncCirTentoOldDMS implements ShouldQueue
                         'sch' => $sch,
                         'reason' => $reason,
                         'content' => $content,
+                        'dataExtract' => $getModelList
                     ],
                     'type' => 'red',
                     'status' => 'failed',
