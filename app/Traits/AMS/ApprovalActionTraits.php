@@ -78,7 +78,7 @@ trait ApprovalActionTraits
                     logger($keyRequest);
                     logger('cek is exists history');
                     logger((clone $cekHist)->toSql());
-                    logger((clone $cekHist)->first());
+                    logger((clone $cekHist)->get());
                     if (!empty((clone $cekHist)->first())) {
                         return $this->handleError("Key " . $keyRequest . " already submited !!", $listVariable);
                     }
