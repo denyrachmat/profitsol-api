@@ -190,6 +190,10 @@ trait ApprovalActionTraits
                     ApprovalTokenDetail::where('id', $useTokenCreate->id)->delete();
                 }
             }
+
+            if ($nextStat === 'reject') {
+                ApprovalHistDetail::where('amstd_token', $useToken)->delete();
+            }
         }
 
         return $this->handleResponse($hist, 'Success');
