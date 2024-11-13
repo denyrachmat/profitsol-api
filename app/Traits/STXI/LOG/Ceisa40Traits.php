@@ -161,8 +161,8 @@ trait Ceisa40Traits
                 'nle-oauth/v1/user/login',
                 'POST',
                 [
-                    'username' => 'erwinstx',
-                    'password' => 'Erwin0123'
+                    'username' => 'ujangstx',
+                    'password' => 'Ujang0123'
                 ]
             );
 
