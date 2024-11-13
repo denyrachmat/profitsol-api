@@ -192,8 +192,8 @@ trait Ceisa40Traits
                 'v2/authws/user/login',
                 'POST',
                 [
-                    'username' => 'erwinstx',
-                    'password' => 'Erwin0123'
+                    'username' => 'ujangstx',
+                    'password' => 'Ujang0123'
                 ]
             );
 
