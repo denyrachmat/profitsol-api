@@ -345,7 +345,7 @@ trait ApprovalActionTraits
                     ]));
                 } else {
                     // If last approval
-                    if (!isset($dataMaster->det[$checkLatestOrder])) {
+                    if (!isset($dataMaster->det[$checkLatestOrder + 1])) {
                         // Sent Notif
                         $hist = ApprovalHistDetail::create([
                             'p_u_username' => $request->username,
