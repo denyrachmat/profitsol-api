@@ -133,6 +133,7 @@ trait ApprovalActionTraits
         $hist = [];
         $getfirstOrder = 0;
         foreach ($dataMaster->det as $keyDet => $valueDet) {
+            // return $valueDet['amsmd_order'] == (int) $checkLatestOrder + 1;
             if ($keyDet == 0) {
                 $getfirstOrder = $valueDet['amsmd_order'];
             }
@@ -163,6 +164,7 @@ trait ApprovalActionTraits
 
             // If First or now order more than last order
             if ((int) $valueDet['amsmd_order'] > $getfirstOrder || empty($checkFirst)) {
+                // If Next Order
                 if ($valueDet['amsmd_order'] == (int) $checkLatestOrder + 1) {
 
                     // Sent Notif
@@ -223,11 +225,6 @@ trait ApprovalActionTraits
                     $getSender = PortalUserDet::where('u_username', $request->username)->first();
 
                     $useTokenCreate = ApprovalTokenDetail::where('amstd_token', $useToken)->first();
-
-                    if (!isset($dataMaster->det[$keyDet + 1])) {
-                        // Delete used token
-                        ApprovalTokenDetail::where('id', $useTokenCreate->id)->delete();
-                    }
 
                     if ($dataMaster->apprvSet->amssd_attachment) {
                         $cekSettingAttch = ApprovalAttachSet::where('aasd_id', $dataMaster->apprvSet->id)->get();
@@ -345,6 +342,11 @@ trait ApprovalActionTraits
                             'username_dest' => empty($checkFirst) ? $valueDet['amsmd_username'] : $checkFirst->p_u_username
                         ]
                     ]));
+                }
+
+                if (!isset($dataMaster->det[$keyDet + 1])) {
+                    // Delete used token
+                    ApprovalTokenDetail::where('id', $useTokenCreate->id)->delete();
                 }
             }
             // else {
