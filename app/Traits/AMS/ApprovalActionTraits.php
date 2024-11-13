@@ -162,7 +162,7 @@ trait ApprovalActionTraits
             // If First or now order more than last order
             if ((int) $valueDet['amsmd_order'] > $getfirstOrder || empty($checkFirst)) {
                 // If Next Order
-                if ($valueDet['amsmd_order'] == (int) $checkLatestOrder + 1 || empty($checkFirst)) {
+                if ($valueDet['amsmd_order'] == (int) $checkLatestOrder + 1) {
 
                     // Sent Notif
                     $hist = ApprovalHistDetail::create([
