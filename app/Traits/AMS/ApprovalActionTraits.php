@@ -75,6 +75,8 @@ trait ApprovalActionTraits
                     $keyRequest = $checkJSON[$request->msgkey];
                     $cekHist = ApprovalHistDetail::where('amsm_id', $request->amsm_id)->where('amshd_paramstore', 'like', "'%" . $keyRequest . "%'")->first();
 
+                    logger($keyRequest);
+                    logger($cekHist);
                     if (!empty($cekHist)) {
                         return $this->handleError("Key " . $keyRequest . " already submited !!", $listVariable);
                     }
