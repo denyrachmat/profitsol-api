@@ -338,6 +338,7 @@ Route::group(['prefix' => 'div'], function () {
         Route::get('generateDocumentUp/{ten}', [CirtenUpdateController::class, 'generateDocument']);
         Route::get('cekViewPrint/{ten}', [CirtenUpdateController::class, 'cekViewPrint']);
         Route::get('cekFilePDF/{ten}', [CirtenUpdateController::class, 'cekFilePDF']);
+        Route::get('deleteModel/{tenid}/{model}', [CirtenUpdateController::class, 'deleteSelectedModel']);
 
         Route::get('sendToDMSNew/{ten}', [CircullarTenController::class, 'sendToDMSNew']);
 

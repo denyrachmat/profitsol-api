@@ -34,6 +34,7 @@ class CirtenUpdateController extends BaseController
         $hasil = [];
         foreach ($data as $key => $value) {
             $hasil[] = [
+                'id' => $value->id,
                 'ten_no' => $value->CIRTEN_NO,
                 'DMS_DOC_ID' => $value->CIRTEN_DMS_DOC_ID,
                 'statusflg' => $value->CIRTEN_STATUSFLG,
@@ -338,5 +339,11 @@ class CirtenUpdateController extends BaseController
 
 
         return $data;
+    }
+
+    public function deleteSelectedModel($id, $model) {
+        $deleted = CircularTenModelDet::where('CM_ID', $id)->where('CIM_ITMCD', $model)->delete();
+
+        return $this->handleResponse($deleted, 'Model has been deleted !!');
     }
 }
