@@ -356,72 +356,81 @@ class SyncCirTentoOldDMS implements ShouldQueue
             $content = $getModelList['content'];
 
             if (!empty($model) && !empty($sch) && !empty($reason) && !empty($content)) {
-                logger('start send to AMS');
-                $res = $client->request('POST', 'http://192.168.100.32/public/api/ams/approveAction', [
-                    'multipart' => [
-                        [
-                            'name' => 'username',
-                            'contents' => $username,
-                            'headers' => ['Content-Type' => 'application/json']
-                        ],
-                        [
-                            'name' => 'amsm_id',
-                            'contents' => 5,
-                            'headers' => ['Content-Type' => 'application/json']
-                        ],
-                        [
-                            'name' => 'stat',
-                            'contents' => 1,
-                            'headers' => ['Content-Type' => 'application/json']
-                        ],
-                        [
-                            'name' => 'remarks',
-                            'contents' => 'Sending approval tester!!',
-                            'headers' => ['Content-Type' => 'application/json']
-                        ],
-                        [
-                            'name' => 'subject',
-                            'contents' => 'Circular TEN Approval',
-                            'headers' => ['Content-Type' => 'application/json']
-                        ],
-                        [
-                            'name' => 'data',
-                            'contents' => json_encode([
-                                'dfm_id' => 5149,
-                                'ten_no' => $dataMstr->CIRTEN_NO,
-                                'dfm_root_mstr' => 'root_dms',
-                                'p_u_username' => $username,
-                                'subject' => $getModelList['subject'],
-                                'models' => $getModelList['registered_model'],
-                            ]),
-                            'headers' => ['Content-Type' => 'application/json']
-                        ],
-                        [
-                            'name' => 'file[]',
-                            'contents' => Psr7\Utils::tryFopen($pathFile, 'r'),
-                            'headers' => ['Content-Type' => 'application/pdf']
-                        ],
-                        [
-                            'name' => 'downloadLinks[]',
-                            'contents' => json_encode([
-                                'method' => 'get',
-                                'url' => 'http://192.168.100.32/public/api/dms/documents/{{$id}}',
-                            ]),
-                            'headers' => ['Content-Type' => 'application/json']
-                        ],
-                        [
-                            'name' => 'msgkey',
-                            'contents' => 'ten_no',
-                            'headers' => ['Content-Type' => 'application/json']
+                $uploadResult = [];
+                foreach ($model as $keyModel => $valueModel) {
+                    $flagAMS = 4;
+
+                    if ($valueModel == 'SMT') {
+                        $flagAMS = 2;
+                    } elseif ($valueModel == 'KAI') {
+                        $flagAMS = 3;
+                    }
+
+                    $res = $client->request('POST', 'http://192.168.100.32/public/api/ams/approveAction', [
+                        'multipart' => [
+                            [
+                                'name' => 'username',
+                                'contents' => $username,
+                                'headers' => ['Content-Type' => 'application/json']
+                            ],
+                            [
+                                'name' => 'amsm_id',
+                                'contents' => $flagAMS,
+                                'headers' => ['Content-Type' => 'application/json']
+                            ],
+                            [
+                                'name' => 'stat',
+                                'contents' => 1,
+                                'headers' => ['Content-Type' => 'application/json']
+                            ],
+                            [
+                                'name' => 'remarks',
+                                'contents' => 'Sending approval tester!!',
+                                'headers' => ['Content-Type' => 'application/json']
+                            ],
+                            [
+                                'name' => 'subject',
+                                'contents' => 'Circular TEN Approval',
+                                'headers' => ['Content-Type' => 'application/json']
+                            ],
+                            [
+                                'name' => 'data',
+                                'contents' => json_encode([
+                                    'dfm_id' => 5149,
+                                    'ten_no' => $dataMstr->CIRTEN_NO,
+                                    'dfm_root_mstr' => 'root_dms',
+                                    'p_u_username' => $username,
+                                    'subject' => $getModelList['subject'],
+                                    'models' => $getModelList['registered_model'],
+                                ]),
+                                'headers' => ['Content-Type' => 'application/json']
+                            ],
+                            [
+                                'name' => 'file[]',
+                                'contents' => Psr7\Utils::tryFopen($pathFile, 'r'),
+                                'headers' => ['Content-Type' => 'application/pdf']
+                            ],
+                            [
+                                'name' => 'downloadLinks[]',
+                                'contents' => json_encode([
+                                    'method' => 'get',
+                                    'url' => 'http://192.168.100.32/public/api/dms/documents/{{$id}}',
+                                ]),
+                                'headers' => ['Content-Type' => 'application/json']
+                            ],
+                            [
+                                'name' => 'msgkey',
+                                'contents' => 'ten_no',
+                                'headers' => ['Content-Type' => 'application/json']
+                            ]
                         ]
-                    ]
-                ]);
+                    ]);
 
-                $uploadResult = $res->getBody();
+                    $uploadResult[] = $res->getBody();
+                }
 
-                logger($uploadResult);
                 CircularTenMstr::where('CIRTEN_TENIEI', $ten)->update([
-                    'CIRTEN_DMS_DOC_ID' => $uploadResult
+                    'CIRTEN_DMS_DOC_ID' => json_encode($uploadResult)
                 ]);
 
                 Redis::publish('portalv2', json_encode([
