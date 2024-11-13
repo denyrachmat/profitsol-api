@@ -61,8 +61,8 @@ trait ApprovalActionTraits
 
         if (count($listVariable) > 0) {
             if ($request->has('data')) {
-                $checkFil = array_values(array_filter($listVariable, function ($f) use ($request) {
-                    $checkJSON = is_string($request->data) ? json_decode($request->data, true) : $request->data;
+                $checkJSON = is_string($request->data) ? json_decode($request->data, true) : $request->data;
+                $checkFil = array_values(array_filter($listVariable, function ($f) use ($request, $checkJSON) {
                     return !in_array($f, array_keys($checkJSON));
                 }));
 
@@ -71,11 +71,11 @@ trait ApprovalActionTraits
                 }
 
                 if ($request->has('msgkey') && !empty($request->msgkey)) {
-                    $keyRequest = $request->data[$request->msgkey];
-                    $cekHist = ApprovalHistDetail::where('amsm_id', $request->amsm_id)->where('amshd_paramstore', 'like', "'%".$keyRequest."%'")->first();
+                    $keyRequest = $checkJSON[$request->msgkey];
+                    $cekHist = ApprovalHistDetail::where('amsm_id', $request->amsm_id)->where('amshd_paramstore', 'like', "'%" . $keyRequest . "%'")->first();
 
                     if (!empty($cekHist)) {
-                        return $this->handleError("Key ".$keyRequest." already submited !!" , $listVariable);
+                        return $this->handleError("Key " . $keyRequest . " already submited !!", $listVariable);
                     }
                 }
             } else {
