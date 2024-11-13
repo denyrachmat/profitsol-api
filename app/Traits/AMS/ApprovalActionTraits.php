@@ -70,15 +70,10 @@ trait ApprovalActionTraits
                     return $this->handleError("you hasn't provide some data keys on request!!", $checkFil);
                 }
 
-                logger($checkJSON);
                 if ($request->has('msgkey') && !empty($request->msgkey)) {
                     $keyRequest = $checkJSON[$request->msgkey];
                     $cekHist = ApprovalHistDetail::where('amsm_id', $request->amsm_id)->where('amshd_paramstore', 'like', "%" . $keyRequest . "%");
 
-                    logger($keyRequest);
-                    logger('cek is exists history');
-                    logger((clone $cekHist)->toSql());
-                    logger((clone $cekHist)->get());
                     if (!empty((clone $cekHist)->first())) {
                         return $this->handleError("Key " . $keyRequest . " already submited !!", $listVariable);
                     }
