@@ -131,12 +131,9 @@ trait ApprovalActionTraits
 
         // Start Calculating approval
         $hist = [];
-        $getfirstOrder = 0;
+        $getfirstOrder = $checkLatestOrder;
         foreach ($dataMaster->det as $keyDet => $valueDet) {
             // return $valueDet['amsmd_order'] == (int) $checkLatestOrder + 1;
-            if ($keyDet == 0) {
-                $getfirstOrder = $valueDet['amsmd_order'];
-            }
 
             $checkLatestToken = ApprovalHistDetail::where('amsm_id', $request->amsm_id)
                 ->with('mapdet')
