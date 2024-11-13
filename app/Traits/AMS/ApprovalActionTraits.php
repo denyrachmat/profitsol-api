@@ -521,6 +521,8 @@ trait ApprovalActionTraits
                         ]));
                         // Delete used token
                         ApprovalTokenDetail::where('id', $useTokenCreate->id)->delete();
+                    } else {
+                        break;
                     }
                 }
             }
