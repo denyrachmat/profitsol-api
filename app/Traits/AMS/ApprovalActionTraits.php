@@ -159,8 +159,12 @@ trait ApprovalActionTraits
             $histToken = Str::random(50);
             $toEmail = '';
 
+
+            $getSender = PortalUserDet::where('u_username', $request->username)->first();
+            $useTokenCreate = ApprovalTokenDetail::where('amstd_token', $useToken)->first();
+
             // If First or now order more than last order
-            if ((int) $valueDet['amsmd_order'] > $getfirstOrder || empty($checkFirst)) {
+            if ((int) $valueDet['amsmd_order'] > $checkLatestOrder || empty($checkFirst)) {
                 // If Next Order
                 if ($valueDet['amsmd_order'] == (int) $checkLatestOrder + 1) {
 
@@ -228,7 +232,7 @@ trait ApprovalActionTraits
 
                         // Receive Notif
                         $hist = ApprovalHistDetail::create([
-                            'p_u_username' => $valueDet['amsmd_username'],
+                            'p_u_username' => $checkFirst->p_u_username,
                             'amsm_id' => $request->amsm_id,
                             'amsmd_id' => $valueDet['id'],
                             'amshd_token' => $histToken,
@@ -246,12 +250,7 @@ trait ApprovalActionTraits
                         // Delete used token
                         ApprovalTokenDetail::where('id', $useTokenCreate->id)->delete();
                     }
-                    break;
                 }
-
-                $getSender = PortalUserDet::where('u_username', $request->username)->first();
-
-                $useTokenCreate = ApprovalTokenDetail::where('amstd_token', $useToken)->first();
 
                 // If using on Approval method trigger
                 if ($request->has('onApproval') && count($request->onApproval) > 0) {
