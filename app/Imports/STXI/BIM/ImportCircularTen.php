@@ -278,7 +278,7 @@ class ImportCircularTen implements ToModel
                     'list_files' => [$this->tenEpsonNo . '.html'],
                     'exec_sch' => $this->data['exec'],
                     'reason' => $this->data['reason'],
-                    'username' => $this->username
+                    'username' => $this->username,
                 ];
 
                 foreach ($this->data['model_cek'] as $keyMdl => $valueMdl) {
