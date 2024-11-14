@@ -159,7 +159,7 @@ class SyncCirTentoOldDMS implements ShouldQueue
                     ? str_replace(["\n", "\r", "\\"], "", $getModel['list_content'][1])
                     : str_replace(["\n", "\r", "\\"], "", $getModel['list_content'][0])
                 )
-                : '',
+                : $this->data['content'],
             'real_content' => $getModel,
             'subject' => $getModel['subject'],
             'list_files' => $filesData,
