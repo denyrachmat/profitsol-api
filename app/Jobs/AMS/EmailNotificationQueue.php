@@ -63,7 +63,7 @@ class EmailNotificationQueue implements ShouldQueue
             $convertContent = str_replace(search: "{{".$keyVar."}}", replace: $valueVar, subject: $convertContent);
         }
 
-        Notification::route('mail', 'deny-rachmat@sumitronics.co.jp')->notify(new ApprovalNotification(
+        Notification::route('mail', $this->to)->notify(new ApprovalNotification(
             $this->to,
             $this->subject,
             $this->isApprove,
