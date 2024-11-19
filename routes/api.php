@@ -270,6 +270,7 @@ Route::group(['prefix' => 'div'], function () {
         Route::group(['prefix' => 'labelPrints'], function () {
             Route::post('search', [labelPrintController::class, 'searchItems']);
             Route::post('searchGIT', [labelPrintController::class, 'searchGIT']);
+            Route::post('splitSPQData', [labelPrintController::class, 'splitData']);
         });
     });
 

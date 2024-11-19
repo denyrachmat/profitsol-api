@@ -25,18 +25,19 @@ class labelPrintController extends BaseController
             $printer->cut();
             $printer->close();
         } catch (\Exception $e) {
-            return "Couldn't print to this printer: " . $e -> getMessage() . "\n";
+            return "Couldn't print to this printer: " . $e->getMessage() . "\n";
         }
     }
 
-    public function searchItems(Request $request) {
+    public function searchItems(Request $request)
+    {
         $hist = DB::connection('sqlsrv_mega_exim')->table('MITM_TBL')
-        ->select(
-            'MITM_ITMCD',
-            DB::raw("CONCAT(RTRIM(MITM_ITMCD), '( ' , MITM_ITMD1, ' )') AS MITM_ITMD1"),
-            'MITM_STKUOM',
-            'MITM_SPTNO'
-        );
+            ->select(
+                'MITM_ITMCD',
+                DB::raw("CONCAT(RTRIM(MITM_ITMCD), '( ' , MITM_ITMD1, ' )') AS MITM_ITMD1"),
+                'MITM_STKUOM',
+                'MITM_SPTNO'
+            );
 
         if ($request->has('filter') && count($request->filter) > 0) {
             foreach ($request->filter as $key => $value) {
@@ -57,28 +58,36 @@ class labelPrintController extends BaseController
         }
     }
 
-    public function searchGIT(Request $request) {
+    public function searchGIT(Request $request)
+    {
         $hist = DB::connection('sqlsrv_mega_exim')->table('PGIT_TBL')
-        ->select(
-            'PGIT_SUPNO',
-            'PGIT_ITMCD',
-            'PGITSHP_SHPREFNO',
-            DB::raw("CONCAT(RTRIM(MITM_ITMCD), '( ' , MITM_ITMD1, ' )') AS MITM_ITMD1"),
-            'MITM_STKUOM',
-            'MITM_SPTNO',
-            DB::raw('sum(PGIT_RCVQT) as PGIT_RCVQT')
-        )
-        ->join('MITM_TBL', 'MITM_ITMCD', 'PGIT_ITMCD')
-        ->join('PGITSHP_TBL', 'PGITSHP_DOCNO', 'PGIT_SUPNO')
-        ->groupBy(
-            'PGIT_SUPNO',
-            'PGIT_ITMCD',
-            'PGITSHP_SHPREFNO',
-            DB::raw("CONCAT(RTRIM(MITM_ITMCD), '( ' , MITM_ITMD1, ' )')"),
-            'MITM_STKUOM',
-            'MITM_SPTNO',
-            'PGIT_LUPDT'
-        );
+            ->select(
+                'PGIT_SUPNO',
+                'PGIT_ITMCD',
+                'PGITSHP_SHPREFNO',
+                DB::raw("CONCAT(RTRIM(MITM_ITMCD), '( ' , MITM_ITMD1, ' )') AS MITM_ITMD1"),
+                'MITM_STKUOM',
+                'MITM_SPTNO',
+                'MITM_SPQ',
+                DB::raw('MITM_SPQ AS SPQ_QTY'),
+                DB::raw('1 AS TOTAL_PRINT'),
+                DB::raw('sum(PGRN_RCVQT) as PGIT_RCVQT'),
+                DB::raw('CAST(PGRN_RCVDT AS DATE) PGRN_RCVDT')
+            )
+            ->join('MITM_TBL', 'MITM_ITMCD', 'PGIT_ITMCD')
+            ->join('PGITSHP_TBL', 'PGITSHP_DOCNO', 'PGIT_SUPNO')
+            ->join('PGRN_TBL', 'PGIT_SUPNO', 'PGRN_SUPNO')
+            ->groupBy(
+                'PGIT_SUPNO',
+                'PGIT_ITMCD',
+                'PGITSHP_SHPREFNO',
+                DB::raw("CONCAT(RTRIM(MITM_ITMCD), '( ' , MITM_ITMD1, ' )')"),
+                'MITM_STKUOM',
+                'MITM_SPTNO',
+                'MITM_SPQ',
+                'PGIT_LUPDT',
+                'PGRN_RCVDT'
+            );
 
         if ($request->has('filter') && count($request->filter) > 0) {
             foreach ($request->filter as $key => $value) {
@@ -94,13 +103,23 @@ class labelPrintController extends BaseController
 
         if ((clone $hist)->count() > 0) {
             $datanya = (clone $hist)->orderBy('PGIT_LUPDT', 'desc')
-                ->limit(50)
+                ->limit(10)
                 ->get()
                 ->toArray();
+
             $hasil = [];
             foreach (@json_decode(json_encode($datanya), true) as $key => $value) {
                 $hasil[$value['PGITSHP_SHPREFNO']]['PGITSHP_SHPREFNO'] = $value['PGITSHP_SHPREFNO'];
-                $hasil[$value['PGITSHP_SHPREFNO']]['det'][] = $value;
+                $hasil[$value['PGITSHP_SHPREFNO']]['det'][] = array_merge(
+                    $value,
+                    // [
+                    //     'SPLIT_SPQ' => $this->splitStockBySPQ(
+                    //         (int)$value['MITM_SPQ'],
+                    //         (int)$value['PGIT_RCVQT'],
+                    //         $value
+                    //     )
+                    // ]
+                );
             }
 
             return $this->handleResponse(array_values($hasil), 'Data Fetched');
@@ -155,5 +174,38 @@ class labelPrintController extends BaseController
     public function destroy(string $id)
     {
         //
+    }
+
+    public function splitData(Request $request)
+    {
+        $splitSPQList = $this->splitStockBySPQ(
+            (int) $request->data['MITM_SPQ'],
+            (int) $request->data['PGIT_RCVQT'],
+            $request->data
+        );
+
+        $hasilSplit = [];
+        $jumPrint = 1;
+        foreach ($splitSPQList as $key => $value) {
+            $hasilSplit[$value['SPQ_QTY']]['TOTAL_PRINT'] = $jumPrint;
+            $hasilSplit[$value['SPQ_QTY']]['SPQ_QTY'] = $value['SPQ_QTY'];
+            $hasilSplit[$value['SPQ_QTY']]['LIST'][] = $value;
+
+            // $jumPrint++;
+        }
+        return array_merge($request->data, ['det' => array_values($hasilSplit)]);
+    }
+
+    public function splitStockBySPQ($spq, $qty, $data, $returnedData = []): array
+    {
+        if ($qty > $spq) {
+            $data['SPQ_QTY'] = $spq;
+            $returnedData[] = $data;
+            return $this->splitStockBySPQ($spq, $qty - $spq, $data, $returnedData);
+        } else {
+            $data['SPQ_QTY'] = $qty;
+            $returnedData[] = $data;
+            return $returnedData;
+        }
     }
 }
