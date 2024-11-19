@@ -62,8 +62,8 @@ class labelPrintController extends BaseController
     {
         $hist = DB::connection('sqlsrv_mega_exim')->table('PGRN_TBL')
             ->select(
-                'PGIT_SUPNO',
-                'PGIT_ITMCD',
+                DB::raw('PGRN_SUPNO as PGIT_SUPNO'),
+                DB::raw('PGRN_ITMCD as PGIT_ITMCD'),
                 'PGITSHP_SHPREFNO',
                 DB::raw("CONCAT(RTRIM(MITM_ITMCD), '( ' , MITM_ITMD1, ' )') AS MITM_ITMD1"),
                 'MITM_STKUOM',
@@ -76,16 +76,16 @@ class labelPrintController extends BaseController
             )
             ->join('MITM_TBL', 'MITM_ITMCD', 'PGRN_ITMCD')
             ->join('PGITSHP_TBL', 'PGITSHP_DOCNO', 'PGRN_SUPNO')
-            ->join('PGIT_TBL', 'PGIT_SUPNO', 'PGRN_SUPNO')
+            // ->join('PGIT_TBL', 'PGIT_SUPNO', 'PGRN_SUPNO')
             ->groupBy(
-                'PGIT_SUPNO',
-                'PGIT_ITMCD',
+                'PGRN_SUPNO',
+                'PGRN_ITMCD',
                 'PGITSHP_SHPREFNO',
                 DB::raw("CONCAT(RTRIM(MITM_ITMCD), '( ' , MITM_ITMD1, ' )')"),
                 'MITM_STKUOM',
                 'MITM_SPTNO',
                 'MITM_SPQ',
-                'PGIT_LUPDT',
+                'PGRN_LUPDT',
                 'PGRN_RCVDT'
             );
 
@@ -102,7 +102,7 @@ class labelPrintController extends BaseController
         }
 
         if ((clone $hist)->count() > 0) {
-            $datanya = (clone $hist)->orderBy('PGIT_LUPDT', 'desc')
+            $datanya = (clone $hist)->orderBy('PGRN_LUPDT', 'desc')
                 ->limit(10)
                 ->get()
                 ->toArray();
