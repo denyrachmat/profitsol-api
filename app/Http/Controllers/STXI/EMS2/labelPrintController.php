@@ -60,7 +60,7 @@ class labelPrintController extends BaseController
 
     public function searchGIT(Request $request)
     {
-        $hist = DB::connection('sqlsrv_mega_exim')->table('PGIT_TBL')
+        $hist = DB::connection('sqlsrv_mega_exim')->table('PGRN_TBL')
             ->select(
                 'PGIT_SUPNO',
                 'PGIT_ITMCD',
@@ -76,7 +76,7 @@ class labelPrintController extends BaseController
             )
             ->join('MITM_TBL', 'MITM_ITMCD', 'PGIT_ITMCD')
             ->join('PGITSHP_TBL', 'PGITSHP_DOCNO', 'PGIT_SUPNO')
-            ->join('PGRN_TBL', 'PGIT_SUPNO', 'PGRN_SUPNO')
+            ->join('PGIT_TBL', 'PGIT_SUPNO', 'PGRN_SUPNO')
             ->groupBy(
                 'PGIT_SUPNO',
                 'PGIT_ITMCD',
