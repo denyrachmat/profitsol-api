@@ -74,8 +74,8 @@ class labelPrintController extends BaseController
                 DB::raw('sum(PGRN_RCVQT) as PGIT_RCVQT'),
                 DB::raw('CAST(PGRN_RCVDT AS DATE) PGRN_RCVDT')
             )
-            ->join('MITM_TBL', 'MITM_ITMCD', 'PGIT_ITMCD')
-            ->join('PGITSHP_TBL', 'PGITSHP_DOCNO', 'PGIT_SUPNO')
+            ->join('MITM_TBL', 'MITM_ITMCD', 'PGRN_ITMCD')
+            ->join('PGITSHP_TBL', 'PGITSHP_DOCNO', 'PGRN_SUPNO')
             ->join('PGIT_TBL', 'PGIT_SUPNO', 'PGRN_SUPNO')
             ->groupBy(
                 'PGIT_SUPNO',
