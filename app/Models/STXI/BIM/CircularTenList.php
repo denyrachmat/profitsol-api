@@ -17,5 +17,6 @@ class CircularTenList extends Model
         'CTT_EXCUPDT',
         'CTT_ITMUPDT',
         'CTT_BOMUPDT',
+        'CTT_SUBJECT',
     ];
 }
