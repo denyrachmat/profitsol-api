@@ -33,7 +33,7 @@ trait ApprovalActionTraits
                 ->with('mapdet')
                 ->first();
 
-            $checkLatestOrder = (int)$getLatestData->mapdet->amsmd_order;
+            $checkLatestOrder = (int) $getLatestData->mapdet->amsmd_order;
         }
 
         // Fetch Approval map
@@ -331,7 +331,9 @@ trait ApprovalActionTraits
 
         // Receive Notif
         $hist = ApprovalHistDetail::create([
-            'p_u_username' => $valueDet['amsmd_username'],
+            'p_u_username' => $isLast // IF Approval Complete send back to requestor
+                ? $checkFirst->p_u_username
+                : $valueDet['amsmd_username'],
             'amsm_id' => $request->amsm_id,
             'amsmd_id' => $valueDet['id'],
             'amshd_token' => $histToken,
@@ -437,6 +439,7 @@ trait ApprovalActionTraits
                             } else {
                                 $convLink = '';
                             }
+
                             // Jika menggunakan DMS Sebagai Storage
                             if (str_contains($valueAttch->aats_name, 'DMS')) {
                                 $storeData[] = $storeDataCek;
