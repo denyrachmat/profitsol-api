@@ -281,9 +281,9 @@ class ImportCircularTen implements ToModel
                     'username' => $this->username,
                 ];
 
-                $getListItemFromTenList = CircularTenList::where('CTT_IEITENNO', $this->tenNo)->first();
+                $getListItemFromTenList = CircularTenList::where('CTT_SECTENNO', $this->tenNo)->first();
 
-                if (count($getListItemFromTenList->models) > 0) {
+                if (!empty($getListItemFromTenList->models) && count($getListItemFromTenList->models) > 0) {
                     foreach ($getListItemFromTenList->models as $keyMdl => $valueMdl) {
                         CircularTenModelDet::updateOrCreate([
                             'CM_ID' => $storedTen->id,
