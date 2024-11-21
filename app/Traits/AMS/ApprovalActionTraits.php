@@ -94,7 +94,7 @@ trait ApprovalActionTraits
                         }
 
                         if (count($runningToken) > 0) {
-                            return $this->handleError('you already send Approval, please d');
+                            return $this->handleError('you already send this Approval, please check again your data.');
                         }
                         $useToken = $useTokenTest->amstd_token;
                     } else {
