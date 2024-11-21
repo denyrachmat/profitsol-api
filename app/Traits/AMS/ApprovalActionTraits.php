@@ -530,7 +530,8 @@ trait ApprovalActionTraits
             'amshd_paramstore',
             'amsm_id',
             DB::raw('MAX(created_at) as created_at')
-        );
+        )
+        ->with('master');
 
         if ($request->has('filter') && count($request->filter) > 0) {
             foreach ($request->filter as $key => $value) {

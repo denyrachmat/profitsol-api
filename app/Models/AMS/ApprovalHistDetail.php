@@ -42,6 +42,11 @@ class ApprovalHistDetail extends Model
     {
         return $this->hasOne(ApprovalMapDetail::class, 'id', 'amsmd_id');
     }
+
+    public function master() {
+        return $this->hasOne(ApprovalMaster::class, 'id', 'amsm_id');
+    }
+
     public function attch()
     {
         return $this->hasMany(ApprovalAttachHist::class, 'amshd_id', 'id');

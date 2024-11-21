@@ -483,6 +483,8 @@ class SyncCirTentoOldDMS implements ShouldQueue
                 ]));
             }
         } catch (ClientException $e) {
+            $response = $e->getResponse();
+            $responseBodyAsString = $response->getBody()->getContents();
             Redis::publish('portalv2', json_encode([
                 'app' => 'cirten',
                 'message' => 'TEN ' . $this->data['ten'] . ' : sync failed server (' . $e->getMessage() . ')',
@@ -490,7 +492,8 @@ class SyncCirTentoOldDMS implements ShouldQueue
                 'status' => 'failed',
                 'data' => [
                     'secTenNo' => $this->data['ten'],
-                ]
+                ],
+                'cek' => $responseBodyAsString
             ]));
         }
     }
