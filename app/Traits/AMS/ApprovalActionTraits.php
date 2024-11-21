@@ -26,13 +26,14 @@ trait ApprovalActionTraits
     public function approveAction(ApprovalRunningApproveActionRequest $request)
     {
         $checkLatestOrder = 0;
+        $getLatestData = null;
         if ($request->has('token') && !empty($request->token)) {
-            $checkLatestOrder = (int) ApprovalHistDetail::where('amsm_id', $request->amsm_id)
+            $getLatestData = ApprovalHistDetail::where('amsm_id', $request->amsm_id)
                 ->where('amshd_token', $request->token)
                 ->with('mapdet')
-                ->first()
-                ->mapdet
-                ->amsmd_order;
+                ->first();
+
+            $checkLatestOrder = (int)$getLatestData->mapdet->amsmd_order;
         }
 
         // Fetch Approval map
@@ -54,7 +55,11 @@ trait ApprovalActionTraits
             $getToken = ApprovalTokenDetail::where('amsm_id', $request->amsm_id);
 
             if ($request->has('token') && !empty($request->token)) {
-                $useToken = (clone $getToken)->first()->amstd_token;
+                if (!empty($getLatestData)) {
+                    $useToken = $getLatestData->amstd_token;
+                } else {
+                    $useToken = (clone $getToken)->first()->amstd_token;
+                }
             } else {
                 $useTokenTest = (clone $getToken)->whereDoesntHave('hist')->first();
 
