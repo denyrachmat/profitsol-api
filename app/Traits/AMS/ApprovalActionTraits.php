@@ -213,11 +213,14 @@ trait ApprovalActionTraits
             }
         }
 
+        $cekTimes = $request->has('page') ? $request->page : 1;
+
         if ((clone $hist)->count() > 0) {
             $datanya = (clone $hist)->with('senderUser', 'receiveUser')
                 ->orderBy('created_at', 'desc')
-                ->take(10)
+                ->take(10 * $cekTimes)
                 ->get();
+
             return $this->handleResponse($datanya, 'Data Fetched');
         } else {
             return $this->handleError('No data found !!', []);
@@ -234,6 +237,7 @@ trait ApprovalActionTraits
         $cekToken = ApprovalTokenDetail::with([
             'hist' => function ($f) use ($tokenHist) {
                 $f->with('mapdet')
+                    ->whereHas('mapdet')
                     ->orderBy('id', 'asc')
                     ->get()
                     ->toArray();
@@ -307,6 +311,7 @@ trait ApprovalActionTraits
     public function sendingApproval($request, $dataMaster, $checkFirst, $checkLatest, $valueDet, $histToken, $useToken, $nextStat, $isLast = false)
     {
         $getSender = PortalUserDet::where('u_username', $request->username)->first();
+        $getDataSent = is_string($request->data) ? json_decode($request->data, true) : $request->data;
         // Sent Notif
         $hist = ApprovalHistDetail::create([
             'p_u_username' => $request->username,
@@ -320,7 +325,7 @@ trait ApprovalActionTraits
             'amshd_stat' => $nextStat,
             'amshd_remarks' => $request->remarks,
             'amshd_paramstore' => json_encode([
-                'data' => is_string($request->data) ? json_decode($request->data, true) : $request->data,
+                'data' => $getDataSent,
                 'onApproval' => $request->has('onApproval') ? $request->onApproval : [],
                 'onDone' => $request->has('onDone') ? $request->onDone : [],
                 'msgkey' => $request->has('msgkey') ? $request->msgkey : ''
@@ -342,7 +347,7 @@ trait ApprovalActionTraits
             'amshd_stat' => 'receive',
             'amshd_remarks' => $request->remarks,
             'amshd_paramstore' => json_encode([
-                'data' => is_string($request->data) ? json_decode($request->data, true) : $request->data,
+                'data' => $getDataSent,
                 'onApproval' => $request->has('onApproval') ? $request->onApproval : [],
                 'onDone' => $request->has('onDone') ? $request->onDone : [],
                 'msgkey' => $request->has('msgkey') ? $request->msgkey : ''
@@ -463,10 +468,16 @@ trait ApprovalActionTraits
 
         // If Email notification is on
         if ($dataMaster->apprvSet->amssd_isemail) {
+            $cekKeyValue = array_values((array)$request->data)[0];
+            if ($request->has('msgkey') && !empty($request->msgkey)) {
+                $checkJSON = is_string($request->data) ? json_decode($request->data, true) : $request->data;
+                $cekKeyValue = $checkJSON->{$request->msgkey};
+            }
+
             $queueSet = new EmailNotificationQueue(
                 $request->username,
                 $toEmail,
-                $request->subject ?? $dataMaster->ams_title,
+                $request->subject ? ($request->subject .' - '. $cekKeyValue) : $dataMaster->ams_title,
                 $valueDet->amsmd_reqaprv,
                 $dataMaster->ams_content,
                 $useToken . '/' . $histToken
