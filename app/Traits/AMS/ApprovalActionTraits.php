@@ -468,7 +468,7 @@ trait ApprovalActionTraits
 
         // If Email notification is on
         if ($dataMaster->apprvSet->amssd_isemail) {
-            $cekKeyValue = array_values((array)$request->data)[0];
+            $cekKeyValue = array_values((array) $request->data)[0];
             if ($request->has('msgkey') && !empty($request->msgkey)) {
                 $checkJSON = is_string($request->data) ? json_decode($request->data, true) : $request->data;
                 $cekKeyValue = $checkJSON->{$request->msgkey};
@@ -477,7 +477,7 @@ trait ApprovalActionTraits
             $queueSet = new EmailNotificationQueue(
                 $request->username,
                 $toEmail,
-                $request->subject ? ($request->subject .' - '. $cekKeyValue) : $dataMaster->ams_title,
+                $request->subject ? ($request->subject . ' - ' . $cekKeyValue) : $dataMaster->ams_title,
                 $valueDet->amsmd_reqaprv,
                 $dataMaster->ams_content,
                 $useToken . '/' . $histToken
@@ -542,7 +542,8 @@ trait ApprovalActionTraits
             'amsm_id',
             DB::raw('MAX(created_at) as created_at')
         )
-        ->with('master');
+            ->with('master')
+            ->whereHas('mapdet');
 
         if ($request->has('filter') && count($request->filter) > 0) {
             foreach ($request->filter as $key => $value) {
@@ -563,24 +564,34 @@ trait ApprovalActionTraits
             'amsm_id'
         );
 
+        $result = $data->get()->toArray();
+
+        // return $result;
+
         $hasil = [];
-        foreach ($data->get()->toArray() as $key => $value) {
+        foreach ($result as $key => $value) {
             $cekLast = ApprovalHistDetail::with('mapdet')
                 ->where('amshd_stat', 'receive')
                 ->where('amstd_token', $value['amstd_token'])
+                ->whereHas('mapdet')
                 ->orderBy('created_at', 'desc')
                 ->first();
 
             $cekDet = ApprovalMapDetail::select('amsmd_order')->where('amsm_id', (int) $value['amsm_id'])->groupBy('amsmd_order')->get();
             $hasilDet = 0;
             foreach ($cekDet as $key => $valueDet) {
-                if ((int) $valueDet->amsmd_order <= (int) $cekLast->mapdet->amsmd_order) {
-                    $hasilDet += 1;
+                if (!empty($valueDet)) {
+                    if ((int) $valueDet->amsmd_order <= (int) $cekLast->mapdet->amsmd_order) {
+                        $hasilDet += 1;
+                    }
                 }
             }
 
+            $getDataSent = is_string($cekLast->amshd_paramstore) ? json_decode($cekLast->amshd_paramstore, true) : $cekLast->amshd_paramstore;
+
             $hasil[] = array_merge($value, [
-                'percent' => $hasilDet / count($cekDet) * 100
+                'percent' => $hasilDet / count($cekDet) * 100,
+                'dataKey' => isset($getDataSent['msgkey']) ? $getDataSent['data'][$getDataSent['msgkey']] : array_values($getDataSent)['data'][0]
             ]);
         }
 
