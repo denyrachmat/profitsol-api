@@ -184,7 +184,7 @@ trait ApprovalActionTraits
                 }
             } else {
                 // If last order
-                if (!isset($dataMaster->det[$checkLatestOrder])) {
+                if (!isset($dataMaster->det[$checkLatestOrder]) && $valueDet['p_u_username'] === $request->username) {
                     $this->sendingApproval($request, $dataMaster, $checkFirst, $checkLatest, $valueDet, $histToken, $useToken, $nextStat, true);
                     // Delete used token
                     ApprovalTokenDetail::where('id', $useTokenCreate->id)->delete();
