@@ -128,7 +128,10 @@ trait ApprovalActionTraits
                     $cekHist = ApprovalHistDetail::where('amsm_id', $request->amsm_id)->where('amshd_paramstore', 'like', "%" . $keyRequest . "%")->first();
 
                     if (!empty($cekHist) && $useToken !== $cekHist->amstd_token) {
-                        return $this->handleError("Key " . $keyRequest . " already submited !!", $listVariable);
+                        return $this->handleError("Key " . $keyRequest . " already submited !!", [
+                            'hist' => $cekHist,
+                            'token_used' => $useToken
+                        ]);
                     }
                 }
             } else {
@@ -140,8 +143,6 @@ trait ApprovalActionTraits
         $hist = [];
         $getfirstOrder = $checkLatestOrder;
         foreach ($dataMaster->det as $keyDet => $valueDet) {
-            // return $valueDet['amsmd_order'] == (int) $checkLatestOrder + 1;
-
             $checkLatestToken = ApprovalHistDetail::where('amsm_id', $request->amsm_id)
                 ->with('mapdet')
                 ->with('senderUser')
