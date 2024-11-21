@@ -178,14 +178,14 @@ trait ApprovalActionTraits
             if ((int) $valueDet['amsmd_order'] > $checkLatestOrder || empty($checkFirst)) {
                 // If Next Order
                 if ($valueDet['amsmd_order'] == (int) $checkLatestOrder + 1) {
-                    $this->sendingApproval($request, $dataMaster, $checkFirst, $keyDet, $valueDet, $histToken, $useToken, $nextStat);
+                    $this->sendingApproval($request, $dataMaster, $checkFirst, $checkLatest, $valueDet, $histToken, $useToken, $nextStat);
                 } else {
                     break;
                 }
             } else {
                 // If last order
                 if (!isset($dataMaster->det[$checkLatestOrder])) {
-                    $this->sendingApproval($request, $dataMaster, $checkFirst, $keyDet, $valueDet, $histToken, $useToken, $nextStat, true);
+                    $this->sendingApproval($request, $dataMaster, $checkFirst, $checkLatest, $valueDet, $histToken, $useToken, $nextStat, true);
                     // Delete used token
                     ApprovalTokenDetail::where('id', $useTokenCreate->id)->delete();
                 }
@@ -304,7 +304,7 @@ trait ApprovalActionTraits
         return $this->handleError('Token not found !! please check again !!');
     }
 
-    public function sendingApproval($request, $dataMaster, $checkFirst, $keyDet, $valueDet, $histToken, $useToken, $nextStat, $isLast = false)
+    public function sendingApproval($request, $dataMaster, $checkFirst, $checkLatest, $valueDet, $histToken, $useToken, $nextStat, $isLast = false)
     {
         $getSender = PortalUserDet::where('u_username', $request->username)->first();
         // Sent Notif
@@ -487,36 +487,11 @@ trait ApprovalActionTraits
         $getUsersFrom = PortalUserDet::where('u_username', $fromUname)->first();
         $getUsers = PortalUserDet::where('u_username', $toUname)->first();
 
-        // logger("{$getUsers->pud_first_name} {$getUsers->pud_last_name}");
-        // Convert fullname Recepient variable
-
-        // If user exists then use fullname instead
-        // if (!empty($getUsers)) {
-        //     $convertContent = str_replace(search: "{{recipient_fullname}}", replace: "{$getUsers->pud_first_name} {$getUsers->pud_last_name}", subject: $content);
-        // } else {
-        //     $convertContent = str_replace(search: "{{recipient_fullname}}", replace: $toUname, subject: $content);
-        // }
-
-        // // Convert fullname sender variable
-
-        // // If user exists then use fullname instead
-        // if (!empty($getUsersFrom)) {
-        //     $convertContent = str_replace(search: "{{fullname}}", replace: "{$getUsersFrom->pud_first_name} {$getUsersFrom->pud_last_name}", subject: $convertContent);
-        // } else {
-        //     $convertContent = str_replace(search: "{{fullname}}", replace: $fromUname, subject: $convertContent);
-        // }
-
-        // $convertContent = str_replace(search: "{{linkapproval}}", replace: env('FE_URL') . "/ams/approvalAction/{$token}", subject: $convertContent);
-
-        // logger($param);
-
         $params = [];
         foreach ($param as $keyVar => $valueVar) {
             $params[$keyVar] = $valueVar;
             // $convertContent = str_replace(search: "{{" . $keyVar . "}}", replace: $valueVar, subject: $convertContent);
         }
-
-        logger(json_encode($params[$keyVar]));
 
         $convertContent = Blade::render($content, array_merge([
             'recipient_fullname' => !empty($getUsers) ? "{$getUsers->pud_first_name} {$getUsers->pud_last_name}" : $toUname,
