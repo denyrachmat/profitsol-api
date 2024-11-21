@@ -19,4 +19,8 @@ class CircularTenList extends Model
         'CTT_BOMUPDT',
         'CTT_SUBJECT',
     ];
+
+    public function models() {
+        return $this->hasMany(CircularTenListModelDet::class, 'CTT_ID', 'id');
+    }
 }

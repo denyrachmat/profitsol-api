@@ -128,9 +128,9 @@ class ImportCircularTen implements ToModel
                 $this->contentArray[] = $hasilCekKosong;
             }
 
-            $this->data['cekContentJuga'][] = [count($hasilCekKosong),$hasilCekKosong, count($this->contentArray)];
+            $this->data['cekContentJuga'][] = [count($hasilCekKosong), $hasilCekKosong, count($this->contentArray)];
 
-            if(count($hasilCekKosong) === 0 && count($this->contentArray) > 0){
+            if (count($hasilCekKosong) === 0 && count($this->contentArray) > 0) {
 
                 foreach ($this->contentArray as $keyRow => $valueRow) {
                     $this->tableBuild .= "<tr>";
@@ -281,14 +281,28 @@ class ImportCircularTen implements ToModel
                     'username' => $this->username,
                 ];
 
-                foreach ($this->data['model_cek'] as $keyMdl => $valueMdl) {
-                    CircularTenModelDet::updateOrCreate([
-                        'CM_ID' => $storedTen->id,
-                        'CIM_ITMCD' => $valueMdl,
-                    ], [
-                        'CM_ID' => $storedTen->id,
-                        'CIM_ITMCD' => $valueMdl,
-                    ]);
+                $getListItemFromTenList = CircularTenList::where('CTT_IEITENNO', $this->tenNo)->first();
+
+                if (count($getListItemFromTenList->models) > 0) {
+                    foreach ($getListItemFromTenList->models as $keyMdl => $valueMdl) {
+                        CircularTenModelDet::updateOrCreate([
+                            'CM_ID' => $storedTen->id,
+                            'CIM_ITMCD' => $valueMdl->CTID_ITEMCDNEW,
+                        ], [
+                            'CM_ID' => $storedTen->id,
+                            'CIM_ITMCD' => $valueMdl->CTID_ITEMCDNEW,
+                        ]);
+                    }
+                } else {
+                    foreach ($this->data['model_cek'] as $keyMdl => $valueMdl) {
+                        CircularTenModelDet::updateOrCreate([
+                            'CM_ID' => $storedTen->id,
+                            'CIM_ITMCD' => $valueMdl,
+                        ], [
+                            'CM_ID' => $storedTen->id,
+                            'CIM_ITMCD' => $valueMdl,
+                        ]);
+                    }
                 }
 
                 $this->data['send_data'] = $datas;
@@ -344,8 +358,8 @@ class ImportCircularTen implements ToModel
                 foreach ($getDataItem as $keyItem => $value) {
                     $items[] = trim($value->MITM_ITMCD);
                     $getSubcon = empty($value->MITM_SUPCD)
-                    ? substr($value->MITM_ITMTY, 0, 3)
-                    : substr($value->MITM_SUPCD, 0, 3);
+                        ? substr($value->MITM_ITMTY, 0, 3)
+                        : substr($value->MITM_SUPCD, 0, 3);
 
                     if ($getSubcon !== 'SMT' || $getSubcon !== 'VST' || $getSubcon !== 'KAI') {
                         $getSubcons = $value->MITM_SUPCD;

@@ -49,40 +49,6 @@ trait ApprovalActionTraits
             ->with('apprvSet')
             ->first();
 
-        // return $dataMaster;
-
-        // logger(json_encode($checkLatestOrder));
-
-        // Check if there is any content using variable on recepient
-        preg_match_all("/\{{(.*?)\}}/", str_replace('$', '', $dataMaster->apprvSet->amssd_content), $matches);
-        $listVariable = array_values(array_filter($matches[1], function ($fc) {
-            return !str_contains($fc, 'fullname') && !str_contains($fc, "['");
-        }));
-
-        if (count($listVariable) > 0) {
-            if ($request->has('data')) {
-                $checkJSON = is_string($request->data) ? json_decode($request->data, true) : $request->data;
-                $checkFil = array_values(array_filter($listVariable, function ($f) use ($request, $checkJSON) {
-                    return !in_array($f, array_keys($checkJSON));
-                }));
-
-                if (count($checkFil) > 0) {
-                    return $this->handleError("you hasn't provide some data keys on request!!", $checkFil);
-                }
-
-                if ($request->has('msgkey') && !empty($request->msgkey)) {
-                    $keyRequest = $checkJSON[$request->msgkey];
-                    $cekHist = ApprovalHistDetail::where('amsm_id', $request->amsm_id)->where('amshd_paramstore', 'like', "%" . $keyRequest . "%");
-
-                    if (!empty((clone $cekHist)->first())) {
-                        return $this->handleError("Key " . $keyRequest . " already submited !!", $listVariable);
-                    }
-                }
-            } else {
-                return $this->handleError("you hasn't provide data keys on request!!", $listVariable);
-            }
-        }
-
         // Check if quota more than 0 then using quota
         if ($dataMaster->apprvSet->amssd_quotkn > 0) {
             $getToken = ApprovalTokenDetail::where('amsm_id', $request->amsm_id);
@@ -138,6 +104,36 @@ trait ApprovalActionTraits
                 'amsm_id' => $request->amsm_id,
                 'amstd_token' => $useToken,
             ]);
+        }
+
+        // Check if there is any content using variable on recepient
+        preg_match_all("/\{{(.*?)\}}/", str_replace('$', '', $dataMaster->apprvSet->amssd_content), $matches);
+        $listVariable = array_values(array_filter($matches[1], function ($fc) {
+            return !str_contains($fc, 'fullname') && !str_contains($fc, "['");
+        }));
+
+        if (count($listVariable) > 0) {
+            if ($request->has('data')) {
+                $checkJSON = is_string($request->data) ? json_decode($request->data, true) : $request->data;
+                $checkFil = array_values(array_filter($listVariable, function ($f) use ($request, $checkJSON) {
+                    return !in_array($f, array_keys($checkJSON));
+                }));
+
+                if (count($checkFil) > 0) {
+                    return $this->handleError("you hasn't provide some data keys on request!!", $checkFil);
+                }
+
+                if ($request->has('msgkey') && !empty($request->msgkey)) {
+                    $keyRequest = $checkJSON[$request->msgkey];
+                    $cekHist = ApprovalHistDetail::where('amsm_id', $request->amsm_id)->where('amshd_paramstore', 'like', "%" . $keyRequest . "%")->first();
+
+                    if (!empty($cekHist) && $useToken !== $cekHist->amstd_token) {
+                        return $this->handleError("Key " . $keyRequest . " already submited !!", $listVariable);
+                    }
+                }
+            } else {
+                return $this->handleError("you hasn't provide data keys on request!!", $listVariable);
+            }
         }
 
         // Start Calculating approval
