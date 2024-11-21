@@ -495,6 +495,13 @@ class SyncCirTentoOldDMS implements ShouldQueue
                 ],
                 'cek' => $responseBodyAsString
             ]));
+
+
+            if (str_contains($responseBodyAsString->message, 'already send')) {
+                CircularTenMstr::where('CIRTEN_TENIEI', $ten)->update([
+                    'CIRTEN_DMS_DOC_ID' => json_encode($uploadResult)
+                ]);
+            }
         }
     }
 
