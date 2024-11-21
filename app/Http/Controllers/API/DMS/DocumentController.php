@@ -74,7 +74,8 @@ class DocumentController extends BaseController
                             !empty($dataFolder) ? $this->pathCreator($dataFolder->toArray()) : '',
                             $this->getAliasFolderbyAuthor($req->p_u_username, 'source') == 1
                             ? $value
-                            : $fileNameFormat
+                            : $fileNameFormat,
+                            $req->dfm_root_mstr
                         ),
                         'ddm_doc_flag' => $req->ddm_doc_flag,
                         'dfm_root_mstr' => $req->dfm_root_mstr
