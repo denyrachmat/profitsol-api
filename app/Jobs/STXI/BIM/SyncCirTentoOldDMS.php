@@ -17,6 +17,7 @@ use Illuminate\Support\Facades\DB;
 
 use App\Models\STXI\BIM\CircularTenMstr;
 use App\Models\STXI\BIM\CircularTenModelDet;
+use App\Models\STXI\BIM\CircularTenList;
 use Symfony\Component\DomCrawler\Crawler;
 
 class SyncCirTentoOldDMS implements ShouldQueue
