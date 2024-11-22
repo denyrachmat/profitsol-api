@@ -234,7 +234,7 @@ class ImportCircularTen implements ToModel
 
             if (!empty($getListItemFromTenList->models) && count($getListItemFromTenList->models) > 0) {
                 foreach ($getListItemFromTenList->models as $keyMdl => $valueMdl) {
-                    $this->data['model'] = $valueMdl->CTID_ITEMCDNEW;
+                    $this->data['model'][] = $valueMdl->CTID_ITEMCDNEW;
                     CircularTenModelDet::updateOrCreate([
                         'CM_ID' => $storedTen->id,
                         'CIM_ITMCD' => $valueMdl->CTID_ITEMCDNEW,
