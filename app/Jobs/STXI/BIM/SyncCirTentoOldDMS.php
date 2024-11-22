@@ -344,7 +344,7 @@ class SyncCirTentoOldDMS implements ShouldQueue
         $dataMstr = CircularTenMstr::where('CIRTEN_TENIEI', $ten)->first();
         $storepdf = Storage::disk('local')->put('/public/circular_ten/' . $dataMstr->CIRTEN_NO . '/' . $ten . '.pdf', $pdf);
         $target_url = 'http://192.168.100.32/public/api/'; // Write your URL here
-        $pathFile = urlencode('http://192.168.100.32/public/storage/circular_ten/' . $dataMstr->CIRTEN_NO . '/' . $ten . '.pdf');
+        $pathFile = 'http://192.168.100.32/public/storage/circular_ten/'.urlencode('' . $dataMstr->CIRTEN_NO . '/' . $ten . '.pdf');
 
         $getTenlistData = CircularTenList::where('CTT_IEITENNO', $ten)->with('models')->first();
         // $cekData = DB::connection('sqlsrv_dms_old')->table('dms_doc_mstr')->where('doc_real_name', $ten . '.pdf')->first();
