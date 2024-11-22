@@ -212,6 +212,21 @@ class ImportCircularTen implements ToModel
                 'CIRTEN_HTMFILEPATH' => $this->htmlEpson,
             ]);
 
+            $getListItemFromTenList = CircularTenList::where('CTT_SECTENNO', $this->tenNo)->first();
+
+            if (!empty($getListItemFromTenList->models) && count($getListItemFromTenList->models) > 0) {
+                foreach ($getListItemFromTenList->models as $keyMdl => $valueMdl) {
+                    // $this->data['model'][] = $valueMdl->CTID_ITEMCDNEW;
+                    CircularTenModelDet::updateOrCreate([
+                        'CM_ID' => $storedTen->id,
+                        'CIM_ITMCD' => $valueMdl->CTID_ITEMCDNEW,
+                    ], [
+                        'CM_ID' => $storedTen->id,
+                        'CIM_ITMCD' => $valueMdl->CTID_ITEMCDNEW,
+                    ]);
+                }
+            }
+
             // Cek model kalo kosong ambil dari database
             $cekTenSudahInput = CircularTenMstr::where('CIRTEN_NO', $this->tenNo)->first();
             if (count($this->data['model']) === 0) {
@@ -227,21 +242,6 @@ class ImportCircularTen implements ToModel
                 if (count($hasilSupp) > 0) {
                     $this->data['model_cek'] = $cekModel->pluck('CIM_ITMCD');
                     $this->data['model'] = array_values($hasilSupp);
-                }
-            }
-
-            $getListItemFromTenList = CircularTenList::where('CTT_SECTENNO', $this->tenNo)->first();
-
-            if (!empty($getListItemFromTenList->models) && count($getListItemFromTenList->models) > 0) {
-                foreach ($getListItemFromTenList->models as $keyMdl => $valueMdl) {
-                    $this->data['model'][] = $valueMdl->CTID_ITEMCDNEW;
-                    CircularTenModelDet::updateOrCreate([
-                        'CM_ID' => $storedTen->id,
-                        'CIM_ITMCD' => $valueMdl->CTID_ITEMCDNEW,
-                    ], [
-                        'CM_ID' => $storedTen->id,
-                        'CIM_ITMCD' => $valueMdl->CTID_ITEMCDNEW,
-                    ]);
                 }
             }
 
