@@ -150,6 +150,7 @@ trait ApprovalActionTraits
         foreach ($dataMaster->det as $keyDet => $valueDet) {
             $checkLatestToken = ApprovalHistDetail::where('amsm_id', $request->amsm_id)
                 ->with('mapdet')
+                ->whereHas('mapdet')
                 ->with('senderUser')
                 ->with('receiveUser')
                 ->with('attch')
