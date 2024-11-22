@@ -472,7 +472,7 @@ trait ApprovalActionTraits
             $cekKeyValue = array_values((array) $request->data)[0];
             if ($request->has('msgkey') && !empty($request->msgkey)) {
                 $checkJSON = is_string($request->data) ? json_decode($request->data, true) : $request->data;
-                $cekKeyValue = $checkJSON->{$request->msgkey};
+                $cekKeyValue = $checkJSON[$request->msgkey];
             }
 
             $queueSet = new EmailNotificationQueue(
