@@ -230,6 +230,21 @@ class ImportCircularTen implements ToModel
                 }
             }
 
+            $getListItemFromTenList = CircularTenList::where('CTT_SECTENNO', $this->tenNo)->first();
+
+            if (!empty($getListItemFromTenList->models) && count($getListItemFromTenList->models) > 0) {
+                foreach ($getListItemFromTenList->models as $keyMdl => $valueMdl) {
+                    $this->data['model'] = $valueMdl->CTID_ITEMCDNEW;
+                    CircularTenModelDet::updateOrCreate([
+                        'CM_ID' => $storedTen->id,
+                        'CIM_ITMCD' => $valueMdl->CTID_ITEMCDNEW,
+                    ], [
+                        'CM_ID' => $storedTen->id,
+                        'CIM_ITMCD' => $valueMdl->CTID_ITEMCDNEW,
+                    ]);
+                }
+            }
+
             $status = '';
             if (count($this->data['model']) === 0) {
                 $status .= 'Model not found on Excel of Ten, please add it manually !!';
