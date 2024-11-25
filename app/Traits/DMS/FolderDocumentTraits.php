@@ -506,9 +506,9 @@ trait FolderDocumentTraits
             }
 
             if (count($data) === 1) {
-                $contents = base64_decode($hasil[0]['base64Files']);
+                $contents = base64_decode($hasil[0]['data']['base64Files']);
 
-                $path = public_path($hasil[0]['filename']);
+                $path = public_path($hasil[0]['data']['filename']);
                 //store file temporarily
                 file_put_contents($path, $contents);
 
