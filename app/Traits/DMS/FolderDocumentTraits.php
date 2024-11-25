@@ -505,7 +505,18 @@ trait FolderDocumentTraits
                 }
             }
 
-            return count($data) === 1 ? $hasil[0] : $hasil;
+            if (count($data) === 1) {
+                $contents = base64_decode($hasil[0]['base64Files']);
+
+                $path = public_path($hasil[0]['filename']);
+                //store file temporarily
+                file_put_contents($path, $contents);
+
+                //download file and delete it
+                return response()->download($path)->deleteFileAfterSend(true);
+            }
+
+            return $hasil;
         } else {
             return $this->handleError("Shared files / folder not found !");
         }
