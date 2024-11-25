@@ -142,7 +142,7 @@ class DocumentController extends BaseController
      */
     public function show($id, $fileOnly = false)
     {
-        $getData = DMSDocMstr::where('id', $id)->with('folder.parentFolders')->first()->toArray();
+        $getData = DMSDocMstr::where('id', $id)->with('folder.parentFolders')->with('shared')->first()->toArray();
 
         // return $getData;
         $files = $this->openFiles(

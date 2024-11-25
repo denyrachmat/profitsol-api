@@ -116,7 +116,8 @@ Route::group(['prefix' => 'dms'], function () {
         Route::get('installDisk/{id}', [DocumenRootController::class, 'installDisk']);
         Route::get('resyncFolderToDB/{users}/{root}', [DocumenRootController::class, 'folderFilesSync']);
         Route::post('shareFileFolder', [DocumenRootController::class, 'shareFileFolder']);
-        Route::get('getSharedToken/{token}/{id?}/{users?}', [DocumenRootController::class, 'getSharedToken']);
+        Route::get('getSharedToken/{token}/{sharedId?}/{users?}', [DocumenRootController::class, 'getSharedToken']);
+        Route::get('getSharedFolder/{token}/{sharedId?}/{users?}/{idFiles?}', [DocumenRootController::class, 'getSharedFolder']);
 
     });
 

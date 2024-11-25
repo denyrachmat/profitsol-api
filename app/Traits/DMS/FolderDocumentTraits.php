@@ -24,8 +24,8 @@ trait FolderDocumentTraits
                 $q->orderBy('dfm_folder_name');
             }
         ])
-        ->with('doc.shared')
-        ->with('shared')
+            ->with('doc.shared')
+            ->with('shared')
             ->where('p_u_username', $users)
             ->whereNull('dfm_parent_id')
             ->orderBy('dfm_folder_name');
@@ -365,7 +365,7 @@ trait FolderDocumentTraits
         }
 
         $result = [];
-        foreach ($request->det as $key => $value){
+        foreach ($request->det as $key => $value) {
             foreach ($request->ddfus_p_u_username as $keyUsers => $valueUsers) {
                 $result[] = DMSShareDet::updateOrCreate(
                     [
@@ -460,14 +460,54 @@ trait FolderDocumentTraits
         }
     }
 
-    public function getSharedToken($token, $id = '', $users = 'all') {
-        $data = DMSShareDet::where('ddfus_token', $token)->with('folder')->with('file')
-        ->where('ddfus_p_u_username', $users);
+    public function getSharedToken($token, $sharedId = '', $users = 'all')
+    {
+        $data = DMSShareDet::where('ddfus_token', $token)
+            ->with('folder')
+            ->with('file')
+            ->where('ddfus_p_u_username', $users);
 
-        if (!empty($id)) {
-            $data->where('dfm_id', $id);
+        if (!empty($sharedId)) {
+            $data->where('id', $sharedId);
         }
 
         return $data->get();
+    }
+
+    public function getSharedFolder($token, $sharedId = '', $users = 'all')
+    {
+        $data = $this->getSharedToken($token, $sharedId, $users);
+
+        if (count($data) > 0) {
+            $hasil = [];
+
+            foreach ($data as $key => $value) {
+                if (!empty($value->file)) {
+                    $getData = DMSDocMstr::where('id', $value->file->id)->with('folder.parentFolders')->with('shared')->first()->toArray();
+
+                    // return $getData;
+                    $files = $this->openFiles(
+                        $getData['p_u_username'],
+                        !empty($getData['folder']) ? $this->pathCreator($getData['folder']) : '',
+                        $this->getAliasFolderbyAuthor($getData['p_u_username'], 'source') == 1
+                        ? $getData['ddm_doc_real_name']
+                        : $getData['ddm_doc_name'],
+                        empty($getData['folder']) ? $getData['dfm_root_mstr'] : $getData['folder']['dfm_root_mstr']
+                    );
+
+                    $hasil[] = [
+                        'data' => $getData,
+                        'base64Files' => 'data:' . $files['mime'] . ';base64,' . base64_encode($files['file']),
+                        'mime' => $files['mime'],
+                        'ext' => $files['ext'],
+                        'filename' => $getData['ddm_doc_real_name']
+                    ];
+                }
+            }
+
+            return $hasil;
+        } else {
+            return $this->handleError("Shared files / folder not found !");
+        }
     }
 }
