@@ -24,7 +24,7 @@ trait FormsTraits
             foreach ($value['form_master'] as $key => $valueAns) {
                 $cekAnswer = FormAnswerDet::where('cfmd_id', $valueAns['id'])->first();
                 if (!empty($cekAnswer)) {
-                    $answer[] = is_array(json_decode($cekAnswer['cfm_val'])) ? json_decode($cekAnswer['cfm_val']) : $cekAnswer['cfm_val'];
+                    $answer[] = is_array(json_decode($cekAnswer['cfm_val'])) ? json_decode($cekAnswer['cfm_val']) : (int)$cekAnswer['cfm_val'];
                     $exp[] = $cekAnswer['cfm_exp'];
                 } else {
                     $answer[] = '';
