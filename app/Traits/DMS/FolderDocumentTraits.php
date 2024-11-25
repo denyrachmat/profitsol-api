@@ -474,7 +474,7 @@ trait FolderDocumentTraits
         return $data->get();
     }
 
-    public function getSharedFolder($token, $sharedId = '', $users = 'all')
+    public function getSharedFilesFolder($token, $sharedId = '', $users = 'all')
     {
         $data = $this->getSharedToken($token, $sharedId, $users);
 
@@ -505,7 +505,7 @@ trait FolderDocumentTraits
                 }
             }
 
-            return $hasil;
+            return count($data) === 1 ? $hasil[0] : $hasil;
         } else {
             return $this->handleError("Shared files / folder not found !");
         }
