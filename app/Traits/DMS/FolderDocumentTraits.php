@@ -497,7 +497,7 @@ trait FolderDocumentTraits
 
                     $hasil[] = [
                         'data' => $getData,
-                        'base64Files' => 'data:' . $files['mime'] . ';base64,' . base64_encode($files['file']),
+                        'base64Files' => base64_encode($files['file']),
                         'mime' => $files['mime'],
                         'ext' => $files['ext'],
                         'filename' => $getData['ddm_doc_real_name']
@@ -506,9 +506,9 @@ trait FolderDocumentTraits
             }
 
             if (count($data) === 1) {
-                $contents = base64_decode($hasil[0]['data']['base64Files']);
+                $contents = base64_decode($hasil[0]['base64Files']);
 
-                $path = public_path($hasil[0]['data']['filename']);
+                $path = public_path($hasil[0]['filename']);
                 //store file temporarily
                 file_put_contents($path, $contents);
 
