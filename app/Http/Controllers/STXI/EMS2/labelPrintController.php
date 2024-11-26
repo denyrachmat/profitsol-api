@@ -69,6 +69,8 @@ class labelPrintController extends BaseController
                 'MITM_STKUOM',
                 'MITM_SPTNO',
                 'MITM_SPQ',
+                'PGRN_SUPCD',
+                'MSUP_SUPNM',
                 DB::raw('MITM_SPQ AS SPQ_QTY'),
                 DB::raw('1 AS TOTAL_PRINT'),
                 DB::raw('sum(PGRN_RCVQT) as PGIT_RCVQT'),
@@ -76,6 +78,7 @@ class labelPrintController extends BaseController
             )
             ->join('MITM_TBL', 'MITM_ITMCD', 'PGRN_ITMCD')
             ->join('PGITSHP_TBL', 'PGITSHP_DOCNO', 'PGRN_SUPNO')
+            ->join('MSUP_TBL', 'PGRN_SUPCD', 'MSUP_SUPCD')
             // ->join('PGIT_TBL', 'PGIT_SUPNO', 'PGRN_SUPNO')
             ->groupBy(
                 'PGRN_SUPNO',
@@ -86,6 +89,8 @@ class labelPrintController extends BaseController
                 'MITM_SPTNO',
                 'MITM_SPQ',
                 'PGRN_LUPDT',
+                'MSUP_SUPNM',
+                'PGRN_SUPCD',
                 'PGRN_RCVDT'
             );
 

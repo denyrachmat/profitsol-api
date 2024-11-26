@@ -11,6 +11,7 @@ use DB;
 use App\Models\STXI\LOG\ITINVIncoming;
 use App\Models\STXI\LOG\ITINVOutgoing;
 use App\Models\STXI\LOG\ITINVUploadTemp;
+use App\Models\STXI\CEISA40\CEISARESPON;
 
 class ImportHeader implements ToModel, WithHeadingRow, SkipsEmptyRows
 {
@@ -258,6 +259,20 @@ class ImportHeader implements ToModel, WithHeadingRow, SkipsEmptyRows
                 //     'data' => $row
                 // ]));
             }
+
+            $insertCeisa = CEISARESPON::updateOrCreate([
+                'NOMOR_AJU' => $row['nomor_aju'],
+                'RES_TYPE' => 'UPLOAD_MANUAL',
+            ], [
+                'NOMOR_AJU' => $row['nomor_aju'],
+                'NOMOR_DAFTAR' => $cekData->BCDOCNO,
+                'RES_DATE' => date(format: 'Y-m-d H:i:s'),
+                'RES_TYPE' => 'UPLOAD_MANUAL',
+                'RES_NO' => '-',
+                'TYPE_DOC' => $kodeDokumen,
+                'TGL_DAFTAR' => date('Y-m-d H:i:s', strtotime($row['tanggal_daftar'])),
+                'ID_HEADER' => '-'
+            ]);
         }
 
         logger(json_encode($row));
