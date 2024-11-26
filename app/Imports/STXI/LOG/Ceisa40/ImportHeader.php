@@ -265,7 +265,7 @@ class ImportHeader implements ToModel, WithHeadingRow, SkipsEmptyRows
                 'RES_TYPE' => 'UPLOAD_MANUAL',
             ], [
                 'NOMOR_AJU' => $row['nomor_aju'],
-                'NOMOR_DAFTAR' => $cekData->BCDOCNO,
+                'NOMOR_DAFTAR' => $row['nomor_daftar'],
                 'RES_DATE' => date(format: 'Y-m-d H:i:s'),
                 'RES_TYPE' => 'UPLOAD_MANUAL',
                 'RES_NO' => '-',
