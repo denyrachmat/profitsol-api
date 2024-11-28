@@ -408,6 +408,7 @@ class SyncCirTentoOldDMS implements ShouldQueue
                                     'excel_update_date' => $getTenlistData->CTT_EXCUPDT,
                                     'email_date' => $getTenlistData->CTT_EMLDT,
                                     'item_update_date' => $getTenlistData->CTT_ITMUPDT,
+                                    'bom_update_date' => $getTenlistData->CTT_BOMUPDT,
                                 ]),
                                 'headers' => ['Content-Type' => 'application/json']
                             ],
