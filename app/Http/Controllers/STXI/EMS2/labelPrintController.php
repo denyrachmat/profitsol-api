@@ -72,6 +72,7 @@ class labelPrintController extends BaseController
                 'PGRN_SUPCD',
                 'MSUP_SUPNM',
                 DB::raw('MITM_SPQ AS SPQ_QTY'),
+                DB::raw('sum(PGRN_RCVQT) AS TOTAL_QTY'),
                 DB::raw('1 AS TOTAL_PRINT'),
                 DB::raw('sum(PGRN_RCVQT) as PGIT_RCVQT'),
                 DB::raw('CAST(PGRN_RCVDT AS DATE) PGRN_RCVDT')
@@ -183,31 +184,66 @@ class labelPrintController extends BaseController
 
     public function splitData(Request $request)
     {
+        $dataDetail = $request->data['det'] ?? [];
+        usort($dataDetail, function ($a, $b) {
+            return $a['SPQ_QTY'] <=> $b['SPQ_QTY'];
+        });
+
         $splitSPQList = $this->splitStockBySPQ(
-            (int) $request->data['MITM_SPQ'],
-            (int) $request->data['PGIT_RCVQT'],
+            (int) $request->data['SPQ_QTY'],
+            (int) $request->data['TOTAL_QTY'],
             $request->data
         );
 
         $hasilSplit = [];
-        $jumPrint = 1;
+        $jumPrint = 0;
         foreach ($splitSPQList as $key => $value) {
-            $hasilSplit[$value['SPQ_QTY']]['TOTAL_PRINT'] = $jumPrint;
-            $hasilSplit[$value['SPQ_QTY']]['SPQ_QTY'] = $value['SPQ_QTY'];
-            $hasilSplit[$value['SPQ_QTY']]['LIST'][] = $value;
+            if ($key === 0 || $value['SPQ_QTY'] == $splitSPQList[$key - 1]['SPQ_QTY']) {
+                $jumPrint++;
+            } else {
+                $jumPrint = 1;
+            }
 
-            // $jumPrint++;
+            $hasilSplit[$value['SPQ_QTY']] = array_merge(
+                $value,
+                [
+                    'TOTAL_PRINT' => $jumPrint,
+                    'SPQ_QTY' => $value['SPQ_QTY'],
+                    'TOTAL_QTY' => $value['TOTAL_QTY']
+                ]
+            );
         }
         return array_merge($request->data, ['det' => array_values($hasilSplit)]);
     }
 
-    public function splitStockBySPQ($spq, $qty, $data, $returnedData = []): array
+    public function splitStockBySPQ($spq, $qty, $data, $currentDet = [], $returnedData = []): array
     {
+        if (isset($data['det']) && empty($currentDet)) {
+            $currentDet = $data['det'];
+        }
+
+        $nowDetData = current($currentDet);
+        $spq = $nowDetData ? $nowDetData['SPQ_QTY'] : $spq;
         if ($qty > $spq) {
+            $cekNextData = next($currentDet);
+            if (!empty($cekNextData)) {
+                if (($spq + (int)$cekNextData['SPQ_QTY']) > $qty) {
+                    return $this->splitStockBySPQ($cekNextData['SPQ_QTY'], $qty, $data, $currentDet, $returnedData);
+                } else {
+                    prev($currentDet);
+                }
+            }
+
             $data['SPQ_QTY'] = $spq;
             $returnedData[] = $data;
-            return $this->splitStockBySPQ($spq, $qty - $spq, $data, $returnedData);
+            return $this->splitStockBySPQ($spq, $qty - $spq, $data, $currentDet, $returnedData);
         } else {
+            $cekNextData = next($currentDet);
+            if (!empty($cekNextData)) {
+                $spq = $cekNextData['SPQ_QTY'];
+                return $this->splitStockBySPQ($spq, $qty, $data, $currentDet, $returnedData);
+            }
+
             $data['SPQ_QTY'] = $qty;
             $returnedData[] = $data;
             return $returnedData;
