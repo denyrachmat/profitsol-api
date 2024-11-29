@@ -20,7 +20,6 @@ class ApprovalHistDetail extends Model
         'amsmd_id',
         'amshd_token',
         'amstd_token',
-        'amshd_username',
         'amshd_username_apprv',
         'amshd_stat',
         'amshd_remarks',
@@ -40,7 +39,7 @@ class ApprovalHistDetail extends Model
 
     public function mapdet()
     {
-        return $this->hasOne(ApprovalMapDetail::class, 'id', 'amsmd_id');
+        return $this->hasOne(ApprovalMapDetail::class, ['id', 'amsmd_username'], ['amsmd_id', 'p_u_username']);
     }
 
     public function master() {

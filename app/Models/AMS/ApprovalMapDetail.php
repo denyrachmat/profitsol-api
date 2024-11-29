@@ -6,10 +6,11 @@ use App\Models\PORTAL\PortalUserDet;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Awobaz\Compoships\Compoships;
 
 class ApprovalMapDetail extends Model
 {
-    use HasFactory;
+    use HasFactory, Compoships;
     protected $connection = 'sqlsrv_ams';
     protected $table = 'ams_apprv_map_det';
 

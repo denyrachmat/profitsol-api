@@ -539,11 +539,12 @@ trait ApprovalActionTraits
         $data = ApprovalHistDetail::select(
             'p_u_username',
             'amstd_token',
-            'amshd_paramstore',
+            DB::raw('MAX(amshd_paramstore) as amshd_paramstore'),
             'amsm_id',
             DB::raw('MAX(created_at) as created_at')
         )
             ->with('master')
+            ->where('amshd_stat', 'sent')
             ->whereHas('mapdet');
 
         if ($request->has('filter') && count($request->filter) > 0) {
@@ -561,7 +562,6 @@ trait ApprovalActionTraits
         $data->groupBy(
             'p_u_username',
             'amstd_token',
-            'amshd_paramstore',
             'amsm_id'
         );
 
@@ -572,28 +572,36 @@ trait ApprovalActionTraits
         $hasil = [];
         foreach ($result as $key => $value) {
             $cekLast = ApprovalHistDetail::with('mapdet')
-                ->where('amshd_stat', 'receive')
+                // ->where('amshd_stat', 'receive')
                 ->where('amstd_token', $value['amstd_token'])
+                ->where('amshd_stat', 'sent')
                 ->whereHas('mapdet')
                 ->orderBy('created_at', 'desc')
                 ->first();
 
-            $cekDet = ApprovalMapDetail::select('amsmd_order')->where('amsm_id', (int) $value['amsm_id'])->groupBy('amsmd_order')->get();
+            $cekDet = ApprovalMapDetail::select('amsmd_order')
+                ->where('amsm_id', (int) $value['amsm_id'])
+                ->groupBy('amsmd_order')
+                ->get();
+
             $hasilDet = 0;
             foreach ($cekDet as $key => $valueDet) {
-                if (!empty($valueDet)) {
+                if (!empty($valueDet) && !empty($cekLast)) {
                     if ((int) $valueDet->amsmd_order <= (int) $cekLast->mapdet->amsmd_order) {
                         $hasilDet += 1;
                     }
                 }
             }
 
-            $getDataSent = is_string($cekLast->amshd_paramstore) ? json_decode($cekLast->amshd_paramstore, true) : $cekLast->amshd_paramstore;
+            if (!empty($cekLast)) {
+                $getDataSent = is_string($cekLast->amshd_paramstore) ? json_decode($cekLast->amshd_paramstore, true) : $cekLast->amshd_paramstore;
 
-            $hasil[] = array_merge($value, [
-                'percent' => $hasilDet / count($cekDet) * 100,
-                'dataKey' => isset($getDataSent['msgkey']) ? $getDataSent['data'][$getDataSent['msgkey']] : array_values($getDataSent)['data'][0]
-            ]);
+                $hasil[] = array_merge($value, [
+                    'data' => $cekLast,
+                    'percent' => $hasilDet / count($cekDet) * 100,
+                    'dataKey' => isset($getDataSent['msgkey']) ? $getDataSent['data'][$getDataSent['msgkey']] : array_values($getDataSent)['data'][0]
+                ]);
+            }
         }
 
         return $this->handleResponse($hasil, 'Data Fetched');
