@@ -30,6 +30,7 @@ trait ApprovalActionTraits
         if ($request->has('token') && !empty($request->token)) {
             $getLatestData = ApprovalHistDetail::where('amsm_id', $request->amsm_id)
                 ->where('amshd_token', $request->token)
+                ->whereHas('mapdet')
                 ->with('mapdet')
                 ->first();
 
