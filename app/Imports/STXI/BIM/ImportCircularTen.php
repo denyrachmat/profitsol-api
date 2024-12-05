@@ -186,7 +186,7 @@ class ImportCircularTen implements ToModel
         // return $filesData;
         $listCopiedFiles = [];
         foreach ($filesData as $file) {
-            Storage::writeStream($file, Storage::disk('ten_bim')->readStream($file));
+            Storage::writeStream($file, Storage::disk('ten_bim')->readStream(basename($file)));
             $listCopiedFiles[] = basename($file);
         }
 
