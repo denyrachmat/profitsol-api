@@ -335,6 +335,17 @@ class ImportCircularTen implements ToModel
                 $this->data['send_data'] = $datas;
             }
 
+            $datas = [
+                'ten' => $this->tenNo,
+                'mail_date' => $this->data['mail_date'],
+                'subject' => $this->data['subject'],
+                'model' => $this->data['model'],
+                'content' => $this->data['content'],
+                'list_files' => $listCopiedFiles,
+                'exec_sch' => $this->data['exec'],
+                'reason' => $this->data['reason'],
+                'username' => $this->username
+            ];
             $this->pdf = $this->generateDocument($this->data['mail_date'], $datas, true);
         }
 
