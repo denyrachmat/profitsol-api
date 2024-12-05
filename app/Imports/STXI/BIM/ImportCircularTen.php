@@ -180,8 +180,18 @@ class ImportCircularTen implements ToModel
 
         $this->data['mail_date'] = $cekTen->CTT_EMLDT;
 
+
+        $filesData = Storage::disk('local')->files('public/circular_ten/' . $this->tenNo);
+
+        // return $filesData;
+        $listCopiedFiles = [];
+        foreach ($filesData as $file) {
+            Storage::writeStream($file, Storage::disk('ten_bim')->readStream($this->htmlEpson));
+            $listCopiedFiles[] = basename($file);
+        }
+
         // Copy to local storage laravel
-        Storage::writeStream('/public/circular_ten/' . $this->tenNo . '/' . $this->tenEpsonNo . '.html', Storage::disk('ten_bim')->readStream($this->htmlEpson));
+
 
         $datas = [];
 
