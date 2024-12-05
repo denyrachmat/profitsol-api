@@ -373,8 +373,8 @@ class ImportCircularTen implements ToModel
                 foreach ($getDataItem as $keyItem => $value) {
                     $items[] = trim($value->MITM_ITMCD);
                     $getSubcon = empty($value->MITM_SUPCD)
-                        ? substr($value->MITM_ITMTY, 0, 3)
-                        : substr($value->MITM_SUPCD, 0, 3);
+                        ? substr(trim($value->MITM_ITMTY), 0, 3)
+                        : substr(trim($value->MITM_SUPCD), 0, 3);
 
                     if ($getSubcon !== 'SMT' || $getSubcon !== 'VST' || $getSubcon !== 'KAI') {
                         $getSubcons = $value->MITM_SUPCD;
