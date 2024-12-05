@@ -179,7 +179,7 @@ class SyncCirTentoOldDMS implements ShouldQueue
         ];
 
         if ($isExport) {
-            $pdf = Pdf::loadView('STXI/BIM/circularTenLayout', $data);
+            $pdf = Pdf::loadView('STXI/BIM/circularTenLayout', $this->data);
 
             return $pdf->download($this->data['ten'] . '.pdf');
         }
