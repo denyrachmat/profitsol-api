@@ -165,7 +165,14 @@ class CirtenUpdateController extends BaseController
         if (!empty($cirtenMstr)) {
             // $submit = SyncActionCirten::dispatch($id, $cirtenMstr->CIRTEN_TENIEI, $cirtenMstr->CIRTEN_HTMFILEPATH, $cirtenMstr->CIRTEN_FILEPATH)->onQueue('SyncCirTentoOldDMS');
 
-            $importer = new ImportCircularTen($id, $cirtenMstr->CIRTEN_HTMFILEPATH, $cirtenMstr->CIRTEN_TENIEI, 2, $cirtenMstr->CIRTEN_FILEPATH, $username);
+            $importer = new ImportCircularTen(
+                $id,
+                $cirtenMstr->CIRTEN_HTMFILEPATH,
+                $cirtenMstr->CIRTEN_TENIEI,
+                2,
+                $cirtenMstr->CIRTEN_FILEPATH,
+                $username
+            );
 
             Excel::import($importer, $cirtenMstr->CIRTEN_FILEPATH, 'ten_bim');
 
