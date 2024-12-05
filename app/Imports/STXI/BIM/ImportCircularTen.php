@@ -23,7 +23,7 @@ class ImportCircularTen implements ToModel
     /**
      * @param Collection $collection
      */
-    public function __construct($tenNo, $htmlEpson, $tenEpsonNo, $options = 0, $filepathExcel = '', $username = '')
+    public function __construct($tenNo, $htmlEpson, $tenEpsonNo, $options = 0, $filepathExcel = '', $username = '', $year = '', $month = '')
     {
         $this->nowRows = -1;
         $this->statusGetData = '';
@@ -180,8 +180,10 @@ class ImportCircularTen implements ToModel
 
         $this->data['mail_date'] = $cekTen->CTT_EMLDT;
 
+        $pathInfo = pathinfo($this->htmlEpson);
+        $directoryPath = $pathInfo['dirname'];
 
-        $filesData = Storage::disk('local')->files('public/circular_ten/' . $this->tenNo);
+        $filesData = Storage::disk('ten_bim')->files($directoryPath);
 
         // return $filesData;
         $listCopiedFiles = [];
