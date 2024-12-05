@@ -202,7 +202,7 @@ class ImportCircularTen implements ToModel
                 'subject' => $this->data['subject'],
                 'model' => $this->data['model'],
                 'content' => $this->data['content'],
-                'list_files' => [$this->tenEpsonNo . '.html'],
+                'list_files' => $listCopiedFiles,
                 'exec_sch' => $this->data['exec'],
                 'reason' => $this->data['reason'],
                 'username' => $this->username
