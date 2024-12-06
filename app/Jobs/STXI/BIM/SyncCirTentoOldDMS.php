@@ -147,10 +147,10 @@ class SyncCirTentoOldDMS implements ShouldQueue
         // logger('check content');
         // logger($getModel['list_content']);
 
-        $data = [
+        $datas = [
             'registered_model' => $cekDataModel,
             'ten' => $ten,
-            'mail_date' => $data,
+            'mail_date' => $data->CIRTEN_MAILDT,
             'ori_list_item' => $getModel['ori_list_item'],
             'model' => array_values($hasil),
             'list_model' => array_values($listModel),
@@ -179,12 +179,12 @@ class SyncCirTentoOldDMS implements ShouldQueue
         ];
 
         if ($isExport) {
-            $pdf = Pdf::loadView('STXI/BIM/circularTenLayout', $data);
+            $pdf = Pdf::loadView('STXI/BIM/circularTenLayout', $datas);
 
             return $pdf->download($this->data['ten'] . '.pdf');
         }
 
-        return $data;
+        return $datas;
     }
 
     public function sendToDMS($ten, $emailDate)
