@@ -178,6 +178,8 @@ class ImportCircularTen implements ToModel
         $this->data['subject'] = $listSubject[1];
         $cekTen = CircularTenList::where('CTT_SECTENNO', $this->tenNo)->first();
 
+        $this->data['cekaja'] = $cekTen;
+
         $this->data['mail_date'] = $cekTen->CTT_EMLDT;
         $this->data['subject'] = $cekTen->CTT_SUBJECT;
 
