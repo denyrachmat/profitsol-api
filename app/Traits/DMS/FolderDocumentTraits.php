@@ -140,7 +140,11 @@ trait FolderDocumentTraits
     public function getSizeFiles($author, $path, $file, $root = '')
     {
         logger(Storage::disk($this->getAliasFolderbyAuthor($author, 'root', $root))->path($this->getAliasFolderbyAuthor($author) . '/' . $path . '/' . $file));
-        return storage::disk($this->getAliasFolderbyAuthor($author, 'root', $root))->size($this->getAliasFolderbyAuthor($author) . '/' . $path . '/' . $file);
+        try {
+            return storage::disk($this->getAliasFolderbyAuthor($author, 'root', $root))->size($this->getAliasFolderbyAuthor($author) . '/' . $path . '/' . $file);
+        } catch (\Throwable $th) {
+            return 0;
+        }
     }
 
     public function convertFolderPathToArray($author, $path = '', $parentKey = 0, $hasil = [], $root = '')
