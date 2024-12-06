@@ -125,7 +125,7 @@ class CirtenUpdateController extends BaseController
             } else {
                 Redis::publish('portalv2', json_encode([
                     'app' => 'cirten',
-                    'message' => 'TEN ' . $value['tenNum'] . ' : Failed to get data !',
+                    'message' => 'TEN ' . $value['tenNum'] . ' : Failed to get excel files or HTML Files !',
                     'type' => 'red',
                     'status' => 'failed',
                     'data' => [
