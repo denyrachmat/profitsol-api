@@ -102,6 +102,21 @@ class CirtenUpdateController extends BaseController
                         ],
                         'cek' => $importer
                     ]));
+
+                    Redis::publish('portalv2', json_encode([
+                        'app' => 'cirten',
+                        'message' => 'TEN ' . $value['tenNum'] . ' : Upload on progress !',
+                        'type' => 'green',
+                        'status' => 'start',
+                        'data' => [
+                            'secTenNo' => $value['tenNum'],
+                            'epsTenNo' => $value['tenNumEpson'],
+                            'HTMLPath' => $filehtm,
+                            'excelPath' => $file
+                        ],
+                        'cek' => $importer
+                    ]));
+
                 } else {
                     Redis::publish('portalv2', json_encode([
                         'app' => 'cirten',
