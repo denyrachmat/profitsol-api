@@ -175,7 +175,7 @@ class ImportCircularTen implements ToModel
         $this->data['cekhtml'] = $listItem;
 
         $listSubject = $crawler->filterXPath('//*[@class="comment-box"]')->extract(['_text']);
-        $this->data['subject'] = $listSubject[1];
+        // $this->data['subject'] = $listSubject[1];
         $cekTen = CircularTenList::where('CTT_SECTENNO', $this->tenNo)->first();
 
         $this->data['cekaja'] = $cekTen;
