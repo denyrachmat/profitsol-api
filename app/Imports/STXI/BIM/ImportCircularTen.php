@@ -179,6 +179,7 @@ class ImportCircularTen implements ToModel
         $cekTen = CircularTenList::where('CTT_SECTENNO', $this->tenNo)->first();
 
         $this->data['mail_date'] = $cekTen->CTT_EMLDT;
+        $this->data['subject'] = $cekTen->CTT_SUBJECT;
 
         $pathInfo = pathinfo($this->htmlEpson);
         $directoryPath = $pathInfo['dirname'];
