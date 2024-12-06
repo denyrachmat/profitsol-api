@@ -424,6 +424,9 @@ trait ApprovalActionTraits
                     }
                 }
 
+                logger('punya attachment');
+                logger(json_encode($filenya));
+
                 // IF First Time send approval
                 if (!$request->has('token') || empty($request->token)) {
                     foreach ($filenya as $keyFiles => $valueFiles) {
