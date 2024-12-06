@@ -64,6 +64,7 @@ class DocumentController extends BaseController
                 // logger($storeRealFile);
 
                 if ($storeRealFile) {
+                    logger($this->getAliasFolderbyAuthor($req->p_u_username, 'source'));
                     $stored = DMSDocMstr::create([
                         'p_u_username' => $req->p_u_username,
                         'dfm_id' => $req->dfm_id,
