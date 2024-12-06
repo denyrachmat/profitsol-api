@@ -175,7 +175,7 @@ class CirtenUpdateController extends BaseController
      */
     public function resubmitCirten(string $id, string $username = '')
     {
-        $cirtenMstr = CircularTenMstr::where('CIRTEN_TENIEI', $id)->first();
+        $cirtenMstr = CircularTenMstr::where('CIRTEN_NO', $id)->first();
 
         if (!empty($cirtenMstr)) {
             // $submit = SyncActionCirten::dispatch($id, $cirtenMstr->CIRTEN_TENIEI, $cirtenMstr->CIRTEN_HTMFILEPATH, $cirtenMstr->CIRTEN_FILEPATH)->onQueue('SyncCirTentoOldDMS');
