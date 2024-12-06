@@ -55,7 +55,6 @@ trait FolderDocumentTraits
 
     public function getAliasFolderbyAuthor($author, $data = 'path', $root = '')
     {
-
         $checkRootAliasTest = DMSFolderRootMstr::where('p_u_username', $author)->first();
         $checkRootAlias = $checkRootAliasTest;
 
