@@ -72,7 +72,7 @@ class DocumentController extends BaseController
                         'ddm_doc_size' => $this->getSizeFiles(
                             $req->p_u_username,
                             !empty($dataFolder) ? $this->pathCreator($dataFolder->toArray()) : '',
-                            $this->getAliasFolderbyAuthor($req->p_u_username, 'source') == 1
+                            $this->getAliasFolderbyAuthor($req->p_u_username, 'path') == 1
                             ? $value
                             : $fileNameFormat,
                             $req->dfm_root_mstr
