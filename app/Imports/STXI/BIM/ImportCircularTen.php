@@ -406,9 +406,7 @@ class ImportCircularTen implements ToModel
                         ? substr(trim($value->MITM_ITMTY), 0, 3)
                         : substr(trim($value->MITM_SUPCD), 0, 3);
 
-                    if ($getSubcon !== 'SMT' || $getSubcon !== 'VST' || $getSubcon !== 'KAI') {
-                        $getSubcons = trim($getSubcon);
-                    } else {
+                    if (!empty($getSubcon) && ($getSubcon == 'SMT' || $getSubcon == 'VST' || $getSubcon == 'KAI')) {
                         $getSubcons = trim($getSubcon);
                     }
 
