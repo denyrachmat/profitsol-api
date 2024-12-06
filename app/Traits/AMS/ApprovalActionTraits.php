@@ -488,7 +488,7 @@ trait ApprovalActionTraits
                 $useToken . '/' . $histToken
             );
 
-            dispatch($queueSet)->onQueue('sendEmailQueue');
+            // dispatch($queueSet)->onQueue('sendEmailQueue');
         }
 
         Redis::publish('portalv2', json_encode([
