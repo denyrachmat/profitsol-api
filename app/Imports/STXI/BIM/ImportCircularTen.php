@@ -349,6 +349,8 @@ class ImportCircularTen implements ToModel
                 'reason' => $this->data['reason'],
                 'username' => $this->username
             ];
+
+            logger(json_encode($datas));
             $this->pdf = $this->generateDocument($this->data['mail_date'], $datas, true);
         }
 
