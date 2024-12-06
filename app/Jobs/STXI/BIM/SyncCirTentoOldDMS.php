@@ -495,7 +495,8 @@ class SyncCirTentoOldDMS implements ShouldQueue
                 'data' => [
                     'secTenNo' => $this->data['ten'],
                 ],
-                'cek' => $responseBodyAsString
+                'cek' => $responseBodyAsString,
+                'dataGenerate' => $this->generateDocument($ten)
             ]));
 
 
