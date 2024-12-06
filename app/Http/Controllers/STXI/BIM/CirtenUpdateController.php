@@ -210,7 +210,7 @@ class CirtenUpdateController extends BaseController
                     'cek' => $importer
                 ]));
 
-                return $this->handleResponse(json_encode($importer), 'Re-sync TEN ' . $id . ' On progress');
+                return $this->handleResponse(json_encode($importer->data), 'Re-sync TEN ' . $id . ' On progress');
             } else {
                 Redis::publish('portalv2', json_encode([
                     'app' => 'cirten',
