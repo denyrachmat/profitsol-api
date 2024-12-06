@@ -361,12 +361,14 @@ class SyncCirTentoOldDMS implements ShouldQueue
             if (!empty($model) && !empty($sch) && !empty($reason) && !empty($content)) {
                 $uploadResult = [];
                 foreach ($model as $keyModel => $valueModel) {
-                    $flagAMS = 4;
-
                     if ($valueModel == 'SMT') {
                         $flagAMS = 2;
                     } elseif ($valueModel == 'KAI') {
                         $flagAMS = 3;
+                    } elseif ($valueModel == 'VST') {
+                        $flagAMS = 4;
+                    } else {
+                        continue;
                     }
 
                     $res = $client->request('POST', 'http://192.168.100.32/public/api/ams/approveAction', [
