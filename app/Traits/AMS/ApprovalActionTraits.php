@@ -176,6 +176,11 @@ trait ApprovalActionTraits
 
             $useTokenCreate = ApprovalTokenDetail::where('amstd_token', $useToken)->first();
 
+            if ($nextStat === 'reject') {
+                ApprovalHistDetail::where('amstd_token', $useToken)->delete();
+                break;
+            }
+
             // If First or now order more than last order
             if ((int) $valueDet['amsmd_order'] > $checkLatestOrder || empty($checkFirst)) {
                 // If Next Order
@@ -192,10 +197,6 @@ trait ApprovalActionTraits
                     ApprovalTokenDetail::where('id', $useTokenCreate->id)->delete();
                 }
             }
-        }
-
-        if ($nextStat === 'reject') {
-            ApprovalHistDetail::where('amstd_token', $useToken)->delete();
         }
 
         return $this->handleResponse($hist, 'Success');
