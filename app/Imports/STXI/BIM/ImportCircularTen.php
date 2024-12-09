@@ -203,6 +203,7 @@ class ImportCircularTen implements ToModel
         if ($this->options === 1) {
             $datas = [
                 'ten' => $this->tenNo,
+                'ten_epson' => $this->tenEpsonNo,
                 'mail_date' => $this->data['mail_date'],
                 'subject' => $this->data['subject'],
                 'model' => $this->data['model'],
@@ -358,6 +359,7 @@ class ImportCircularTen implements ToModel
         if ($this->options === 3) {
             $datas = [
                 'ten' => $this->tenNo,
+                'ten_epson' => $this->tenEpsonNo,
                 'mail_date' => $this->data['mail_date'],
                 'subject' => $this->data['subject'],
                 'model' => $this->data['model'],
