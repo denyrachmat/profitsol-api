@@ -146,6 +146,10 @@ class SyncCirTentoOldDMS implements ShouldQueue
 
         // logger('check content');
         // logger($getModel['list_content']);
+        $listCopiedFiles = [];
+        foreach ($filesData as $file) {
+            $listCopiedFiles[] = basename($file);
+        }
 
         $datas = [
             'registered_model' => $cekDataModel,
@@ -164,7 +168,7 @@ class SyncCirTentoOldDMS implements ShouldQueue
                 : $this->data['content'],
             'real_content' => $getModel,
             'subject' => $getModel['subject'],
-            'list_files' => $filesData,
+            'list_files' => $listCopiedFiles,
             'exec_sch' => count($getModel['exec_sch']) > 2
                 ? $getModel['exec_sch'][2]
                 : (count($getModel['exec_sch']) == 1
