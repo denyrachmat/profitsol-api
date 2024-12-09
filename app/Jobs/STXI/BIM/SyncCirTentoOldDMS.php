@@ -153,8 +153,8 @@ class SyncCirTentoOldDMS implements ShouldQueue
 
         $datas = [
             'registered_model' => $cekDataModel,
-            'ten' => $ten,
-            'ten_epson' => $data->CIRTEN_TENIEI,
+            'ten' => $data->CIRTEN_NO,
+            'ten_epson' => $ten,
             'mail_date' => $data->CIRTEN_MAILDT,
             'ori_list_item' => $getModel['ori_list_item'],
             'model' => array_values($hasil),
@@ -347,9 +347,9 @@ class SyncCirTentoOldDMS implements ShouldQueue
         // Upload PDF to DMS
         $pdf = $this->generateDocument($ten, true);
         $dataMstr = CircularTenMstr::where('CIRTEN_TENIEI', $ten)->first();
-        $storepdf = Storage::disk('local')->put('/public/circular_ten/' . $dataMstr->CIRTEN_NO . '/' . $ten . '.pdf', $pdf);
-        $target_url = 'http://192.168.100.32/public/api/'; // Write your URL here
-        $pathFile = 'http://192.168.100.32/public/storage/circular_ten/' . $dataMstr->CIRTEN_NO . '/' . $ten . '.pdf';
+        Storage::disk('local')->put('/public/circular_ten/' . $ten . '/' . $ten . '.pdf', $pdf);
+
+        $pathFile = 'http://192.168.100.32/public/storage/circular_ten/' . $ten . '/' . $ten . '.pdf';
         $pathFile = str_replace(' ', '%20', $pathFile);
 
         $getTenlistData = CircularTenList::where('CTT_IEITENNO', $ten)->with('models')->first();
