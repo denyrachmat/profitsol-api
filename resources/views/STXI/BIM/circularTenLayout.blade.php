@@ -28,7 +28,7 @@
     <b>3). Issued Document :</b>
     <br>
     @foreach($list_files as $file)
-        <a target="_blank" href="{{asset('storage/circular_ten/'.$ten.'/'.basename($file))}}">{{basename($file)}}</a><br>
+        <a target="_blank" href="{{asset('storage/circular_ten/'.$ten_epson.'/'.basename($file))}}">{{basename($file)}}</a><br>
     @endforeach
 </div>
 

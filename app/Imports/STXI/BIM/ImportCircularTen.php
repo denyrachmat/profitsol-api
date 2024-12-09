@@ -183,7 +183,7 @@ class ImportCircularTen implements ToModel
         $this->data['mail_date'] = $cekTen->CTT_EMLDT;
         $this->data['subject'] = $cekTen->CTT_SUBJECT;
 
-        $pathInfo = pathinfo($this->tenNo);
+        $pathInfo = pathinfo($this->htmlEpson);
         $directoryPath = $pathInfo['dirname'];
 
         $filesData = Storage::disk('ten_bim')->files($directoryPath);
@@ -340,6 +340,7 @@ class ImportCircularTen implements ToModel
 
             $datas = [
                 'ten' => $this->tenNo,
+                'ten_epson' => $this->tenEpsonNo,
                 'mail_date' => $this->data['mail_date'],
                 'subject' => $this->data['subject'],
                 'model' => $this->data['model'],
