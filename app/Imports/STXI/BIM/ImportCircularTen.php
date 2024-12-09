@@ -369,6 +369,7 @@ class ImportCircularTen implements ToModel
                 'reason' => $this->data['reason'],
                 'username' => $this->username
             ];
+
             $this->dataForPDF = $datas;
         }
     }
