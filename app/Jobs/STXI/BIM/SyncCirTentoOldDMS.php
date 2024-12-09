@@ -150,6 +150,7 @@ class SyncCirTentoOldDMS implements ShouldQueue
         $datas = [
             'registered_model' => $cekDataModel,
             'ten' => $ten,
+            'ten_epson' => $data->CIRTEN_TENIEI,
             'mail_date' => $data->CIRTEN_MAILDT,
             'ori_list_item' => $getModel['ori_list_item'],
             'model' => array_values($hasil),

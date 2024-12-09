@@ -302,6 +302,7 @@ class CircullarTenController extends BaseController
 
         $data = [
             'ten' => $ten,
+            'ten_epson' => $data->CIRTEN_TENIEI,
             'mail_date' => $data,
             'ori_list_item' => $getModel['ori_list_item'],
             'model' => array_values($hasil),
