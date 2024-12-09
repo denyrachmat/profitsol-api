@@ -337,7 +337,7 @@ Route::group(['prefix' => 'div'], function () {
         Route::get('resubmitCirten/{ten}/{username?}', [CirtenUpdateController::class, 'resubmitCirten']);
         Route::get('tenList/{date}', [CirtenUpdateController::class, 'showByDateTen']);
         Route::get('syncTenList/{date}', [CirtenUpdateController::class, 'syncTenList']);
-        Route::get('generateDocumentUp/{ten}', [CirtenUpdateController::class, 'generateDocument']);
+        Route::get('generateDocumentUp/{ten}/{username?}', [CirtenUpdateController::class, 'generateDocument']);
         Route::get('cekViewPrint/{ten}', [CirtenUpdateController::class, 'cekViewPrint']);
         Route::get('cekFilePDF/{ten}', [CirtenUpdateController::class, 'cekFilePDF']);
         Route::get('deleteModel/{tenid}/{model}', [CirtenUpdateController::class, 'deleteSelectedModel']);

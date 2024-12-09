@@ -200,6 +200,7 @@ class ImportCircularTen implements ToModel
 
         $datas = [];
 
+        // For store new cirten
         if ($this->options === 1) {
             $datas = [
                 'ten' => $this->tenNo,
@@ -216,6 +217,7 @@ class ImportCircularTen implements ToModel
             $this->pdf = $this->generateDocument($this->data['mail_date'], $datas, true);
         }
 
+        // For Update cirten
         if ($this->options === 2) {
             // Save to Cirten Master Table
             $storedTen = CircularTenMstr::updateOrCreate([
@@ -356,6 +358,7 @@ class ImportCircularTen implements ToModel
             $this->pdf = $this->generateDocument($this->data['mail_date'], $datas, true);
         }
 
+        // For reprint
         if ($this->options === 3) {
             $datas = [
                 'ten' => $this->tenNo,

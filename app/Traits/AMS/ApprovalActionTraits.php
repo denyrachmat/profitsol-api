@@ -241,6 +241,7 @@ trait ApprovalActionTraits
             'hist' => function ($f) use ($tokenHist) {
                 $f->with('mapdet')
                     ->whereHas('mapdet')
+                    // ->withTrashed()
                     ->orderBy('id', 'asc')
                     ->get()
                     ->toArray();
@@ -253,6 +254,7 @@ trait ApprovalActionTraits
                         'attch'
                     )
                         ->where('amshd_token', $tokenHist)
+                        // ->withTrashed()
                         ->orderBy('id', 'asc')
                         ->get()
                         ->toArray();
@@ -267,6 +269,7 @@ trait ApprovalActionTraits
         // If token is not deleted and if latest token order same with current token order or if not view mode
         if (
             (
+                count($cekToken->hist) > 0 &&
                 !empty($cekToken) &&
                 !empty($cekToken->selectedHist) &&
                 $cekToken->hist[count($cekToken->hist) - 1]['mapdet']['amsmd_order'] === $cekToken->selectedHist[count($cekToken->selectedHist) - 1]['mapdet']['amsmd_order']
@@ -281,10 +284,23 @@ trait ApprovalActionTraits
 
             $getSender = array_values(array_filter((clone $cekToken)->toArray()['selected_hist'], function ($f) {
                 return $f['amshd_stat'] !== 'receive';
-            }))[0];
+            }));
+
+            if (!isset($getSender[0])) {
+                return $this->handleError('Token not found !! please check again !!');
+            }
+
+            $getSender = $getSender[0];
+
             $getReceiver = array_values(array_filter((clone $cekToken)->toArray()['selected_hist'], function ($f) {
                 return $f['amshd_stat'] === 'receive';
-            }))[0];
+            }));
+
+            if (!isset($getReceiver[0])) {
+                return $this->handleError('Token not found !! please check again !!');
+            }
+
+            $getReceiver = $getReceiver[0];
 
             $hasil = ApprovalMaster::where('id', $cekToken['amsm_id'])->with('det')->with('apprvSet', function ($f) {
                 $f->get();
