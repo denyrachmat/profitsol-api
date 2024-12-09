@@ -347,9 +347,9 @@ class SyncCirTentoOldDMS implements ShouldQueue
         // Upload PDF to DMS
         $dataMstr = CircularTenMstr::where('CIRTEN_TENIEI', $ten)->first();
         $pdf = $this->generateDocument($ten, true);
-        Storage::disk('local')->put('/public/circular_ten/' . $ten . '/' . $ten . '.pdf', $pdf);
+        Storage::disk('local')->put('/public/circular_ten/' . $ten . '/' . $dataMstr->CIRTEN_NO . '-AUTOGEN-COVER.pdf', $pdf);
 
-        $pathFile = 'http://192.168.100.32/public/storage/circular_ten/' . $ten . '/' . $dataMstr->CIRTEN_NO . '.pdf';
+        $pathFile = 'http://192.168.100.32/public/storage/circular_ten/' . $ten . '/' . $dataMstr->CIRTEN_NO . '-AUTOGEN-COVER.pdf';
         $pathFile = str_replace(' ', '%20', $pathFile);
 
         $getTenlistData = CircularTenList::where('CTT_IEITENNO', $ten)->with('models')->first();
