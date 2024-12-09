@@ -295,7 +295,7 @@ class CirtenUpdateController extends BaseController
         return 'Sync !!';
     }
 
-    public function generateDocument($ten)
+    public function generateDocument($ten, $username = '')
     {
         $getData = CircularTenMstr::where('CIRTEN_NO', $ten)
             ->whereNotNull('CIRTEN_HTMFILEPATH')
@@ -309,7 +309,8 @@ class CirtenUpdateController extends BaseController
                 $getData->CIRTEN_HTMFILEPATH,
                 $getData->CIRTEN_TENIEI,
                 3,
-                $getData->CIRTEN_FILEPATH
+                $getData->CIRTEN_FILEPATH,
+                $username
             );
 
             Excel::import($importer, $getData->CIRTEN_FILEPATH, 'ten_bim');
