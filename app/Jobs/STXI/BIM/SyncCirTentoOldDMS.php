@@ -345,11 +345,11 @@ class SyncCirTentoOldDMS implements ShouldQueue
     {
         logger('send to dms new');
         // Upload PDF to DMS
-        $pdf = $this->generateDocument($ten, true);
         $dataMstr = CircularTenMstr::where('CIRTEN_TENIEI', $ten)->first();
+        $pdf = $this->generateDocument($ten, true);
         Storage::disk('local')->put('/public/circular_ten/' . $ten . '/' . $ten . '.pdf', $pdf);
 
-        $pathFile = 'http://192.168.100.32/public/storage/circular_ten/' . $dataMstr->CIRTEN_NO . '/' . $ten . '.pdf';
+        $pathFile = 'http://192.168.100.32/public/storage/circular_ten/' . $ten . '/' . $dataMstr->CIRTEN_NO . '.pdf';
         $pathFile = str_replace(' ', '%20', $pathFile);
 
         $getTenlistData = CircularTenList::where('CTT_IEITENNO', $ten)->with('models')->first();

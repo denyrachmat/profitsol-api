@@ -304,7 +304,13 @@ class CirtenUpdateController extends BaseController
             ->first();
 
         if (!empty($getData)) {
-            $importer = new ImportCircularTen($ten, $getData->CIRTEN_HTMFILEPATH, $getData->CIRTEN_TENIEI, 3, $getData->CIRTEN_FILEPATH);
+            $importer = new ImportCircularTen(
+                $ten,
+                $getData->CIRTEN_HTMFILEPATH,
+                $getData->CIRTEN_TENIEI,
+                3,
+                $getData->CIRTEN_FILEPATH
+            );
 
             Excel::import($importer, $getData->CIRTEN_FILEPATH, 'ten_bim');
 
