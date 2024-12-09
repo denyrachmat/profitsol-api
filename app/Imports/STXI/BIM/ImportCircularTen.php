@@ -183,7 +183,7 @@ class ImportCircularTen implements ToModel
         $this->data['mail_date'] = $cekTen->CTT_EMLDT;
         $this->data['subject'] = $cekTen->CTT_SUBJECT;
 
-        $pathInfo = pathinfo($this->htmlEpson);
+        $pathInfo = pathinfo($this->tenNo);
         $directoryPath = $pathInfo['dirname'];
 
         $filesData = Storage::disk('ten_bim')->files($directoryPath);
