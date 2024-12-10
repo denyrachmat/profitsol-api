@@ -417,7 +417,9 @@ class ImportCircularTen implements ToModel
                         $getSubcons = trim($getSubcon);
                     }
 
-                    $listSubcon[$getSubcons] = $getSubcons;
+                    if (isset($getSubcons)) {
+                        $listSubcon[$getSubcons] = $getSubcons;
+                    }
                 }
 
                 return [
