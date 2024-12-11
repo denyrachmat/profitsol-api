@@ -93,7 +93,8 @@ class labelPrintController extends BaseController
                 'PGRN_LUPDT',
                 'MSUP_SUPNM',
                 'PGRN_SUPCD',
-                'PGRN_RCVDT'
+                'PGRN_RCVDT',
+                'MITM_MAKERNM'
             );
 
         if ($request->has('filter') && count($request->filter) > 0) {
