@@ -60,6 +60,8 @@ class labelPrintController extends BaseController
 
     public function searchGIT(Request $request)
     {
+        ini_set('memory_limit', '1024M');
+
         $hist = DB::connection('sqlsrv_mega_exim')->table('PGRN_TBL')
             ->select(
                 DB::raw('PGRN_SUPNO as PGIT_SUPNO'),
