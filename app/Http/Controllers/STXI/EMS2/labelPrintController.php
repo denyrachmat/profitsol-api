@@ -78,7 +78,7 @@ class labelPrintController extends BaseController
                 DB::raw('CAST(PGRN_RCVDT AS DATE) PGRN_RCVDT')
             )
             ->join('MITM_TBL', 'MITM_ITMCD', 'PGRN_ITMCD')
-            ->join('PGITSHP_TBL', 'PGITSHP_DOCNO', 'PGRN_SUPNO')
+            ->leftjoin('PGITSHP_TBL', 'PGITSHP_DOCNO', 'PGRN_SUPNO')
             ->join('MSUP_TBL', 'PGRN_SUPCD', 'MSUP_SUPCD')
             // ->join('PGIT_TBL', 'PGIT_SUPNO', 'PGRN_SUPNO')
             ->groupBy(
@@ -109,7 +109,7 @@ class labelPrintController extends BaseController
 
         if ((clone $hist)->count() > 0) {
             $datanya = (clone $hist)->orderBy('PGRN_LUPDT', 'desc')
-                ->limit(10)
+                // ->limit(10)
                 ->get()
                 ->toArray();
 
