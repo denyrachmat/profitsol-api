@@ -68,6 +68,7 @@ class labelPrintController extends BaseController
                 DB::raw("CONCAT(RTRIM(MITM_ITMCD), '( ' , MITM_ITMD1, ' )') AS MITM_ITMD1"),
                 'MITM_STKUOM',
                 'MITM_SPTNO',
+                'MITM_MAKERNM',
                 'MITM_SPQ',
                 'PGRN_SUPCD',
                 'MSUP_SUPNM',
