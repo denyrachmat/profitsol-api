@@ -6,7 +6,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use DB;
 use App\Http\Controllers\API\PORTAL\BaseController;
-
+use Carbon\Carbon;
 use Mike42\Escpos\PrintConnectors\FilePrintConnector;
 use Mike42\Escpos\PrintConnectors\WindowsPrintConnector;
 use Mike42\Escpos\Printer;
@@ -105,6 +105,8 @@ class labelPrintController extends BaseController
                     }
                 }
             }
+        } else {
+            $hist->whereBetween('PGRN_RCVDT', [Carbon::now()->subDays(7), date('Y-m-d')]);
         }
 
         if ((clone $hist)->count() > 0) {
