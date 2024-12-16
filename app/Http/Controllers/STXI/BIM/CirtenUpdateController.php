@@ -223,7 +223,7 @@ class CirtenUpdateController extends BaseController
                         'HTMLPath' => $cirtenMstr->CIRTEN_HTMFILEPATH,
                         'excelPath' => $cirtenMstr->CIRTEN_FILEPATH
                     ],
-                    'cek' => $importer
+                    'cek' => json_encode($importer)
                 ]));
 
                 return $this->handleError('Re-sync TEN ' . $id . ' Failed', json_encode($importer));
