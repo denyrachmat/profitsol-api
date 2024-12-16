@@ -28,4 +28,8 @@ class INSWDataMaster extends Model
         'ZID_MFN_BMPPN',
         'ZID_MFN_CUKAI'
     ];
+
+    public function det() {
+        return $this->hasMany(INSWDataJlsDetail::class, 'ZID_HSCODE', 'ZID_HSCODE');
+    }
 }

@@ -73,6 +73,10 @@ class autoSyncBOMtoPSIController extends Controller
             }
         }
 
+        foreach ($getDataPA100 as $key => $value) {
+            syncBOMToPSIQueue::dispatch($value, $runTime)->onQueue('syncPA100BOMToPSI');
+        }
+
         syncBOMToPSINotifQueue::dispatch(array_values($getListModelPart['EMAIL']), [
             'hadi.cahyono@smt.co.id',
             'ida.damayanti@smt.co.id',
@@ -94,10 +98,6 @@ class autoSyncBOMtoPSIController extends Controller
             'krista.diana@smt.co.id',
             'deny-rachmat@sumitronics.co.jp'
         ])->onQueue('sendEmailQueue');
-
-        foreach ($getDataPA100 as $key => $value) {
-            syncBOMToPSIQueue::dispatch($value, $runTime)->onQueue('syncPA100BOMToPSI');
-        }
 
         return 'Sync BOM Queued, Data to be updated : ' . count($getDataPA100);
     }

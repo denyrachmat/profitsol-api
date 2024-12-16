@@ -21,7 +21,7 @@ class HSCodeReportController extends Controller
 
     public function HSCodeFilter(Request $request): array
     {
-        $data = INSWDataMaster::select('*');
+        $data = INSWDataMaster::select('*')->with('det');
 
         if (
             count($request->filter) > 0 && count(array_filter($request->filter, function ($f) {
@@ -33,7 +33,11 @@ class HSCodeReportController extends Controller
             }
         }
 
-        return $data->get()->toArray();
+        if ($request->has('paginate')) {
+            return $data->paginate($request->paginate['rowsPerPage'], [], 'page', $request->paginate['page'])->toArray();
+        }
+
+        return $data->paginate()->toArray();
     }
 
     public function HSCodeBeaDetail() {
