@@ -226,7 +226,7 @@ class CirtenUpdateController extends BaseController
                     'cek' => $importer
                 ]));
 
-                return $this->handleError('Re-sync TEN ' . $id . ' Failed', $importer);
+                return $this->handleError('Re-sync TEN ' . $id . ' Failed', json_encode($importer));
             }
         } else {
             return $this->handleError('TEN ' . $id . ' not found !!!', []);
