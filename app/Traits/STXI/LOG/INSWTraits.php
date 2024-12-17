@@ -2,6 +2,7 @@
 
 namespace App\Traits\STXI\LOG;
 
+use App\Jobs\STXI\LOG\SyncINSWRegDetail;
 use Illuminate\Http\Request;
 use App\Models\STXI\LOG\INSWDataMaster;
 use App\Models\STXI\LOG\INSWDataJlsDetail;
@@ -295,5 +296,15 @@ trait INSWTraits
         SyncINSWRules::dispatch($hsCode)->onQueue('INSWQueueRunning');
 
         return 'Checking INSW Rules has been started';
+    }
+
+    public function resyncUnsyncedRegulationDet() {
+        $getAllHSCode = INSWDataMaster::get();
+
+        foreach ($getAllHSCode as $key => $value) {
+            SyncINSWRegDetail::dispatch($value->ZID_HSCODE)->onQueue('INSWQueueRunning');
+        }
+
+        return 'Resync un-synced Regulation has started';
     }
 }
