@@ -45,7 +45,18 @@ class HSCodeReportController extends Controller
     }
 
     public function HSCodeRegulationDet($hsCode) {
-        return INSWDataRegDet::where('ZID_HSCODE', $hsCode)->get();
+        $data = INSWDataRegDet::where('ZID_HSCODE', $hsCode)->get();
+
+        $hasil = [];
+        foreach ($data as $key => $value) {
+            $hasil['group'][$value->ZIRD_TYPE]['ZIRD_TYPE'] = $value->ZIRD_TYPE;
+            $hasil['group'][$value->ZIRD_TYPE]['DATA'][] = $value;
+            $hasil['list'][] = $value;
+        }
+
+        $hasil['group'] = isset($hasil['group']) ? array_values($hasil['group']) : [];
+
+        return $hasil;
     }
 
     /**
