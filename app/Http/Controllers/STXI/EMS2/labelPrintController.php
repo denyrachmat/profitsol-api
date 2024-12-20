@@ -118,11 +118,13 @@ class labelPrintController extends BaseController
 
             if(!($request->has('filter') && count($request->filter) > 0))
             {
-                $datanya->limit(10)
+                (clone $datanya)
+                ->limit(10)
                 ->get()
                 ->toArray();
             } else {
-                $datanya->get()
+                (clone $datanya)
+                ->get()
                 ->toArray();
             }
 
