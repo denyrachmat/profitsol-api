@@ -114,10 +114,17 @@ class labelPrintController extends BaseController
         }
 
         if ((clone $hist)->count() > 0) {
-            $datanya = (clone $hist)->orderBy('PGRN_LUPDT', 'desc')
-                // ->limit(10)
+            $datanya = (clone $hist)->orderBy('PGRN_LUPDT', 'desc');
+
+            if(!($request->has('filter') && count($request->filter) > 0))
+            {
+                $datanya->limit(10)
                 ->get()
                 ->toArray();
+            } else {
+                $datanya->get()
+                ->toArray();
+            }
 
             $hasil = [];
             foreach (@json_decode(json_encode($datanya), true) as $key => $value) {
