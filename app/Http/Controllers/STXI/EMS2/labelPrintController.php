@@ -115,21 +115,18 @@ class labelPrintController extends BaseController
 
         if ((clone $hist)->count() > 0) {
             $datanya = (clone $hist)->orderBy('PGRN_LUPDT', 'desc');
-
             if(!($request->has('filter') && count($request->filter) > 0))
             {
-                (clone $datanya)
-                ->limit(10)
-                ->get()
-                ->toArray();
-            } else {
-                (clone $datanya)
-                ->get()
-                ->toArray();
+                $datanya
+                    ->limit(10);
             }
 
+            $datanya = collect($datanya->get())->map(function ($user) {
+                return (array) $user;
+            })->toArray();
+
             $hasil = [];
-            foreach (@json_decode(json_encode($datanya), true) as $key => $value) {
+            foreach ($datanya as $key => $value) {
                 $hasil[$value['PGITSHP_SHPREFNO']]['PGITSHP_SHPREFNO'] = $value['PGITSHP_SHPREFNO'];
                 $hasil[$value['PGITSHP_SHPREFNO']]['det'][] = array_merge(
                     $value,
