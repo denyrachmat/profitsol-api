@@ -110,7 +110,7 @@ class labelPrintController extends BaseController
                 }
             }
         } else {
-            $hist->whereBetween('PGRN_RCVDT', [Carbon::now()->subDays(3), date('Y-m-d')]);
+            $hist->whereBetween('PGRN_RCVDT', [Carbon::now()->subDays(1), date('Y-m-d')]);
         }
 
         if ((clone $hist)->count() > 0) {
