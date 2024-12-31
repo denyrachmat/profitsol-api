@@ -223,7 +223,8 @@ class HSCodeUploadController extends BaseController
                         'HSCD_MKHSCD' => $value['HSCD_MKHSCD'],
                         'HSCD_STXICD' => $value['HSCD_STXICD']
                     ],
-                    'url' => 'http://localhost/STX/stx-api/public/api/div/log/updateApprovalHSCode'
+                    'url' => 'http://192.168.100.32/public/api/div/log/updateApprovalHSCode'
+                    // 'url' => 'http://localhost/STX/stx-api/public/api/div/log/updateApprovalHSCode'
                 ],
                 'onDone' => [
                     'methods' => 'post',
@@ -236,7 +237,8 @@ class HSCodeUploadController extends BaseController
                         'HSCD_STXICD' => $value['HSCD_STXICD'],
                         'ISDONE' => 1
                     ],
-                    'url' => 'http://localhost/STX/stx-api/public/api/div/log/updateApprovalHSCode'
+                    'url' => 'http://192.168.100.32/public/api/div/log/updateApprovalHSCode'
+                    // 'url' => 'http://localhost/STX/stx-api/public/api/div/log/updateApprovalHSCode'
                 ],
                 [
                     'name' => 'msgkey',
