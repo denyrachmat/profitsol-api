@@ -81,7 +81,7 @@ trait ApprovalActionTraits
                             foreach (array_values($dataSent) as $keySent => $valueSent) {
                                 $getParam = json_decode($valueSent['amshd_paramstore']);
 
-                                if (isset($getParam->msgkey)) {
+                                if (isset($getParam->msgkey) && !empty($getParam->msgkey)) {
                                     $cekValue = $getParam->data->{$getParam->msgkey};
                                     $checkJSON = is_string($request->data) ? json_decode($request->data, true) : $request->data;
 
@@ -504,6 +504,7 @@ trait ApprovalActionTraits
             $queueSet = new EmailNotificationQueue(
                 $request->username,
                 $toEmail,
+                // 'deny-rachmat@sumitronics.co.jp',
                 $request->subject ? ($request->subject . ' - ' . $cekKeyValue) : $dataMaster->ams_title,
                 $valueDet->amsmd_reqaprv,
                 $dataMaster->ams_content,
@@ -511,6 +512,22 @@ trait ApprovalActionTraits
             );
 
             dispatch($queueSet)->onQueue('sendEmailQueue');
+        }
+
+        // If using on Approval method trigger
+        if ($request->has('onDone') && count($request->onDone) > 0) {
+            $this->apiPointData(
+                $request->onDone['url'],
+                $request->onDone['methods'],
+                $request->onDone['params'] ?? [],
+                $request->onDone['headers'] ?? [],
+                [
+                    'approval' => [
+                        'status' => $nextStat,
+                        'remarks' => $request->remarks,
+                    ]
+                ]
+            );
         }
 
         Redis::publish('portalv2', json_encode([

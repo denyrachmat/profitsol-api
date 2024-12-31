@@ -207,6 +207,7 @@ class HSCodeUploadController extends BaseController
                 'stat' => 1,
                 'remarks' => 'Sending approval hs code!!',
                 'data' => [
+                    'HSCD_DOCNO' => $value['HSCD_DOCNO'] . '-' . $value['HSCD_ITMCD'],
                     'itemcode' => $value['HSCD_ITMCD'],
                     'part_name' => $value['MITM_SPTNO'],
                     'item_desc' => $value['MITM_ITMD1'],
@@ -240,11 +241,7 @@ class HSCodeUploadController extends BaseController
                     'url' => 'http://192.168.100.32/public/api/div/log/updateApprovalHSCode'
                     // 'url' => 'http://localhost/STX/stx-api/public/api/div/log/updateApprovalHSCode'
                 ],
-                [
-                    'name' => 'msgkey',
-                    'contents' => 'HSCD_DOCNO',
-                    'headers' => ['Content-Type' => 'application/json']
-                ]
+                'msgkey' => 'HSCD_DOCNO'
 
             ]))->getOriginalContent();
         }
