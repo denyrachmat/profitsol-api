@@ -310,7 +310,7 @@ Route::group(['prefix' => 'div'], function () {
         Route::post('HSCodeSendApproval', [HSCodeUploadController::class, 'sendApproval']);
         Route::post('updateApprovalHSCode', [HSCodeUploadController::class, 'updateApprovalHSCode']);
 
-        Route::resource('HSCode', HSCodeReportController::class);
+        // Route::resource('HSCode', HSCodeReportController::class);
         Route::post('HSCodeINSWFilter', [HSCodeReportController::class, 'HSCodeFilter']);
         Route::get('HSCodeBeaDetail', [HSCodeReportController::class, 'HSCodeBeaDetail']);
         Route::get('HSCodeRegulationDet/{hsCode}', [HSCodeReportController::class, 'HSCodeRegulationDet']);
