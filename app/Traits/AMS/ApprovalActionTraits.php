@@ -89,7 +89,11 @@ trait ApprovalActionTraits
                                         $runningToken[] = $checkJSON[$getParam->msgkey];
                                     }
                                 } else {
-                                    $runningToken[] = $getParam['data'][array_keys($getParam['data'])[0]];
+                                    $objectArray = (array) $getParam->data;
+                                    $firstKey = array_keys($objectArray)[0];
+                                    $runningToken[] = $objectArray[$firstKey];
+
+                                    // $runningToken[] = $getParam->data[array_keys((array) $getParam->data)[0]];
                                 }
                             }
                         }
@@ -151,13 +155,12 @@ trait ApprovalActionTraits
         foreach ($dataMaster->det as $keyDet => $valueDet) {
             $checkLatestToken = ApprovalHistDetail::where('amsm_id', $request->amsm_id)
                 ->with('mapdet')
-                ->whereHas('mapdet')
                 ->with('senderUser')
                 ->with('receiveUser')
                 ->with('attch')
                 ->where('amstd_token', $useToken);
 
-            $checkLatest = (clone $checkLatestToken)->orderBy('id', 'desc')->first();
+            $checkLatest = (clone $checkLatestToken)->whereHas('mapdet')->orderBy('id', 'desc')->first();
             $checkFirst = (clone $checkLatestToken)->orderBy('id', 'asc')->first();
 
             $nextStat = 'sent';
@@ -272,6 +275,8 @@ trait ApprovalActionTraits
                 count($cekToken->hist) > 0 &&
                 !empty($cekToken) &&
                 !empty($cekToken->selectedHist) &&
+                !empty($cekToken->hist[count($cekToken->hist) - 1]['mapdet']) &&
+                !empty($cekToken->selectedHist[count($cekToken->selectedHist) - 1]['mapdet']) &&
                 $cekToken->hist[count($cekToken->hist) - 1]['mapdet']['amsmd_order'] === $cekToken->selectedHist[count($cekToken->selectedHist) - 1]['mapdet']['amsmd_order']
             ) || $isView == 1
         ) {
