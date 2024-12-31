@@ -237,7 +237,13 @@ class HSCodeUploadController extends BaseController
                         'ISDONE' => 1
                     ],
                     'url' => 'http://localhost/STX/stx-api/public/api/div/log/updateApprovalHSCode'
+                ],
+                [
+                    'name' => 'msgkey',
+                    'contents' => 'HSCD_DOCNO',
+                    'headers' => ['Content-Type' => 'application/json']
                 ]
+
             ]))->getOriginalContent();
         }
 
