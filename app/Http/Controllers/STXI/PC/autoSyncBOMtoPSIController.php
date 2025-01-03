@@ -207,4 +207,25 @@ class autoSyncBOMtoPSIController extends Controller
 
         return $hasil;
     }
+
+    public function updateStockSGL()
+    {
+        ini_set('max_execution_time', 7200);
+        ini_set("memory_limit", "2G");
+        $getData = DB::connection('sqlsrv_psi_eng')->table('BOMSTX_TBL')->select('MAIN_PART_CODE')->groupBy('MAIN_PART_CODE')->get();
+
+        $hasil = [];
+        foreach ($getData as $key => $value) {
+            $searchDataCPO = DB::connection('sqlsrv_mega_sme')->table('PPO2_TBL')->select(DB::raw('Sum([PPO2_POQTY]-[PPO2_GRNQT]) AS TOT'))->where('PPO2_ITMCD', $value->MAIN_PART_CODE)->first();
+            $searchDataSGL = DB::connection('sqlsrv_mega_sme')->table('IBAL_TBL')->select(DB::raw('SUM(IBAL_BLQTY) AS TOT'))->where('IBAL_OWNER', 'STX')->where('IBAL_LOCCD', 'PSGL')->where('IBAL_ITMCD', $value->MAIN_PART_CODE)->first();
+
+            $hasil[] = DB::connection('sqlsrv_psi_eng')->table('BOMSTX_TBL')->where('MAIN_PART_CODE', $value->MAIN_PART_CODE)->update([
+                'STOCK_SGL' => isset($searchDataSGL) ? $searchDataSGL->TOT : 0,
+                'STOCK_CPO' => isset($searchDataCPO) ? $searchDataCPO->TOT : 0,
+                'UPDDT_STOCK' => date('Y-m-d H:i:s')
+            ]);
+        }
+
+        return $hasil;
+    }
 }
