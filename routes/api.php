@@ -354,6 +354,7 @@ Route::group(['prefix' => 'div'], function () {
         Route::get('syncBOMtoPSIByItem/{item}', [autoSyncBOMtoPSIController::class, 'syncBOMbyItem']);
         Route::post('syncBOMMultipleItem', [autoSyncBOMtoPSIController::class, 'syncWithoutJobs']);
         Route::get('syncAllNotInterfaced', [autoSyncBOMtoPSIController::class, 'syncAllNotInterfaced']);
+        Route::get('syncSGLStock', [autoSyncBOMtoPSIController::class, 'updateStockSGL']);
 
         Route::get('autoMailOSDOList', [autoEmailWMSConfirmation::class, 'sendEmailFun']);
     });
