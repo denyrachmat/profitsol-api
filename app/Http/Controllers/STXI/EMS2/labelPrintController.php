@@ -130,8 +130,8 @@ class labelPrintController extends BaseController
 
             $hasil = [];
             foreach ($datanya as $key => $value) {
-                $hasil[$value['PGITSHP_SHPREFNO']]['PGITSHP_SHPREFNO'] = $value['PGITSHP_SHPREFNO'];
-                $hasil[$value['PGITSHP_SHPREFNO']]['det'][] = array_merge(
+                $hasil[$value['PGITSHP_SHPREFNO'] ?? $value['PGRN_SUPNO']]['PGITSHP_SHPREFNO'] = $value['PGITSHP_SHPREFNO'];
+                $hasil[$value['PGITSHP_SHPREFNO'] ?? $value['PGRN_SUPNO']]['det'][] = array_merge(
                     $value,
                     // [
                     //     'SPLIT_SPQ' => $this->splitStockBySPQ(
