@@ -66,7 +66,7 @@ class labelPrintController extends BaseController
             ->select(
                 DB::raw('PGRN_SUPNO as PGIT_SUPNO'),
                 DB::raw('PGRN_ITMCD as PGIT_ITMCD'),
-                'PGITSHP_SHPREFNO',
+                DB::raw("CASE WHEN PGITSHP_SHPREFNO IS NULL THEN PGRN_SUPNO ELSE PGITSHP_SHPREFNO END AS PGITSHP_SHPREFNO"),
                 DB::raw("CONCAT(RTRIM(MITM_ITMCD), '( ' , MITM_ITMD1, ' )') AS MITM_ITMD1"),
                 'MITM_STKUOM',
                 'MITM_SPTNO',
