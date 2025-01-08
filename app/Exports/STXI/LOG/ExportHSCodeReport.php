@@ -170,6 +170,7 @@ class ExportHSCodeReport implements FromCollection, WithHeadings, WithEvents
                 'ZID_HSCODE',
                 'ZIRD_TYPE',
                 'ZIRD_KDIJIN',
+                DB::raw('CAST(ZIRD_NMIJIN AS VARCHAR(200)) ZIRD_NMIJIN'),
                 'ZIRD_BEALIST',
                 'ZIRD_MODUL'
             )
@@ -178,6 +179,7 @@ class ExportHSCodeReport implements FromCollection, WithHeadings, WithEvents
                     'ZID_HSCODE',
                     'ZIRD_TYPE',
                     'ZIRD_KDIJIN',
+                    DB::raw('CAST(ZIRD_NMIJIN AS VARCHAR(200))'),
                     'ZIRD_BEALIST',
                     'ZIRD_MODUL'
                 );
@@ -189,19 +191,26 @@ class ExportHSCodeReport implements FromCollection, WithHeadings, WithEvents
 
                     // Tataniaga Border
                     foreach ($this->headerDet as $keyHeader => $valueHeader) {
-                        if (in_array($valueHeader, $getParseJsonBeaList) && $valueReg->ZIRD_TYPE === 'import_regulation_border') {
-                            $listReg['TB-' . $valueHeader] = $valueReg->ZIRD_KDIJIN;
+                        if (in_array($valueHeader, $getParseJsonBeaList) && ($valueReg->ZIRD_TYPE === 'import_regulation' || $valueReg->ZIRD_TYPE === 'import_regulation_border')) {
+                            $listReg['TB-' . $valueHeader] = $valueReg->ZIRD_NMIJIN;
                         } else {
-                            $listReg['TB-' . $valueHeader] = '-';
+                            if (empty($valueReg->ZIRD_NMIJIN) || !isset($listReg['TB-' . $valueHeader]) || empty($listReg['TB-' . $valueHeader]) || $listReg['TB-' . $valueHeader] === '-') {
+                                $listReg['TB-' . $valueHeader] = '-';
+                            }
+                            // else {
+                            //     $listReg['TB-' . $valueHeader] = $listReg['TB-' . $valueHeader].';'.$valueReg->ZIRD_NMIJIN;
+                            // }
                         }
                     }
 
                     // Tataniaga Post Border
                     foreach ($this->headerDet as $keyHeader => $valueHeader) {
                         if (in_array($valueHeader, $getParseJsonBeaList) && $valueReg->ZIRD_TYPE === 'import_regulation_post_border') {
-                            $listReg['TPB-' . $valueHeader] = $valueReg->ZIRD_KDIJIN;
+                            $listReg['TPB-' . $valueHeader] = $valueReg->ZIRD_NMIJIN;
                         } else {
-                            $listReg['TPB-' . $valueHeader] = '-';
+                            if (!isset($listReg['TPB-' . $valueHeader]) && empty($listReg['TPB-' . $valueHeader])) {
+                                $listReg['TPB-' . $valueHeader] = '-';
+                            }
                         }
                     }
                 }
