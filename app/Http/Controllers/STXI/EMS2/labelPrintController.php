@@ -106,6 +106,9 @@ class labelPrintController extends BaseController
                         $hist->orwhere($value['cols'], $value['param'], $value['param'] === 'like' ? "%{$value['value']}%" : $value['value']);
                     } else {
                         $hist->where($value['cols'], $value['param'], $value['param'] === 'like' ? "%{$value['value']}%" : $value['value']);
+                        if ($value['cols'] === 'PGITSHP_SHPREFNO') {
+                            $hist->orwhere('PGRN_SUPNO', $value['param'], $value['param'] === 'like' ? "%{$value['value']}%" : $value['value']);
+                        }
                     }
                 }
             }
