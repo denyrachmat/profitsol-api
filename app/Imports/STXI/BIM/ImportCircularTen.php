@@ -255,6 +255,7 @@ class ImportCircularTen implements ToModel
                     $cekSupp = $this->getItemMaster($value, '');
                     $datanya = array_merge($hasilSupp, array_values($cekSupp['listSub']));
                     if (count($datanya) > 0) {
+                        logger($datanya);
                         $hasilData = $datanya[0];
                     } else {
                         $hasilData = '';
