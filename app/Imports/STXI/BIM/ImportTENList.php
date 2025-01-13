@@ -64,6 +64,7 @@ class ImportTENList implements ToModel, WithEvents, WithStartRow, WithMultipleSh
             //     (substr($row[3],0,3) === 'N06' && substr($row[2],0,3) === 'TEN')
             // )
         ) {
+            logger([$row[2],$row[3]]);
             $insert = CircularTenList::updateOrCreate([
                 'CTT_SECTENNO' => $row[3],
                 'CTT_IEITENNO' => $row[2],
