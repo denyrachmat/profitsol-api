@@ -92,7 +92,7 @@ class ImportTENList implements ToModel, WithEvents, WithStartRow, WithMultipleSh
 
             // CircularTenListModelDet
         } else {
-            if ($this->storedData->CTT_IEITENNO == $row[2] || (empty($row[2]) && (!empty($row[8]) || !empty($row[9])))) {
+            if ($this->storedData->CTT_IEITENNO == $row[2] || (empty($row[2]) && !empty($row[10]))) {
                 CircularTenListModelDet::updateOrCreate([
                     'CTT_ID' => $this->storedData->id,
                     'CTID_ITEMCDNEW' => (string)$row[10],
