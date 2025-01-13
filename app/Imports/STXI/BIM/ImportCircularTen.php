@@ -253,7 +253,7 @@ class ImportCircularTen implements ToModel
                 $hasilSupp = [];
                 foreach ($cekModel->pluck('CIM_ITMCD') as $key => $value) {
                     $cekSupp = $this->getItemMaster($value, '');
-                    if (count($datanya) > 0 && count($cekSupp) > 0) {
+                    if (count($cekSupp) > 0) {
                         $datanya = array_merge($hasilSupp, array_values($cekSupp['listSub']));
                         logger(json_encode($cekSupp));
                         $hasilData = $datanya[0];
