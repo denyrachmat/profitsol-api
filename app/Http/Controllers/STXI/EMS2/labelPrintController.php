@@ -199,7 +199,7 @@ class labelPrintController extends BaseController
 
     public function splitData(Request $request)
     {
-        ini_set('memory_limit', '2048M');
+        ini_set('memory_limit', '-1');
         $dataDetail = $request->data['det'] ?? [];
         usort($dataDetail, function ($a, $b) {
             return $a['SPQ_QTY'] <=> $b['SPQ_QTY'];
