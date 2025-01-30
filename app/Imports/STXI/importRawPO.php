@@ -83,16 +83,14 @@ class importRawPO implements ToModel, WithStartRow
                                     ->where('FPM_UPLDT', $date)
                                     ->first();
 
-                                if(empty($cekDataPO)) {
-                                    FRCST_PO_MRI::updateOrCreate([
-                                        'FPM_ITMCD' => $this->formatItem($item),
-                                        'FPM_UPLDT' => $date,
-                                    ], [
-                                        'FPM_ITMCD' => $this->formatItem($item),
-                                        'FPM_UPLDT' => $date,
-                                        'FPM_QTY' => (int) $row[$valueSelHead['keyHead']],
-                                    ]);
-                                }
+                                FRCST_PO_MRI::updateOrCreate([
+                                    'FPM_ITMCD' => $this->formatItem($item),
+                                    'FPM_UPLDT' => $date,
+                                ], [
+                                    'FPM_ITMCD' => $this->formatItem($item),
+                                    'FPM_UPLDT' => $date,
+                                    'FPM_QTY' => (int) $row[$valueSelHead['keyHead']],
+                                ]);
                             }
                         }
 
