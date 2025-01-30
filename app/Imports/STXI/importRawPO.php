@@ -62,34 +62,37 @@ class importRawPO implements ToModel, WithStartRow
                         preg_match_all('/\d+/', $string, $matches);
                         $quantities = $matches[0];
 
-                        if (count($quantities) > 0 && (int)$row[$valueSelHead['keyHead']] > 0) {
-                            $countDate = (int)$quantities[0];
+                        if (count($quantities) > 0 && (int) $row[$valueSelHead['keyHead']] > 0) {
+                            $countDate = (int) $quantities[0];
                             $checkDate = date('Y-m', strtotime($this->date)) . '-' . $countDate;
 
                             // Jika hari minggu tambah 1 hari ke hari senin
                             if (date('w', strtotime($checkDate)) == '0') {
-                                $countDate = (int)$countDate + 1;
+                                $countDate = (int) $countDate + 1;
                             }
 
                             // Jika hari sabtu tambah 2 hari ke hari senin
                             if (date('w', strtotime($checkDate)) == 6) {
-                                $countDate = (int)$countDate + 2;
+                                $countDate = (int) $countDate + 2;
                             }
 
                             $date = date('Y-m', strtotime($this->date)) . '-' . $countDate;
-                            $cekDataPO = FRCST_PO_MRI::where('FPM_ITMCD',$this->formatItem($item))
-                                ->where('FPM_UPLDT', $date)
-                                ->first();
-                            if (empty($row[0]) && empty($cekDataPO)) {
+                            if (empty($row[0])) {
                                 $item = $row[0];
-                                FRCST_PO_MRI::updateOrCreate([
-                                    'FPM_ITMCD' => $this->formatItem($item),
-                                    'FPM_UPLDT' => $date,
-                                ], [
-                                    'FPM_ITMCD' => $this->formatItem($item),
-                                    'FPM_UPLDT' => $date,
-                                    'FPM_QTY' => (int)$row[$valueSelHead['keyHead']],
-                                ]);
+                                $cekDataPO = FRCST_PO_MRI::where('FPM_ITMCD', $this->formatItem($item))
+                                    ->where('FPM_UPLDT', $date)
+                                    ->first();
+
+                                if(empty($cekDataPO)) {
+                                    FRCST_PO_MRI::updateOrCreate([
+                                        'FPM_ITMCD' => $this->formatItem($item),
+                                        'FPM_UPLDT' => $date,
+                                    ], [
+                                        'FPM_ITMCD' => $this->formatItem($item),
+                                        'FPM_UPLDT' => $date,
+                                        'FPM_QTY' => (int) $row[$valueSelHead['keyHead']],
+                                    ]);
+                                }
                             }
                         }
 
