@@ -254,7 +254,7 @@ class ImportCircularTen implements ToModel
                     $cekSupp = $this->getItemMaster($value, '');
                     if (count($cekSupp) > 0 && count($cekSupp['listSub']) > 0) {
                         $datanya = array_merge($hasilSupp, array_values($cekSupp['listSub']));
-                        logger(json_encode($cekSupp));
+                        // logger(json_encode($cekSupp));
                         $hasilData = $datanya[0];
 
                         $hasilSupp[count($cekSupp) > 0 ? $hasilData : ''] = count($cekSupp) > 0
@@ -360,7 +360,7 @@ class ImportCircularTen implements ToModel
                 'username' => $this->username
             ];
 
-            logger(json_encode($datas));
+            // logger(json_encode($datas));
             $this->pdf = $this->generateDocument($this->data['mail_date'], $datas, true);
         }
 
