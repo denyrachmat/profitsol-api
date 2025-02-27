@@ -77,11 +77,12 @@ class importRawPO implements ToModel, WithStartRow
                             }
 
                             $date = date('Y-m', strtotime($this->date)) . '-' . $countDate;
-                            if (empty($row[0])) {
+                            if (!empty($row[0])) {
+                                logger($row[0]. '- Ready to inserted');
                                 $item = $row[0];
-                                $cekDataPO = FRCST_PO_MRI::where('FPM_ITMCD', $this->formatItem($item))
-                                    ->where('FPM_UPLDT', $date)
-                                    ->first();
+                                // $cekDataPO = FRCST_PO_MRI::where('FPM_ITMCD', $this->formatItem($item))
+                                //     ->where('FPM_UPLDT', $date)
+                                //     ->first();
 
                                 FRCST_PO_MRI::updateOrCreate([
                                     'FPM_ITMCD' => $this->formatItem($item),
