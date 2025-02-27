@@ -77,21 +77,24 @@ class importRawPO implements ToModel, WithStartRow
                             }
 
                             $date = date('Y-m', strtotime($this->date)) . '-' . $countDate;
-                            $cekDataPO = FRCST_PO_MRI::where('FPM_ITMCD', $this->formatItem($item))
-                                ->where('FPM_UPLDT', $date)
-                                ->where('FPM_ITMCD', $this->formatItem($item))
-                                ->where('FPM_QTY', (int) $row[$valueSelHead['keyHead']])
-                                ->first();
-
-                            if (!empty($row[0]) && empty($cekDataPO)) {
-                                logger($row[0]. '- Ready to inserted');
+                            if (!empty($row[0])) {;
                                 $item = $row[0];
+                                $cekDataPO = FRCST_PO_MRI::where('FPM_ITMCD', $this->formatItem($item))
+                                    ->where('FPM_UPLDT', $date)
+                                    ->where('FPM_ITMCD', $this->formatItem($item))
+                                    ->where('FPM_QTY', (int) $row[$valueSelHead['keyHead']])
+                                    ->first();
 
-                                FRCST_PO_MRI::create([
-                                    'FPM_ITMCD' => $this->formatItem($item),
-                                    'FPM_UPLDT' => $date,
-                                    'FPM_QTY' => (int) $row[$valueSelHead['keyHead']],
-                                ]);
+                                    if (empty($cekDataPO)) {
+
+                                        logger($row[0]. '- Ready to inserted');
+
+                                        FRCST_PO_MRI::create([
+                                            'FPM_ITMCD' => $this->formatItem($item),
+                                            'FPM_UPLDT' => $date,
+                                            'FPM_QTY' => (int) $row[$valueSelHead['keyHead']],
+                                        ]);
+                                    }
                             }
                         }
 
