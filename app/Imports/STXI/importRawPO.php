@@ -87,7 +87,7 @@ class importRawPO implements ToModel, WithStartRow
 
                                     if (empty($cekDataPO)) {
 
-                                        logger($row[0]. '- Ready to inserted');
+                                        // logger($row[0]. '- Ready to inserted');
 
                                         FRCST_PO_MRI::create([
                                             'FPM_ITMCD' => $this->formatItem($item),
