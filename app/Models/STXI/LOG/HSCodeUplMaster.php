@@ -22,6 +22,11 @@ class HSCodeUplMaster extends Model
         'HSCD_ISSDT',
         'HSCD_REMARK',
         'HSCD_APRVSTAT',
+        'HSCD_LASTAPPRV',
         'p_u_username'
     ];
+
+    public function insw_reg() {
+        return  $this->hasMany(INSWDataRegDet::class, 'ZID_HSCODE', 'HSCD_STXICD');
+    }
 }

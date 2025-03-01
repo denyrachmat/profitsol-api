@@ -272,6 +272,9 @@ Route::group(['prefix' => 'div'], function () {
             Route::post('search', [labelPrintController::class, 'searchItems']);
             Route::post('searchGIT', [labelPrintController::class, 'searchGIT']);
             Route::post('splitSPQData', [labelPrintController::class, 'splitData']);
+            Route::post('searchAllItemFromGRN', [labelPrintController::class, 'searchAllItemFromGRN']);
+            Route::post('searchAllInvByItem/{item}', [labelPrintController::class, 'searchAllInvByItem']);
+
         });
     });
 
@@ -306,7 +309,8 @@ Route::group(['prefix' => 'div'], function () {
         Route::resource('HSCode', HSCodeUploadController::class);
         Route::post('HSCodeFilter', [HSCodeUploadController::class, 'HSCodeFilter']);
         Route::get('testRecurs', [HSCodeUploadController::class, 'testHeaderData']);
-        Route::post('exportData', [HSCodeUploadController::class, 'exportData']);
+        Route::post('exportData/{hist?}', [HSCodeUploadController::class, 'exportData']);
+        Route::post('exportDataPDF', [HSCodeUploadController::class, 'exportDataPDF']);
         Route::post('HSCodeSendApproval', [HSCodeUploadController::class, 'sendApproval']);
         Route::post('updateApprovalHSCode', [HSCodeUploadController::class, 'updateApprovalHSCode']);
 
@@ -358,6 +362,8 @@ Route::group(['prefix' => 'div'], function () {
 
         Route::get('autoMailOSDOList', [autoEmailWMSConfirmation::class, 'sendEmailFun']);
     });
+
+    Route::group(['prefix' => 'it'], function () {});
 });
 
 Route::group((['prefix' => 'scheduller']), function () {

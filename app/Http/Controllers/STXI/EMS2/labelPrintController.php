@@ -10,6 +10,7 @@ use Carbon\Carbon;
 use Mike42\Escpos\PrintConnectors\FilePrintConnector;
 use Mike42\Escpos\PrintConnectors\WindowsPrintConnector;
 use Mike42\Escpos\Printer;
+use Illuminate\Pagination\Paginator;
 
 class labelPrintController extends BaseController
 {
@@ -118,8 +119,7 @@ class labelPrintController extends BaseController
 
         if ((clone $hist)->count() > 0) {
             $datanya = (clone $hist)->orderBy('PGRN_LUPDT', 'desc');
-            if(!($request->has('filter') && count($request->filter) > 0))
-            {
+            if (!($request->has('filter') && count($request->filter) > 0)) {
                 $datanya
                     ->limit(10);
             }
@@ -147,6 +147,95 @@ class labelPrintController extends BaseController
         } else {
             return $this->handleError('No data found !!', []);
         }
+    }
+
+    public function searchAllItemFromGRN(Request $request)
+    {
+        $hist = DB::connection('sqlsrv_mega_exim')->table('PGRN_TBL')
+            ->select(
+                DB::raw('RTRIM(PGRN_SUPNO) AS PGRN_SUPNO'),
+                DB::raw('RTRIM(PGRN_BSGRP) AS PGRN_BSGRP'),
+                DB::raw("CASE WHEN PGITSHP_SHPREFNO IS NULL THEN RTRIM(PGRN_SUPNO) ELSE RTRIM(PGITSHP_SHPREFNO) END AS PGITSHP_SHPREFNO"),
+                DB::raw('RTRIM(PGRN_ITMCD) AS PGRN_ITMCD'),
+                DB::raw("CONCAT(RTRIM(MITM_ITMCD), ' ( ' , RTRIM(MITM_ITMD1), ' )') AS MITM_ITMD1"),
+                DB::raw('RTRIM(MITM_STKUOM) AS MITM_STKUOM'),
+                DB::raw('RTRIM(MITM_SPTNO) AS MITM_SPTNO'),
+                DB::raw('MITM_MAKERNM AS MITM_MAKERNM'),
+                'MITM_SPQ',
+                DB::raw('COUNT(PGRN_ITMCD) AS TOTAL_INV')
+            )
+            ->join('MITM_TBL', 'MITM_ITMCD', 'PGRN_ITMCD')
+            ->leftjoin('PGITSHP_TBL', 'PGITSHP_DOCNO', 'PGRN_SUPNO')
+            ->where('PGRN_BSGRP', ['SME3IIZMRI', 'SME3XIZSVN', 'SME3XIZYBR', 'SME3XIZYIN'])
+            ->groupBy(
+                'PGRN_SUPNO',
+                'PGRN_BSGRP',
+                'PGRN_ITMCD',
+                DB::raw("CONCAT(RTRIM(MITM_ITMCD), ' ( ' , RTRIM(MITM_ITMD1), ' )')"),
+                'MITM_STKUOM',
+                'MITM_SPTNO',
+                'MITM_SPQ',
+                'MITM_MAKERNM',
+                'PGITSHP_SHPREFNO'
+            );
+
+        if ($request->has('filter') && !empty($request->filter['val'])) {
+            $hist->where($request->filter['cols'], 'like', '%'.$request->filter['val'] . '%');
+        }
+
+        if ($request->has('sortBy')) {
+            $hist->orderBy($request->sortBy, $request->descending ? 'desc' : 'asc');
+        }
+
+        return $hist->paginate($request->rowsPerPage, ['*'], 'page', $request->page);
+
+        $hasil = [];
+        foreach ($hist->get() as $key => $item) {
+            $hasil[$item->PGRN_ITMCD] = [
+                'PGRN_ITMCD' => trim($item->PGRN_ITMCD),
+                'MITM_ITMD1' => trim($item->MITM_ITMD1),
+                'MITM_STKUOM' => trim($item->MITM_STKUOM),
+                'MITM_SPTNO' => trim($item->MITM_SPTNO),
+                'MITM_MAKERNM' => trim($item->MITM_MAKERNM),
+                'MITM_SPQ' => $item->MITM_SPQ,
+                'TOTAL_INV' => $item->TOTAL_INV,
+            ];
+        }
+
+        $items = array_values($hasil);
+        $totalItems = count($items);
+
+        $currentPageItems = array_slice(
+            $items,
+            ($request->page - 1) * $request->rowsPerPage,
+            $request->rowsPerPage
+        );
+
+        // Create a Paginator instance using Paginator::paginate()
+        $paginatedItems = new \Illuminate\Pagination\LengthAwarePaginator(
+            $currentPageItems,
+            $totalItems, // Total items count
+            $request->rowsPerPage,
+            $request->page,
+            ['path' => request()->url(), 'query' => request()->query()]
+        );
+
+        return $paginatedItems;
+    }
+
+    public function searchAllInvByItem($item){
+        $itemnya = base64_decode($item);
+        $hasil = $this->searchGIT(new Request([
+            'filter' => [
+                [
+                    'cols' => 'PGRN_ITMCD',
+                    'param' => 'like',
+                    'value' => $itemnya
+                ]
+            ]
+        ]));
+
+        return $hasil;
     }
 
     /**
@@ -243,7 +332,7 @@ class labelPrintController extends BaseController
         if ($qty > $spq) {
             $cekNextData = next($currentDet);
             if (!empty($cekNextData)) {
-                if (($spq + (int)$cekNextData['SPQ_QTY']) > $qty) {
+                if (($spq + (int) $cekNextData['SPQ_QTY']) > $qty) {
                     return $this->splitStockBySPQ($cekNextData['SPQ_QTY'], $qty, $data, $currentDet, $returnedData);
                 } else {
                     prev($currentDet);
