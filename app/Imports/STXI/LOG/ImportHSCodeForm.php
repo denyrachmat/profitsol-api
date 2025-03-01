@@ -4,6 +4,9 @@ namespace App\Imports\STXI\LOG;
 
 use Illuminate\Support\Collection;
 use Maatwebsite\Excel\Concerns\ToModel;
+use Maatwebsite\Excel\Concerns\WithEvents;
+use Maatwebsite\Excel\Concerns\WithStartRow;
+use Maatwebsite\Excel\Events\BeforeSheet;
 use Maatwebsite\Excel\Concerns\WithHeadingRow;
 use Maatwebsite\Excel\Concerns\SkipsEmptyRows;
 use Illuminate\Support\Facades\DB;
@@ -13,10 +16,11 @@ use App\Models\STXI\LOG\HSCodeUplMaster;
 
 use App\Traits\STXI\LOG\INSWTraits;
 
-class ImportHSCodeForm implements ToModel
+class ImportHSCodeForm implements ToModel, WithEvents
 {
     use INSWTraits;
     protected $username, $issdate, $keys, $doc, $type, $keysFordoc, $item, $bg, $series, $mkhscd, $stxihscd;
+    private $activeSheetTitle;
     function __construct($username, $issdate = '', $keys = 0, $doc = '', $type = '', $keysFordoc = 0, $item = '', $bg = '', $series = '', $mkhscd = '', $stxihscd = '')
     {
         $this->username = $username;
@@ -67,7 +71,7 @@ class ImportHSCodeForm implements ToModel
                     $this->issdate = $row[$key + 5];
                 }
 
-                if (str_contains($valData, 'Parts Code')) {
+                if (str_contains($valData, 'Parts Code') && !empty($row[$key + 5])) {
                     $this->item = $row[$key + 5];
                 }
 
@@ -84,22 +88,51 @@ class ImportHSCodeForm implements ToModel
                 }
             }
 
-            if ($this->keys === 63) {
-                HSCodeUplMaster::where('HSCD_BG', $this->bg)->where('HSCD_ITMCD', $this->item)->delete();
-                HSCodeUplMaster::create([
-                    'p_u_username' => $this->username,
-                    'HSCD_DOCNO' => $this->doc,
-                    'HSCD_BG' => $this->bg,
-                    'HSCD_ITMCD' => $this->item,
-                    'HSCD_SERIES' => $this->series,
-                    'HSCD_MKHSCD' => $this->mkhscd,
-                    'HSCD_STXICD' => str_replace('.', '', $row[0]),
-                    'HSCD_UPLTYFORM' => $this->type,
-                    'HSCD_ISSDT' => $this->issdate
-                ]);
+            if (str_contains($this->getActiveSheetTitle(), 'Attachment')) {
+                if ($this->keys > 5 && !empty($this->stxihscd) && empty($this->item) && !empty($row[10])) {
+                    HSCodeUplMaster::where('HSCD_BG', $this->bg)
+                        ->where('HSCD_ITMCD', (string)$row[3])
+                        ->delete();
 
-                $this->syncINSWDataShare($this->mkhscd);
-                $this->syncINSWDataShare(str_replace('.', '', $row[0]));
+                    HSCodeUplMaster::create([
+                        'p_u_username' => $this->username,
+                        'HSCD_DOCNO' => $this->doc,
+                        'HSCD_BG' => $this->bg,
+                        'HSCD_ITMCD' => (string)$row[3],
+                        'HSCD_SERIES' => $row[7],
+                        'HSCD_MKHSCD' => $row[10],
+                        'HSCD_STXICD' => $this->stxihscd,
+                        'HSCD_UPLTYFORM' => $this->type,
+                        'HSCD_ISSDT' => $this->issdate
+                    ]);
+
+                    $this->syncINSWDataShare($this->mkhscd);
+                    $this->syncINSWDataShare($this->stxihscd);
+                }
+            } else {
+                if ($this->keys === 63) {
+                    if (empty($this->stxihscd)) {
+                        $this->stxihscd = str_replace('.', '', $row[0]);
+                    }
+
+                    if (!empty($this->item)) {
+                        HSCodeUplMaster::where('HSCD_BG', $this->bg)->where('HSCD_ITMCD', $this->item)->delete();
+                        HSCodeUplMaster::create([
+                            'p_u_username' => $this->username,
+                            'HSCD_DOCNO' => $this->doc,
+                            'HSCD_BG' => $this->bg,
+                            'HSCD_ITMCD' => $this->item,
+                            'HSCD_SERIES' => $this->series,
+                            'HSCD_MKHSCD' => $this->mkhscd,
+                            'HSCD_STXICD' => str_replace('.', '', $row[0]),
+                            'HSCD_UPLTYFORM' => $this->type,
+                            'HSCD_ISSDT' => $this->issdate
+                        ]);
+
+                        $this->syncINSWDataShare($this->mkhscd);
+                        $this->syncINSWDataShare(str_replace('.', '', $row[0]));
+                    }
+                }
             }
         }
 
@@ -137,5 +170,22 @@ class ImportHSCodeForm implements ToModel
         }
 
         $this->keys = $this->keys + 1;
+    }
+
+    public function registerEvents(): array
+    {
+        return [
+            BeforeSheet::class => function (BeforeSheet $event) {
+                if ($event->getSheet()->getTitle() !== $this->activeSheetTitle) {
+                    $this->keys = 0;
+                }
+                $this->activeSheetTitle = $event->getSheet()->getTitle();
+            },
+        ];
+    }
+
+    public function getActiveSheetTitle()
+    {
+        return $this->activeSheetTitle;
     }
 }

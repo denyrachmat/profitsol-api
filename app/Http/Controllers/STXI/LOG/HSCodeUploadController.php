@@ -9,6 +9,7 @@ use Excel;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 use Illuminate\Http\File;
 use Illuminate\Support\Facades\Http;
+use PDF;
 
 use App\Models\STXI\LOG\HSCodeUplMaster;
 use App\Models\STXI\LOG\HSCodeGroupBeaDetail;
@@ -99,11 +100,61 @@ class HSCodeUploadController extends BaseController
         return HSCodeUplMaster::where('id', $id)->delete();
     }
 
-    public function exportData(Request $request)
+    public function exportData(Request $request, $withHist = false)
     {
-        Excel::store(new ExportHSCodeReport($request->filter), 'export_hscode.xlsx', 'public');
+        Excel::store(new ExportHSCodeReport($request->filter, $withHist), 'export_hscode.xlsx', 'public');
 
         return 'storage/app/public/export_hscode.xlsx';
+    }
+
+    public function exportDataWithHistory() {
+
+    }
+
+    public function exportDataPDF(Request $request)
+    {
+        $arrReq = array_merge($request->all(), [
+            'select' => [
+                '*'
+            ],
+            'with' => 'insw_reg'
+        ]);
+
+        $data = $this->HSCodeFilter(new Request($arrReq));
+
+        $hasil = [];
+        foreach ($data as $keyData => $valueData) {
+            $listImport = '';
+            $listImportPost = '';
+            if (count($valueData['insw_reg']) > 0) {
+                $arrImport = [];
+                $arrImportPost = [];
+                foreach ($valueData['insw_reg'] as $keyInswReg => $valueInswReg) {
+                    if ($valueInswReg['ZIRD_TYPE'] == 'import_regulation') {
+                        $arrImport[] = '- '.$valueInswReg['ZIRD_NMIJIN'];
+                    }
+
+                    if ($valueInswReg['ZIRD_TYPE'] == 'import_regulation_post_border') {
+                        $arrImportPost[] = '- '.$valueInswReg['ZIRD_NMIJIN'];
+                    }
+                }
+
+                $listImport = implode("<br>", $arrImport);
+                $listImportPost = implode("<br>", $arrImportPost);
+            }
+
+            $hasil[] = array_merge($valueData, [
+                'LIST_IMPORT' => $listImport,
+                'LIST_IMPORT_POST' => $listImportPost
+            ]);
+        }
+
+        $pdf = PDF::loadView('STXI/LOG/hsCodeDraft', ['data' => $hasil])->setOrientation('landscape');
+        $datetime = date('y-m-d his');
+
+        // return view('STXI/LOG/hsCodeDraft', ['data' => $data]);
+
+        return $pdf->download("hscode_draft_" . $datetime . ".pdf");
     }
 
     public function testHeaderData()
@@ -184,6 +235,10 @@ class HSCodeUploadController extends BaseController
     {
         $data = HSCodeUplMaster::join('CRPTWEB.dbo.VIEW_MITM_TBL', 'MITM_ITMCD', 'HSCD_ITMCD');
 
+        if ($request->has('select')) {
+            $data->select($request->select);
+        }
+
         if (
             count($request->filter) > 0 && count(array_filter($request->filter, function ($f) {
                 return !empty($f['value']);
@@ -194,52 +249,69 @@ class HSCodeUploadController extends BaseController
             }
         }
 
+        if ($request->has('join')) {
+            foreach ($request->join as $keyJoin => $valueJoin) {
+                $data->join($valueJoin['table'], $valueJoin['localKey'], $valueJoin['foreignKey']);
+            }
+        }
+
+        if ($request->has('with')) {
+            $data->with($request->with);
+        }
+
+        if ($request->has('groupBy')) {
+            $data->groupBy($request->select);
+        }
+
         return $data->get()->toArray();
     }
 
     public function sendApproval(Request $request): array
     {
-        $hasil = [];
+        $hasilGroup = [];
         foreach ($request->data as $key => $value) {
+            $hasilGroup[$value['HSCD_DOCNO']]['HSCD_DOCNO'] = $value['HSCD_DOCNO'];
+            $hasilGroup[$value['HSCD_DOCNO']]['det'][] = $value;
+        }
+
+        $hasil = [];
+        foreach (array_values($hasilGroup) as $keyGrp => $valueGrp) {
+            $listDet = [];
+            foreach ($valueGrp['det'] as $keyDet => $valueDet) {
+                $listDet[] = [
+                    'itemcode' => $valueDet['HSCD_ITMCD'],
+                    'part_name' => $valueDet['MITM_SPTNO'],
+                    'item_desc' => $valueDet['MITM_ITMD1'],
+                    'mk_hscode' => $valueDet['HSCD_MKHSCD'],
+                    'stxi_hscode' => $valueDet['HSCD_STXICD']
+                ];
+            }
+
             $hasil[] = $this->approveAction(new ApprovalRunningApproveActionRequest([
                 'username' => $request->username,
-                'amsm_id' => 1,
+                'amsm_id' => 5,
                 'stat' => 1,
                 'remarks' => 'Sending approval hs code!!',
                 'data' => [
-                    'HSCD_DOCNO' => $value['HSCD_DOCNO'] . '-' . $value['HSCD_ITMCD'],
-                    'itemcode' => $value['HSCD_ITMCD'],
-                    'part_name' => $value['MITM_SPTNO'],
-                    'item_desc' => $value['MITM_ITMD1'],
-                    'mk_hscode' => $value['HSCD_MKHSCD'],
-                    'stxi_hscode' => $value['HSCD_STXICD']
+                    'HSCD_DOCNO' => $valueGrp['HSCD_DOCNO'],
+                    'item_det' => $listDet
                 ],
                 'onApproval' => [
                     'methods' => 'post',
                     'params' => [
                         'HSCD_DOCNO' => $value['HSCD_DOCNO'],
-                        'HSCD_ITMCD' => $value['HSCD_ITMCD'],
-                        'MITM_SPTNO' => $value['MITM_SPTNO'],
-                        'MITM_ITMD1' => $value['MITM_ITMD1'],
-                        'HSCD_MKHSCD' => $value['HSCD_MKHSCD'],
-                        'HSCD_STXICD' => $value['HSCD_STXICD']
                     ],
-                    'url' => 'http://192.168.100.32/public/api/div/log/updateApprovalHSCode'
-                    // 'url' => 'http://localhost/STX/stx-api/public/api/div/log/updateApprovalHSCode'
+                    // 'url' => 'http://192.168.100.32/public/api/div/log/updateApprovalHSCode'
+                    'url' => 'http://localhost/STX/stx-api/public/api/div/log/updateApprovalHSCode'
                 ],
                 'onDone' => [
                     'methods' => 'post',
                     'params' => [
                         'HSCD_DOCNO' => $value['HSCD_DOCNO'],
-                        'HSCD_ITMCD' => $value['HSCD_ITMCD'],
-                        'MITM_SPTNO' => $value['MITM_SPTNO'],
-                        'MITM_ITMD1' => $value['MITM_ITMD1'],
-                        'HSCD_MKHSCD' => $value['HSCD_MKHSCD'],
-                        'HSCD_STXICD' => $value['HSCD_STXICD'],
                         'ISDONE' => 1
                     ],
-                    'url' => 'http://192.168.100.32/public/api/div/log/updateApprovalHSCode'
-                    // 'url' => 'http://localhost/STX/stx-api/public/api/div/log/updateApprovalHSCode'
+                    // 'url' => 'http://192.168.100.32/public/api/div/log/updateApprovalHSCode'
+                    'url' => 'http://localhost/STX/stx-api/public/api/div/log/updateApprovalHSCode'
                 ],
                 'msgkey' => 'HSCD_DOCNO'
 
@@ -251,13 +323,14 @@ class HSCodeUploadController extends BaseController
 
     public function updateApprovalHSCode(Request $request)
     {
-        logger(json_encode($request->all()));
+        // logger(json_encode($request->all()));
         // return $request->all();
         $data = HSCodeUplMaster::where('HSCD_DOCNO', $request->HSCD_DOCNO)
-            ->where('HSCD_ITMCD', $request->HSCD_ITMCD)
+            // ->where('HSCD_ITMCD', $request->HSCD_ITMCD)
             ->update([
                 'HSCD_APRVSTAT' => $request->has('ISDONE') && $request->ISDONE == 1 ? 1 : 0,
                 'HSCD_REMARK' => $request->approval['remarks'],
+                'HSCD_LASTAPPRV' => $request->has('approval') ? $request->approval['username'] : '',
                 'HSCD_APPRVDT' => date('Y-m-d H:i:s')
             ]);
 

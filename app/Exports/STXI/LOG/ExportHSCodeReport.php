@@ -18,10 +18,11 @@ use App\Models\STXI\LOG\INSWDataRegDet;
 class ExportHSCodeReport implements FromCollection, WithHeadings, WithEvents
 {
     use RegistersEventListeners, Exportable;
-    public $data;
-    function __construct($data = [])
+    public $data, $withHist;
+    function __construct($data = [], $withHist = false)
     {
         $this->data = $data;
+        $this->withHist = $withHist;
         $this->headerDet = [];
     }
     public function startRow(): int
@@ -43,6 +44,7 @@ class ExportHSCodeReport implements FromCollection, WithHeadings, WithEvents
             'Maker Recomendation',
             'QC Doc',
             'Approval Date',
+            'Approved By',
             'HS Code',
             'Section',
             'Tarif (%)',
@@ -56,7 +58,7 @@ class ExportHSCodeReport implements FromCollection, WithHeadings, WithEvents
         $cekDataOsOnly = array_values(array_filter($this->data, fn($f) => $f['cols'] == 'HSCD_APRVSTAT' && $f['param'] == '<>' && $f['value'] == '1'));
 
         if (count($cekDataOsOnly) > 0) {
-            return $firstPart;
+            // return $firstPart;
         }
 
         $getBCData = INSWDataDocBeaMaster::whereNotIn('ZIDBD_DOCCD', [611, 632])->get();
@@ -94,7 +96,7 @@ class ExportHSCodeReport implements FromCollection, WithHeadings, WithEvents
                 'DG Class',
                 'DG File Number',
                 'DG Regulation',
-                'Remark-1'
+                'Remark-1',
             ]
         );
 
@@ -148,6 +150,7 @@ class ExportHSCodeReport implements FromCollection, WithHeadings, WithEvents
     {
         $cekDataOsOnly = array_values(array_filter($this->data, fn($f) => $f['cols'] == 'HSCD_APRVSTAT' && $f['param'] == '<>' && $f['value'] == '1'));
         $data = DB::connection('sqlsrv_log')->table(count($cekDataOsOnly) > 0 ? 'V_HSCODE_SYS' : 'V_HSCODE_SYS_DONE');
+        // $data = DB::connection('sqlsrv_log')->table('V_HSCODE_SYS_DONE');
 
         if (
             count($this->data) > 0 && count(array_filter($this->data, function ($f) {
@@ -161,11 +164,16 @@ class ExportHSCodeReport implements FromCollection, WithHeadings, WithEvents
             }
         }
 
+        if (!$this->withHist) {
+            $data->where('IS_DELETED', 0);
+        }
+
         // return $data->get();
 
         // $hasil = json_decode(json_encode($data->get()), true);
+        $datanya = json_decode(json_encode($data->get()), true);
         $hasil = [];
-        foreach (json_decode(json_encode($data->get()), true) as $key => $value) {
+        foreach ($datanya as $key => $value) {
             $checkReg = INSWDataRegDet::select(
                 'ZID_HSCODE',
                 'ZIRD_TYPE',
@@ -187,11 +195,14 @@ class ExportHSCodeReport implements FromCollection, WithHeadings, WithEvents
             $listReg = [];
             if ((clone $checkReg)->count() > 0) {
                 foreach ($checkReg->get() as $key => $valueReg) {
-                    $getParseJsonBeaList = json_decode($valueReg->ZIRD_BEALIST);
+                    $getParseJsonBeaList = [];
+                    if (!empty($valueReg->ZIRD_BEALIST)) {
+                        $getParseJsonBeaList = json_decode($valueReg->ZIRD_BEALIST);
+                    }
 
                     // Tataniaga Border
                     foreach ($this->headerDet as $keyHeader => $valueHeader) {
-                        if (in_array($valueHeader, $getParseJsonBeaList) && ($valueReg->ZIRD_TYPE === 'import_regulation' || $valueReg->ZIRD_TYPE === 'import_regulation_border')) {
+                        if (count($getParseJsonBeaList) > 0 && in_array($valueHeader, $getParseJsonBeaList) && ($valueReg->ZIRD_TYPE === 'import_regulation' || $valueReg->ZIRD_TYPE === 'import_regulation_border')) {
                             $listReg['TB-' . $valueHeader] = $valueReg->ZIRD_NMIJIN;
                         } else {
                             if (empty($valueReg->ZIRD_NMIJIN) || !isset($listReg['TB-' . $valueHeader]) || empty($listReg['TB-' . $valueHeader]) || $listReg['TB-' . $valueHeader] === '-') {
@@ -249,7 +260,35 @@ class ExportHSCodeReport implements FromCollection, WithHeadings, WithEvents
                 $listReg['TES'] = '-';
             }
 
-            $hasil[] = array_merge($value, $listReg);
+            $itemnya = $value['HSCD_ITMCD'];
+            if ($key > 0) {
+                if ($value['HSCD_ITMCD'] === $datanya[$key - 1]['HSCD_ITMCD']) {
+                    $itemnya = '';
+                }
+            }
+
+            $hasil[] = array_merge([
+                'HSCD_ITMCD' => $itemnya,
+                'HSCD_BG' => $value['HSCD_BG'],
+                'HSCD_BIZ' => $value['HSCD_BIZ'],
+                'HSCD_ITMD' => $value['HSCD_ITMD'],
+                'HSCD_ITMQCD' => $value['HSCD_ITMQCD'],
+                'HSCD_MKCD' => $value['HSCD_MKCD'],
+                'HSCD_MKCDQC' => $value['HSCD_MKCDQC'],
+                'HSCD_SERIES' => $value['HSCD_SERIES'],
+                'HSCD_MKRECCD' => $value['HSCD_MKRECCD'],
+                'HSCD_QCDOC' => $value['HSCD_QCDOC'],
+                'HSCD_APPRVDT' => $value['HSCD_APPRVDT'],
+                'HSCD_LASTAPPRV' => $value['HSCD_LASTAPPRV'],
+                'HSCD_STXICD' => $value['HSCD_STXICD'],
+                'HSCD_SECT' => $value['HSCD_SECT'],
+                'HSCD_TARIF' => $value['HSCD_TARIF'],
+                'HSCD_PPN' => $value['HSCD_PPN'],
+                'HSCD_PPH' => $value['HSCD_PPH'],
+                'HSCD_PPNBM' => $value['HSCD_PPNBM'],
+                'HSCD_CUKAI' => $value['HSCD_CUKAI'],
+                'HSCD_UOM' => $value['HSCD_UOM'],
+            ], $listReg);
         }
 
         return collect($hasil);
@@ -305,33 +344,43 @@ class ExportHSCodeReport implements FromCollection, WithHeadings, WithEvents
 
                 $cekDataOsOnly = array_values(array_filter($this->data, fn($f) => $f['cols'] == 'HSCD_APRVSTAT' && $f['param'] == '<>' && $f['value'] == '1'));
 
-                if (count($cekDataOsOnly) === 0) {
-                    $event->sheet->getStyle("A1:{$highestColumn}3")->applyFromArray([
-                        'font' => [
-                            'size' => '11',
-                            'bold' => true
-                        ]
-                    ]);
-                    for ($i = 0; $i < 19; $i++) {
-                        $event->sheet->getDelegate()->mergeCells("{$this->toAlpha($i)}1:{$this->toAlpha($i)}3");
-                    }
+                // if (count($cekDataOsOnly) === 0) {
+                // }
 
-                    $event->sheet->getDelegate()->mergeCells("T1:Z1");
-                    $event->sheet->getDelegate()->mergeCells("T2:U2");
-                    $event->sheet->getDelegate()->mergeCells("W2:X2");
-                    $event->sheet->getDelegate()->mergeCells("Y2:Z2");
-                    $event->sheet->getDelegate()->mergeCells("AA2:AB2");
-                    $event->sheet->getDelegate()->mergeCells("AD2:AE2");
-                    $event->sheet->getDelegate()->mergeCells("AF2:AG2");
-                    $event->sheet->getDelegate()->mergeCells("AA1:AG1");
 
-                    for ($i = 33; $i < 45; $i++) {
-                        $event->sheet->getDelegate()->mergeCells("{$this->toAlpha($i)}1:{$this->toAlpha($i)}3");
-                    }
-
-                    $event->sheet->getStyle("A1:{$highestColumn}3")->getAlignment()->setHorizontal('center');
-                    $event->sheet->getStyle("A1:{$highestColumn}3")->getAlignment()->setVertical('center');
+                $event->sheet->getStyle("A1:{$highestColumn}3")->applyFromArray([
+                    'font' => [
+                        'size' => '11',
+                        'bold' => true
+                    ]
+                ]);
+                for ($i = 0; $i < 20; $i++) {
+                    $event->sheet->getDelegate()->mergeCells("{$this->toAlpha($i)}1:{$this->toAlpha($i)}3");
                 }
+
+                $event->sheet->getDelegate()->mergeCells("U1:AA1");
+                $event->sheet->getDelegate()->mergeCells("U2:V2");
+                $event->sheet->getDelegate()->mergeCells("X2:Y2");
+                $event->sheet->getDelegate()->mergeCells("Z2:AA2");
+                $event->sheet->getDelegate()->mergeCells("AB2:AC2");
+                $event->sheet->getDelegate()->mergeCells("AE2:AF2");
+                $event->sheet->getDelegate()->mergeCells("AG2:AH2");
+                $event->sheet->getDelegate()->mergeCells("AB1:AH1");
+
+                for ($i = 34; $i < 46; $i++) {
+                    $event->sheet->getDelegate()->mergeCells("{$this->toAlpha($i)}1:{$this->toAlpha($i)}3");
+                }
+
+                $event->sheet->getStyle("A1:{$highestColumn}3")->getAlignment()->setHorizontal('center');
+                $event->sheet->getStyle("A1:{$highestColumn}3")->getAlignment()->setVertical('center');
+
+                // Wrap text in column A
+                $event->sheet->getStyle("U4:AH{$highestRow}")->applyFromArray([
+                    'alignment' => [
+                        'wrapText' => true,
+                        'vertical' => \PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_TOP,
+                    ]
+                ]);
             }
         ];
     }
