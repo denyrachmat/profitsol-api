@@ -103,6 +103,14 @@ class AuthController extends BaseController
                 ]);
             }
 
+            if ($request->has('is_mobile') && $request->is_mobile === 1) {
+                if ($cekUser->is_mobileacc == 0) {
+                    return $this->handleError([
+                        'password' => ["User or Password not match !"]
+                    ]);
+                }
+            }
+
             return $this->handleResponse($success, 'User logged-in!');
         } else {
             return $this->handleError([
