@@ -16,5 +16,6 @@ class PartScanner extends Model
         'MBCSCNH_LOT',
         'MBCSCNH_VALID',
         'MBCSCNH_REMARKS',
+        'created_by'
     ];
 }
