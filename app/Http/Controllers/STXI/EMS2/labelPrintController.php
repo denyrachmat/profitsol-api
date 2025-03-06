@@ -37,7 +37,8 @@ class labelPrintController extends BaseController
                 'MITM_ITMCD',
                 DB::raw("CONCAT(RTRIM(MITM_ITMCD), '( ' , MITM_ITMD1, ' )') AS MITM_ITMD1"),
                 'MITM_STKUOM',
-                'MITM_SPTNO'
+                'MITM_SPTNO',
+                'MITM_SPQ'
             );
 
         if ($request->has('filter') && count($request->filter) > 0) {
@@ -180,7 +181,11 @@ class labelPrintController extends BaseController
             );
 
         if ($request->has('filter') && !empty($request->filter['val'])) {
-            $hist->where($request->filter['cols'], 'like', '%'.$request->filter['val'] . '%');
+            if ($request->filter['cols']['name'] === 'PGITSHP_SHPREFNO') {
+                $hist->where(DB::raw("(CASE WHEN PGITSHP_SHPREFNO IS NULL THEN RTRIM(PGRN_SUPNO) ELSE RTRIM(PGITSHP_SHPREFNO) end)"), 'like', "{$request->filter['val']}%");
+            } else {
+                $hist->where($request->filter['cols']['name'], 'like', "{$request->filter['val']}%");
+            }
         }
 
         if ($request->has('sortBy')) {
