@@ -156,7 +156,10 @@ class labelPrintController extends BaseController
             ->select(
                 DB::raw('RTRIM(PGRN_SUPNO) AS PGRN_SUPNO'),
                 DB::raw('RTRIM(PGRN_BSGRP) AS PGRN_BSGRP'),
-                DB::raw("CASE WHEN PGITSHP_SHPREFNO IS NULL THEN RTRIM(PGRN_SUPNO) ELSE RTRIM(PGITSHP_SHPREFNO) END AS PGITSHP_SHPREFNO"),
+                DB::raw("CASE WHEN PGITSHP_SHPREFNO IS NULL
+                    THEN RTRIM(PGRN_SUPNO)
+                    ELSE RTRIM(PGITSHP_SHPREFNO)
+                END AS PGITSHP_SHPREFNO"),
                 DB::raw('RTRIM(PGRN_ITMCD) AS PGRN_ITMCD'),
                 DB::raw("CONCAT(RTRIM(MITM_ITMCD), ' ( ' , RTRIM(MITM_ITMD1), ' )') AS MITM_ITMD1"),
                 DB::raw('RTRIM(MITM_STKUOM) AS MITM_STKUOM'),
@@ -167,7 +170,7 @@ class labelPrintController extends BaseController
             )
             ->join('MITM_TBL', 'MITM_ITMCD', 'PGRN_ITMCD')
             ->leftjoin('PGITSHP_TBL', 'PGITSHP_DOCNO', 'PGRN_SUPNO')
-            ->where('PGRN_BSGRP', ['SME3IIZMRI', 'SME3XIZSVN', 'SME3XIZYBR', 'SME3XIZYIN'])
+            ->whereIn('PGRN_BSGRP', ['SME3IIZMRI', 'SME3XIZSVN', 'SME3XIZYBR', 'SME3XIZYIN'])
             ->groupBy(
                 'PGRN_SUPNO',
                 'PGRN_BSGRP',
@@ -182,7 +185,10 @@ class labelPrintController extends BaseController
 
         if ($request->has('filter') && !empty($request->filter['val'])) {
             if ($request->filter['cols']['name'] === 'PGITSHP_SHPREFNO') {
-                $hist->where(DB::raw("(CASE WHEN PGITSHP_SHPREFNO IS NULL THEN RTRIM(PGRN_SUPNO) ELSE RTRIM(PGITSHP_SHPREFNO) end)"), 'like', "{$request->filter['val']}%");
+                $hist->where(DB::raw("(CASE WHEN PGITSHP_SHPREFNO IS NULL
+                    THEN RTRIM(PGRN_SUPNO)
+                    ELSE RTRIM(PGITSHP_SHPREFNO)
+                end)"), 'like', "{$request->filter['val']}%");
             } else {
                 $hist->where($request->filter['cols']['name'], 'like', "{$request->filter['val']}%");
             }
