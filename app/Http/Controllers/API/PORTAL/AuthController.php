@@ -106,7 +106,7 @@ class AuthController extends BaseController
             if ($request->has('is_mobile') && $request->is_mobile === 1) {
                 if ($cekUser->is_mobileacc == 0) {
                     return $this->handleError([
-                        'password' => ["User or Password not match !"]
+                        'password' => ["User not set up as mobile users, please add it on STX-I Portal !"]
                     ]);
                 }
             }
