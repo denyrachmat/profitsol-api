@@ -1,12 +1,12 @@
 <?php
 
-namespace App\Http\Controllers\STXI\IT;
+namespace App\Http\Controllers\API\PORTAL;
 
-use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
-use App\Models\STXI\IT\PartScanner;
+use App\Models\PORTAL\PortalMobileGencode;
+use App\Http\Controllers\API\PORTAL\BaseController;
 
-class PartScannerController extends Controller
+class MobileGencodeController extends BaseController
 {
     /**
      * Display a listing of the resource.
@@ -29,20 +29,17 @@ class PartScannerController extends Controller
      */
     public function store(Request $request)
     {
-        foreach ($request->data as $key => $value) {
-            PartScanner::updateOrCreate([
-                'MBCSCNH_ITMCD' => $value['MBCSCNH_ITMCD'],
-                'MBCSCNH_QTY' => $value['MBCSCNH_QTY'],
-                'MBCSCNH_LOT' => $value['MBCSCNH_LOT'],
-            ],[
-                'MBCSCNH_ITMCD' => $value['MBCSCNH_ITMCD'],
-                'MBCSCNH_QTY' => $value['MBCSCNH_QTY'],
-                'MBCSCNH_LOT' => $value['MBCSCNH_LOT'],
-                'MBCSCNH_VALID' => $value['MBCSCNH_VALID'],
-                'MBCSCNH_REMARKS' => $value['MBCSCNH_REMARKS'],
-                'created_by' => $value['created_by']
-            ]);
-        }
+        $store = PortalMobileGencode::updateOrCreate([
+            'MBLG_SETTYPE' => $request->MBLG_SETTYPE,
+            'MBLG_SETVALUE' => $request->MBLG_SETVALUE,
+        ],[
+            'MBLG_SETTYPE' => $request->MBLG_SETTYPE,
+            'MBLG_SETVALUE' => $request->MBLG_SETVALUE,
+            'MBLG_SETDESC' => $request->MBLG_SETDESC,
+            'created_by' => $request->created_by,
+        ]);
+
+        return $this->handleResponse($store, 'Data has been updated !');
     }
 
     /**
