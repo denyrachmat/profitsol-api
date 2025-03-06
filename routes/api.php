@@ -4,9 +4,11 @@ use App\Http\Controllers\API\AMS\ApprovalRunningController;
 use App\Http\Controllers\API\AMS\ApprovalSettingsController;
 use App\Http\Controllers\API\DMS\DocumenRootController;
 use App\Http\Controllers\API\PORTAL\DomainController;
+use App\Http\Controllers\API\PORTAL\MobileGencodeController;
 use App\Http\Controllers\STXI\EMS2\labelPrintController;
 use App\Http\Controllers\STXI\EMS2\TYOAutoBarcodeController;
 use App\Http\Controllers\STXI\EMS2\YPODailyConfController;
+use App\Http\Controllers\STXI\IT\PartScannerController;
 use App\Http\Controllers\STXI\LOG\CeisaMonitoringController;
 use App\Http\Controllers\STXI\LOG\HSCodeReportController;
 use App\Http\Controllers\STXI\LOG\HSCodeUploadController;
@@ -122,7 +124,7 @@ Route::group(['prefix' => 'dms'], function () {
     });
 
     Route::resource('folders', FolderController::class);
-    Route::group(['prefix' => 'folderList'], function() {
+    Route::group(['prefix' => 'folderList'], function () {
         Route::get('list/{username}/{root}/{id?}', [FolderController::class, 'showList']);
     });
     Route::get('migrateToDB/{users}/{path?}/{isCheck?}', [FolderController::class, 'migrateRealFileToDB']);
@@ -363,7 +365,9 @@ Route::group(['prefix' => 'div'], function () {
         Route::get('autoMailOSDOList', [autoEmailWMSConfirmation::class, 'sendEmailFun']);
     });
 
-    Route::group(['prefix' => 'it'], function () {});
+    Route::group(['prefix' => 'it'], function () {
+        Route::resource('scan', PartScannerController::class);
+    });
 });
 
 Route::group((['prefix' => 'scheduller']), function () {
@@ -380,6 +384,7 @@ Route::group(['prefix' => 'macro'], function () {
 Route::post('login', [AuthController::class, 'login']);
 Route::post('register', [AuthController::class, 'register']);
 Route::get('countryList', [ProfileController::class, 'getCountryList']);
+Route::resource('mobileGencode', MobileGencodeController::class);
 
 Route::post('forgot-password', [AuthController::class, 'forgot_password']);
 Route::post('reset-password/{token}', [AuthController::class, 'submitResetPasswordForm']);
