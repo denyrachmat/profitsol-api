@@ -184,13 +184,17 @@ class labelPrintController extends BaseController
             );
 
         if ($request->has('filter') && !empty($request->filter['val'])) {
-            if ($request->filter['cols']['name'] === 'PGITSHP_SHPREFNO') {
-                $hist->where(DB::raw("(CASE WHEN PGITSHP_SHPREFNO IS NULL
-                    THEN RTRIM(PGRN_SUPNO)
-                    ELSE RTRIM(PGITSHP_SHPREFNO)
-                end)"), 'like', "{$request->filter['val']}%");
+            if (isset($request->filter['cols']['name'])) {
+                if ($request->filter['cols']['name'] === 'PGITSHP_SHPREFNO') {
+                    $hist->where(DB::raw("(CASE WHEN PGITSHP_SHPREFNO IS NULL
+                        THEN RTRIM(PGRN_SUPNO)
+                        ELSE RTRIM(PGITSHP_SHPREFNO)
+                    end)"), 'like', "{$request->filter['val']}%");
+                } else {
+                    $hist->where($request->filter['cols']['name'], 'like', "{$request->filter['val']}%");
+                }
             } else {
-                $hist->where($request->filter['cols']['name'], 'like', "{$request->filter['val']}%");
+                $hist->where($request->filter['cols'], 'like', "{$request->filter['val']}%");
             }
         }
 
