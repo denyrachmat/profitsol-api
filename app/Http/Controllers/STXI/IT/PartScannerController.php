@@ -50,7 +50,10 @@ class PartScannerController extends Controller
      */
     public function show(string $id)
     {
-        //
+       
+        $store = PartScanner::where('created_by', $id)->get();
+
+        return $this->handleResponse($store, 'Data found !');
     }
 
     /**
