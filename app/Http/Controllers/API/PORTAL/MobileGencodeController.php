@@ -47,7 +47,9 @@ class MobileGencodeController extends BaseController
      */
     public function show(string $id)
     {
-        //
+        $store = PortalMobileGencode::where('created_by', $id)->get();
+
+        return $this->handleResponse($store, 'Data found !');
     }
 
     /**
