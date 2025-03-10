@@ -2,11 +2,11 @@
 
 namespace App\Http\Controllers\STXI\IT;
 
-use App\Http\Controllers\Controller;
+use App\Http\Controllers\API\PORTAL\BaseController;
 use Illuminate\Http\Request;
 use App\Models\STXI\IT\PartScanner;
 
-class PartScannerController extends Controller
+class PartScannerController extends BaseController
 {
     /**
      * Display a listing of the resource.
@@ -50,8 +50,10 @@ class PartScannerController extends Controller
      */
     public function show(string $id)
     {
-       
-        $store = PartScanner::where('created_by', $id)->get();
+
+        $store = PartScanner::where('created_by', $id)
+            ->join('CRPTWEB.dbo.VIEW_MITM_TBL', 'MITM_ITMCD', 'MBCSCNH_ITMCD')
+            ->get();
 
         return $this->handleResponse($store, 'Data found !');
     }
