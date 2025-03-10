@@ -32,6 +32,7 @@ class MobileGencodeController extends BaseController
         $store = PortalMobileGencode::updateOrCreate([
             'MBLG_SETTYPE' => $request->MBLG_SETTYPE,
             'MBLG_SETVALUE' => $request->MBLG_SETVALUE,
+            'created_by' => $request->created_by,
         ],[
             'MBLG_SETTYPE' => $request->MBLG_SETTYPE,
             'MBLG_SETVALUE' => $request->MBLG_SETVALUE,
