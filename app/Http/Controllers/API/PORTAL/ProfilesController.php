@@ -104,11 +104,17 @@ class ProfilesController extends BaseController
         // ];
 
         $id = base64_decode($idDet);
-        
+
         if (isset($request->form['email'])) {
             $users = User::updateOrCreate(['username' => $id], [
                 'email' => $request->form['email'],
-                'email_verified_at' => $request->form['email_verified_at']
+                'email_verified_at' => $request->form['email_verified_at'],
+            ]);
+        }
+
+        if (isset($request->form['is_mobileacc'])) {
+            $users = User::updateOrCreate(['username' => $id], [
+                'is_mobileacc' => $request->form['is_mobileacc'],
             ]);
         }
 
