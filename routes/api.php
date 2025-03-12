@@ -120,7 +120,7 @@ Route::group(['prefix' => 'dms'], function () {
         Route::post('shareFileFolder', [DocumenRootController::class, 'shareFileFolder']);
         Route::get('getSharedToken/{token}/{sharedId?}/{users?}', [DocumenRootController::class, 'getSharedToken']);
         Route::get('getSharedFilesFolder/{token}/{sharedId?}/{users?}/{idFiles?}', [DocumenRootController::class, 'getSharedFilesFolder']);
-
+        Route::get('getfiles/{root}/{path?}', [DocumenRootController::class, 'getfiles']);
     });
 
     Route::resource('folders', FolderController::class);

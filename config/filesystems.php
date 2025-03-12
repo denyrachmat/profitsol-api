@@ -80,6 +80,11 @@ return [
             'root'   => 'X:/',
         ],
 
+        'la_public' => [
+            'driver' => 'local',
+            'root'   => 'V:/',
+        ],
+
         'public' => [
             'driver' => 'local',
             'root' => storage_path('app/public'),
