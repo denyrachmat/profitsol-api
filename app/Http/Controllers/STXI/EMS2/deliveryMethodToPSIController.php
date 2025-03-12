@@ -560,7 +560,7 @@ class deliveryMethodToPSIController extends BaseController
         // return $data;
         Excel::store(new exportDeliveryHist($data), 'export_delivery.xlsx', 'public');
 
-        return 'storage/app/public/export_delivery.xlsx';
+        return 'storage/export_delivery.xlsx';
     }
 
     public function DLVStockDelivery($date, $item = '')
@@ -825,7 +825,7 @@ class deliveryMethodToPSIController extends BaseController
 
         Excel::store(new ExportDODelivery($hasilData, $date), 'export_fifo_delivery_' . $date . '.xlsx', 'public');
 
-        return 'storage/app/public/export_fifo_delivery_' . $date . '.xlsx';
+        return 'storage/export_fifo_delivery_' . $date . '.xlsx';
     }
 
     public function newFIFOSPQ3($data, $spq, $qtyDlv, $barcodeInt = 0, $hasil = [], $dataBefore = null)
@@ -1049,7 +1049,7 @@ class deliveryMethodToPSIController extends BaseController
 
         Excel::store(new ExportDOWeeklyReport($data), 'export_weekly_PO_delivery_' . $date . '.xlsx', 'public');
 
-        return 'storage/app/public/export_weekly_PO_delivery_' . $date . '.xlsx';
+        return 'storage/export_weekly_PO_delivery_' . $date . '.xlsx';
     }
 
     public function replaceFIFODO(Request $request)
@@ -1325,7 +1325,7 @@ class deliveryMethodToPSIController extends BaseController
         // return $data;
         Excel::store(new ExportDOMegaUpload($data, $date), 'export_do_tyo_upload_mega.xlsx', 'public');
 
-        return 'storage/app/public/export_do_tyo_upload_mega.xlsx';
+        return 'storage/export_do_tyo_upload_mega.xlsx';
     }
 
     public function ExportDOChecker($date)
@@ -1336,6 +1336,6 @@ class deliveryMethodToPSIController extends BaseController
 
         Excel::store(new ExportDOChecker($data), 'export_do_tyo_checker.xlsx', 'public');
 
-        return 'storage/app/public/export_do_tyo_checker.xlsx';
+        return 'storage/export_do_tyo_checker.xlsx';
     }
 }
