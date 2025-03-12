@@ -123,4 +123,10 @@ class DocumenRootController extends BaseController
 
         return $this->migrateFolderToDB($users, '', [], $root);
     }
+
+    public function getfiles($root, $path) {
+        $files = Storage::disk($root)->get(base64_decode($path));
+
+        return $files;
+    }
 }
