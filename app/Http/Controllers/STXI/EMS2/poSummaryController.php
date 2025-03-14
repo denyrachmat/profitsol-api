@@ -168,7 +168,7 @@ class poSummaryController extends BaseController
 
         Excel::store(new ExportPOSummary($data, $date), 'export_po_summary.xlsx', 'public');
 
-        return 'storage/app/public/export_po_summary.xlsx';
+        return 'storage/export_po_summary.xlsx';
     }
 
     public function exportPODet($date)
@@ -179,6 +179,6 @@ class poSummaryController extends BaseController
 
         Excel::store(new ExportPODetSummary($data, $date), 'export_po_summary_det.xlsx', 'public');
 
-        return 'storage/app/public/export_po_summary_det.xlsx';
+        return 'storage/export_po_summary_det.xlsx';
     }
 }
