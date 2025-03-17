@@ -88,6 +88,8 @@ class FormController extends BaseController
                 'cfsd_end_quiz' => $request->setupTraining['endQuiz'],
                 'cfsd_real_start_quiz' => empty($cekSetup) ? $request->setupTraining['startQuiz']: $cekSetup->cfsd_real_start_quiz,
                 'cfsd_real_end_quiz' => empty($cekSetup) ? $request->setupTraining['endQuiz']: $cekSetup->cfsd_real_end_quiz,
+                'cfsd_quest_limit' => $request->setupTraining['maxQuestionCount'],
+                'cfsd_skip_next_btn_media_done' => $request->setupTraining['maxQuestionCount']
             ]);
         }
 
@@ -163,9 +165,9 @@ class FormController extends BaseController
             }
         }
 
-        FormAnswerDet::where('cfm_id', $insertMaster->id)->delete();
-        FormAnswerUserDet::where('cfm_id', $insertMaster->id)->delete();
-        FormMaster::where('cfmt_id', $insertMaster->id)->delete();
+        // FormAnswerDet::where('cfm_id', $insertMaster->id)->delete();
+        // FormAnswerUserDet::where('cfm_id', $insertMaster->id)->delete();
+        // FormMaster::where('cfmt_id', $insertMaster->id)->delete();
 
         $hasil = [];
         $listPage = [];
@@ -178,7 +180,7 @@ class FormController extends BaseController
                 isset($request->exp) ? $request->exp : [],
                 $insertMaster->id,
                 0,
-                $key
+                $key,
             );
         }
 

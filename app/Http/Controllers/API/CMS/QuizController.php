@@ -97,7 +97,8 @@ class QuizController extends Controller
      */
     public function show(Request $request, $id, $idDet = '')
     {
-        $dataAnswers = FormAnswerDet::where('cfm_id', $id)->get();
+        $dataAnswersHead = FormAnswerDet::select('cms_form_ans_det.*')
+            ->where('cms_form_ans_det.cfm_id', $id);
         $dataHeader = FormMasterTitle::where('id', $id)->with([
             'formMaster' => function ($f2) {
                 $f2->where('cfm_parent_id', 0);
@@ -107,8 +108,26 @@ class QuizController extends Controller
             }
         ])->first();
 
+        $cekSetup = FormSetupDet::where('cfmt_id', $id)->first();
+        if ($cekSetup->cfsd_quest_limit > 0) {
+            $dataAnswers = (clone $dataAnswersHead)->leftjoin('cms_form_ans_user_det', function ($f) {
+                $f->on('cms_form_ans_det.cfm_id', 'cms_form_ans_user_det.cfm_id');
+                $f->on('cms_form_ans_det.cfmd_id', 'cms_form_ans_user_det.cfmd_id');
+            })
+                ->where('cms_form_ans_user_det.deleted_at', null)
+                ->get();
+        } else {
+            (clone $dataAnswersHead)->get();
+        }
+
+        $dataOri = $this->getHeaderAllForms([$dataHeader->toArray()])[0]['forms'];
+
+        // return $dataAnswers;
+
         // return $dataAnswers;
         $hasil = [];
+        $hasilOri = [];
+        $startKey = 0;
         foreach ($dataAnswers as $key => $value) {
             $answers = is_array(json_decode($value['cfm_val'])) ? json_decode($value['cfm_val']) : $value['cfm_val'];
             if (is_array($answers)) {
@@ -116,38 +135,55 @@ class QuizController extends Controller
             }
 
             $data = FormAnswerUserDet::where('p_u_username', $request->header('username'))
-                ->where('cfm_id', (int)$id)
+                ->where('cfm_id', (int) $id)
                 ->where('cfmd_id', $value['cfmd_id'])
                 ->first();
 
-            $answersUser = !empty($data)
-                ? (is_array(json_decode($data->cfm_val)) ? json_decode($data->cfm_val) : $data->cfm_val)
-                : (is_array(json_decode($value['cfm_val'])) ? [] : "");
+            if (!empty($data)) {
+                $cekOri = array_values(array_filter($dataOri, function ($f) use ($value) {
+                    return $f['id'] == $value['cfmd_id'];
+                }));
 
-            $getLabelCek = FormMultiDet::select('cfmd_label')
-                ->where('cfm_id', $data->cfmd_id)
-                ->whereIn('cfmd_value', is_array(json_decode($value['cfm_val'])) ? json_decode($value['cfm_val']) : [$value['cfm_val']]);
+                if (count($cekOri) > 0) {
+                    $hasilOri[] = $cekOri[0];
+                }
 
-            if (!empty($idDet)) {
-                $getLabelCek->where('cfmd_id', $idDet);
+                $answersUser = !empty($data)
+                    ? (is_array(json_decode($data->cfm_val)) ? json_decode($data->cfm_val) : $data->cfm_val)
+                    : (is_array(json_decode($value['cfm_val'])) ? [] : "");
+
+                $getLabelCek = FormMultiDet::select('cfmd_label')
+                    ->where('cfm_id', $data->cfmd_id)
+                    ->whereIn('cfmd_value', is_array(json_decode($value['cfm_val'])) ? json_decode($value['cfm_val']) : [$value['cfm_val']]);
+
+                if (!empty($idDet)) {
+                    $getLabelCek->where('cfmd_id', $idDet);
+                }
+
+                $getLabel = $getLabelCek->pluck('cfmd_label');
+
+                $hasil[$startKey] = [
+                    'status' => $answers === $answersUser,
+                    'users' => $answersUser,
+                    'ans' => $answers,
+                    'ans_value' => $getLabel,
+                    'exp' => $value['cfm_exp']
+                ];
+
+                $startKey++;
             }
-
-            $getLabel = $getLabelCek->pluck('cfmd_label');
-
-            $hasil[$key] = [
-                'status' => $answers === $answersUser,
-                'users' => $answersUser,
-                'ans' => $answers,
-                'ans_value' => $getLabel,
-                'exp' => $value['cfm_exp']
-            ];
         }
 
         $getGrade = array_filter($hasil, function ($f) {
             return $f['status'];
         });
 
-        $totalGrade = round((count($getGrade) / count($dataAnswers)) * 100, 2);
+        if ($cekSetup->cfsd_quest_limit > 0) {
+            $totalGrade = round((count($getGrade) / $cekSetup->cfsd_quest_limit) * 100, 2);
+        } else {
+            $totalGrade = round((count($getGrade) / count($dataAnswers)) * 100, 2);
+        }
+
         $cekStatGrade = FormSetupDet::where('cfmt_id', $id)->first();
 
         return response([
@@ -155,7 +191,8 @@ class QuizController extends Controller
             'data' => $hasil,
             'grade' => $totalGrade,
             'is_pass' => $totalGrade >= $cekStatGrade['cfsd_min_pass'],
-            'data_ori' => $this->getHeaderAllForms([$dataHeader->toArray()])[0]['forms']
+            'data_ori' => $hasilOri,
+            'data_ans' => $dataAnswers
         ]);
     }
 
@@ -216,8 +253,8 @@ class QuizController extends Controller
         $hasil = [];
         foreach ($data as $key => $value) {
             $getAnswersTest = DB::table('HRMS.dbo.hrms_form_key_answers as hfka')
-            ->where('hfka.form_id', $value->div_content)
-            ->get();
+                ->where('hfka.form_id', $value->div_content)
+                ->get();
 
             $hasilConvert = [
                 'component' => [
@@ -290,7 +327,7 @@ class QuizController extends Controller
 
                 if (count($getAnswers) > 0) {
                     $getAnswersFilter = array_values(array_filter($getAnswers->toArray(), function ($f) use ($valueHasil) {
-                        $listLabel=[];
+                        $listLabel = [];
                         foreach ($valueHasil['cfm_content']['detail_data'] as $key => $valueLabelDet) {
                             $listLabel[] = $valueLabelDet['label'];
                         }
@@ -328,7 +365,8 @@ class QuizController extends Controller
         return $hasil;
     }
 
-    public function migrateUsersAnswers() {
+    public function migrateUsersAnswers()
+    {
         ini_set('memory_limit', '2G');
         $getUsers = DB::table('HRMS.dbo.hrms_user_mstr as hum')
             ->select('hum.email', 'hum.first_name', 'hum.last_name', 'hum.username')
@@ -384,7 +422,7 @@ class QuizController extends Controller
             $userAns = [];
             foreach ($dataJawaban as $key => $valueJawaban) {
                 $cekIDJawaban = FormMultiDet::whereIn(DB::raw('CAST(cfmd_label AS VARCHAR(MAX))'), json_decode($valueJawaban->form_hist_value))
-                ->orderBy('cfm_id', 'asc');
+                    ->orderBy('cfm_id', 'asc');
 
                 $getIDJawaban = (clone $cekIDJawaban)->get()->pluck('cfmd_value');
                 $getIDJawabanAll = (clone $cekIDJawaban)->get();
@@ -400,7 +438,7 @@ class QuizController extends Controller
                 }
 
                 if (count($getIDJawabanAll) > 0) {
-                    $cekJawabanExists = FormAnswerUserDet::where('cfm_id',$valueJawaban->cfmt_id)
+                    $cekJawabanExists = FormAnswerUserDet::where('cfm_id', $valueJawaban->cfmt_id)
                         // ->whereIn('cfmd_id', (clone $getIDJawabanAll)->pluck('cfm_id'))
                         ->where('p_u_username', $valueJawaban->email)
                         // ->where('cfm_val', count(array_values($groupJawaban)) > 1 ? json_encode(array_values($groupJawaban)) : array_values($groupJawaban)[0])
@@ -409,7 +447,7 @@ class QuizController extends Controller
                         ->toArray();
 
                     $viewDataJawaban = (clone $getIDJawabanAll)->pluck('cfm_id')->toArray();
-                    $filterDataAnsExists = array_values(array_filter($viewDataJawaban, function($f) use ($cekJawabanExists) {
+                    $filterDataAnsExists = array_values(array_filter($viewDataJawaban, function ($f) use ($cekJawabanExists) {
                         return !in_array($f, $cekJawabanExists);
                     }));
 
@@ -418,15 +456,15 @@ class QuizController extends Controller
                             // logger([$valueJawaban->cfmt_id, $viewDataJawaban, $cekJawabanExists, $filterDataAnsExists]);
                         }
 
-                        $cekBatch = FormAnswerUserDet::select('cfaud_batch')->where('p_u_username',$valueJawaban->email)
+                        $cekBatch = FormAnswerUserDet::select('cfaud_batch')->where('p_u_username', $valueJawaban->email)
                             ->where('cfm_id', $valueJawaban->cfmt_id)
                             ->where('cfmd_id', $filterDataAnsExists[0])
                             ->withTrashed()
                             ->first();
 
-                        $cekLatestBatch = FormAnswerUserDet::select('cfaud_batch')->where('p_u_username',$valueJawaban->email)
-                        ->where('cfm_id', $valueJawaban->cfmt_id)
-                        ->first();
+                        $cekLatestBatch = FormAnswerUserDet::select('cfaud_batch')->where('p_u_username', $valueJawaban->email)
+                            ->where('cfm_id', $valueJawaban->cfmt_id)
+                            ->first();
 
                         $userAja = FormAnswerUserDet::create([
                             'p_u_username' => $valueJawaban->email,
@@ -440,7 +478,7 @@ class QuizController extends Controller
                             FormAnswerUserDet::where('p_u_username', $valueJawaban->email)
                                 ->where('cfm_id', $valueJawaban->cfmt_id)
                                 ->where('cfmd_id', $filterDataAnsExists[0])
-                                ->where('cfm_val',count(array_values($groupJawaban)) > 1 ? json_encode(array_values($groupJawaban)) : array_values($groupJawaban)[0])
+                                ->where('cfm_val', count(array_values($groupJawaban)) > 1 ? json_encode(array_values($groupJawaban)) : array_values($groupJawaban)[0])
                                 ->delete();
                         } else {
                             $userAns[] = $userAja;
@@ -498,11 +536,13 @@ class QuizController extends Controller
         return $hasil;
     }
 
-    public function getHTMLList($id) {
+    public function getHTMLList($id)
+    {
         return FormMaster::where('cfmt_id', $id)->where('cfm_type', 'html')->get()->toArray();
     }
 
-    public function downloadHTMLMaterial($id) {
+    public function downloadHTMLMaterial($id)
+    {
         // $pdf = PDF::loadFile("http://192.168.100.32:8081/portal_v2/#/showHTMLTraining?data={$id}");
         // $pdf = PDF::loadFile("http://localhost:8080/#/showHTMLTraining?data={$id}");
         $pdf = PDF::loadView("CMS.HTMLMaterial", ['data' => $this->getHTMLList($id)]);
