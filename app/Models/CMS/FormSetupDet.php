@@ -27,5 +27,7 @@ class FormSetupDet extends Model
         'cfsd_end_quiz',
         'cfsd_real_start_quiz',
         'cfsd_real_end_quiz',
+        'cfsd_quest_limit',
+        'cfsd_skip_next_btn_media_done',
     ];
 }

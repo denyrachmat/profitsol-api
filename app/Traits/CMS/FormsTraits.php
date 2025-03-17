@@ -68,6 +68,8 @@ trait FormsTraits
                         'minPass' => $value['quiz_setup']['cfsd_min_pass'],
                         'startQuiz' => $value['quiz_setup']['cfsd_start_quiz'],
                         'endQuiz' => $value['quiz_setup']['cfsd_end_quiz'],
+                        'skipNextButtonMedia' => (boolean)$value['quiz_setup']['cfsd_skip_next_btn_media_done'],
+                        'maxQuestionCount' => (int) $value['quiz_setup']['cfsd_quest_limit']
                     ]
                     : null,
                 'shareFormsIsMainMenu' => count((clone $shared)) > 0 && (clone $shared)[0]->cfsd_is_menu == 1 ? true : false,
@@ -121,8 +123,6 @@ trait FormsTraits
             $content = '';
 
             $insert = FormMaster::updateOrCreate([
-                // 'cfmt_id' => $idTitle,
-                // 'p_u_username' => $uname,
                 'id' => $data['id'],
             ],[
                 'p_u_username' => $uname,
@@ -157,7 +157,9 @@ trait FormsTraits
             }
 
             if(!empty($data['id'])) {
-                $insert = FormMaster::create([
+                $insert = FormMaster::updateOrCreate([
+                    'id' => $data['id'],
+                ],[
                     'p_u_username' => $uname,
                     'cfmt_id' => $idTitle,
                     'cfm_type' => $data['type'],
@@ -167,7 +169,9 @@ trait FormsTraits
                     'cfm_required' => $data['type'] === 'form' ? $data['required'] : 0,
                 ]);
             } else {
-                $insert = FormMaster::Create([
+                $insert = FormMaster::updateOrCreate([
+                    'id' => $data['id'],
+                ],[
                     'p_u_username' => $uname,
                     'cfmt_id' => $idTitle,
                     'cfm_type' => $data['type'],
@@ -224,14 +228,15 @@ trait FormsTraits
                                 $hasilValue = $valueAns;
                             }
                             $detail_data_key_ans[] = FormAnswerDet::updateOrCreate([
-                                'cfm_id' => $insert->id,
+                                'cfm_id' => $idTitle,
+                                'cfmd_id' => $insert->id,
                                 // 'cfm_val' => is_array($valueAns) ? (string) json_encode($valueAns) : (string) $valueAns,
                             ],[
                                 'p_u_username' => $uname,
                                 'cfm_id' => $idTitle,
                                 'cfmd_id' => $insert->id,
                                 'cfm_val' => (string)$hasilValue,
-                                'cfm_exp' => (string) $keyExp[$keyAns],
+                                'cfm_exp' => isset($keyExp[$keyAns]) ? (string) $keyExp[$keyAns] : null,
                             ]);
                         }
                     }
@@ -239,7 +244,9 @@ trait FormsTraits
 
                 if (isset($data['logics'])) {
                     foreach ($data['logics'] as $keyLogics => $valueLogics) {
-                        FormLogicsDet::create([
+                        FormLogicsDet::updateOrCreate([
+                            'id' => $data['id'],
+                        ],[
                             'cfm_id' => $insert->id,
                             'cfld_opr' => $valueLogics['opr'],
                             'cfld_val' => $valueLogics['modelValue'],
