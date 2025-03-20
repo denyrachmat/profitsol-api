@@ -174,6 +174,6 @@ class YMIQuotantionController extends BaseController
 
         Excel::store(new ExportPriceListYMICDCU($data), 'export_pricelist.xlsx', 'public');
 
-        return 'storage/app/public/export_pricelist.xlsx';
+        return 'storage/export_pricelist.xlsx';
     }
 }
