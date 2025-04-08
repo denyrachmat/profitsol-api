@@ -157,7 +157,7 @@ class ForcastDOTYOController extends BaseController
                     )
                 ));
             }
-                
+
             $data = $data->get();
             // if ($dt->format("Y-m-1") == '2022-02-1') {
             //     return $data;
@@ -225,7 +225,7 @@ class ForcastDOTYOController extends BaseController
         // return $dataSum;
         Excel::store(new ExportForcastDLVTYOCover($data, $dataSum), 'export_do_tyo_forcast.xlsx', 'public');
 
-        return 'storage/app/public/export_do_tyo_forcast.xlsx';
+        return 'storage/export_do_tyo_forcast.xlsx';
     }
 
     public function dataExport($data)
