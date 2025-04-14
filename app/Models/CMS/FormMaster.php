@@ -4,6 +4,7 @@ namespace App\Models\CMS;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\DB;
 
 class FormMaster extends Model
 {
@@ -34,17 +35,17 @@ class FormMaster extends Model
 
     public function formDetail()
     {
-        return $this->hasMany(FormMultiDet::class, 'cfm_id', 'id');
+        return $this->hasMany(FormMultiDet::class, 'cfm_id', 'id')->orderBy(DB::raw('CAST(cfmd_value AS INT)'), 'asc');
     }
 
     public function formAnswer()
     {
-        return $this->hasMany(FormAnswerDet::class, 'cfmd_id', 'id');
+        return $this->hasMany(FormAnswerDet::class, 'cfmd_id', 'id')->orderBy(DB::raw('CAST(cfmd_id AS INT)'), 'asc');
     }
 
     public function formUserAnswer()
     {
-        return $this->hasMany(FormAnswerUserDet::class, 'cfmd_id', 'id');
+        return $this->hasMany(FormAnswerUserDet::class, 'cfmd_id', 'id')->orderBy(DB::raw('CAST(cfmd_id AS INT)'), 'asc');
     }
 
     public function childrenContent()

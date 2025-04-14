@@ -4,6 +4,7 @@ namespace App\Models\CMS;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\DB;
 
 class FormMasterTitle extends Model
 {
@@ -26,7 +27,7 @@ class FormMasterTitle extends Model
     }
     public function formMaster()
     {
-        return $this->hasMany(FormMaster::class, 'cfmt_id', 'id');
+        return $this->hasMany(FormMaster::class, 'cfmt_id', 'id')->orderBy(DB::raw('CAST(cfm_seq_name AS INT)'), 'asc');
     }
 
     public function quizSetup()

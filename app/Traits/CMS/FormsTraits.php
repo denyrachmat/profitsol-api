@@ -169,9 +169,7 @@ trait FormsTraits
                     'cfm_required' => $data['type'] === 'form' ? $data['required'] : 0,
                 ]);
             } else {
-                $insert = FormMaster::updateOrCreate([
-                    'id' => $data['id'],
-                ],[
+                $insert = FormMaster::create([
                     'p_u_username' => $uname,
                     'cfmt_id' => $idTitle,
                     'cfm_type' => $data['type'],
