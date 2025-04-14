@@ -72,7 +72,7 @@ class FormController extends BaseController
 
             FormSetupDet::updateOrCreate([
                 'cfmt_id' => $request->idRef,
-            ],[
+            ], [
                 'cfmt_id' => $request->idRef,
                 'cfsd_res_show' => $request->setupTraining['showResult'],
                 'cfsd_ans_show' => $request->setupTraining['showRightKeysAnswer'],
@@ -86,8 +86,8 @@ class FormController extends BaseController
                 'cfsd_min_pass' => $request->setupTraining['minPass'],
                 'cfsd_start_quiz' => $request->setupTraining['startQuiz'],
                 'cfsd_end_quiz' => $request->setupTraining['endQuiz'],
-                'cfsd_real_start_quiz' => empty($cekSetup) ? $request->setupTraining['startQuiz']: $cekSetup->cfsd_real_start_quiz,
-                'cfsd_real_end_quiz' => empty($cekSetup) ? $request->setupTraining['endQuiz']: $cekSetup->cfsd_real_end_quiz,
+                'cfsd_real_start_quiz' => empty($cekSetup) ? $request->setupTraining['startQuiz'] : $cekSetup->cfsd_real_start_quiz,
+                'cfsd_real_end_quiz' => empty($cekSetup) ? $request->setupTraining['endQuiz'] : $cekSetup->cfsd_real_end_quiz,
                 'cfsd_quest_limit' => $request->setupTraining['maxQuestionCount'],
                 'cfsd_skip_next_btn_media_done' => $request->setupTraining['maxQuestionCount']
             ]);
@@ -163,11 +163,25 @@ class FormController extends BaseController
                     ]);
                 }
             }
-        }
 
-        // FormAnswerDet::where('cfm_id', $insertMaster->id)->delete();
-        // FormAnswerUserDet::where('cfm_id', $insertMaster->id)->delete();
-        // FormMaster::where('cfmt_id', $insertMaster->id)->delete();
+            $getListUpdatedID = array_map(function ($item) {
+                return $item['id'];
+            }, array_filter($data, function ($item) {
+                return isset($item['id']);
+            }));
+
+            if (count($getListUpdatedID) > 0) {
+                FormMaster::where('cfmt_id', $insertMaster->id)
+                    ->whereNotIn('id', $getListUpdatedID)
+                    ->delete();
+                FormAnswerDet::where('cfm_id', $insertMaster->id)
+                    ->whereNotIn('cfmd_id', $getListUpdatedID)
+                    ->delete();
+                // FormAnswerUserDet::where('cfm_id', $insertMaster->id)
+                //     ->whereNotIn('cfmd_id', $getListUpdatedID)
+                //     ->delete();
+            }
+        }
 
         $hasil = [];
         $listPage = [];

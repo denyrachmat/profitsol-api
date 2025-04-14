@@ -117,7 +117,7 @@ class QuizController extends Controller
                 ->where('cms_form_ans_user_det.deleted_at', null)
                 ->get();
         } else {
-            (clone $dataAnswersHead)->get();
+            $dataAnswers = (clone $dataAnswersHead)->get();
         }
 
         $dataOri = $this->getHeaderAllForms([$dataHeader->toArray()])[0]['forms'];
