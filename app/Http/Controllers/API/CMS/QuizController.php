@@ -110,11 +110,13 @@ class QuizController extends Controller
 
         $cekSetup = FormSetupDet::where('cfmt_id', $id)->first();
         if ($cekSetup->cfsd_quest_limit > 0) {
-            $dataAnswers = (clone $dataAnswersHead)->leftjoin('cms_form_ans_user_det', function ($f) {
+            $dataAnswers = (clone $dataAnswersHead)
+            ->join('cms_form_ans_user_det', function ($f) {
                 $f->on('cms_form_ans_det.cfm_id', 'cms_form_ans_user_det.cfm_id');
                 $f->on('cms_form_ans_det.cfmd_id', 'cms_form_ans_user_det.cfmd_id');
             })
                 ->where('cms_form_ans_user_det.deleted_at', null)
+                ->where('cms_form_ans_user_det.p_u_username', $request->header('username'))
                 ->get();
         } else {
             $dataAnswers = (clone $dataAnswersHead)->get();
