@@ -9,7 +9,7 @@ use App\Models\CMS\FormMasterTitle;
 use App\Models\CMS\FormMultiDet;
 use App\Models\CMS\FormSetupDet;
 use App\Models\PORTAL\PortalNotif;
-use Illuminate\Support\Facades\DB; 
+use Illuminate\Support\Facades\DB;
 
 trait TrainingTraits
 {
@@ -34,12 +34,14 @@ trait TrainingTraits
                 // DB::raw('CAST((CAST((COALESCE(SUM(cfaud.cfm_val), 0)) as decimal(12,2)) / MAX(cfaud.tot_question)) * 100 AS DECIMAL(12,2)) as cfm_val'),
                 DB::raw('MAX(cfaud.tot_question) as tot_question'),
                 DB::raw("
-                    CASE WHEN SUM(cfaud.cfm_val) > 0 AND ((SUM(cfaud.cfm_val) / MAX(cfaud.tot_question)) * 100) >= cfsd.cfsd_min_pass
+                    CASE WHEN SUM(cfaud.cfm_val) > 0 AND (SUM(CAST(cfaud.cfm_val as decimal(12,2))) / MAX(cfaud.tot_question) * 100) >= cfsd.cfsd_min_pass
                         THEN 'PASSED'
                         ELSE 'NOT PASSED'
                     END AS status
                 "),
-                DB::raw("SUM(cfaud.cfm_val) as total_answer")
+                DB::raw("SUM(cfaud.cfm_val) as total_answer"),
+                DB::raw('(SUM(CAST(cfaud.cfm_val as decimal(12,2))) / MAX(cfaud.tot_question)) AS grade_check'),
+                'cfsd.cfsd_min_pass'
             )
             ->join(DB::raw('cms_form_share_det cfsd2'), 'cfsd2.cfmt_id','cfmt.id')
             ->where('cfmt_quiz_flag', 1)
@@ -57,7 +59,7 @@ trait TrainingTraits
                 $f->with('allChildrenContent');
             }])
             ->leftjoin(DB::raw('(
-                SELECT 
+                SELECT
                     cfaud.cfm_id,
                     cfaud.cfaud_batch,
                     cfaud.p_u_username,
@@ -91,7 +93,7 @@ trait TrainingTraits
                 'cfsd.cfsd_min_pass',
                 'cfsd.cfsd_timer'
             );
-        
+
         // return $data->get()->toArray();
         $hasil = [];
         foreach ($data->get()->toArray() as $key => $value) {
@@ -121,7 +123,7 @@ trait TrainingTraits
         $hasil = [];
         foreach ($dataAnswers as $key => $value) {
             $answers = is_array(json_decode($value['cfm_val'])) ? json_decode($value['cfm_val']) : $value['cfm_val'];
-            
+
             if (is_array($answers)) {
                 sort($answers);
             }
@@ -178,7 +180,7 @@ trait TrainingTraits
                             $f2->with('formDetail.formAnswer');
                             $f2->with('allChildrenContent');
                         }]);
-    
+
                         $f->with('quizSetup');
                 }])
                 ->where('pnm_hash_id_location', $id)
@@ -193,10 +195,10 @@ trait TrainingTraits
                     $f2->with('allChildrenContent');
                 }])
                 ->first();
-            
+
             $hasilHeader = $this->getHeaderAllForms([$cekID->toArray()]);
         }
-        
+
         if(empty($cekID)) {
             return $this->handleError('Data Not Found !', $cekID);
         }
@@ -212,7 +214,7 @@ trait TrainingTraits
                 $f2->with('allChildrenContent');
             }
         ])->first();
-        
+
         $hasil = [];
         foreach ($dataAnswers as $key => $value) {
             $answers = is_array(json_decode($value['cfm_val'])) ? json_decode($value['cfm_val']) : $value['cfm_val'];
@@ -222,7 +224,7 @@ trait TrainingTraits
             }
 
             $dataCheck = FormAnswerUserDet::withTrashed()->where('p_u_username',$username)->where('cfm_id', (int)$id)->where('cfmd_id', (int)$value['cfmd_id']);
-            
+
             if (!empty($batch)) {
                 $dataCheck->where('cfaud_batch', $batch);
             }
