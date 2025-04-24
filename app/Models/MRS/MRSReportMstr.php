@@ -21,5 +21,6 @@ class MRSReportMstr extends Model
         'created_at',
         'updated_at',
         'mrm_url_gen',
+        'mrm_filter_flg'
     ];
 }
