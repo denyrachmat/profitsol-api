@@ -25,7 +25,8 @@ class NotifController extends BaseController
             ->where(DB::raw("(
                 CASE WHEN pnm_end_date IS NULL OR pnm_end_date = '1900-01-01 00:00:00'
                     THEN 1
-                    ELSE CASE WHEN GETDATE() <= pnm_end_date
+                    -- ELSE CASE WHEN GETDATE() <= pnm_end_date
+                    ELSE CASE WHEN pnm_start_date <= pnm_end_date
                         THEN 1
                         ELSE 0
                     END
@@ -43,7 +44,7 @@ class NotifController extends BaseController
                 if ($value['shared']['forms']['cfmt_quiz_flag'] == 1) {
                     $cekJawaban = FormAnswerUserDet::where('p_u_username', $request->header('username'))->where('cfm_id', $value['shared']['forms']['id'])->get()->toArray();
                     $cekListHasil = $this->getTrainingList($request->header('username'), $value['shared']['forms']['id'])[0];
-                    
+
                     $hasil[] = array_merge($value, ['answers' => $cekJawaban, 'listHasil' => $cekListHasil]);
                 } else {
                     $hasil[] = $value;
