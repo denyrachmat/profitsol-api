@@ -26,7 +26,7 @@ class NotifController extends BaseController
                 CASE WHEN pnm_end_date IS NULL OR pnm_end_date = '1900-01-01 00:00:00'
                     THEN 1
                     -- ELSE CASE WHEN GETDATE() <= pnm_end_date
-                    ELSE CASE WHEN pnm_start_date <= pnm_end_date
+                    ELSE CASE WHEN pnm_start_date >= GETDATE() AND GETDATE() <= pnm_end_date
                         THEN 1
                         ELSE 0
                     END
