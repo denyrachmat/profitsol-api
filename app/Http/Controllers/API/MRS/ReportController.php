@@ -372,7 +372,7 @@ class ReportController extends BaseController
                         }
                     }
                     $sm->andwhere('smb.RowNum >= ' . ($firstNum))
-                        ->andwhere('smb.RowNum <= ' . ($lastNum))
+                        ->andwhere('smb.RowNum <= ' . ($lastNum === 0 ? $smAllRecords[0]['total'] : $lastNum))
                         ->orderBy('smb.RowNum');
 
                     $hasil = [

@@ -20,6 +20,7 @@ class MRSReportColsDet extends Model
         'mrcd_isFiltered',
         'mrcd_isExported',
         'mrcd_fieldType',
-        'mrcd_col_prop'
+        'mrcd_col_prop',
+        'mrcd_sortable_def'
     ];
 }

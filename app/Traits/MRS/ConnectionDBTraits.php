@@ -46,7 +46,7 @@ trait ConnectionDBTraits
                 "username" => $getConnTable->mdm_username,
                 "password" => $getConnTable->mdm_password
             ]);
-    
+
             return true;
         } catch (\Throwable $th) {
             return $th;
@@ -73,7 +73,8 @@ trait ConnectionDBTraits
                 'filterable' => (bool)$value['mrcd_isFiltered'],
                 'exported' => (bool)$value['mrcd_isExported'],
                 'type' => $value['mrcd_fieldType'],
-                'value' => ['']
+                'value' => [''],
+                'sortable_def' => (bool)$value['mrcd_sortable_def'],
             ];
         }
 

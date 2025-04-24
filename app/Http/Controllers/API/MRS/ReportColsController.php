@@ -54,7 +54,7 @@ class ReportColsController extends BaseController
         $master = MRSReportMstr::where('id', $id)->first();
 
         $data = MRSReportColsDet::select(
-            'mrs_report_cols_det.*', 
+            'mrs_report_cols_det.*',
             DB::raw('mrs_report_mstr.mrm_name as tbl_nm')
         )->join('mrs_report_mstr', 'mrm_id', 'mrs_report_mstr.id')
         ->where('mrcd_col_prop', 'cols')
@@ -63,7 +63,7 @@ class ReportColsController extends BaseController
         ->get();
 
         $dataParam = MRSReportColsDet::select(
-            'mrs_report_cols_det.*', 
+            'mrs_report_cols_det.*',
             DB::raw('mrs_report_mstr.mrm_name as tbl_nm')
         )->join('mrs_report_mstr', 'mrm_id', 'mrs_report_mstr.id')
         ->where('mrcd_col_prop', 'params')
@@ -75,7 +75,8 @@ class ReportColsController extends BaseController
             'title' => $data[0]->tbl_nm,
             'cols' => $this->getCols($data),
             'colsParam' => $this->getCols($dataParam),
-            'props' => $master->mrm_url_gen
+            'props' => $master->mrm_url_gen,
+            'filterFirst' => $master->mrm_filter_flg,
         ], 'Data Found');
     }
 
