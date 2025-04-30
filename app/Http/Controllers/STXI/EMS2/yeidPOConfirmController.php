@@ -201,7 +201,7 @@ class yeidPOConfirmController extends BaseController
     public function getDataPagination(Request $req)
     {
         set_time_limit(3000);
-        
+
         $data = YPOMaster::select(
             'YPO_MSTR_TBL.*',
             DB::raw("COALESCE((
@@ -275,7 +275,7 @@ class yeidPOConfirmController extends BaseController
             'reg' => $dataReg
         ]), 'export_ypo_manual.xlsx', 'public');
 
-        return 'storage/app/public/export_ypo_manual.xlsx';
+        return 'storage/export_ypo_manual.xlsx';
     }
 
     public function getDataYpo($id = '', $idx = '')
@@ -325,14 +325,14 @@ class yeidPOConfirmController extends BaseController
         if (count($data) > 0) {
 
             $hasil = [];
-            foreach ($data as $key => $value) {    
+            foreach ($data as $key => $value) {
                 $dataView = DB::connection('sqlsrv_ems2')->table('V_YPO_OS_GIT')
                     ->where('PPO1_PONO', $value->YSPDT_PONO)
                     ->where('PPO2_ITMCD', $value->YPO_ITMCD)
                     ->where('PGIT_RCVQT', '>=', $value->YSPDT_POQTY)
                     ->orderBy('PPO1_ISUDT', 'asc')
                     ->first();
-                
+
                 if (!empty($dataView)) {
                     $hasil[] = YPOSTXIPODet::where('YMT_ID', $value->YMT_ID)
                         ->where('YSPDT_PONO', $value->YSPDT_PONO)
@@ -348,7 +348,7 @@ class yeidPOConfirmController extends BaseController
             }
 
             return 'tidak update';
-        }        
+        }
 
         return 'tidak update';
     }
@@ -379,7 +379,7 @@ class yeidPOConfirmController extends BaseController
             }
 
             // return  public_path('/storage/upload_manual_ymi_po/' . $nama_file);
-            
+
             $getData = YPOMaster::where('YPO_TYPE',  $req->type)->get();
             foreach ($getData as $key => $value) {
                 YPOSTXIPODet::where('YMT_ID', $value->id)->delete();
@@ -438,7 +438,7 @@ class yeidPOConfirmController extends BaseController
                     'YFDD_ITMCD' => $valueImp['item'],
                     'YFDD_YEAR' => $valueImp['year'],
                     'YFDD_MONTH' => $valueImp['month'],
-                    'YFDD_FCQT' => $valueImp['qty'], 
+                    'YFDD_FCQT' => $valueImp['qty'],
                 ]);
             }
 
