@@ -99,6 +99,32 @@ trait FormsTraits
                 }
             }
 
+            $dataLogics = FormLogicsDet::where('cfm_id', $value['id'])
+            ->orderBy('cfld_seq_name', 'asc')
+            ->get();
+
+            $dataLogs = [];
+            $keysData = 0;
+            foreach ($dataLogics as $keyLogics => $item) {
+                if($keyLogics === 0) {
+                    $dataLogs[$item->cfld_seq_name] = [
+                        'seq_name' => $item->cfld_seq_name,
+                        'seq_desc' => $item->cfld_seq_desc,
+                        'data' => [],
+                    ];
+                }
+
+                $dataLogs[$item->cfld_seq_name]['data'][$keysData] = [
+                    'cfld_opr' => $item->cfld_opr,
+                    'cfld_val' => $item->cfld_val,
+                    'cfld_opr_ctrl' => $item->cfld_opr_ctrl,
+                    'cfld_res' => $item->cfld_res,
+                    'cfld_actions' => $item->cfld_actions,
+                ];
+
+                $keysData++;
+            }
+
             $hasil[] = [
                 'id' => $value['id'],
                 'type' => $value['cfm_type'],
@@ -111,6 +137,7 @@ trait FormsTraits
                         ? $value['cfm_content']
                         : array_merge(json_decode($value['cfm_content'], true), ['detail_data' => $hasilDetail])
                     ),
+                'logics' => array_values($dataLogs),
             ];
         }
 
@@ -241,17 +268,30 @@ trait FormsTraits
                 }
 
                 if (isset($data['logics'])) {
-                    foreach ($data['logics'] as $keyLogics => $valueLogics) {
-                        FormLogicsDet::updateOrCreate([
-                            'id' => $data['id'],
-                        ],[
-                            'cfm_id' => $insert->id,
-                            'cfld_opr' => $valueLogics['opr'],
-                            'cfld_val' => $valueLogics['modelValue'],
-                            'cfld_opr_ctrl' => $valueLogics['oprCont'],
-                            'cfld_res' => $valueLogics['result'],
-                            'cfld_actions' => json_encode($valueLogics['resultAction']),
-                        ]);
+                    foreach ($data['logics'] as $keyLogics => $valueLogics) { //Split by id sequences
+                        $getLastLogics = FormLogicsDet::where('cfm_id', $insert->id)->orderBy('created_at', 'desc')->first();
+
+                        if(isset($valueLogics['seq_name']) && !empty($valueLogics['seq_name'])){
+                            $createNewSeqName = $valueLogics['seq_name'];
+                        } else {
+                            $createNewSeqName = empty($getLastLogics) ? 'L'.$insert->id.'-0001' : 'L'.$insert->id.'-'.str_pad((int)substr($getLastLogics->cfld_seq_name, 5) + 1, 4, '0', STR_PAD_LEFT);
+                        }
+
+                        foreach ($valueLogics['data'] as $key => $valueLogicsDet) {
+                            FormLogicsDet::updateOrCreate([
+                                'id' => $data['id'],
+                                'cfld_seq_name' => $createNewSeqName,
+                            ],[
+                                'cfm_id' => $insert->id,
+                                'cfld_seq_name' => $createNewSeqName,
+                                'cfld_seq_desc' => $valueLogics['seq_desc'],
+                                'cfld_opr' => $valueLogicsDet['cfld_opr'],
+                                'cfld_val' => $valueLogicsDet['cfld_val'],
+                                'cfld_opr_ctrl' => $valueLogicsDet['cfld_opr_ctrl'],
+                                'cfld_res' => $valueLogicsDet['cfld_res'],
+                                'cfld_actions' => $valueLogicsDet['cfld_actions'],
+                            ]);
+                        }
                     }
                 }
 

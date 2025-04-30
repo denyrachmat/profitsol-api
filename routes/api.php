@@ -4,6 +4,7 @@ use App\Http\Controllers\API\AMS\ApprovalRunningController;
 use App\Http\Controllers\API\AMS\ApprovalSettingsController;
 use App\Http\Controllers\API\DMS\DocumenRootController;
 use App\Http\Controllers\API\PORTAL\DomainController;
+use App\Http\Controllers\API\PORTAL\GencodeController;
 use App\Http\Controllers\API\PORTAL\MobileGencodeController;
 use App\Http\Controllers\STXI\EMS2\labelPrintController;
 use App\Http\Controllers\STXI\EMS2\TYOAutoBarcodeController;
@@ -89,6 +90,8 @@ Route::group(['prefix' => 'portal', 'middleware' => 'auth:sanctum', 'verify' => 
     Route::post('profile', [ProfileController::class, 'store'])->middleware('verified');
     Route::get('countryList', [ProfileController::class, 'getCountryList']);
     Route::resource('notif', NotifController::class);
+
+    Route::resource('gencode', GencodeController::class);
 });
 
 Route::resource('domain', DomainController::class);

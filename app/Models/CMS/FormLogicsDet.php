@@ -16,6 +16,8 @@ class FormLogicsDet extends Model
         'cfld_val',
         'cfld_opr_ctrl',
         'cfld_res',
-        'cfld_actions'
+        'cfld_actions',
+        'cfld_seq_name',
+        'cfld_seq_desc'
     ];
 }
