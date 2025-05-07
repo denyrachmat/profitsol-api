@@ -163,7 +163,9 @@ class FormController extends BaseController
                     ]);
                 }
             }
+        }
 
+        if (!empty($request->idRef)) {
             $getListUpdatedID = array_map(function ($item) {
                 return $item['id'];
             }, array_filter($data, function ($item) {

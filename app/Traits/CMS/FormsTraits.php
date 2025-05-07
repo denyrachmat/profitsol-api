@@ -279,8 +279,11 @@ trait FormsTraits
 
                         foreach ($valueLogics['data'] as $key => $valueLogicsDet) {
                             FormLogicsDet::updateOrCreate([
-                                'id' => $data['id'],
                                 'cfld_seq_name' => $createNewSeqName,
+                                'cfm_id' => $insert->id,
+                                'cfld_actions' => $valueLogicsDet['cfld_actions'],
+                                'cfld_opr' => $valueLogicsDet['cfld_opr'],
+                                'cfld_val' => $valueLogicsDet['cfld_val'],
                             ],[
                                 'cfm_id' => $insert->id,
                                 'cfld_seq_name' => $createNewSeqName,
