@@ -149,7 +149,10 @@ class ExportHSCodeReport implements FromCollection, WithHeadings, WithEvents
     public function collection()
     {
         $cekDataOsOnly = array_values(array_filter($this->data, fn($f) => $f['cols'] == 'HSCD_APRVSTAT' && $f['param'] == '<>' && $f['value'] == '1'));
-        $data = DB::connection('sqlsrv_log')->table(count($cekDataOsOnly) > 0 ? 'V_HSCODE_SYS' : 'V_HSCODE_SYS_DONE');
+        $data = DB::connection('sqlsrv_log')->table(count($cekDataOsOnly) > 0 ? 'V_HSCODE_SYS' : 'V_HSCODE_SYS_DONE')
+            ->orderBy('HSCD_BG', 'ASC')
+            ->orderBy('HSCD_ITMCD', 'ASC')
+            ->orderBy('HSCD_APPRVDT', 'DESC');
         // $data = DB::connection('sqlsrv_log')->table('V_HSCODE_SYS_DONE');
 
         if (
