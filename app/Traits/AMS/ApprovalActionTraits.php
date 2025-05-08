@@ -153,7 +153,7 @@ trait ApprovalActionTraits
         // Start Calculating approval
         $hist = [];
         $getfirstOrder = $checkLatestOrder;
-        logger($dataMaster->det);
+        // logger($dataMaster->det);
         foreach ($dataMaster->det as $keyDet => $valueDet) {
             $checkLatestToken = ApprovalHistDetail::where('amsm_id', $request->amsm_id)
                 ->with('mapdet')
@@ -165,8 +165,8 @@ trait ApprovalActionTraits
             $checkLatest = (clone $checkLatestToken)->whereHas('mapdet')->orderBy('id', 'desc')->first();
             $checkFirst = (clone $checkLatestToken)->orderBy('id', 'asc')->first();
 
-            logger($checkFirst);
-            logger($checkLatest);
+            // logger($checkFirst);
+            // logger($checkLatest);
             $nextStat = 'sent';
             if (!empty($checkLatest)) {
                 $nextStat = $valueDet['amsmd_order'] != $checkLatest->mapdet->amsmd_order && $request->stat === 1
@@ -207,6 +207,9 @@ trait ApprovalActionTraits
                 // }
 
                 // If last order
+                logger(array_key_exists($checkLatestOrder + 1, (clone $dataMaster)->ToArray()['det']));
+                logger($dataMaster->det[$checkLatestOrder]);
+                logger($valueDet['amsmd_username'] == $request->username);
                 if (!array_key_exists($checkLatestOrder + 1, (clone $dataMaster)->ToArray()['det']) || (!isset($dataMaster->det[$checkLatestOrder]) && $valueDet['amsmd_username'] == $request->username)) {
                     $this->sendingApproval($request, $dataMaster, $checkFirst, $checkLatest, $valueDet, $histToken, $useToken, $nextStat, true);
                     // Delete used token
