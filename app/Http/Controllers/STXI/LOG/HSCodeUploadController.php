@@ -104,7 +104,7 @@ class HSCodeUploadController extends BaseController
     {
         Excel::store(new ExportHSCodeReport($request->filter, $withHist), 'export_hscode.xlsx', 'public');
 
-        return 'storage/app/public/export_hscode.xlsx';
+        return 'storage/export_hscode.xlsx';
     }
 
     public function exportDataWithHistory() {
