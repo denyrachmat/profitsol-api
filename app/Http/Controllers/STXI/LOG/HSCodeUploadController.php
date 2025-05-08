@@ -289,7 +289,7 @@ class HSCodeUploadController extends BaseController
 
             $hasil[] = $this->approveAction(new ApprovalRunningApproveActionRequest([
                 'username' => $request->username,
-                'amsm_id' => 5,
+                'amsm_id' => 1,
                 'stat' => 1,
                 'remarks' => 'Sending approval hs code!!',
                 'data' => [
