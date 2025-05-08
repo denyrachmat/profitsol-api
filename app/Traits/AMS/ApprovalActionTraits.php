@@ -165,6 +165,8 @@ trait ApprovalActionTraits
             $checkLatest = (clone $checkLatestToken)->whereHas('mapdet')->orderBy('id', 'desc')->first();
             $checkFirst = (clone $checkLatestToken)->orderBy('id', 'asc')->first();
 
+            logger($checkFirst);
+            logger($checkLatest);
             $nextStat = 'sent';
             if (!empty($checkLatest)) {
                 $nextStat = $valueDet['amsmd_order'] != $checkLatest->mapdet->amsmd_order && $request->stat === 1
