@@ -199,8 +199,8 @@ trait ApprovalActionTraits
                     break;
                 }
             } else {
-                    // logger($dataMaster->det[$checkLatestOrder]);
-                    // logger([$checkLatestOrder, $valueDet['amsmd_order'], $valueDet['amsmd_username'], $request->username]);
+                // logger($dataMaster->det[$checkLatestOrder]);
+                // logger([$checkLatestOrder, $valueDet['amsmd_order'], $valueDet['amsmd_username'], $request->username]);
 
                 // if (isset($dataMaster->det[$checkLatestOrder]) && $valueDet['amsmd_order'] == (int) $checkLatestOrder) {
                 //     $this->sendingApproval($request, $dataMaster, $checkFirst, $checkLatest, $valueDet, $histToken, $useToken, $nextStat);
@@ -210,12 +210,24 @@ trait ApprovalActionTraits
                 logger(array_key_exists($checkLatestOrder + 1, (clone $dataMaster)->ToArray()['det']));
                 logger($dataMaster->det[$checkLatestOrder]);
                 logger($valueDet['amsmd_username'] == $request->username);
-                if (!array_key_exists($checkLatestOrder + 1, (clone $dataMaster)->ToArray()['det']) || (!isset($dataMaster->det[$checkLatestOrder]) && $valueDet['amsmd_username'] == $request->username)) {
+
+                $checkNextOrder = array_filter((clone $dataMaster)->ToArray()['det'], function ($f) use ($valueDet) {
+                    return $f['amsmd_order'] == (int) $valueDet['amsmd_order'] + 1;
+                });
+
+                if (count($checkNextOrder) === 0) {
                     $this->sendingApproval($request, $dataMaster, $checkFirst, $checkLatest, $valueDet, $histToken, $useToken, $nextStat, true);
                     // Delete used token
                     ApprovalTokenDetail::where('id', $useTokenCreate->id)->delete();
                     break;
                 }
+
+                // if (!array_key_exists($checkLatestOrder + 1, (clone $dataMaster)->ToArray()['det']) || (!isset($dataMaster->det[$checkLatestOrder]) && $valueDet['amsmd_username'] == $request->username)) {
+                //     $this->sendingApproval($request, $dataMaster, $checkFirst, $checkLatest, $valueDet, $histToken, $useToken, $nextStat, true);
+                //     // Delete used token
+                //     ApprovalTokenDetail::where('id', $useTokenCreate->id)->delete();
+                //     break;
+                // }
             }
         }
 
