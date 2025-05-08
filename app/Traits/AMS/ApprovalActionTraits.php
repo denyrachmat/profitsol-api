@@ -215,7 +215,7 @@ trait ApprovalActionTraits
                     return $f['amsmd_order'] == (int) $valueDet['amsmd_order'] + 1;
                 });
 
-                if (count($checkNextOrder) === 0) {
+                if (count($checkNextOrder) === 0 && $valueDet['amsmd_username'] == $request->username) {
                     $this->sendingApproval($request, $dataMaster, $checkFirst, $checkLatest, $valueDet, $histToken, $useToken, $nextStat, true);
                     // Delete used token
                     ApprovalTokenDetail::where('id', $useTokenCreate->id)->delete();
