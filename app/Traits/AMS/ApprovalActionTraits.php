@@ -7,6 +7,7 @@ use App\Models\AMS\ApprovalMapDetail;
 use App\Models\AMS\ApprovalTokenDetail;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
+use Maatwebsite\Excel\Concerns\ToArray;
 use Redis;
 use DB;
 use Blade;
@@ -188,16 +189,26 @@ trait ApprovalActionTraits
             if ((int) $valueDet['amsmd_order'] > $checkLatestOrder || empty($checkFirst)) {
                 // If Next Order
                 if ($valueDet['amsmd_order'] == (int) $checkLatestOrder + 1) {
+                    logger('masuk 1');
                     $this->sendingApproval($request, $dataMaster, $checkFirst, $checkLatest, $valueDet, $histToken, $useToken, $nextStat);
                 } else {
+                    logger('masuk 2');
                     break;
                 }
             } else {
+                    // logger($dataMaster->det[$checkLatestOrder]);
+                    // logger([$checkLatestOrder, $valueDet['amsmd_order'], $valueDet['amsmd_username'], $request->username]);
+
+                // if (isset($dataMaster->det[$checkLatestOrder]) && $valueDet['amsmd_order'] == (int) $checkLatestOrder) {
+                //     $this->sendingApproval($request, $dataMaster, $checkFirst, $checkLatest, $valueDet, $histToken, $useToken, $nextStat);
+                // }
+
                 // If last order
-                if (!isset($dataMaster->det[$checkLatestOrder]) && $valueDet['amsmd_username'] == $request->username) {
+                if (!array_key_exists($checkLatestOrder + 1, (clone $dataMaster)->ToArray()['det']) || (!isset($dataMaster->det[$checkLatestOrder]) && $valueDet['amsmd_username'] == $request->username)) {
                     $this->sendingApproval($request, $dataMaster, $checkFirst, $checkLatest, $valueDet, $histToken, $useToken, $nextStat, true);
                     // Delete used token
                     ApprovalTokenDetail::where('id', $useTokenCreate->id)->delete();
+                    break;
                 }
             }
         }
@@ -388,6 +399,7 @@ trait ApprovalActionTraits
                 [
                     'approval' => [
                         'status' => $nextStat,
+                        'username' => $request->username,
                         'remarks' => $request->remarks,
                     ]
                 ]
@@ -515,7 +527,7 @@ trait ApprovalActionTraits
         }
 
         // If using on Approval method trigger
-        if ($request->has('onDone') && count($request->onDone) > 0) {
+        if ($request->has('onDone') && count($request->onDone) > 0 && $isLast) {
             $this->apiPointData(
                 $request->onDone['url'],
                 $request->onDone['methods'],
@@ -524,6 +536,7 @@ trait ApprovalActionTraits
                 [
                     'approval' => [
                         'status' => $nextStat,
+                        'username' => $request->username,
                         'remarks' => $request->remarks,
                     ]
                 ]
