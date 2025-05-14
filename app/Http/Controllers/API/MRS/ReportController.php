@@ -311,35 +311,41 @@ class ReportController extends BaseController
                 // Start filter state by users
                 if ($request->has('filter') && count($request->filter) > 0) {
                     foreach ($request->filter as $key => $valueFilter) {
-                        $valuenya1 = $valueFilter['cols']['type'] == 'int'
-                            ? $valueFilter['value'][0]
-                            : "'" . $valueFilter['value'][0] . "'";
+                        $checkExistsValue = array_filter($valueFilter['value'], function($f) {
+                            return !empty($f);
+                        });
 
-                        $valuenya2 = isset($valueFilter['value'][1])
-                            ? (
-                                $valueFilter['cols']['type'] == 'int'
-                                ? $valueFilter['value'][1]
-                                : "'" . $valueFilter['value'][1] . "'"
-                            )
-                            : null;
+                        if(count($checkExistsValue) > 0) {
+                            $valuenya1 = $valueFilter['cols']['type'] == 'int'
+                                ? $valueFilter['value'][0]
+                                : "'" . $valueFilter['value'][0] . "'";
 
-                        if ($valueFilter['opr'] == 'between') {
-                            if ($valueFilter['conmet'] == 'and') {
-                                $smBuild->andwhere($valueFilter['cols']['value'] . ' between ' . $valuenya1 . ' and ' . $valuenya2);
+                            $valuenya2 = isset($valueFilter['value'][1])
+                                ? (
+                                    $valueFilter['cols']['type'] == 'int'
+                                    ? $valueFilter['value'][1]
+                                    : "'" . $valueFilter['value'][1] . "'"
+                                )
+                                : null;
+
+                            if ($valueFilter['opr'] == 'between') {
+                                if ($valueFilter['conmet'] == 'and') {
+                                    $smBuild->andwhere($valueFilter['cols']['value'] . ' between ' . $valuenya1 . ' and ' . $valuenya2);
+                                } else {
+                                    $smBuild->orwhere($valueFilter['cols']['value'] . ' between ' . $valuenya1 . ' and ' . $valuenya2);
+                                }
+                            } elseif ($valueFilter['opr'] == 'like') {
+                                if ($valueFilter['conmet'] == 'and') {
+                                    $smBuild->andwhere($valueFilter['cols']['value'] . " like '%" . $valueFilter['value'][0] . "%'");
+                                } else {
+                                    $smBuild->orwhere($valueFilter['cols']['value'] . " like '%" . $valueFilter['value'][0] . "%'");
+                                }
                             } else {
-                                $smBuild->orwhere($valueFilter['cols']['value'] . ' between ' . $valuenya1 . ' and ' . $valuenya2);
-                            }
-                        } elseif ($valueFilter['opr'] == 'like') {
-                            if ($valueFilter['conmet'] == 'and') {
-                                $smBuild->andwhere($valueFilter['cols']['value'] . " like '%" . $valueFilter['value'][0] . "%'");
-                            } else {
-                                $smBuild->orwhere($valueFilter['cols']['value'] . " like '%" . $valueFilter['value'][0] . "%'");
-                            }
-                        } else {
-                            if ($valueFilter['conmet'] == 'and') {
-                                $smBuild->andwhere($valueFilter['cols']['value'] . " " . $valueFilter['opr'] . " " . $valuenya1);
-                            } else {
-                                $smBuild->orwhere($valueFilter['cols']['value'] . " " . $valueFilter['opr'] . " " . $valuenya1);
+                                if ($valueFilter['conmet'] == 'and') {
+                                    $smBuild->andwhere($valueFilter['cols']['value'] . " " . $valueFilter['opr'] . " " . $valuenya1);
+                                } else {
+                                    $smBuild->orwhere($valueFilter['cols']['value'] . " " . $valueFilter['opr'] . " " . $valuenya1);
+                                }
                             }
                         }
                     }
