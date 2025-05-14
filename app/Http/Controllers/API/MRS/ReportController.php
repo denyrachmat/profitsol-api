@@ -166,7 +166,7 @@ class ReportController extends BaseController
 
             $changeConn = $this->eloqConn($request->id, $request->dbname);
             if ($changeConn) {
-                $data = DB::connection('sqlsrv_conn_dyn')->select('SET NOCOUNT ON;'.$request->code);
+                $data = DB::connection('sqlsrv_conn_dyn')->select('SET NOCOUNT ON;' . $request->code);
 
                 $data = json_decode(json_encode($data), true);
                 $cols = [];
@@ -267,19 +267,19 @@ class ReportController extends BaseController
                 if ($changeConn) {
                     $splitSPCode = explode(' ', $cekReport->mrm_query);
 
-                    $finalCode = $splitSPCode[0].' '.$splitSPCode[1];
+                    $finalCode = $splitSPCode[0] . ' ' . $splitSPCode[1];
                     if ($request->has('filter') && count($request->filter) > 0) {
                         foreach ($request->filter as $key => $valueFilter) {
                             $valuenya = $valueFilter['cols']['type'] == 'int'
-                            ? $valueFilter['value'][0]
-                            : "'" . $valueFilter['value'][0] . "'";
+                                ? $valueFilter['value'][0]
+                                : "'" . $valueFilter['value'][0] . "'";
 
-                            $finalCode .= ($key === 0 ? ' ' : ', ') .$valueFilter['cols']['value'].'='.$valuenya;
+                            $finalCode .= ($key === 0 ? ' ' : ', ') . $valueFilter['cols']['value'] . '=' . $valuenya;
                         }
                     }
                     // return $finalCode;
 
-                    $data = DB::connection('sqlsrv_conn_dyn')->select('SET NOCOUNT ON;'.$finalCode);
+                    $data = DB::connection('sqlsrv_conn_dyn')->select('SET NOCOUNT ON;' . $finalCode);
 
                     $data = json_decode(json_encode($data), true);
 
@@ -311,11 +311,11 @@ class ReportController extends BaseController
                 // Start filter state by users
                 if ($request->has('filter') && count($request->filter) > 0) {
                     foreach ($request->filter as $key => $valueFilter) {
-                        $checkExistsValue = array_filter($valueFilter['value'], function($f) {
+                        $checkExistsValue = array_filter($valueFilter['value'], function ($f) {
                             return !empty($f);
                         });
 
-                        if(count($checkExistsValue) > 0) {
+                        if (count($checkExistsValue) > 0) {
                             $valuenya1 = $valueFilter['cols']['type'] == 'int'
                                 ? $valueFilter['value'][0]
                                 : "'" . $valueFilter['value'][0] . "'";
@@ -356,9 +356,9 @@ class ReportController extends BaseController
                 $smAllRecords = $conn->fetchAllAssociative('SELECT COUNT(*) as total FROM (' . $getQuery . ') a');
 
                 $buildSelect = "";
-                $listCols = MRSReportColsDet::where('mrm_id',$idReport)->where('mrcd_isActive', 1)->get();
+                $listCols = MRSReportColsDet::where('mrm_id', $idReport)->where('mrcd_isActive', 1)->get();
                 foreach ($listCols as $keyCols => $valueCols) {
-                    $buildSelect .= $keyCols === 0 ? 'smb.'.$valueCols->mrcd_field : ', smb.'.$valueCols->mrcd_field;
+                    $buildSelect .= $keyCols === 0 ? 'smb.' . $valueCols->mrcd_field : ', smb.' . $valueCols->mrcd_field;
                 }
 
                 $sm = $conn->createQueryBuilder()
@@ -406,14 +406,22 @@ class ReportController extends BaseController
 
     public function exportToExcel($idReport, Request $request)
     {
+        $cekReport = MRSReportMstr::select(
+            'mrs_report_mstr.*',
+            'mrs_db_mstr.mdm_host'
+            )
+        ->where('mrs_report_mstr.id', $idReport)
+        ->first();
+
         $getData = $this->runningReport($idReport, $request);
 
+        $filename = 'export_'.$cekReport->mrm_name.'_'.date('ymd_his').'.xlsx';
         // return $getData;
-        Excel::store(new ExportReport($getData, $idReport), 'MRS/export_report.xlsx', 'public');
+        Excel::store(new ExportReport($getData, $idReport), 'MRS/'.$filename, 'public');
 
         return [
             'status' => true,
-            'path' => 'storage/app/public/MRS/export_report.xlsx'
+            'path' => 'storage/MRS/'.$filename,
         ];
     }
 }
