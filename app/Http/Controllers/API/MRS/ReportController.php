@@ -407,8 +407,7 @@ class ReportController extends BaseController
     public function exportToExcel($idReport, Request $request)
     {
         $cekReport = MRSReportMstr::select(
-            'mrs_report_mstr.*',
-            'mrs_db_mstr.mdm_host'
+            'mrs_report_mstr.*'
             )
         ->where('mrs_report_mstr.id', $idReport)
         ->first();
