@@ -12,8 +12,20 @@ use App\Models\CMS\FormLogicsDet;
 
 use Illuminate\Support\Facades\DB;
 
+use App\Traits\PORTAL\GencodeTraits;
+
 trait FormsTraits
 {
+    use GencodeTraits;
+
+    private function isJson($string)
+    {
+        if (!is_string($string)) {
+            return false;
+        }
+        json_decode($string);
+        return (json_last_error() === JSON_ERROR_NONE);
+    }
     public function getHeaderAllForms($data)
     {
         $hasil = [];
@@ -24,7 +36,7 @@ trait FormsTraits
             foreach ($value['form_master'] as $key => $valueAns) {
                 $cekAnswer = FormAnswerDet::where('cfmd_id', $valueAns['id'])->first();
                 if (!empty($cekAnswer)) {
-                    $answer[] = is_array(json_decode($cekAnswer['cfm_val'])) ? json_decode($cekAnswer['cfm_val']) : (int)$cekAnswer['cfm_val'];
+                    $answer[] = is_array(json_decode($cekAnswer['cfm_val'])) ? json_decode($cekAnswer['cfm_val']) : (int) $cekAnswer['cfm_val'];
                     $exp[] = $cekAnswer['cfm_exp'];
                 } else {
                     $answer[] = '';
@@ -34,7 +46,9 @@ trait FormsTraits
             }
 
             $shared = FormShareDet::where('cfmt_id', $value['id'])
+                ->join('STX_PORTAL.dbo.portal_users_det', 'u_username', 'cfsd_to')
                 ->leftjoin('STX_PORTAL.dbo.portal_app_mstr', 'am_app_url', DB::raw("CONCAT('forms/', cfsd_gen_link)"))
+                ->where('pud_is_active', 1)
                 ->get();
 
             $roleList = [];
@@ -42,17 +56,9 @@ trait FormsTraits
                 $roleList[$value2['cfsd_role_id']] = (int) $value2['cfsd_role_id'];
             }
 
-            $hasil[] = [
-                'id' => $value['id'],
-                'title' => $value['cfmt_title'],
-                'isQuiz' => $value['cfmt_quiz_flag'],
-                'forms' => $this->convertToFE($value['form_master']),
-                // 'checkFormMaster' => $value['form_master'],
-                'ans' => $answer,
-                'exp' => $exp,
-                'ans_id' => $answerID,
-                'share' => (clone $shared)->pluck('cfsd_to'),
-                'setupTraining' => !empty($value['quiz_setup'])
+            // If the form is a quiz, get the setup from the quiz setup table
+            if ($value['cfmt_quiz_flag'] == 1) {
+                $setupTraining = !empty($value['quiz_setup'])
                     ? [
                         'defaultNumberOfChoice' => 1,
                         'defaultTypeChoice' => "multiple-radio",
@@ -68,10 +74,56 @@ trait FormsTraits
                         'minPass' => $value['quiz_setup']['cfsd_min_pass'],
                         'startQuiz' => $value['quiz_setup']['cfsd_start_quiz'],
                         'endQuiz' => $value['quiz_setup']['cfsd_end_quiz'],
-                        'skipNextButtonMedia' => (boolean)$value['quiz_setup']['cfsd_skip_next_btn_media_done'],
+                        'skipNextButtonMedia' => (boolean) $value['quiz_setup']['cfsd_skip_next_btn_media_done'],
                         'maxQuestionCount' => (int) $value['quiz_setup']['cfsd_quest_limit']
                     ]
-                    : null,
+                    : null;
+
+                $setupTrainingRes = $setupTraining;
+            } else {
+                $setupTraining = $this->getDataGencode(
+                    'FORMS_SETUP',
+                    [
+                        'pgm_value' => (string) $value['id']
+                    ],
+                    [
+                        'pgm_desc' => 'pgm_value2'
+                    ]
+                );
+
+                // Convert numeric 1/0 values in $setupTraining to boolean
+                $setupTrainingRes = [];
+                foreach ($setupTraining as $k => $v) {
+                    if (is_string($v) && $this->isJson($v)) {
+                        $setupTrainingRes[$k] = json_decode($v, true);
+                    } else {
+                        // Explicitly cast "1"/"0", 1/0, "true"/"false" to boolean, else keep original
+                        if ($v === "1" || $v === 1 || $v === true || $v === "true") {
+                            $setupTrainingRes[$k] = true;
+                        } elseif ($v === "0" || $v === 0 || $v === false || $v === "false") {
+                            $setupTrainingRes[$k] = false;
+                        } else {
+                            $setupTrainingRes[$k] = $v;
+                        }
+                        // Force boolean for 1/0 (int or string)
+                        if ($v === 1 || $v === 0 || $v === "1" || $v === "0") {
+                            $setupTrainingRes[$k] = (bool)$v;
+                        }
+                    }
+                }
+            }
+
+            $hasil[] = [
+                'id' => $value['id'],
+                'title' => $value['cfmt_title'],
+                'isQuiz' => $value['cfmt_quiz_flag'],
+                'forms' => $this->convertToFE($value['form_master']),
+                // 'checkFormMaster' => $value['form_master'],
+                'ans' => $answer,
+                'exp' => $exp,
+                'ans_id' => $answerID,
+                'share' => (clone $shared)->pluck('cfsd_to'),
+                'setupTraining' => $setupTrainingRes,
                 'shareFormsIsMainMenu' => count((clone $shared)) > 0 && (clone $shared)[0]->cfsd_is_menu == 1 ? true : false,
                 'shareFormsIsRoles' => count((clone $shared)) > 0 && !empty((clone $shared)[0]->cfsd_role_id) ? true : false,
                 'selectedSharedMenu' => count((clone $shared)) > 0 && !empty((clone $shared)[0]->cfsd_role_id) ? (clone $shared)[0]->am_app_parent : '',
@@ -100,26 +152,57 @@ trait FormsTraits
             }
 
             $dataLogics = FormLogicsDet::where('cfm_id', $value['id'])
-            ->orderBy('cfld_seq_name', 'asc')
-            ->get();
+                ->orderBy('cfld_seq_name', 'asc')
+                ->get();
 
             $dataLogs = [];
             $keysData = 0;
             foreach ($dataLogics as $keyLogics => $item) {
-                if($keyLogics === 0) {
-                    $dataLogs[$item->cfld_seq_name] = [
-                        'seq_name' => $item->cfld_seq_name,
-                        'seq_desc' => $item->cfld_seq_desc,
-                        'data' => [],
-                    ];
-                }
+                // if($keyLogics === 0) {
+                //     $dataLogs[$item->cfld_seq_name] = [
+                //         'seq_name' => $item->cfld_seq_name,
+                //         'seq_desc' => $item->cfld_seq_desc,
+                //         'data' => [],
+                //     ];
 
-                $dataLogs[$item->cfld_seq_name]['data'][$keysData] = [
-                    'cfld_opr' => $item->cfld_opr,
-                    'cfld_val' => $item->cfld_val,
-                    'cfld_opr_ctrl' => $item->cfld_opr_ctrl,
-                    'cfld_res' => $item->cfld_res,
-                    'cfld_actions' => $item->cfld_actions,
+                //     $keysData = 0;
+                // }
+
+                // $dataLogs[$item->cfld_seq_name] = [
+                //     'seq_name' => $item->cfld_seq_name,
+                //     'seq_desc' => $item->cfld_seq_desc,
+                // ];
+
+                // $dataLogs[$item->cfld_seq_name]['data'][] = [
+                //     'cfld_opr' => $item->cfld_opr,
+                //     'cfld_val' => $item->cfld_val,
+                //     'cfld_opr_ctrl' => $item->cfld_opr_ctrl,
+                //     'cfld_res' => $item->cfld_res,
+                //     'cfld_actions' => $item->cfld_actions,
+                // ];
+
+                $dataLogs[$item->cfld_seq_name] = [
+                    'seq_name' => $item->cfld_seq_name,
+                    'seq_desc' => $item->cfld_seq_desc,
+                    'data' => isset($dataLogs[$item->cfld_seq_name]['data'])
+                        ? array_merge($dataLogs[$item->cfld_seq_name]['data'], [
+                            [
+                                'cfld_opr' => $item->cfld_opr,
+                                'cfld_val' => $item->cfld_val,
+                                'cfld_opr_ctrl' => $item->cfld_opr_ctrl,
+                                'cfld_res' => $item->cfld_res,
+                                'cfld_actions' => $item->cfld_actions,
+                            ]
+                        ])
+                        : [
+                            [
+                                'cfld_opr' => $item->cfld_opr,
+                                'cfld_val' => $item->cfld_val,
+                                'cfld_opr_ctrl' => $item->cfld_opr_ctrl,
+                                'cfld_res' => $item->cfld_res,
+                                'cfld_actions' => $item->cfld_actions,
+                            ]
+                        ],
                 ];
 
                 $keysData++;
@@ -151,7 +234,7 @@ trait FormsTraits
 
             $insert = FormMaster::updateOrCreate([
                 'id' => $data['id'],
-            ],[
+            ], [
                 'p_u_username' => $uname,
                 'cfmt_id' => $idTitle,
                 'cfm_type' => $data['type'],
@@ -183,10 +266,10 @@ trait FormsTraits
                 $content = $data['content'];
             }
 
-            if(!empty($data['id'])) {
+            if (!empty($data['id'])) {
                 $insert = FormMaster::updateOrCreate([
                     'id' => $data['id'],
-                ],[
+                ], [
                     'p_u_username' => $uname,
                     'cfmt_id' => $idTitle,
                     'cfm_type' => $data['type'],
@@ -214,7 +297,7 @@ trait FormsTraits
                         $detail_data[] = FormMultiDet::updateOrCreate([
                             'cfm_id' => $insert->id,
                             'cfmd_value' => $valueDet['value'],
-                        ],[
+                        ], [
                             'cfm_id' => $insert->id,
                             'cfmd_value' => $valueDet['value'],
                             'cfmd_label' => $valueDet['label'],
@@ -242,10 +325,10 @@ trait FormsTraits
                                 $valnya = $valueAns;
                             }
 
-                            if(is_array($valueAns)) {
+                            if (is_array($valueAns)) {
                                 $hasilValue = [];
                                 foreach ($valueAns as $keyAnswers => $valueAnswers) {
-                                    $hasilValue[(int)$valueAnswers] = (string)$valueAnswers;
+                                    $hasilValue[(int) $valueAnswers] = (string) $valueAnswers;
                                 }
 
                                 $hasilValue = json_encode(array_values($hasilValue));
@@ -256,11 +339,11 @@ trait FormsTraits
                                 'cfm_id' => $idTitle,
                                 'cfmd_id' => $insert->id,
                                 // 'cfm_val' => is_array($valueAns) ? (string) json_encode($valueAns) : (string) $valueAns,
-                            ],[
+                            ], [
                                 'p_u_username' => $uname,
                                 'cfm_id' => $idTitle,
                                 'cfmd_id' => $insert->id,
-                                'cfm_val' => (string)$hasilValue,
+                                'cfm_val' => (string) $hasilValue,
                                 'cfm_exp' => isset($keyExp[$keyAns]) ? (string) $keyExp[$keyAns] : null,
                             ]);
                         }
@@ -271,10 +354,10 @@ trait FormsTraits
                     foreach ($data['logics'] as $keyLogics => $valueLogics) { //Split by id sequences
                         $getLastLogics = FormLogicsDet::where('cfm_id', $insert->id)->orderBy('created_at', 'desc')->first();
 
-                        if(isset($valueLogics['seq_name']) && !empty($valueLogics['seq_name'])){
+                        if (isset($valueLogics['seq_name']) && !empty($valueLogics['seq_name'])) {
                             $createNewSeqName = $valueLogics['seq_name'];
                         } else {
-                            $createNewSeqName = empty($getLastLogics) ? 'L'.$insert->id.'-0001' : 'L'.$insert->id.'-'.str_pad((int)substr($getLastLogics->cfld_seq_name, 5) + 1, 4, '0', STR_PAD_LEFT);
+                            $createNewSeqName = empty($getLastLogics) ? 'L' . $insert->id . '-0001' : 'L' . $insert->id . '-' . str_pad((int) substr($getLastLogics->cfld_seq_name, 5) + 1, 4, '0', STR_PAD_LEFT);
                         }
 
                         foreach ($valueLogics['data'] as $key => $valueLogicsDet) {
@@ -284,7 +367,7 @@ trait FormsTraits
                                 'cfld_actions' => $valueLogicsDet['cfld_actions'],
                                 'cfld_opr' => $valueLogicsDet['cfld_opr'],
                                 'cfld_val' => $valueLogicsDet['cfld_val'],
-                            ],[
+                            ], [
                                 'cfm_id' => $insert->id,
                                 'cfld_seq_name' => $createNewSeqName,
                                 'cfld_seq_desc' => $valueLogics['seq_desc'],

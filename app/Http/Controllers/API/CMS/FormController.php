@@ -4,6 +4,7 @@ namespace App\Http\Controllers\API\CMS;
 
 use App\Http\Controllers\API\PORTAL\BaseController as BaseController;
 use App\Models\CMS\FormAnswerUserDet;
+use App\Models\CMS\FormLogicsDet;
 use App\Models\PORTAL\PortalApp;
 use App\Models\PORTAL\PortalRoleAppMap;
 use App\Models\PORTAL\PortalRoleUserMap;
@@ -17,6 +18,7 @@ use App\Models\CMS\FormMasterTitle;
 use App\Models\CMS\FormSetupDet;
 use App\Models\CMS\FormShareDet;
 use App\Models\PORTAL\PortalNotif;
+use App\Models\PORTAL\PortalGencode;
 
 use App\Traits\CMS\FormsTraits;
 
@@ -70,27 +72,43 @@ class FormController extends BaseController
             // FormSetupDet::where('cfmt_id', $request->idRef)->delete();
             $cekSetup = FormSetupDet::where('cfmt_id', $request->idRef)->first();
 
-            FormSetupDet::updateOrCreate([
-                'cfmt_id' => $request->idRef,
-            ], [
-                'cfmt_id' => $request->idRef,
-                'cfsd_res_show' => $request->setupTraining['showResult'],
-                'cfsd_ans_show' => $request->setupTraining['showRightKeysAnswer'],
-                'cfsd_rand_quest' => $request->setupTraining['randomizeQuestion'],
-                'cfsd_ans_loc' => $request->setupTraining['showRightKeysAnswerLocation'],
-                'cfsd_timer' => $request->setupTraining['setUpTimer'],
-                'cfsd_timer_quest' => $request->setupTraining['timerEveryQuestion'],
-                'cfsd_hours' => $request->setupTraining['hourTimer'],
-                'cfsd_min' => $request->setupTraining['minTimer'],
-                'cfsd_sec' => $request->setupTraining['secTimer'],
-                'cfsd_min_pass' => $request->setupTraining['minPass'],
-                'cfsd_start_quiz' => $request->setupTraining['startQuiz'],
-                'cfsd_end_quiz' => $request->setupTraining['endQuiz'],
-                'cfsd_real_start_quiz' => empty($cekSetup) ? $request->setupTraining['startQuiz'] : $cekSetup->cfsd_real_start_quiz,
-                'cfsd_real_end_quiz' => empty($cekSetup) ? $request->setupTraining['endQuiz'] : $cekSetup->cfsd_real_end_quiz,
-                'cfsd_quest_limit' => $request->setupTraining['maxQuestionCount'],
-                'cfsd_skip_next_btn_media_done' => $request->setupTraining['maxQuestionCount']
-            ]);
+            if ($request->isQuiz) {
+                FormSetupDet::updateOrCreate([
+                    'cfmt_id' => $request->idRef,
+                ], [
+                    'cfmt_id' => $request->idRef,
+                    'cfsd_res_show' => $request->setupTraining['showResult'],
+                    'cfsd_ans_show' => $request->setupTraining['showRightKeysAnswer'],
+                    'cfsd_rand_quest' => $request->setupTraining['randomizeQuestion'],
+                    'cfsd_ans_loc' => $request->setupTraining['showRightKeysAnswerLocation'],
+                    'cfsd_timer' => $request->setupTraining['setUpTimer'],
+                    'cfsd_timer_quest' => $request->setupTraining['timerEveryQuestion'],
+                    'cfsd_hours' => $request->setupTraining['hourTimer'],
+                    'cfsd_min' => $request->setupTraining['minTimer'],
+                    'cfsd_sec' => $request->setupTraining['secTimer'],
+                    'cfsd_min_pass' => $request->setupTraining['minPass'],
+                    'cfsd_start_quiz' => $request->setupTraining['startQuiz'],
+                    'cfsd_end_quiz' => $request->setupTraining['endQuiz'],
+                    'cfsd_real_start_quiz' => empty($cekSetup) ? $request->setupTraining['startQuiz'] : $cekSetup->cfsd_real_start_quiz,
+                    'cfsd_real_end_quiz' => empty($cekSetup) ? $request->setupTraining['endQuiz'] : $cekSetup->cfsd_real_end_quiz,
+                    'cfsd_quest_limit' => $request->setupTraining['maxQuestionCount'],
+                    'cfsd_skip_next_btn_media_done' => $request->setupTraining['maxQuestionCount']
+                ]);
+            } else {
+                foreach ($request->setupTraining as $key => $valueSetup) {
+                    PortalGencode::updateOrCreate([
+                        'pgm_code' => 'FORMS_SETUP',
+                        'pgm_value' => $request->idRef,
+                        'pgm_desc' => $key,
+                    ],[
+                        'pgm_code' => 'FORMS_SETUP',
+                        'pgm_value' => $request->idRef,
+                        'pgm_value2' => is_array($valueSetup) ? json_encode($valueSetup) : $valueSetup,
+                        'pgm_desc' => $key,
+                        'pgm_created_by' => $request->header('username'),
+                    ]);
+                }
+            }
         }
 
         if (isset($request->shareForms) && !empty($request->idRef)) {
@@ -166,11 +184,22 @@ class FormController extends BaseController
         }
 
         if (!empty($request->idRef)) {
-            $getListUpdatedID = array_map(function ($item) {
-                return $item['id'];
-            }, array_filter($data, function ($item) {
-                return isset($item['id']);
-            }));
+            function extractIds($array, &$ids = [])
+            {
+                if (isset($array['id'])) {
+                    $ids[] = $array['id'];
+                }
+
+                foreach ($array as $value) {
+                    if (is_array($value)) {
+                        extractIds($value, $ids);
+                    }
+                }
+
+                return $ids;
+            }
+
+            $getListUpdatedID = extractIds($data);
 
             if (count($getListUpdatedID) > 0) {
                 FormMaster::where('cfmt_id', $insertMaster->id)
@@ -178,6 +207,10 @@ class FormController extends BaseController
                     ->delete();
                 FormAnswerDet::where('cfm_id', $insertMaster->id)
                     ->whereNotIn('cfmd_id', $getListUpdatedID)
+                    ->delete();
+
+                FormLogicsDet::where('cfm_id', $insertMaster->id)
+                    ->whereNotIn('cfm_id', $getListUpdatedID)
                     ->delete();
                 // FormAnswerUserDet::where('cfm_id', $insertMaster->id)
                 //     ->whereNotIn('cfmd_id', $getListUpdatedID)
@@ -199,10 +232,6 @@ class FormController extends BaseController
                 $key,
             );
         }
-
-        // FormMaster::where('cfmt_id', $request->idRef)
-        //     ->whereNotIn('cfm_seq_name', $listPage)
-        //     ->delete();
 
         return $this->handleResponse([
             'insert' => $hasil,

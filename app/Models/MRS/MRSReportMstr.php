@@ -23,4 +23,11 @@ class MRSReportMstr extends Model
         'mrm_url_gen',
         'mrm_filter_flg'
     ];
+
+    public function database()
+    {
+        // Assuming the foreign key is 'mdm_id' on mrs_report_mstr
+        // and the primary key is 'id' on mrs_db_mstr
+        return $this->belongsTo(MRSDBConnMstr::class, 'mdm_id', 'id');
+    }
 }
