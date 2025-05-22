@@ -63,14 +63,20 @@ class ExportReport implements FromCollection, WithHeadings, WithEvents
             ->where('mrcd_isActive', 1)
             ->where('mrcd_isExported', 1)
             ->where('mrcd_col_prop', 'cols');
-        
+
         $getDataHeaderChecker = (clone $getDataHeaderFirst)->pluck('mrcd_field')->toArray();
         $getDataHeader = (clone $getDataHeaderFirst)
             ->get()
             ->toArray();
 
-        foreach ($this->data as $key => $value) {
-            $cekCols = array_filter(array_keys($value), function ($f) use ($getDataHeaderChecker) {
+        if (is_object($this->data)) {
+            $getData = json_decode(json_encode($this->data), true);
+        } else {
+            $getData = $this->data;
+        }
+
+        foreach ($getData as $key => $value) {
+            $cekCols = array_filter(array_keys((array)$value), function ($f) use ($getDataHeaderChecker) {
                 return in_array($f, $getDataHeaderChecker);
             });
 
@@ -79,13 +85,13 @@ class ExportReport implements FromCollection, WithHeadings, WithEvents
                     return $fc['mrcd_field'] === $valueCols;
                 }));
 
-                $hasil[$key][$valueCols] = count($cekTest) > 0 
+                $hasil[$key][$valueCols] = count($cekTest) > 0
                     ? (
                         $cekTest[0]['mrcd_fieldType'] === 'date' || $cekTest[0]['mrcd_fieldType'] === 'datetime'
-                        ? Date::PHPToExcel(date('Y-m-d', strtotime($value[$valueCols])))
-                        : $value[$valueCols]
+                        ? Date::PHPToExcel(date('Y-m-d', strtotime($value->$valueCols)))
+                        : $value->$valueCols
                     )
-                    : $value[$valueCols];
+                    : $value->$valueCols;
             }
         }
 
@@ -119,23 +125,23 @@ class ExportReport implements FromCollection, WithHeadings, WithEvents
 
                 // $event->sheet->getStyle('C')->getNumberFormat()->setFormatCode(NumberFormat::FORMAT_DATE_XLSX15);
                 // $event->sheet->getStyle('D')->getNumberFormat()->setFormatCode(NumberFormat::FORMAT_DATE_XLSX15);
-    
+
                 $event->sheet->getStyle('A4:' . $highestColumn . '4')->getAlignment()->setHorizontal('center');
                 // $event->sheet->getStyle('I3:I' . $highestRow)->getNumberFormat()
                 // ->setFormatCode(
                 //         \PhpOffice\PhpSpreadsheet\Style\NumberFormat::FORMAT_NUMBER_COMMA_SEPARATED1
                 // );
-    
+
                 // $event->sheet->getStyle('G3:G' . $highestRow)->getNumberFormat()
                 // ->setFormatCode(
                 //         \PhpOffice\PhpSpreadsheet\Style\NumberFormat::FORMAT_NUMBER_COMMA_SEPARATED1
                 // );
-    
+
                 // $event->sheet->getStyle('H3:H' . $highestRow)->getNumberFormat()
                 // ->setFormatCode(
                 //         \PhpOffice\PhpSpreadsheet\Style\NumberFormat::FORMAT_NUMBER_COMMA_SEPARATED1
                 // );
-    
+
                 $event->sheet->styleCells(
                     'A4:' . $highestColumn . $highestRow,
                     [
@@ -169,9 +175,9 @@ class ExportReport implements FromCollection, WithHeadings, WithEvents
                 // foreach(range('A', $highestColumn) as $columnID) {
                 // $event->sheet->getColumnDimension($columnID)->setAutoSize(true) ;
                 // }
-    
+
                 // $event->sheet->getDelegate()->mergeCells('A1:'.$highestColumn.'1');
-    
+
                 // $event->sheet->getStyle('G5:'.$highestColumn.$highestRow)->getAlignment()->setHorizontal('right');
             }
         ];
