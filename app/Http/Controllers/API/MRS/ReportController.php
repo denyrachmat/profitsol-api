@@ -450,14 +450,17 @@ class ReportController extends BaseController
         $parameters = [];
         if ($request->has('filter') && count($request->filter) > 0) {
             foreach ($request->filter as $filter) {
+                if ($filter['value'][0] !== '') {
+
                 $value = is_numeric($filter['value'][0])
                     ? $filter['value'][0]
                     : "'" . str_replace("'", "''", $filter['value'][0]) . "'";
-                $parameters[] = "@{$filter['cols']['value']}={$value}";
+                $parameters[] = "{$filter['cols']['value']}={$value}";
+                }
             }
         }
 
-        $execStatement = "EXEC {$spName} " . implode(', ', $parameters);
+        $execStatement = "{$spName} {$spCommand} " . implode(', ', $parameters);
 
         try {
             $data = DB::connection('sqlsrv_conn_dyn')
@@ -679,6 +682,13 @@ class ReportController extends BaseController
             ->first();
 
         $getData = $this->runningReport($idReport, $request);
+
+        // Convert stdClass to array if needed
+        if (is_object($getData)) {
+            $getData = json_decode(json_encode($getData), true);
+        }
+
+        // return $getData;
 
         $filename = 'export_' . $cekReport->mrm_name . '_' . date('ymd_his') . '.xlsx';
         // return $getData;
