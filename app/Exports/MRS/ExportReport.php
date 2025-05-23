@@ -88,10 +88,10 @@ class ExportReport implements FromCollection, WithHeadings, WithEvents
                 $hasil[$key][$valueCols] = count($cekTest) > 0
                     ? (
                         $cekTest[0]['mrcd_fieldType'] === 'date' || $cekTest[0]['mrcd_fieldType'] === 'datetime'
-                        ? Date::PHPToExcel(date('Y-m-d', strtotime($value->$valueCols)))
-                        : $value->$valueCols
+                        ? Date::PHPToExcel(date('Y-m-d', strtotime(is_array($value) ? $value[$valueCols] : $value->$valueCols)))
+                        : (is_array($value) ? $value[$valueCols] : $value->$valueCols)
                     )
-                    : $value->$valueCols;
+                    : (is_array($value) ? $value[$valueCols] : $value->$valueCols);
             }
         }
 
