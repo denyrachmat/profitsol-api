@@ -10,6 +10,7 @@ class ITINVIncoming extends Model
 {
     use HasFactory;
 
+    public $incrementing = false;
     protected $connection = 'sqlsrv_itinv';
     protected $table = 'CR1_INC_CR7';
     const CREATED_AT = 'LUPDT';
