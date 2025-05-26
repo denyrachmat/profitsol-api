@@ -137,7 +137,7 @@ class ImportBarang implements ToModel, WithHeadingRow, SkipsEmptyRows
                             ]
                         ]));
                     } else {
-                        $insert = ITINVIncoming::updateOrCreate([
+                        $insert = ITINVIncoming::updateOrInsert([
                             'BCTYPE' => $cekTempData['TYPE_BC'],
                             'BCDOCNO' => $noDaftar,
                             'BCDOCDT' => $cekTempData['TGL_DAFTAR'],

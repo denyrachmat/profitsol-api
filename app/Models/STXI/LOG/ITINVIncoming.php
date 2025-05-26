@@ -15,7 +15,6 @@ class ITINVIncoming extends Model
     protected $table = 'CR1_INC_CR7';
     const CREATED_AT = 'LUPDT';
     const UPDATED_AT = 'LUPDT';
-
     protected $fillable = [
         'LOCCD',
         'BCTYPE',
