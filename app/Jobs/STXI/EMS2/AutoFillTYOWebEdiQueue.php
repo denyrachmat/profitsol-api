@@ -52,7 +52,7 @@ class AutoFillTYOWebEdiQueue implements ShouldQueue
                 ]);
 
                 $process = Process::timeout(300)->path('D:\app\stx-i-automation\robot-tyo-barcode-creator')
-                ->run('C:\Python311\python.exe -m robocorp.tasks run -t minimal_task -- --data "' . $this->url . '"');
+                ->run('C:\Python311\python.exe -m robocorp.tasks run tasks.py -- --data "' . $this->url . '"');
 
             if ($process->successful()) {
                 TYOA_BC_MSTR::where('TYOAM_PONO', $this->data[1])
