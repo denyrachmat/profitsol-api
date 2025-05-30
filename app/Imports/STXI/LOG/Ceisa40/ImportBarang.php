@@ -295,7 +295,7 @@ class ImportBarang implements ToModel, WithHeadingRow, SkipsEmptyRows
                             ->where('BCDOCDT', $cekTempData['TGL_DAFTAR'])
                             ->first();
 
-                        $insert = ITINVOutgoing::updateOrCreate([
+                        $insert = ITINVOutgoing::updateOrInsert([
                             'BCTYPE' => $cekTempData['TYPE_BC'],
                             'BCDOCNO' => $noDaftar,
                             'BCDOCDT' => $cekTempData['TGL_DAFTAR'],
