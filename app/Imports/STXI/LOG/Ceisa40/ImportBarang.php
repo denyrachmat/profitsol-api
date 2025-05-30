@@ -309,7 +309,7 @@ class ImportBarang implements ToModel, WithHeadingRow, SkipsEmptyRows
                             'BSGRP' => 'LAIN NYA',
                             'DOCCD' => '',
                             'DOCNO' => '',
-                            'HHEINVNO' => '',
+                            'INVNO' => '',
                             'ISUDT' => empty($cekOutgoingDataOnly) ? $cekTempData['TGL_DAFTAR'] : $cekOutgoingDataOnly->ISUDT,
                             'ITMCD' => trim($row['kode_barang']),
                             'ITMD1' => $row['uraian'],
