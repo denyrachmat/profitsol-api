@@ -10,6 +10,7 @@ class ITINVOutgoing extends Model
 {
     use HasFactory;
 
+    public $incrementing = false;
     protected $connection = 'sqlsrv_itinv';
     protected $table = 'CR2_OUT_CR8';
     const CREATED_AT = 'LUPDT';
