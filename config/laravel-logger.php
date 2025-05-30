@@ -27,7 +27,7 @@ return [
     */
 
     'loggerMiddlewareEnabled'   => env('LARAVEL_LOGGER_MIDDLEWARE_ENABLED', false),
-    'loggerMiddlewareExcept'    => array_filter(explode(',', trim(env('LARAVEL_LOGGER_MIDDLEWARE_EXCEPT')))),
+    'loggerMiddlewareExcept' => array_filter(explode(',', trim(env('LARAVEL_LOGGER_MIDDLEWARE_EXCEPT') ?? ''))),
 
     /*
     |--------------------------------------------------------------------------
