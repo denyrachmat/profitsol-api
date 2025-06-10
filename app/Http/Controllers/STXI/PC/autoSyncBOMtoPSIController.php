@@ -147,7 +147,7 @@ class autoSyncBOMtoPSIController extends Controller
 
         return [
             'message' => 'Sync BOM Queued, Data to be updated : ' . count($getDataPA100),
-            'data' => array_values($getListModelPart['EMAIL'])
+            'data' => $getListModelPart['EMAIL'] ? array_values($getListModelPart['EMAIL']) : []
         ];
     }
 
