@@ -77,12 +77,7 @@ class RPAHistController extends BaseController
             return $this->handleError('RPA History not found.', 404);
         }
 
-        if (!$request->has('prh_flag')) {
-
-            $data->update([
-                'prh_result' => 'Trying resubmit RPA Job',
-            ]);
-
+        if (!$request->has('prh_flag') || $request->prh_flag == 0) {
             // If the request contains a 'prh_cfaud_id', ensure it's an integer
             if ($request->has('prh_cfaud_id')) {
                 $data->prh_cfaud_id = (int) $request->prh_cfaud_id;
@@ -90,6 +85,8 @@ class RPAHistController extends BaseController
 
             // Dispatch the job to send the RPA history data to an external API
             SendRPAJobsQueue::dispatch($id)->onQueue('rpa_jobs');
+        } else {
+            $data->update($request->all());
         }
 
         $data->save();
