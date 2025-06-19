@@ -10,6 +10,7 @@ use App\Models\PORTAL\PortalRoleAppMap;
 use App\Models\PORTAL\PortalRoleUserMap;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\DB;
 
 use App\Models\CMS\FormMaster;
 use App\Models\CMS\FormMultiDet;
@@ -19,7 +20,9 @@ use App\Models\CMS\FormSetupDet;
 use App\Models\CMS\FormShareDet;
 use App\Models\PORTAL\PortalNotif;
 use App\Models\PORTAL\PortalGencode;
+use App\Models\MRS\MRSReportMstr;
 
+use App\Http\Requests\MRS\ReportCreateRequest;
 use App\Traits\CMS\FormsTraits;
 
 class FormController extends BaseController
@@ -100,17 +103,65 @@ class FormController extends BaseController
                         'pgm_code' => 'FORMS_SETUP',
                         'pgm_value' => $request->idRef,
                         'pgm_desc' => $key,
-                    ],[
+                    ], [
                         'pgm_code' => 'FORMS_SETUP',
                         'pgm_value' => $request->idRef,
                         'pgm_value2' => is_array($valueSetup) ? json_encode($valueSetup) : $valueSetup,
                         'pgm_desc' => $key,
                         'pgm_created_by' => $request->header('username'),
                     ]);
+
+                    if ($key === 'isHistory' && $valueSetup == true) {
+                        // If isHistory is true, then we need to create a new table for history
+                        $cekDefID = PortalGencode::where('pgm_code', 'MRS_DB_MSTR_DEF_ID')
+                            ->first();
+
+                        $getReport = MRSReportMstr::where('mrm_url_gen', 'cms')
+                            // ->where('mrm_name', $request->title . ' History')
+                            ->whereRaw("CAST(mrm_query AS NVARCHAR(MAX)) = ?", [(string)$request->idRef])
+                            ->where('mrm_url_gen', 'cms')
+                            ->first();
+
+                        $header = [
+                            'p_u_username' => $request->header('username'),
+                            'mdm_id' => $cekDefID->pgm_value,
+                            'mrm_name' => $request->title . ' History',
+                            'mrm_db' => env('APP_PREFIX') . '_CMS',
+                            'mrm_table' => 'cms_form_ans_user_det',
+                            'mrm_query' => $request->idRef,
+                            'mrm_url_gen' => 'cms',
+                        ];
+
+                        if ($getReport) {
+                            $header['id'] = $getReport->id;
+                        }
+
+                        $getDataForDet = $this->showHistory(new Request(), $request->idRef);
+                        // Decode the response content to access data
+                        $responseData = json_decode($getDataForDet->getContent(), true);
+
+                        $det = [];
+                        if (isset($responseData['data']['columns'])) {
+                            foreach ($request->setupTraining['historyTableList'] as $keyCol => $valueCol) {
+                                $det[] = [
+                                    'field' => $valueCol['name'],
+                                    'label' => $valueCol['label'],
+                                    'active' => $valueCol['isVisible'],
+                                    'sortable' => $valueCol['isSortable'],
+                                    'filterable' => $valueCol['isFiltered'],
+                                    'exported' => $valueCol['isExportable'] ?? false,
+                                    'type' => 'text',
+                                ];
+                            }
+                        }
+
+                        app('App\Http\Controllers\API\MRS\ReportController')->directStore(new Request(['header' => $header, 'det' => $det]));
+                    }
                 }
             }
         }
 
+        // Setup Share forms
         if (isset($request->shareForms) && !empty($request->idRef)) {
             $randomString = Str::random(30);
             foreach ($request->shareForms as $keyShare => $valueShare) {
@@ -152,33 +203,33 @@ class FormController extends BaseController
                         'am_app_code' => 'FRM-' . $request->idRef,
                         'am_app_name' => $request->title,
                         'am_app_desc' => $request->title,
-                        'am_app_url' => 'forms/' . $randomString,
+                        'am_app_url' => 'CMS/formsAsApps?linkID=' . $randomString,
                         'am_app_icon' => $request->shareFormsMenuIcon,
                         'am_app_parent' => $request->selectedSharedMenu,
                         'am_local_form' => 1
                     ]);
 
                     // Insert parent menu
-                    PortalRoleAppMap::updateOrCreate([
-                        'rm_role_id' => $cekIDRoles->rm_role_id,
-                        'am_app_id' => $request->selectedSharedMenu,
-                    ], [
-                        'u_username' => $request->header('username'),
-                        'rm_role_id' => $cekIDRoles->rm_role_id,
-                        'am_app_id' => $request->selectedSharedMenu,
-                        'am_app_parent' => null
-                    ]);
+                    // PortalRoleAppMap::updateOrCreate([
+                    //     'rm_role_id' => $cekIDRoles->rm_role_id,
+                    //     'am_app_id' => $request->selectedSharedMenu,
+                    // ], [
+                    //     'u_username' => $request->header('username'),
+                    //     'rm_role_id' => $cekIDRoles->rm_role_id,
+                    //     'am_app_id' => $request->selectedSharedMenu,
+                    //     'am_app_parent' => null
+                    // ]);
 
-                    // Insert the forms
-                    PortalRoleAppMap::updateOrCreate([
-                        'rm_role_id' => $cekIDRoles->rm_role_id,
-                        'am_app_id' => $appInsert->am_app_code,
-                    ], [
-                        'u_username' => $request->header('username'),
-                        'rm_role_id' => $cekIDRoles->rm_role_id,
-                        'am_app_id' => $appInsert->am_app_code,
-                        'am_app_parent' => $request->selectedSharedMenu
-                    ]);
+                    // // Insert the forms
+                    // PortalRoleAppMap::updateOrCreate([
+                    //     'rm_role_id' => $cekIDRoles->rm_role_id,
+                    //     'am_app_id' => $appInsert->am_app_code,
+                    // ], [
+                    //     'u_username' => $request->header('username'),
+                    //     'rm_role_id' => $cekIDRoles->rm_role_id,
+                    //     'am_app_id' => $appInsert->am_app_code,
+                    //     'am_app_parent' => $request->selectedSharedMenu
+                    // ]);
                 }
             }
         }
@@ -222,6 +273,7 @@ class FormController extends BaseController
         $listPage = [];
         foreach ($data as $key => $value) {
             // $listPage[] = $value['seq_name'];
+            $value['seq_name'] = $key + 1;
             $hasil[] = $this->storingForms(
                 $value,
                 $request->header('username'),
@@ -246,13 +298,15 @@ class FormController extends BaseController
             ->where('p_u_username', $request->header('username'))
             ->orderBy('created_at', 'desc')
             ->first();
+
         if (empty($getID)) {
             $getDeletedID = FormAnswerUserDet::withTrashed()->where('cfm_id', $request->id)
                 ->orderBy('created_at', 'desc')
                 ->first();
+
             $nextID = empty($getDeletedID) ? 1 : $getDeletedID['cfaud_batch'] + 1;
         } else {
-            $nextID = $getID['cfaud_batch'];
+            $nextID = $getID['cfaud_batch'] + 1;
         }
 
         $cekForm = FormMaster::where('cfmt_id', $request->id)->where('cfm_type', 'form')->where('cfm_required', 1)->get()->toArray();
@@ -283,8 +337,26 @@ class FormController extends BaseController
                 'cfaud_batch' => $nextID,
                 'cfm_id' => $request->id,
                 'cfmd_id' => $key,
-                'cfm_val' => $value,
+                'cfm_val' => (string) $value,
             ]);
+        }
+
+        $checkSetup = $this->getSetupFormsForForm($request->id);
+        // return $checkSetup;
+        if ($checkSetup['isRPA'] == 1) {
+            $getRPAId = $checkSetup['rpaId'];
+            $params = $this->buildNestedParams($checkSetup['rpaParams']);
+            $params['param.id'] = $request->id;
+
+            app('App\Http\Controllers\API\RPA\RPAHistController')->store(new Request([
+                'prh_prmid' => $getRPAId['id'],
+                'prh_robotnm' => $getRPAId['prm_name'],
+                'prh_command' => json_encode($this->buildNestedParams($checkSetup['rpaParams'])),
+                'prh_flag' => 0, // pending
+                'prh_result' => 'Starting RPA',
+                'prh_cfaud_id' => $request->id,
+                'prh_cfaud_batch_id' => $nextID,
+            ]));
         }
 
         return $this->handleResponse($hasil, 'Form submited !');
@@ -366,6 +438,18 @@ class FormController extends BaseController
         //
     }
 
+    public function destroyAnswers($id, $batchID) {
+        $delete = FormAnswerUserDet::where('cfm_id', $id)
+            ->where('cfaud_batch', $batchID)
+            ->delete();
+
+        if ($delete) {
+            return $this->handleResponse([], 'Form answers deleted successfully.');
+        } else {
+            return $this->handleError('Failed to delete form answers.', []);
+        }
+    }
+
     public function viewByLinkForm($link)
     {
         $getID = FormShareDet::where('cfsd_gen_link', $link)->first();
@@ -383,6 +467,36 @@ class FormController extends BaseController
         $hasilHeader = $this->getHeaderAllForms($data->toArray());
 
         // return $hasilHeader;
+        $hasil = [
+            'label' => $hasilHeader[0]['title'] . ' (' . count($hasilHeader[0]['forms']) . ' Rows Content)',
+            'value' => $hasilHeader[0]
+        ];
+
+        return response([
+            'status' => count($hasil) > 0,
+            'data' => $hasil
+        ]);
+    }
+
+    public function viewByID($id) {
+        $data = formMasterTitle::with([
+            'formMaster' => function ($f) {
+                $f->where('cfm_parent_id', 0);
+                $f->with('formDetail.formAnswer');
+                $f->with('allChildrenContent.formDetail.formAnswer');
+            }
+        ])->with(['quizSetup', 'shared'])->where('id', $id)
+        ->first();
+
+        if (!$data) {
+            return response([
+                'status' => false,
+                'message' => 'Form not found'
+            ]);
+        }
+
+        $hasilHeader = $this->getHeaderAllForms([$data->toArray()]);
+
         $hasil = [
             'label' => $hasilHeader[0]['title'] . ' (' . count($hasilHeader[0]['forms']) . ' Rows Content)',
             'value' => $hasilHeader[0]

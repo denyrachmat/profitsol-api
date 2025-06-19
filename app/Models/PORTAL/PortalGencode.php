@@ -20,4 +20,9 @@ class PortalGencode extends Model
         'pgm_created_by',
         'pgm_parent',
     ];
+
+    public function setPgmValue2Attribute($value)
+    {
+        $this->attributes['pgm_value2'] = (string) $value;
+    }
 }

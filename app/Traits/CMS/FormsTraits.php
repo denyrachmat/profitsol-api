@@ -9,10 +9,14 @@ use App\Models\CMS\FormMasterTitle;
 use App\Models\CMS\FormSetupDet;
 use App\Models\CMS\FormShareDet;
 use App\Models\CMS\FormLogicsDet;
-
+use App\Models\MRS\MRSReportMstr;
+use App\Models\PORTAL\PortalGencode;
+use App\Models\CMS\FormAnswerUserDet;
 use Illuminate\Support\Facades\DB;
 
 use App\Traits\PORTAL\GencodeTraits;
+use Illuminate\Http\Request;
+use GuzzleHttp\Client;
 
 trait FormsTraits
 {
@@ -81,36 +85,7 @@ trait FormsTraits
 
                 $setupTrainingRes = $setupTraining;
             } else {
-                $setupTraining = $this->getDataGencode(
-                    'FORMS_SETUP',
-                    [
-                        'pgm_value' => (string) $value['id']
-                    ],
-                    [
-                        'pgm_desc' => 'pgm_value2'
-                    ]
-                );
-
-                // Convert numeric 1/0 values in $setupTraining to boolean
-                $setupTrainingRes = [];
-                foreach ($setupTraining as $k => $v) {
-                    if (is_string($v) && $this->isJson($v)) {
-                        $setupTrainingRes[$k] = json_decode($v, true);
-                    } else {
-                        // Explicitly cast "1"/"0", 1/0, "true"/"false" to boolean, else keep original
-                        if ($v === "1" || $v === 1 || $v === true || $v === "true") {
-                            $setupTrainingRes[$k] = true;
-                        } elseif ($v === "0" || $v === 0 || $v === false || $v === "false") {
-                            $setupTrainingRes[$k] = false;
-                        } else {
-                            $setupTrainingRes[$k] = $v;
-                        }
-                        // Force boolean for 1/0 (int or string)
-                        if ($v === 1 || $v === 0 || $v === "1" || $v === "0") {
-                            $setupTrainingRes[$k] = (bool)$v;
-                        }
-                    }
-                }
+                $setupTrainingRes = $this->getSetupFormsForForm($value['id']);
             }
 
             $hasil[] = [
@@ -129,6 +104,7 @@ trait FormsTraits
                 'selectedSharedMenu' => count((clone $shared)) > 0 && !empty((clone $shared)[0]->cfsd_role_id) ? (clone $shared)[0]->am_app_parent : '',
                 'shareFormsMenuIcon' => count((clone $shared)) > 0 && !empty((clone $shared)[0]->cfsd_role_id) ? (clone $shared)[0]->am_app_icon : '',
                 'shareFormsRoleID' => count((clone $shared)) > 0 && !empty((clone $shared)[0]->cfsd_role_id) ? array_values($roleList) : '',
+                'connectedMRS' => $this->getConnectedMRS((string) $value['id']),
             ];
         }
 
@@ -158,29 +134,6 @@ trait FormsTraits
             $dataLogs = [];
             $keysData = 0;
             foreach ($dataLogics as $keyLogics => $item) {
-                // if($keyLogics === 0) {
-                //     $dataLogs[$item->cfld_seq_name] = [
-                //         'seq_name' => $item->cfld_seq_name,
-                //         'seq_desc' => $item->cfld_seq_desc,
-                //         'data' => [],
-                //     ];
-
-                //     $keysData = 0;
-                // }
-
-                // $dataLogs[$item->cfld_seq_name] = [
-                //     'seq_name' => $item->cfld_seq_name,
-                //     'seq_desc' => $item->cfld_seq_desc,
-                // ];
-
-                // $dataLogs[$item->cfld_seq_name]['data'][] = [
-                //     'cfld_opr' => $item->cfld_opr,
-                //     'cfld_val' => $item->cfld_val,
-                //     'cfld_opr_ctrl' => $item->cfld_opr_ctrl,
-                //     'cfld_res' => $item->cfld_res,
-                //     'cfld_actions' => $item->cfld_actions,
-                // ];
-
                 $dataLogs[$item->cfld_seq_name] = [
                     'seq_name' => $item->cfld_seq_name,
                     'seq_desc' => $item->cfld_seq_desc,
@@ -232,20 +185,33 @@ trait FormsTraits
         if ($data['type'] === 'row') {
             $content = '';
 
-            $insert = FormMaster::updateOrCreate([
-                'id' => $data['id'],
-            ], [
-                'p_u_username' => $uname,
-                'cfmt_id' => $idTitle,
-                'cfm_type' => $data['type'],
-                'cfm_seq_name' => $data['seq_name'],
-                'cfm_content' => $content,
-                'cfm_parent_id' => $parent,
-            ]);
+            if (isset($data['id'])) {
+                $insert = FormMaster::updateOrCreate([
+                    'id' => $data['id'],
+                ], [
+                    'p_u_username' => $uname,
+                    'cfmt_id' => $idTitle,
+                    'cfm_type' => $data['type'],
+                    'cfm_seq_name' => $data['seq_name'],
+                    'cfm_content' => $content,
+                    'cfm_parent_id' => $parent,
+                ]);
+            } else {
+                $insert = FormMaster::create([
+                    'p_u_username' => $uname,
+                    'cfmt_id' => $idTitle,
+                    'cfm_type' => $data['type'],
+                    'cfm_seq_name' => $data['seq_name'],
+                    'cfm_content' => $content,
+                    'cfm_parent_id' => $parent,
+                ]);
+            }
 
             if ($insert) {
                 $dataCols = [];
                 foreach ($data['content'] as $key => $value) {
+                    // Add seq_name key with value $key + 1
+                    $value['seq_name'] = $key + 1;
                     $dataCols[] = $this->storingForms($value, $uname, $keyAnswer, $keyExp, $idTitle, $insert->id);
                 }
 
@@ -398,5 +364,396 @@ trait FormsTraits
         }
 
         return $hasil;
+    }
+
+    public function showHistory(Request $request, $id)
+    {
+        $getData = PortalGencode::where('pgm_code', 'FORMS_SETUP')
+            ->where('pgm_value', $id);
+
+        $checkHist = (clone $getData)->where('pgm_desc', 'isHistory')->first();
+
+        if (!empty($checkHist) && $checkHist->pgm_value2 == 1) {
+            $columns = (clone $getData)->where('pgm_desc', 'historyTableList')->pluck('pgm_value2')->first();
+
+            $data = FormAnswerUserDet::select(
+                'cms_form_ans_user_det.p_u_username',
+                'cms_form_ans_user_det.cfm_id',
+                'cms_form_ans_user_det.cfmd_id',
+                DB::raw('CAST(cms_form_ans_user_det.cfm_val AS VARCHAR(MAX)) as cfm_val'),
+                'cms_form_ans_user_det.created_at',
+                'cfaud_batch',
+                'prh_prmid',
+                'prh_flag',
+                'prh_result',
+                DB::raw('portaL_rpa_hist.id as prh_id')
+            )
+                ->leftJoin('STX_PORTAL.dbo.portaL_rpa_hist', function ($f) {
+                    $f->on('portaL_rpa_hist.prh_cfaud_batch_id', '=', 'cms_form_ans_user_det.cfaud_batch')
+                        ->on('portaL_rpa_hist.prh_cfaud_id', '=', 'cms_form_ans_user_det.cfm_id');
+                })
+                ->where('cms_form_ans_user_det.cfm_id', $id)
+                ->groupBy(
+                    'cms_form_ans_user_det.p_u_username',
+                    'cms_form_ans_user_det.cfm_id',
+                    'cms_form_ans_user_det.cfmd_id',
+                    DB::raw('CAST(cms_form_ans_user_det.cfm_val AS VARCHAR(MAX))'),
+                    'cms_form_ans_user_det.created_at',
+                    'cfaud_batch',
+                    'prh_prmid',
+                    'prh_flag',
+                    'prh_result',
+                    'portaL_rpa_hist.id'
+                )
+                ->orderBy('cfaud_batch')
+                ->get();
+
+            $resCols = [];
+            foreach (json_decode($columns) as $key => $Colvalue) {
+
+                $dataContent = FormMaster::where(DB::raw('CAST(id AS VARCHAR)'), (string) $Colvalue->value)->first();
+
+                if (!empty($dataContent)) {
+                    $content = json_decode($dataContent->cfm_content);
+
+                    $Colvalue->component = $content->component;
+                }
+
+                $resCols[] = $Colvalue;
+            }
+
+            $columns = json_encode($resCols);
+
+            $result = [];
+            foreach ($data as $key => $value) {
+                foreach (json_decode($columns) as $column) {
+                    // $getDataValue = $value->cfmd_id == $column->value ? $value->cfm_val : '';
+                    if ($value->cfmd_id == $column->value) {
+                        $progress = $value->prh_flag == 1 ? 'Completed' : ($value->prh_flag == 2 ? 'In Progress' : 'Not Started');
+
+                        $result[$value->cfaud_batch]['form_id'] = $value->cfm_id;
+                        $result[$value->cfaud_batch]['batch_id'] = $value->cfaud_batch;
+                        $result[$value->cfaud_batch]['progress'] = $progress;
+                        $result[$value->cfaud_batch]['progress_detail'] = $value->prh_result ?? '';
+                        $result[$value->cfaud_batch]['created_by'] = $value->p_u_username;
+                        $result[$value->cfaud_batch]['created_at'] = $value->created_at;
+                        $result[$value->cfaud_batch]['CMS_REPORT_' . $column->value] = $value->cfm_val;
+                        $result[$value->cfaud_batch]['prh_id'] = $value->prh_id;
+                        $result[$value->cfaud_batch]['prh_flag'] = $value->prh_flag;
+                        // $result[$value->cfaud_batch]['CMS_REPORT_' . $column->value . '_API'] = $this->searchDataOnAPI($column->component->apiOpt ?? [], $value->cfm_val, $result[$value->cfaud_batch]);
+                    }
+                }
+            }
+
+            $result = collect($result);
+
+            if ($request->has('filter') && count($request->filter) > 0) {
+                foreach ($request->filter as $keyFilter => $valueFilter) {
+                    if (isset($valueFilter['value']) && !empty($valueFilter['value'])) {
+                        if (isset($valueFilter['operator']) && strtolower($valueFilter['operator']) === 'like') {
+                            $result = $result->where($valueFilter['column'], $valueFilter['operator'], '%' . $valueFilter['value'] . '%');
+                        } else {
+                            $result = $result->where($valueFilter['column'], $valueFilter['operator'], $valueFilter['value']);
+                        }
+                    }
+                }
+            }
+
+            if ($request->has('pagination') && is_array($request->pagination)) {
+                $page = isset($request->pagination['page']) ? (int) $request->pagination['page'] : 1;
+                $perPage = isset($request->pagination['perPage']) ? (int) $request->pagination['perPage'] : 10;
+                $result = $result->forPage($page, $perPage);
+                $result = new \Illuminate\Pagination\LengthAwarePaginator(
+                    $result->values(),
+                    $result->count(),
+                    $perPage,
+                    $page,
+                    ['path' => $request->url(), 'query' => $request->query()]
+                );
+
+                // Custom pagination response
+                $pagination = [
+                    'page' => $page,
+                    'rowsNumber' => $result->total(),
+                    'rowsPerPage' => $perPage,
+                    'sortBy' => $request->input('pagination.sortBy', ''),
+                    'data' => $result->items(),
+                ];
+
+                return $this->handleResponse($pagination, 'Data found !');
+            }
+
+            $result = [
+                'columns' => json_decode($columns),
+                'data' => $result->values()->toArray(),
+            ];
+
+            return $this->handleResponse($result, 'Data found !');
+        } else {
+            return $this->handleError([], 'This form is not set to history !');
+        }
+    }
+
+    public function searchDataOnAPI($apiOpt, $value = '', $result = [])
+    {
+        // If apiOpt is empty, return the result as is
+        if (empty($apiOpt)) {
+            return $result;
+        }
+
+        // If apiOpt is not an array, convert it to an array
+        if (!is_array($apiOpt)) {
+            $apiOpt = (array) $apiOpt;
+        }
+
+        // If apiOpt does not have 'api_params', return the result as is
+        if (
+            (is_array($apiOpt) && !isset($apiOpt['api_params'])) &&
+            (!is_object($apiOpt) || (is_object($apiOpt) && !isset($apiOpt->api_params)))
+        ) {
+            return $result;
+        }
+
+        // Build the request parameters
+        $params = $this->buildNestedParams(is_array($apiOpt) ? $apiOpt['api_params'] : $apiOpt->api_params);
+
+        // Add the value to the parameters if it is not empty
+        if (!empty($value)) {
+            if (is_array($apiOpt)) {
+                if (isset($apiOpt['selectedKeys'])) {
+                    if (is_array($apiOpt['selectedKeys'])) {
+                        $selectedKey = $apiOpt['selectedKeys']['value'] ?? ($apiOpt['selectedKeys']['label'] ?? null);
+                    } elseif (is_object($apiOpt['selectedKeys'])) {
+                        $selectedKey = $apiOpt['selectedKeys']->value ?? ($apiOpt['selectedKeys']->label ?? null);
+                    } else {
+                        $selectedKey = null;
+                    }
+                } else {
+                    $selectedKey = null;
+                }
+            } elseif (is_object($apiOpt)) {
+                if (isset($apiOpt->selectedKeys)) {
+                    if (is_array($apiOpt->selectedKeys)) {
+                        $selectedKey = $apiOpt->selectedKeys['value'] ?? ($apiOpt->selectedKeys['label'] ?? null);
+                    } elseif (is_object($apiOpt->selectedKeys)) {
+                        $selectedKey = $apiOpt->selectedKeys->value ?? ($apiOpt->selectedKeys->label ?? null);
+                    } else {
+                        $selectedKey = null;
+                    }
+                } else {
+                    $selectedKey = null;
+                }
+            } else {
+                $selectedKey = null;
+            }
+
+            $params['filters'][] = [
+                'cols' => $selectedKey,
+                'param' => '=',
+                'value' => $value
+            ];
+        }
+
+        foreach ($params['filters'] as $key => $filter) {
+            $params['filters'][$key]['value'] = $result[$filter['value']] ?? $filter['value'];
+        }
+
+        // return $params;
+
+        // Make the API call
+        $client = new Client();
+
+        try {
+            $method = is_array($apiOpt) ? $apiOpt['api_method'] : $apiOpt->api_method;
+            $url = is_array($apiOpt) ? $apiOpt['api_url'] : $apiOpt->api_url;
+            $selectedNode = is_array($apiOpt) ? ($apiOpt['selectedNode'] ?? []) : ($apiOpt->selectedNode ?? []);
+
+            $response = $client->request($method, $url, [
+                'json' => $params,
+                'headers' => [
+                    'Accept' => 'application/json',
+                    'Content-Type' => 'application/json',
+                ],
+            ]);
+
+            $data = json_decode($response->getBody(), true);
+
+            // Process selected node if needed
+            if (!empty($selectedNode)) {
+                foreach ($selectedNode as $key) {
+                    $data = $data[$key] ?? null;
+                    if ($data === null)
+                        break;
+                }
+            }
+
+            return $data;
+
+        } catch (\Exception $e) {
+            // Handle exception
+            \Log::error('API call failed: ' . $e->getMessage());
+            return null;
+        }
+    }
+
+    /**
+     * Build nested params from flat array/object with dot notation keys.
+     * Supports keys like "params.data" => "value" and ["param_name" => "params.data", ...]
+     * @param array $apiParams
+     * @return array
+     */
+    protected function buildNestedParams(array $apiParams): array
+    {
+        $result = [];
+
+        // If the input is a flat associative array (not a list of param objects)
+        $isAssoc = function ($arr) {
+            if ([] === $arr) return false;
+            return array_keys($arr) !== range(0, count($arr) - 1);
+        };
+
+        if ($isAssoc($apiParams)) {
+            // If the array is already nested (no dot notation keys), return as is
+            $hasDot = false;
+            foreach (array_keys($apiParams) as $k) {
+                if (strpos($k, '.') !== false) {
+                    $hasDot = true;
+                    break;
+                }
+            }
+            if (!$hasDot) {
+                return $apiParams;
+            }
+            // Build nested structure from dot notation keys
+            foreach ($apiParams as $paramName => $value) {
+                $keys = explode('.', $paramName);
+                $current = &$result;
+                foreach ($keys as $key) {
+                    // Handle array notation like [0]
+                    if (preg_match('/^\[(\d+)\]$/', $key, $matches)) {
+                        $key = (int) $matches[1];
+                    }
+                    if (!isset($current[$key])) {
+                        $current[$key] = [];
+                    }
+                    $current = &$current[$key];
+                }
+                $current = $value;
+                unset($current);
+            }
+            return $result;
+        }
+
+        // Otherwise, treat as list of param objects (legacy)
+        foreach ($apiParams as $param) {
+            if (is_array($param)) {
+                $paramName = $param['param_name'];
+                $value = isset($param['form_id']) && !empty($param['form_id']) ? 'CMS_REPORT_' . $param['form_id'] :
+                    ($param['default_value'] ?? null);
+            } elseif (is_object($param)) {
+                $paramName = $param->param_name;
+                $value = isset($param->form_id) && !empty($param->form_id) ? 'CMS_REPORT_' . $param->form_id :
+                    ($param->default_value ?? null);
+            } else {
+                continue;
+            }
+
+            $keys = explode('.', $paramName);
+            $current = &$result;
+            foreach ($keys as $key) {
+                if (preg_match('/^\[(\d+)\]$/', $key, $matches)) {
+                    $key = (int) $matches[1];
+                }
+                if (!isset($current[$key])) {
+                    $current[$key] = [];
+                }
+                $current = &$current[$key];
+            }
+            $current = $value;
+            unset($current);
+        }
+
+        return $result;
+    }
+    // {
+    //     $result = [];
+
+    //     foreach ($apiParams as $param) {
+    //         // Support both array and object (stdClass)
+    //         if (is_array($param)) {
+    //             $paramName = $param['param_name'];
+    //             $value = isset($param['form_id']) && !empty($param['form_id']) ? 'CMS_REPORT_' . $param['form_id'] :
+    //                 ($param['default_value'] ?? null);
+    //         } elseif (is_object($param)) {
+    //             $paramName = $param->param_name;
+    //             $value = isset($param->form_id) && !empty($param->form_id) ? 'CMS_REPORT_' . $param->form_id :
+    //                 ($param->default_value ?? null);
+    //         } else {
+    //             continue;
+    //         }
+
+    //         $keys = explode('.', $paramName);
+
+    //         $current = &$result;
+
+    //         foreach ($keys as $key) {
+    //             // Handle array notation like [0]
+    //             if (preg_match('/^\[(\d+)\]$/', $key, $matches)) {
+    //                 $key = (int) $matches[1];
+    //             }
+
+    //             if (!isset($current[$key])) {
+    //                 $current[$key] = [];
+    //             }
+
+    //             $current = &$current[$key];
+    //         }
+
+    //         $current = $value;
+    //         unset($current);
+    //     }
+
+    //     return $result;
+    // }
+
+    public function getConnectedMRS($id)
+    {
+        return MRSReportMstr::where(DB::raw('CAST(mrm_query AS NVARCHAR(MAX))'), (string) $id)->first() ?: [];
+    }
+
+    public function getSetupFormsForForm($id)
+    {
+        $setupTraining = $this->getDataGencode(
+            'FORMS_SETUP',
+            [
+                'pgm_value' => (string) $id
+            ],
+            [
+                'pgm_desc' => 'pgm_value2'
+            ]
+        );
+
+        // Convert numeric 1/0 values in $setupTraining to boolean
+        $setupTrainingRes = [];
+        foreach ($setupTraining as $k => $v) {
+            if (is_string($v) && $this->isJson($v)) {
+                $setupTrainingRes[$k] = json_decode($v, true);
+            } else {
+                // Explicitly cast "1"/"0", 1/0, "true"/"false" to boolean, else keep original
+                if ($v === "1" || $v === 1 || $v === true || $v === "true") {
+                    $setupTrainingRes[$k] = true;
+                } elseif ($v === "0" || $v === 0 || $v === false || $v === "false") {
+                    $setupTrainingRes[$k] = false;
+                } else {
+                    $setupTrainingRes[$k] = $v;
+                }
+                // Force boolean for 1/0 (int or string)
+                if ($v === 1 || $v === 0 || $v === "1" || $v === "0") {
+                    $setupTrainingRes[$k] = (bool) $v;
+                }
+            }
+        }
+
+        return $setupTrainingRes;
     }
 }

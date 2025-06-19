@@ -47,6 +47,7 @@ use App\Http\Controllers\API\PORTAL\ProfilesController;
 use App\Http\Controllers\API\PORTAL\UsersController;
 use App\Http\Controllers\API\PORTAL\AppController;
 use App\Http\Controllers\API\PORTAL\RoleController;
+use App\Http\Controllers\API\RPA\RPAMasterController;
 /*
 |--------------------------------------------------------------------------
 | API Routes
@@ -140,13 +141,18 @@ Route::group(['prefix' => 'dms'], function () {
 
 Route::group(['prefix' => 'cms'], function () {
     Route::resource('forms', FormController::class);
-    Route::resource('quiz', QuizController::class);
 
     Route::post('storeAnswers', [FormController::class, 'storeAnswers']);
+    Route::delete('deleteAnswers/{id}/{batchID}', [FormController::class, 'destroyAnswers']);
+    Route::get('getConnectedMRS/{id}', [FormController::class, 'getConnectedMRS']);
+    Route::get('viewByLinkForm/{link}', [FormController::class, 'viewByLinkForm']);
+    Route::get('viewByID/{id}', [FormController::class, 'viewByID']);
+    Route::post('showHistory/{id}', [FormController::class, 'showHistory']);
+
+    Route::resource('quiz', QuizController::class);
 
     Route::get('migrationHRMS', [QuizController::class, 'migrationHRMS']);
     Route::get('migrationHRMSUserAns', [QuizController::class, 'migrateUsersAnswers']);
-    Route::get('viewByLinkForm/{link}', [FormController::class, 'viewByLinkForm']);
     Route::get('viewHTMLOnlyQuiz/{id}', [QuizController::class, 'getHTMLList']);
     Route::post('downloadHTMLMaterial/{id}', [QuizController::class, 'downloadHTMLMaterial']);
 });
@@ -178,6 +184,17 @@ Route::group(['prefix' => 'mrs'], function () {
     Route::resource('reportCols', ReportColsController::class);
 });
 
+Route::group(['prefix' => 'rpa'], function () {
+    Route::resource('rpaMaster', RPAMasterController::class);
+    Route::get('rpaMaster/{id}', [RPAMasterController::class, 'show']);
+    Route::post('rpaMaster', [RPAMasterController::class, 'store']);
+    Route::put('rpaMaster/{id}', [RPAMasterController::class, 'update']);
+    Route::delete('rpaMaster/{id}', [RPAMasterController::class, 'destroy']);
+
+    Route::resource('rpaHist', \App\Http\Controllers\API\RPA\RPAHistController::class);
+});
+
+// Custom API For STXI
 Route::group(['prefix' => 'div'], function () {
     Route::group(['prefix' => 'ems2'], function () {
         // Start DLV TYO
@@ -370,6 +387,13 @@ Route::group(['prefix' => 'div'], function () {
 
     Route::group(['prefix' => 'it'], function () {
         Route::resource('scan', PartScannerController::class);
+    });
+
+    Route::group(['prefix' => 'ocd'], function () {
+        Route::resource('autoScanKitting', PartScannerController::class);
+        Route::post('getWHFromMega', [PartScannerController::class, 'getWHFromMega']);
+        Route::post('getBGFromMega', [PartScannerController::class, 'getBGFromMega']);
+        Route::post('getDOFromMegaWMS', [PartScannerController::class, 'getDOFromMegaWMS']);
     });
 });
 
