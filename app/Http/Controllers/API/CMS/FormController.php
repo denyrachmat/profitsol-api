@@ -345,13 +345,12 @@ class FormController extends BaseController
         // return $checkSetup;
         if ($checkSetup['isRPA'] == 1) {
             $getRPAId = $checkSetup['rpaId'];
-            $params = $this->buildNestedParams($checkSetup['rpaParams']);
-            $params['param.id'] = $request->id;
+            $params = $this->buildNestedParams($checkSetup['rpaParams'], $request->id, $nextID);
 
             app('App\Http\Controllers\API\RPA\RPAHistController')->store(new Request([
                 'prh_prmid' => $getRPAId['id'],
                 'prh_robotnm' => $getRPAId['prm_name'],
-                'prh_command' => json_encode($this->buildNestedParams($checkSetup['rpaParams'])),
+                'prh_command' => json_encode($params),
                 'prh_flag' => 0, // pending
                 'prh_result' => 'Starting RPA',
                 'prh_cfaud_id' => $request->id,
