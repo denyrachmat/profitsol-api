@@ -37,12 +37,12 @@ class SendRPAJobsQueue implements ShouldQueue
 
         if ($getHist->prh_flag == 0) {
             if ($getHist->prm_type == 'api') {
-                $this->sendApi($getHist->id);
+                $this->sendApi($this->id);
             }
         } else {
             Redis::publish('portalv2', json_encode([
                 'app' => 'rpa',
-                'message' => 'RPA Job ID ' . $getHist->id . ' : Already processed.',
+                'message' => 'RPA Job ID ' . $this->id . ' : Already processed.',
                 'type' => 'yellow',
                 'status' => 'warning',
             ]));
