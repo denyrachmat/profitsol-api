@@ -31,8 +31,8 @@ class RPAHistController extends BaseController
      */
     public function store(Request $request)
     {
-        if ($request->has('id')) {
-            return $this->update($request, $request->id);
+        if ($request->has('prh_id')) {
+            return $this->update($request, $request->prh_id);
         }
 
         $data = PortalRPAHist::create($request->all());
@@ -42,6 +42,10 @@ class RPAHistController extends BaseController
             $data->prh_cfaud_id = (int) $request->prh_cfaud_id;
             $data->save();
         }
+
+
+        // Dispatch the job to send the RPA history data to an external API
+        SendRPAJobsQueue::dispatch($data->id)->onQueue('rpa_jobs');
 
         return $this->handleResponse($data, 'RPA History created successfully.');
     }
@@ -67,17 +71,28 @@ class RPAHistController extends BaseController
      */
     public function update(Request $request, string $id)
     {
-        $data = PortalRPAHist::findOrFail($id);
-        $data->update($request->all());
-
-        // If the request contains a 'prh_cfaud_id', ensure it's an integer
-        if ($request->has('prh_cfaud_id')) {
-            $data->prh_cfaud_id = (int) $request->prh_cfaud_id;
-            $data->save();
+        try {
+            $data = PortalRPAHist::findOrFail($id);
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            return $this->handleError('RPA History not found.', 404);
         }
 
-        // Dispatch the job to send the RPA history data to an external API
-        SendRPAJobsQueue::dispatch($id)->onQueue('rpa_jobs');
+        if (!$request->has('prh_flag')) {
+
+            $data->update([
+                'prh_result' => 'Trying resubmit RPA Job',
+            ]);
+
+            // If the request contains a 'prh_cfaud_id', ensure it's an integer
+            if ($request->has('prh_cfaud_id')) {
+                $data->prh_cfaud_id = (int) $request->prh_cfaud_id;
+            }
+
+            // Dispatch the job to send the RPA history data to an external API
+            SendRPAJobsQueue::dispatch($id)->onQueue('rpa_jobs');
+        }
+
+        $data->save();
 
         // $this->sendApi($id);
 

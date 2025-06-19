@@ -31,6 +31,9 @@ class RPAMasterController extends Controller
      */
     public function store(Request $request)
     {
+        if ($request->has('prh_id')) {
+            return $this->update($request, $request->prh_id);
+        }
         $data = PortalRPAMaster::create($request->all());
 
         // Save related prmParameter if provided
