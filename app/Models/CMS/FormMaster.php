@@ -35,17 +35,17 @@ class FormMaster extends Model
 
     public function formDetail()
     {
-        return $this->hasMany(FormMultiDet::class, 'cfm_id', 'id')->orderBy(DB::raw('CAST(cfmd_value AS INT)'), 'asc');
+        return $this->hasMany(FormMultiDet::class, 'cfm_id', 'id')->orderBy(DB::raw('cfmd_value'), 'asc');
     }
 
     public function formAnswer()
     {
-        return $this->hasMany(FormAnswerDet::class, 'cfmd_id', 'id')->orderBy(DB::raw('CAST(cfmd_id AS INT)'), 'asc');
+        return $this->hasMany(FormAnswerDet::class, 'cfmd_id', 'id')->orderBy(DB::raw('cfmd_id'), 'asc');
     }
 
     public function formUserAnswer()
     {
-        return $this->hasMany(FormAnswerUserDet::class, 'cfmd_id', 'id')->orderBy(DB::raw('CAST(cfmd_id AS INT)'), 'asc');
+        return $this->hasMany(FormAnswerUserDet::class, 'cfmd_id', 'id')->orderBy(DB::raw('cfmd_id'), 'asc');
     }
 
     public function childrenContent()

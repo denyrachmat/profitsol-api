@@ -313,6 +313,58 @@ return [
             'prefix_indexes' => true,
         ],
 
+        'sqlsrv_mega_wms_tyo' => [
+            'driver' => 'sqlsrv',
+            'url' => env('DATABASE_URL'),
+            'host' => env('DB_MEGA_WMS_TYO_HOST', 'localhost'),
+            'port' => env('DB_MEGA_WMS_TYO_PORT', '1433'),
+            'database' => env('DB_MEGA_WMS_TYO_DATABASE', 'forge'),
+            'username' => env('DB_MEGA_WMS_TYO_USERNAME', 'forge'),
+            'password' => env('DB_MEGA_WMS_TYO_PASSWORD', ''),
+            'charset' => 'utf8',
+            'prefix' => '',
+            'prefix_indexes' => true,
+        ],
+
+        'sqlsrv_mega_wms_ska' => [
+            'driver' => 'sqlsrv',
+            'url' => env('DATABASE_URL'),
+            'host' => env('DB_MEGA_WMS_SKA_HOST', 'localhost'),
+            'port' => env('DB_MEGA_WMS_SKA_PORT', '1433'),
+            'database' => env('DB_MEGA_WMS_SKA_DATABASE', 'forge'),
+            'username' => env('DB_MEGA_WMS_SKA_USERNAME', 'forge'),
+            'password' => env('DB_MEGA_WMS_SKA_PASSWORD', ''),
+            'charset' => 'utf8',
+            'prefix' => '',
+            'prefix_indexes' => true,
+        ],
+
+        'sqlsrv_mega_wms_sme' => [
+            'driver' => 'sqlsrv',
+            'url' => env('DATABASE_URL'),
+            'host' => env('DB_MEGA_WMS_SME_HOST', 'localhost'),
+            'port' => env('DB_MEGA_WMS_SME_PORT', '1433'),
+            'database' => env('DB_MEGA_WMS_SME_DATABASE', 'forge'),
+            'username' => env('DB_MEGA_WMS_SME_USERNAME', 'forge'),
+            'password' => env('DB_MEGA_WMS_SME_PASSWORD', ''),
+            'charset' => 'utf8',
+            'prefix' => '',
+            'prefix_indexes' => true,
+        ],
+
+        'sqlsrv_mega_wms_exim' => [
+            'driver' => 'sqlsrv',
+            'url' => env('DATABASE_URL'),
+            'host' => env('DB_MEGA_WMS_EXIM_HOST', 'localhost'),
+            'port' => env('DB_MEGA_WMS_EXIM_PORT', '1433'),
+            'database' => env('DB_MEGA_WMS_EXIM_DATABASE', 'forge'),
+            'username' => env('DB_MEGA_WMS_EXIM_USERNAME', 'forge'),
+            'password' => env('DB_MEGA_WMS_EXIM_PASSWORD', ''),
+            'charset' => 'utf8',
+            'prefix' => '',
+            'prefix_indexes' => true,
+        ],
+
         'sqlsrv_mega_db' => [
             'driver' => 'sqlsrv',
             'url' => env('DATABASE_URL'),

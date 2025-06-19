@@ -5,6 +5,7 @@ namespace App\Http\Controllers\STXI\IT;
 use App\Http\Controllers\API\PORTAL\BaseController;
 use Illuminate\Http\Request;
 use App\Models\STXI\IT\PartScanner;
+use Illuminate\Support\Facades\DB;
 
 class PartScannerController extends BaseController
 {
@@ -34,7 +35,7 @@ class PartScannerController extends BaseController
                 'MBCSCNH_ITMCD' => $value['MBCSCNH_ITMCD'],
                 'MBCSCNH_QTY' => $value['MBCSCNH_QTY'],
                 'MBCSCNH_LOT' => $value['MBCSCNH_LOT'],
-            ],[
+            ], [
                 'MBCSCNH_ITMCD' => $value['MBCSCNH_ITMCD'],
                 'MBCSCNH_QTY' => $value['MBCSCNH_QTY'],
                 'MBCSCNH_LOT' => $value['MBCSCNH_LOT'],
@@ -80,5 +81,90 @@ class PartScannerController extends BaseController
     public function destroy(string $id)
     {
         //
+    }
+
+    // Custom function to get DO From Mega
+
+    public function getWHFromMega(Request $request)
+    {
+        $data = DB::connection('sqlsrv_mega_wms_exim')
+            ->table('MWWHS_TBL')
+            ->select('MWWHS_WHSCD', DB::raw("CONCAT(RTRIM(MWWHS_WHSCD), ' (', RTRIM(MWWHS_WHSNM), ')' ) AS MWWHS_WHSNM"))
+            ->distinct()
+            ->when($request->has('filters'), function ($query) use ($request) {
+                foreach ($request->filters as $key => $valueFilter) {
+                    $query->where($valueFilter['cols'], $valueFilter['param'], $valueFilter['value']);
+                }
+            })
+            ->get();
+
+        if ($data->isEmpty()) {
+            return $this->handleError('No warehouse found.');
+        }
+
+        return $this->handleResponse($data, 'Data retrieved successfully.');
+    }
+
+    public function getBGFromMega(Request $request)
+    {
+        $data = DB::connection('sqlsrv_mega_wms_exim')
+            ->table('MBSG_TBL')
+            ->select('MBSG_BSGRP', DB::raw("CONCAT(RTRIM(MBSG_BSGRP), ' (', RTRIM(MBSG_DESC), ')' ) AS MBSG_DESC"))
+            ->when($request->has('filters'), function ($query) use ($request) {
+                foreach ($request->filters as $key => $valueFilter) {
+                    $query->where($valueFilter['cols'], $valueFilter['param'], $valueFilter['value']);
+                }
+            })
+            ->get();
+
+        if ($data->isEmpty()) {
+            return $this->handleError('No bg Found.');
+        }
+
+        return $this->handleResponse($data, 'Data retrieved successfully.');
+    }
+
+    public function getDOFromMegaWMS(Request $request)
+    {
+        $data = DB::connection('sqlsrv_mega_wms_exim')
+            ->table('WDEL_TBL')
+            ->select(
+                'WDEL_DONO',
+                'WDEL_KITTY',
+                'WDEL_CUSCD',
+                'WDEL_CURCD',
+                'WDEL_DELCD',
+                'WDEL_WHSCD',
+                'WDEL_BSGRP',
+            )
+            ->when($request->has('filters'), function ($query) use ($request) {
+                foreach ($request->filters as $filter) {
+                    $query->where($filter['cols'], $filter['param'], $filter['value']);
+                }
+            })
+            ->whereNotExists(function ($query) {
+                $query->select(DB::raw(1))
+                    ->from('WPCK_TBL')
+                    ->whereColumn('WPCK_TBL.WPCK_DONO', 'WDEL_TBL.WDEL_DONO')
+                    ->whereColumn('WPCK_TBL.WPCK_WHSCD', 'WDEL_TBL.WDEL_WHSCD');
+            })
+            ->whereNotNull('WDEL_DONO')
+            ->whereNotNull('WDEL_STSFG')
+            ->groupBy(
+                'WDEL_DONO',
+                'WDEL_KITTY',
+                'WDEL_CUSCD',
+                'WDEL_CURCD',
+                'WDEL_DELCD',
+                'WDEL_WHSCD',
+                'WDEL_BSGRP',
+            )
+            ->get();
+
+        if ($data->isEmpty()) {
+            return $this->handleError('No data found for the given user ID.');
+        }
+
+        return $this->handleResponse($data, 'Data retrieved successfully.');
     }
 }
