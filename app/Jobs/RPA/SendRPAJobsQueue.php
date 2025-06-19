@@ -60,8 +60,13 @@ class SendRPAJobsQueue implements ShouldQueue
 
         $client = new \GuzzleHttp\Client();
         try {
+            $command = json_decode($data->prh_command, true);
+            if (is_array($command) && array_key_exists('params', $command) && is_array($command['params'])) {
+                $command['params']['id'] = $id;
+            }
+
             $response = $client->post(env('RPA_URL'), [
-                'json' => $data->prh_command,
+                'json' => $command,
             ]);
             $result = json_decode($response->getBody(), true);
 
