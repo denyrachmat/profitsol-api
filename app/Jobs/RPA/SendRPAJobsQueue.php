@@ -30,7 +30,7 @@ class SendRPAJobsQueue implements ShouldQueue
      */
     public function handle(): void
     {
-        $getHist = PortalRPAHist::where('id', $this->id)
+        $getHist = PortalRPAHist::where('portal_rpa_hist.id', $this->id)
             ->join('portal_rpa_mstr', 'portal_rpa_mstr.id', '=', 'portal_rpa_hist.prh_prmid')
             ->where('prh_flag', 0)
             ->first();
