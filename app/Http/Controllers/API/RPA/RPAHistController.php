@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use App\Models\PORTAL\PortalRPAHist;
 use App\Http\Controllers\API\PORTAL\BaseController;
 use App\Jobs\RPA\SendRPAJobsQueue;
+use Redis;
 
 class RPAHistController extends BaseController
 {
@@ -88,6 +89,14 @@ class RPAHistController extends BaseController
         } else {
             $data->update($request->all());
         }
+
+        Redis::publish('portalv2', json_encode([
+            'app' => 'rpa',
+            'message' => 'RPA Job ID ' . $id . ' : Already processed.',
+            'type' => 'yellow',
+            'status' => 'warning',
+            'data' => $data,
+        ]));
 
         $data->save();
 
