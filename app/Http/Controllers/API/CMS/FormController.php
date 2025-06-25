@@ -18,16 +18,20 @@ use App\Models\CMS\FormAnswerDet;
 use App\Models\CMS\FormMasterTitle;
 use App\Models\CMS\FormSetupDet;
 use App\Models\CMS\FormShareDet;
+use App\Models\CMS\FormAMSMapDet;
 use App\Models\PORTAL\PortalNotif;
 use App\Models\PORTAL\PortalGencode;
 use App\Models\MRS\MRSReportMstr;
 
+
 use App\Http\Requests\MRS\ReportCreateRequest;
 use App\Traits\CMS\FormsTraits;
+use App\Traits\AMS\ApprovalActionTraits;
+use App\Http\Requests\AMS\ApprovalRunningApproveActionRequest;
 
 class FormController extends BaseController
 {
-    use FormsTraits;
+    use FormsTraits, ApprovalActionTraits;
 
     /**
      * Display a listing of the resource.
@@ -118,7 +122,7 @@ class FormController extends BaseController
 
                         $getReport = MRSReportMstr::where('mrm_url_gen', 'cms')
                             // ->where('mrm_name', $request->title . ' History')
-                            ->whereRaw("CAST(mrm_query AS NVARCHAR(MAX)) = ?", [(string)$request->idRef])
+                            ->whereRaw("CAST(mrm_query AS NVARCHAR(MAX)) = CAST(? AS NVARCHAR(MAX))", [$request->idRef])
                             ->where('mrm_url_gen', 'cms')
                             ->first();
 
@@ -128,7 +132,7 @@ class FormController extends BaseController
                             'mrm_name' => $request->title . ' History',
                             'mrm_db' => env('APP_PREFIX') . '_CMS',
                             'mrm_table' => 'cms_form_ans_user_det',
-                            'mrm_query' => $request->idRef,
+                            'mrm_query' => strval($request->idRef),
                             'mrm_url_gen' => 'cms',
                         ];
 
@@ -358,6 +362,42 @@ class FormController extends BaseController
             ]));
         }
 
+        if ($checkSetup['isApproval'] == 1) {
+            $getMasterResponse = $this->viewApprovalMasterByApprvCode($checkSetup['approvalCode']);
+            $getMasterContent = json_decode($getMasterResponse->getContent(), true);
+            $getMasterData = isset($getMasterContent['data']) ? $getMasterContent['data'] : null;
+
+            // You need to provide actual values for HSCD_DOCNO and item_det if required by your business logic.
+            // For now, we will use placeholders or empty values to avoid undefined variable errors.
+            $getApproval = $this->approveAction(new ApprovalRunningApproveActionRequest([
+                'username' => $request->header('username'),
+                'amsm_id' => $getMasterData['id'] ?? null,
+                'stat' => 1,
+                'remarks' => 'Sending approval CMS!!',
+                'data' => [],
+                'onApproval' => [
+                    'methods' => 'post',
+                    'params' => [
+                        'amstd_token' => 'token',
+                        'amshd_remarks' => 'Remarks',
+                    ],
+                    'url' => 'http://192.168.100.32/public/api/cms/updateApprovalStatus'
+                    // 'url' => 'http://localhost/STX/stx-api/public/api/cms/updateApprovalStatus'
+                ],
+                'onDone' => [
+                    'methods' => 'post',
+                    'params' => [
+                        'amstd_token' => 'token',
+                        'amshd_remarks' => 'Remarks',
+                    ],
+                    'url' => 'http://192.168.100.32/public/api/cms/updateApprovalStatus'
+                    // 'url' => 'http://localhost/STX/stx-api/public/api/cms/updateApprovalStatus'
+                ],
+                'msgkey' => ''
+            ]))->getOriginalContent();
+
+        }
+
         return $this->handleResponse($hasil, 'Form submited !');
 
     }
@@ -505,5 +545,13 @@ class FormController extends BaseController
             'status' => count($hasil) > 0,
             'data' => $hasil
         ]);
+    }
+
+    public function updateAMSMapping(Request $request, $id)
+    {
+
+
+        return $this->handleResponse([], 'AMS Mapping updated successfully.');
+
     }
 }
