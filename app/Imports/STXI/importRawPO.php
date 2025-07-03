@@ -77,24 +77,36 @@ class importRawPO implements ToModel, WithStartRow
                             }
 
                             $date = date('Y-m', strtotime($this->date)) . '-' . $countDate;
-                            if (!empty($row[0])) {;
+                            if (!empty($row[0])) {
                                 $item = $row[0];
-                                $cekDataPO = FRCST_PO_MRI::where('FPM_ITMCD', $this->formatItem($item))
-                                    ->where('FPM_UPLDT', $date)
-                                    ->where('FPM_ITMCD', $this->formatItem($item))
-                                    ->where('FPM_QTY', (int) $row[$valueSelHead['keyHead']])
-                                    ->first();
+                                FRCST_PO_MRI::updateOrCreate([
+                                    'FPM_UPLDT' => $date,
+                                    'FPM_ITMCD' => $this->formatItem($item),
+                                    'FPM_QTY' => (int) $row[$valueSelHead['keyHead']],
+                                ], [
+                                    'FPM_ITMCD' => $this->formatItem($item),
+                                    'FPM_UPLDT' => $date,
+                                    'FPM_QTY' => (int) $row[$valueSelHead['keyHead']],
+                                ]);
 
-                                    if (empty($cekDataPO)) {
+                                // $cekDataPO = FRCST_PO_MRI::where('FPM_ITMCD', $this->formatItem($item))
+                                //     ->where('FPM_UPLDT', $date)
+                                //     ->where('FPM_QTY', (int) $row[$valueSelHead['keyHead']])
+                                //     ->first();
 
-                                        // logger($row[0]. '- Ready to inserted');
+                                //     if (empty($cekDataPO)) {
 
-                                        FRCST_PO_MRI::create([
-                                            'FPM_ITMCD' => $this->formatItem($item),
-                                            'FPM_UPLDT' => $date,
-                                            'FPM_QTY' => (int) $row[$valueSelHead['keyHead']],
-                                        ]);
-                                    }
+                                //         // logger($row[0]. '- Ready to inserted');
+
+                                //         FRCST_PO_MRI::updateOrCreate([
+                                //             'FPM_UPLDT' => $date,
+                                //             'FPM_ITMCD' => $this->formatItem($item),
+                                //         ],[
+                                //             'FPM_ITMCD' => $this->formatItem($item),
+                                //             'FPM_UPLDT' => $date,
+                                //             'FPM_QTY' => (int) $row[$valueSelHead['keyHead']],
+                                //         ]);
+                                //     }
                             }
                         }
 
