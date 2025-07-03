@@ -56,7 +56,7 @@ class importRawPO implements ToModel, WithStartRow
                 //     $countDate++;
                 // }
 
-                if ($key > 12) {
+                if ($key > 12 && $key < 75 && $key % 2 === 0 && !empty($value)) {
                     foreach ($this->listSelected as $keySelHead => $valueSelHead) {
                         $string = $valueSelHead['valueHead'];
                         preg_match_all('/\d+/', $string, $matches);
