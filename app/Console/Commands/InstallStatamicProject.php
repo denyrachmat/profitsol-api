@@ -31,7 +31,7 @@ class InstallStatamicProject extends Command
 
         $parentPath = base_path("statamic-projects/{$domain->pd_name}");
         $publicPath = "{$parentPath}/public";
-        $symlinkPath = public_path("statamic-projects/{$domain->pd_name}");
+        $symlinkPath = base_path("statamic-projects/{$domain->pd_name}");
 
         if (!file_exists($parentPath)) {
             mkdir($parentPath, 0755, true);
