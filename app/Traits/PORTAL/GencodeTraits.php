@@ -28,9 +28,9 @@ trait GencodeTraits
                     $hasil[$value[$keySel]] = $value[$selectStr];
                     if (count($splitTypeString) > 1) {
                         if ($splitTypeString[1] === 'int') {
-                            $hasil[$value[$keySel]] = (int)$value[$selectStr];
+                            $hasil[$value[$keySel]] = (int) $value[$selectStr];
                         } elseif ($splitTypeString[1] === 'bool') {
-                            $hasil[$value[$keySel]] = (bool)$value[$selectStr];
+                            $hasil[$value[$keySel]] = (bool) $value[$selectStr];
                         }
                     }
                 }
@@ -44,11 +44,13 @@ trait GencodeTraits
 
     public function isGencodeExists($id, $filter = [])
     {
-        $gencode = PortalGencode::where('pgm_code', $id);
+        $gencode = PortalGencode::where('pgm_code', $id)->first();
+
+        // return $gencode;
 
         if (!empty($filter)) {
             foreach ($filter as $key => $value) {
-                $gencode->whereRaw("CAST($key AS nvarchar(max)) = ?", [$value]);
+                $gencode->where($key, $value);
             }
         }
 
