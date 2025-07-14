@@ -175,7 +175,7 @@ class InstallStatamicProject extends Command
                     'pgm_value2' => 'setup_failed',
                     'pgm_value3' => $username,
                     'pgm_desc' => $projectName,
-                    'pgm_desc2' => $e->getMessage(),
+                    'pgm_desc3' => $e->getMessage(),
                 ]
             );
             return 1;
@@ -220,7 +220,7 @@ class InstallStatamicProject extends Command
                         'pgm_value2' => 'setup_failed',
                         'pgm_value3' => $username,
                         'pgm_desc' => $projectName,
-                        'pgm_desc2' => "Failed to create symlink: " . $process->getErrorOutput(),
+                        'pgm_desc3' => "Failed to create symlink: " . $process->getErrorOutput(),
                     ]
                 );
                 throw new \RuntimeException("Failed to create symlink: " . $process->getErrorOutput());
