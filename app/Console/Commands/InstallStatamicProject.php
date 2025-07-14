@@ -30,7 +30,7 @@ class InstallStatamicProject extends Command
         }
 
         $parentPath = base_path("statamic-projects/{$domain->pd_name}");
-        $publicPath = public_path("/");
+        $publicPath = public_path("/{$domain->pd_name}");
         $symlinkPath = base_path("statamic-projects/{$domain->pd_name}");
 
         if (!file_exists($parentPath)) {
@@ -190,6 +190,20 @@ class InstallStatamicProject extends Command
         // Check if we have permissions to create symlinks
         if (!function_exists('symlink')) {
             // Fallback to mklink command
+
+            PortalGencode::updateOrCreate(
+                [
+                    'pgm_code' => 'CMS_INSTALLED',
+                    'pgm_value' => $id
+                ],
+                [
+                    'pgm_code' => 'CMS_INSTALLED',
+                    'pgm_value' => $id,
+                    'pgm_value2' => 'start_symlink_creation_using_mklink',
+                    'pgm_desc' => $projectName,
+                ]
+            );
+
             $command = "mklink /D " . escapeshellarg($link) . " " . escapeshellarg($target);
             $process = new Process(explode(' ', $command));
             $process->run();
@@ -212,6 +226,18 @@ class InstallStatamicProject extends Command
                 throw new \RuntimeException("Failed to create symlink: " . $process->getErrorOutput());
             }
         } else {
+            PortalGencode::updateOrCreate(
+                [
+                    'pgm_code' => 'CMS_INSTALLED',
+                    'pgm_value' => $id
+                ],
+                [
+                    'pgm_code' => 'CMS_INSTALLED',
+                    'pgm_value' => $id,
+                    'pgm_value2' => 'start_symlink_creation_using_symlink_function',
+                    'pgm_desc' => $projectName,
+                ]
+            );
             // Use PHP's symlink function if available
             symlink($target, $link);
         }
