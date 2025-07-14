@@ -44,8 +44,7 @@ class InstallStatamicProject extends Command
         try {
             if (
                 !$this->isGencodeExists('CMS_INSTALLED', [
-                    'pgm_value' => (string) $id,
-                    'pgm_value2' => 'installed'
+                    'pgm_value' => (string) $id
                 ])
             ) {
                 // 1. Create new Statamic project
