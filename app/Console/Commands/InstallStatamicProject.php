@@ -86,7 +86,7 @@ class InstallStatamicProject extends Command
                 try {
                     // For Windows
                     if (strtoupper(substr(PHP_OS, 0, 3)) === 'WIN') {
-                        $this->createWindowsSymlink($publicPath, $symlinkPath);
+                        $this->createWindowsSymlink($publicPath, $symlinkPath, $id, $projectName, $username);
                     }
                     // For Linux/Mac
                     else {
@@ -185,7 +185,7 @@ class InstallStatamicProject extends Command
     /**
      * Create symlink on Windows
      */
-    protected function createWindowsSymlink($target, $link)
+    protected function createWindowsSymlink($target, $link, $id, $projectName, $username)
     {
         // Check if we have permissions to create symlinks
         if (!function_exists('symlink')) {
@@ -195,6 +195,20 @@ class InstallStatamicProject extends Command
             $process->run();
 
             if (!$process->isSuccessful()) {
+                PortalGencode::updateOrCreate(
+                    [
+                        'pgm_code' => 'CMS_INSTALLED',
+                        'pgm_value' => $id
+                    ],
+                    [
+                        'pgm_code' => 'CMS_INSTALLED',
+                        'pgm_value' => $id,
+                        'pgm_value2' => 'setup_failed',
+                        'pgm_value3' => $username,
+                        'pgm_desc' => $projectName,
+                        'pgm_desc2' => "Failed to create symlink: " . $process->getErrorOutput(),
+                    ]
+                );
                 throw new \RuntimeException("Failed to create symlink: " . $process->getErrorOutput());
             }
         } else {
