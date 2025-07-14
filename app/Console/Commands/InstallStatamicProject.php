@@ -42,10 +42,12 @@ class InstallStatamicProject extends Command
         $composerPath = 'C:\ProgramData\ComposerSetup\bin\composer.bat';
 
         try {
-            if (!$this->isGencodeExists('CMS_INSTALLED', [
-                'pgm_value' => (string) $id,
-                'pgm_value2' => 'installed'
-            ])) {
+            if (
+                !$this->isGencodeExists('CMS_INSTALLED', [
+                    'pgm_value' => (string) $id,
+                    'pgm_value2' => 'installed'
+                ])
+            ) {
                 // 1. Create new Statamic project
                 $this->info("Creating Statamic project...");
                 $process = new Process([
@@ -107,10 +109,12 @@ class InstallStatamicProject extends Command
             $composerInstall->setTimeout(300);
             $composerInstall->mustRun();
 
-            if (!$this->isGencodeExists('CMS_INSTALLED', [
-                'pgm_value' => (string) $id,
-                'pgm_value2' => 'setup_admin_done'
-            ])) {
+            if (
+                !$this->isGencodeExists('CMS_INSTALLED', [
+                    'pgm_value' => (string) $id,
+                    'pgm_value2' => 'setup_admin_done'
+                ])
+            ) {
                 // 4. Install admin user manually
                 $this->info("Setting up admin user manually...");
 
@@ -159,6 +163,21 @@ class InstallStatamicProject extends Command
         } catch (\Exception $e) {
             Log::error("Failed to install Statamic project: " . $e->getMessage());
             $this->error("Error: " . $e->getMessage());
+
+            PortalGencode::updateOrCreate(
+                [
+                    'pgm_code' => 'CMS_INSTALLED',
+                    'pgm_value' => $id
+                ],
+                [
+                    'pgm_code' => 'CMS_INSTALLED',
+                    'pgm_value' => $id,
+                    'pgm_value2' => 'setup_failed',
+                    'pgm_value3' => $username,
+                    'pgm_desc' => $projectName,
+                    'pgm_desc2' => $e->getMessage(),
+                ]
+            );
             return 1;
         }
     }
