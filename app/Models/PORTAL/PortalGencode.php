@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 class PortalGencode extends Model
 {
     use HasFactory;
+    protected $connection = 'sqlsrv';
     protected $table = 'portal_gencode_mstr';
     protected $fillable = [
         'pgm_code',

@@ -13,11 +13,12 @@ use Symfony\Component\Process\Exception\ProcessFailedException;
 use Illuminate\Support\Facades\Log;
 use Storage;
 use App\Jobs\PORTAL\StatamicGenerateQueue;
-
+use App\Traits\PORTAL\GencodeTraits;
 use App\Http\Controllers\API\PORTAL\BaseController;
 
 class DomainController extends BaseController
 {
+    use GencodeTraits;
     /**
      * Display a listing of the resource.
      */
@@ -49,7 +50,10 @@ class DomainController extends BaseController
                         'DB' => 'MRS',
                         'status' => $this->checkIfDatabaseExists($value['pd_prefix_db'] . '_MRS')
                     ],
-                ]
+                ],
+                'isCMSInstalled' => $this->isGencodeExists('CMS_INSTALLED', [
+                    'pgm_value' => $value['id']
+                ]),
             ]);
         }
 
@@ -294,7 +298,7 @@ class DomainController extends BaseController
 
     public function createStatamicProject($id, $projectName, $username)
     {
-        StatamicGenerateQueue::dispatch($id, $projectName, $username);
+        StatamicGenerateQueue::dispatch($id, $projectName, $username)->onQueue('portal_cms_install');
         return response()->json(['message' => 'Statamic project is being installed in background.']);
     }
 }
