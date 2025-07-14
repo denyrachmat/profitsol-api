@@ -80,8 +80,8 @@ class InstallStatamicProject extends Command
 
             // 2. Create symlink to public folder
             $this->info("Creating symlink to public folder...");
-            if (file_exists($publicPath)) {
-                $this->warn("Symlink already exists at {$publicPath}");
+            if (file_exists($symlinkPath)) {
+                $this->warn("Symlink already exists at {$symlinkPath}");
             } else {
                 try {
                     // For Windows
