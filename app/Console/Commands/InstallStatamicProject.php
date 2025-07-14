@@ -86,7 +86,7 @@ class InstallStatamicProject extends Command
                 try {
                     // For Windows
                     if (strtoupper(substr(PHP_OS, 0, 3)) === 'WIN') {
-                        $this->createWindowsSymlink($publicPath, $symlinkPath, $id, $projectName, $username);
+                        $this->createWindowsSymlink($symlinkPath, $publicPath, $id, $projectName, $username);
                     }
                     // For Linux/Mac
                     else {
