@@ -96,6 +96,7 @@ class InstallStatamicProject extends Command
                 } catch (\Exception $e) {
                     $this->error("Failed to create symlink: " . $e->getMessage());
                     Log::error("Symlink creation failed: " . $e->getMessage());
+                    return 1;
                 }
             }
 
