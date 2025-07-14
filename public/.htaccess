@@ -14,6 +14,12 @@
     RewriteCond %{REQUEST_URI} (.+)/$
     RewriteRule ^ %1 [L,R=301]
 
+    # Statamic Projects Routing - NEW
+    # Check if request is for a statamic project and if the public folder exists
+    RewriteCond %{REQUEST_URI} ^/statamic-projects/([^/]+) [NC]
+    RewriteCond %{DOCUMENT_ROOT}/../statamic-projects/%1/public -d
+    RewriteRule ^statamic-projects/([^/]+)(/.*)?$ ../statamic-projects/$1/public$2 [L]
+
     # Send Requests To Front Controller...
     RewriteCond %{REQUEST_FILENAME} !-d
     RewriteCond %{REQUEST_FILENAME} !-f

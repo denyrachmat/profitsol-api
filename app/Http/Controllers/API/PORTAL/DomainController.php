@@ -25,9 +25,20 @@ class DomainController extends BaseController
     public function index()
     {
         $data = PortalDomain::get()->toArray();
-
         $hasil = [];
         foreach ($data as $key => $value) {
+            $checkCMS = $this->isGencodeExists('CMS_INSTALLED', [
+                'pgm_value' => $value['id'],
+                'pgm_value2' => 'setup_admin_done'
+            ]);
+
+            $checkCMSData = $this->getDataGencode('CMS_INSTALLED', [
+                'pgm_value' => $value['id'],
+            ], [
+                'idDomain' => 'pgm_value|string',
+                'stateCMS' => 'pgm_value2|string',
+            ]);
+
             $hasil[] = array_merge($value, [
                 'checkCoreDB' => [
                     [
@@ -51,9 +62,8 @@ class DomainController extends BaseController
                         'status' => $this->checkIfDatabaseExists($value['pd_prefix_db'] . '_MRS')
                     ],
                 ],
-                'isCMSInstalled' => $this->isGencodeExists('CMS_INSTALLED', [
-                    'pgm_value' => $value['id']
-                ]),
+                'pd_is_cms' => (string)$checkCMS,
+                'CMSState' => $checkCMS ? $checkCMSData['stateCMS'] : '',
             ]);
         }
 

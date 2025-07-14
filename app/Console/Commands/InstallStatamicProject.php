@@ -30,22 +30,22 @@ class InstallStatamicProject extends Command
         }
 
         $parentPath = base_path("statamic-projects/{$domain->pd_name}");
+        $publicPath = "{$parentPath}/public";
+        $symlinkPath = public_path("statamic-projects/{$domain->pd_name}");
+
         if (!file_exists($parentPath)) {
             mkdir($parentPath, 0755, true);
         }
 
-        $phpPath = 'D:\laragon\bin\php\php-8.2.13\php.exe'; // Sesuaikan dengan path PHP CLI kamu
-        $statamicPath = 'C:\\Users\\deny-rachmat\\AppData\\Roaming\\Composer\\vendor\\bin\\statamic'; // Path ke statamic binary
-
-        $composerPath = 'C:\ProgramData\ComposerSetup\bin\composer.bat'; // Jika kamu pakai composer.phar, sertakan juga
+        $phpPath = 'D:\laragon\bin\php\php-8.2.13\php.exe';
+        $statamicPath = 'C:\\Users\\deny-rachmat\\AppData\\Roaming\\Composer\\vendor\\bin\\statamic';
+        $composerPath = 'C:\ProgramData\ComposerSetup\bin\composer.bat';
 
         try {
-            if (
-                !$this->isGencodeExists('CMS_INSTALLED', [
-                    'pgm_value' => (string) $id,
-                    'pgm_value2' => 'installed'
-                ])
-            ) {
+            if (!$this->isGencodeExists('CMS_INSTALLED', [
+                'pgm_value' => (string) $id,
+                'pgm_value2' => 'installed'
+            ])) {
                 // 1. Create new Statamic project
                 $this->info("Creating Statamic project...");
                 $process = new Process([
@@ -57,7 +57,7 @@ class InstallStatamicProject extends Command
                     '--no-interaction'
                 ], base_path('statamic-projects'));
 
-                $process->setTimeout(null); // atau null untuk tanpa batas
+                $process->setTimeout(null);
                 $process->mustRun();
 
                 if ($process->isSuccessful()) {
@@ -76,22 +76,42 @@ class InstallStatamicProject extends Command
                 }
             }
 
+            // 2. Create symlink to public folder
+            $this->info("Creating symlink to public folder...");
+            if (file_exists($symlinkPath)) {
+                $this->warn("Symlink already exists at {$symlinkPath}");
+            } else {
+                try {
+                    // For Windows
+                    if (strtoupper(substr(PHP_OS, 0, 3)) === 'WIN') {
+                        $this->createWindowsSymlink($publicPath, $symlinkPath);
+                    }
+                    // For Linux/Mac
+                    else {
+                        symlink($publicPath, $symlinkPath);
+                    }
+                    $this->info("Symlink created successfully at {$symlinkPath}");
+                } catch (\Exception $e) {
+                    $this->error("Failed to create symlink: " . $e->getMessage());
+                    Log::error("Symlink creation failed: " . $e->getMessage());
+                }
+            }
+
+            // 3. Run composer install
             $composerInstall = new Process([
                 $composerPath,
                 'install',
                 '--no-interaction'
-            ], $parentPath); // <- Di dalam direktori proyek
+            ], $parentPath);
 
             $composerInstall->setTimeout(300);
             $composerInstall->mustRun();
 
-            if (
-                !$this->isGencodeExists('CMS_INSTALLED', [
-                    'pgm_value' => (string) $id,
-                    'pgm_value2' => 'setup_admin_done'
-                ])
-            ) {
-                // 2. Install admin user manually (for Statamic Free)
+            if (!$this->isGencodeExists('CMS_INSTALLED', [
+                'pgm_value' => (string) $id,
+                'pgm_value2' => 'setup_admin_done'
+            ])) {
+                // 4. Install admin user manually
                 $this->info("Setting up admin user manually...");
 
                 $hashedUsername = Str::slug($username);
@@ -124,7 +144,7 @@ class InstallStatamicProject extends Command
                 );
             }
 
-            // 3. Configure .env
+            // 5. Configure .env
             $envContent = <<<TEXT
             APP_NAME="{$projectName}"
             APP_URL=http://{$projectName}.test
@@ -133,12 +153,34 @@ class InstallStatamicProject extends Command
             file_put_contents("{$parentPath}/.env", $envContent);
 
             $this->info("Statamic project created at: {$parentPath}");
+            $this->info("Accessible via: http://192.168.100.32/statamic-projects/{$domain->pd_name}");
             return 0;
 
         } catch (\Exception $e) {
             Log::error("Failed to install Statamic project: " . $e->getMessage());
             $this->error("Error: " . $e->getMessage());
             return 1;
+        }
+    }
+
+    /**
+     * Create symlink on Windows
+     */
+    protected function createWindowsSymlink($target, $link)
+    {
+        // Check if we have permissions to create symlinks
+        if (!function_exists('symlink')) {
+            // Fallback to mklink command
+            $command = "mklink /D " . escapeshellarg($link) . " " . escapeshellarg($target);
+            $process = new Process(explode(' ', $command));
+            $process->run();
+
+            if (!$process->isSuccessful()) {
+                throw new \RuntimeException("Failed to create symlink: " . $process->getErrorOutput());
+            }
+        } else {
+            // Use PHP's symlink function if available
+            symlink($target, $link);
         }
     }
 }
