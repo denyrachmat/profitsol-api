@@ -187,8 +187,9 @@ class InstallStatamicProject extends Command
      */
     protected function createWindowsSymlink($target, $link, $id, $projectName, $username)
     {
-        if (!file_exists($link)) {
-            mkdir($link, 0755, true);
+        $parentPublic = public_path("statamic-projects");
+        if (!file_exists($parentPublic)) {
+            mkdir($parentPublic, 0755, true);
         }
         // Check if we have permissions to create symlinks
         if (!function_exists('symlink')) {
