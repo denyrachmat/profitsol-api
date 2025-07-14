@@ -30,8 +30,8 @@ class InstallStatamicProject extends Command
         }
 
         $parentPath = base_path("statamic-projects/{$domain->pd_name}");
-        $publicPath = public_path("/{$domain->pd_name}");
-        $symlinkPath = base_path("statamic-projects/{$domain->pd_name}");
+        $publicPath = "{$parentPath}/public"; // The target public folder of the Statamic project
+        $symlinkPath = public_path("statamic-projects/{$domain->pd_name}"); // The symlink location in main Laravel's public folder
 
         if (!file_exists($parentPath)) {
             mkdir($parentPath, 0755, true);
@@ -96,6 +96,7 @@ class InstallStatamicProject extends Command
                 } catch (\Exception $e) {
                     $this->error("Failed to create symlink: " . $e->getMessage());
                     Log::error("Symlink creation failed: " . $e->getMessage());
+                    return 1;
                 }
             }
 
