@@ -41,4 +41,17 @@ trait GencodeTraits
 
         return $hasil;
     }
+
+    public function isGencodeExists($id, $filter = [])
+    {
+        $gencode = PortalGencode::where('pgm_code', $id);
+
+        if (!empty($filter)) {
+            foreach ($filter as $key => $value) {
+                $gencode->whereRaw("CAST($key AS nvarchar(max)) = ?", [$value]);
+            }
+        }
+
+        return $gencode->exists();
+    }
 }

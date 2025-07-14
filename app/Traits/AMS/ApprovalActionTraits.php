@@ -207,9 +207,9 @@ trait ApprovalActionTraits
                 // }
 
                 // If last order
-                logger(array_key_exists($checkLatestOrder + 1, (clone $dataMaster)->ToArray()['det']));
-                logger($dataMaster->det[$checkLatestOrder]);
-                logger($valueDet['amsmd_username'] == $request->username);
+                // logger(array_key_exists($checkLatestOrder + 1, (clone $dataMaster)->ToArray()['det']));
+                // logger($dataMaster->det[$checkLatestOrder]);
+                // logger($valueDet['amsmd_username'] == $request->username);
 
                 $checkNextOrder = array_filter((clone $dataMaster)->ToArray()['det'], function ($f) use ($valueDet) {
                     return $f['amsmd_order'] == (int) $valueDet['amsmd_order'] + 1;
@@ -229,6 +229,14 @@ trait ApprovalActionTraits
                 //     break;
                 // }
             }
+
+            $hist = ApprovalHistDetail::where('amshd_token', $histToken)
+                ->with('mapdet')
+                ->with('senderUser')
+                ->with('receiveUser')
+                ->with('attch')
+                ->orderBy('id', 'desc')
+                ->first();
         }
 
         return $this->handleResponse($hist, 'Success');
@@ -754,5 +762,12 @@ trait ApprovalActionTraits
         Storage::disk('local')->put($imageName, base64_decode($image));
 
         return Storage::disk('local')->url($imageName);
+    }
+
+    public function viewApprovalMasterByApprvCode($apvcd)  {
+        $getData = ApprovalMaster::where('ams_idapv', $apvcd)
+            ->first();
+
+        return $this->handleResponse($getData, 'Data Fetched');
     }
 }

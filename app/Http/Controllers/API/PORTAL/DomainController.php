@@ -8,6 +8,11 @@ use App\Models\PORTAL\PortalDomain;
 use DB;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Artisan;
+use Symfony\Component\Process\Process;
+use Symfony\Component\Process\Exception\ProcessFailedException;
+use Illuminate\Support\Facades\Log;
+use Storage;
+use App\Jobs\PORTAL\StatamicGenerateQueue;
 
 use App\Http\Controllers\API\PORTAL\BaseController;
 
@@ -263,5 +268,33 @@ class DomainController extends BaseController
         } else {
             return response()->json(['error' => 'Migration file not found'], 404);
         }
+    }
+
+    public function activateCMS(Request $request, $id)
+    {
+        $domain = PortalDomain::where('id', $id)->first();
+
+        if (!$domain) {
+            return response()->json(['error' => 'Domain not found'], 404);
+        }
+
+        $projectName = $domain->pd_name;
+
+        if (Schema::hasTable('cms_form_mstr')) {
+            return response()->json(['message' => 'CMS already activated for this domain'], 200);
+        }
+
+        try {
+            $path = $this->createStatamicProject($id, $projectName, $request->header('username'));
+            return response()->json(['message' => 'CMS activated successfully', 'path' => $path], 200);
+        } catch (ProcessFailedException $e) {
+            return response()->json(['error' => 'Failed to activate CMS: ' . $e->getMessage()], 500);
+        }
+    }
+
+    public function createStatamicProject($id, $projectName, $username)
+    {
+        StatamicGenerateQueue::dispatch($id, $projectName, $username);
+        return response()->json(['message' => 'Statamic project is being installed in background.']);
     }
 }

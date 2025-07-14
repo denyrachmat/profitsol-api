@@ -126,14 +126,26 @@ class FormController extends BaseController
                             ->where('mrm_url_gen', 'cms')
                             ->first();
 
+                        $checkSetup = $this->getSetupFormsForForm($request->idRef);
+                        // return $checkSetup;
+                        if ($checkSetup['isRPA'] == 1) {
+                            $descUrl = 'rpa';
+                        } else {
+                            $descUrl = 'cms';
+                        }
+
+                        if ($checkSetup['isApproval'] == 1) {
+                            $descUrl .= '|approval';
+                        }
+
                         $header = [
                             'p_u_username' => $request->header('username'),
                             'mdm_id' => $cekDefID->pgm_value,
                             'mrm_name' => $request->title . ' History',
-                            'mrm_db' => env('APP_PREFIX') . '_CMS',
+                            'mrm_db' => 'STX_CMS',
                             'mrm_table' => 'cms_form_ans_user_det',
                             'mrm_query' => strval($request->idRef),
-                            'mrm_url_gen' => 'cms',
+                            'mrm_url_gen' => $descUrl,
                         ];
 
                         if ($getReport) {
@@ -277,7 +289,10 @@ class FormController extends BaseController
         $listPage = [];
         foreach ($data as $key => $value) {
             // $listPage[] = $value['seq_name'];
-            $value['seq_name'] = $key + 1;
+            if (empty($value['seq_name'])) {
+                $value['seq_name'] = $key + 1;
+            }
+
             $hasil[] = $this->storingForms(
                 $value,
                 $request->header('username'),
@@ -363,38 +378,10 @@ class FormController extends BaseController
         }
 
         if ($checkSetup['isApproval'] == 1) {
-            $getMasterResponse = $this->viewApprovalMasterByApprvCode($checkSetup['approvalCode']);
-            $getMasterContent = json_decode($getMasterResponse->getContent(), true);
-            $getMasterData = isset($getMasterContent['data']) ? $getMasterContent['data'] : null;
-
-            // You need to provide actual values for HSCD_DOCNO and item_det if required by your business logic.
-            // For now, we will use placeholders or empty values to avoid undefined variable errors.
-            $getApproval = $this->approveAction(new ApprovalRunningApproveActionRequest([
+            $this->sendApproval(new Request([
+                'idRef' => $request->id,
                 'username' => $request->header('username'),
-                'amsm_id' => $getMasterData['id'] ?? null,
-                'stat' => 1,
-                'remarks' => 'Sending approval CMS!!',
-                'data' => [],
-                'onApproval' => [
-                    'methods' => 'post',
-                    'params' => [
-                        'amstd_token' => 'token',
-                        'amshd_remarks' => 'Remarks',
-                    ],
-                    'url' => 'http://192.168.100.32/public/api/cms/updateApprovalStatus'
-                    // 'url' => 'http://localhost/STX/stx-api/public/api/cms/updateApprovalStatus'
-                ],
-                'onDone' => [
-                    'methods' => 'post',
-                    'params' => [
-                        'amstd_token' => 'token',
-                        'amshd_remarks' => 'Remarks',
-                    ],
-                    'url' => 'http://192.168.100.32/public/api/cms/updateApprovalStatus'
-                    // 'url' => 'http://localhost/STX/stx-api/public/api/cms/updateApprovalStatus'
-                ],
-                'msgkey' => ''
-            ]))->getOriginalContent();
+            ]));
 
         }
 
@@ -477,7 +464,8 @@ class FormController extends BaseController
         //
     }
 
-    public function destroyAnswers($id, $batchID) {
+    public function destroyAnswers($id, $batchID)
+    {
         $delete = FormAnswerUserDet::where('cfm_id', $id)
             ->where('cfaud_batch', $batchID)
             ->delete();
@@ -517,7 +505,8 @@ class FormController extends BaseController
         ]);
     }
 
-    public function viewByID($id) {
+    public function viewByID($id)
+    {
         $data = formMasterTitle::with([
             'formMaster' => function ($f) {
                 $f->where('cfm_parent_id', 0);
@@ -525,7 +514,7 @@ class FormController extends BaseController
                 $f->with('allChildrenContent.formDetail.formAnswer');
             }
         ])->with(['quizSetup', 'shared'])->where('id', $id)
-        ->first();
+            ->first();
 
         if (!$data) {
             return response([
@@ -553,5 +542,71 @@ class FormController extends BaseController
 
         return $this->handleResponse([], 'AMS Mapping updated successfully.');
 
+    }
+
+    public function sendApproval(Request $request)
+    {
+        // Validate the request
+        $request->validate([
+            'idRef' => 'required|integer',
+            'username' => 'required|string',
+        ]);
+
+        $checkSetup = $this->getSetupFormsForForm($request->idRef);
+
+        $getMasterResponse = $this->viewApprovalMasterByApprvCode($checkSetup['approvalCode']);
+        $getMasterContent = json_decode($getMasterResponse->getContent(), true);
+        $getMasterData = isset($getMasterContent['data']) ? $getMasterContent['data'] : null;
+
+        $dataAnswers = $this->showHistory(new Request(), $request->idRef, $request->batch_id)->getOriginalContent()['data']['data'][0];
+        // FormAMSMapDet::update(
+        //     ['amsm_id' => $getMasterData['id'] ?? null],
+        //     ['cfmt_id' => $request->idRef]
+        // );
+
+        // You need to provide actual values for HSCD_DOCNO and item_det if required by your business logic.
+        // For now, we will use placeholders or empty values to avoid undefined variable errors.
+        $getApproval = $this->approveAction(new ApprovalRunningApproveActionRequest([
+            'username' => $request->username,
+            'amsm_id' => $getMasterData['id'] ?? null,
+            'stat' => 1,
+            'remarks' => 'Sending approval CMS!!',
+            'data' => $dataAnswers,
+            'onApproval' => [
+                'methods' => 'post',
+                'params' => [
+                    'amstd_token' => 'token',
+                    'amshd_remarks' => 'Remarks',
+                ],
+                'url' => 'http://192.168.100.32/public/api/cms/updateApprovalStatus'
+                // 'url' => 'http://localhost/STX/stx-api/public/api/cms/updateApprovalStatus'
+            ],
+            'onDone' => [
+                'methods' => 'post',
+                'params' => [
+                    'amstd_token' => 'token',
+                    'amshd_remarks' => 'Remarks',
+                ],
+                'url' => 'http://192.168.100.32/public/api/cms/updateApprovalStatus'
+                // 'url' => 'http://localhost/STX/stx-api/public/api/cms/updateApprovalStatus'
+            ],
+            'msgkey' => ''
+        ]))->getOriginalContent();
+
+        // return $getApproval;
+        if ($getApproval['status'] == true) {
+            // amstd_token
+            FormAMSMapDet::updateOrCreate(
+                ['cfamd_cfm_id' => $request->idRef],
+                [
+                    'cfamd_cfm_id' => $request->idRef,
+                    'cfamd_cfaud_batch' => $request->batch_id,
+                    'cfamd_amstd_token' => $getApproval['data']['amstd_token'],
+                    'cfamd_desc' => $getApproval['data']['amshd_remarks'],
+                ]
+            );
+        }
+
+        return $getApproval;
     }
 }

@@ -239,7 +239,7 @@ trait FormsTraits
                     'p_u_username' => $uname,
                     'cfmt_id' => $idTitle,
                     'cfm_type' => $data['type'],
-                    'cfm_seq_name' => isset($data['seq_name']) ? $data['seq_name'] : '',
+                    'cfm_seq_name' => isset($data['seq_name']) ? (int)$data['seq_name'] : '',
                     'cfm_content' => $content,
                     'cfm_parent_id' => $parent,
                     'cfm_required' => $data['type'] === 'form' ? $data['required'] : 0,
@@ -249,7 +249,7 @@ trait FormsTraits
                     'p_u_username' => $uname,
                     'cfmt_id' => $idTitle,
                     'cfm_type' => $data['type'],
-                    'cfm_seq_name' => isset($data['seq_name']) ? $data['seq_name'] : '',
+                    'cfm_seq_name' => isset($data['seq_name']) ? (int)$data['seq_name'] : '',
                     'cfm_content' => $content,
                     'cfm_parent_id' => $parent,
                     'cfm_required' => $data['type'] === 'form' ? $data['required'] : 0,
@@ -366,7 +366,7 @@ trait FormsTraits
         return $hasil;
     }
 
-    public function showHistory(Request $request, $id)
+    public function showHistory(Request $request, $id, $batchID = '')
     {
         $getData = PortalGencode::where('pgm_code', 'FORMS_SETUP')
             ->where('pgm_value', $id);
@@ -375,6 +375,56 @@ trait FormsTraits
 
         if (!empty($checkHist) && $checkHist->pgm_value2 == 1) {
             $columns = (clone $getData)->where('pgm_desc', 'historyTableList')->pluck('pgm_value2')->first();
+
+            $values = [];
+            foreach (json_decode($columns) as $col) {
+                if (isset($col->value)) {
+                    $values[] = (int) $col->value;
+                }
+            }
+
+            $dataKeys = FormMaster::select(
+                'cms_form_mstr.cfm_parent_id',
+                'cms_form_mstr.id',
+                'parent_form.cfm_seq_name'
+            )->whereIn('cms_form_mstr.id', $values)
+                ->with('parentContent')
+                ->join(DB::raw('cms_form_mstr as parent_form'), 'parent_form.id', '=', 'cms_form_mstr.cfm_parent_id')
+                ->orderBy(DB::raw('CAST(parent_form.cfm_seq_name AS INT)'))
+                ->get()
+                // ->pluck('cfm_seq_name', 'id')
+                ->toArray();
+
+            $hasilKeys = [];
+            foreach ($dataKeys as $keyPos => $valuePos) {
+                $hasilKeys[] = [
+                    'id' => $valuePos['id'],
+                    'parent' => $valuePos['cfm_parent_id'],
+                ];
+            }
+
+            // Order json_decode($columns) by 'value' based on $data array, but only when key 'forms' is not null
+            // $columnsArr = array_filter(json_decode($columns), function ($col) {
+            //     return isset($col->forms) && !empty($col->forms);
+            // });
+            // usort($columnsArr, function ($a, $b) use ($data) {
+            //     $posA = array_search($a->value, $data);
+            //     $posB = array_search($b->value, $data);
+            //     return $posA - $posB;
+            // });
+            // // return $columnsArr;
+            // $getData = array_map(function ($f) {
+            //     $data = FormMaster::where('id', (int)$f->value)->with('parentContent')->first();
+            //     if (isset($f->forms) && !empty($data)) {
+            //         return $data;
+            //     }
+            // }, json_decode($columns));
+
+            // return $data;
+            $columns = collect(json_decode($columns))
+                ->sortBy('value')
+                ->values()
+                ->toJson();
 
             $data = FormAnswerUserDet::select(
                 'cms_form_ans_user_det.p_u_username',
@@ -392,6 +442,18 @@ trait FormsTraits
                     $f->on('portaL_rpa_hist.prh_cfaud_batch_id', '=', 'cms_form_ans_user_det.cfaud_batch')
                         ->on('portaL_rpa_hist.prh_cfaud_id', '=', 'cms_form_ans_user_det.cfm_id');
                 })
+                ->leftJoin('cms_form_ams_map_det', function ($f) {
+                    $f->on('cms_form_ams_map_det.cfamd_cfm_id', '=', 'cms_form_ans_user_det.cfm_id')
+                        ->on('cms_form_ams_map_det.cfamd_cfaud_batch', '=', 'cms_form_ans_user_det.cfaud_batch');
+                })
+                ->leftJoin('STX_AMS.dbo.ams_apprv_hist_det', function ($f) {
+                    $f->on('ams_apprv_hist_det.amstd_token', '=', 'cms_form_ams_map_det.cfamd_amstd_token');
+                })
+                // Add where if $batchID is not empty
+                ->when(!empty($batchID), function ($query) use ($batchID) {
+                    $query->where('cms_form_ans_user_det.cfaud_batch', $batchID);
+                })
+                // ->leftJoin('')
                 ->where('cms_form_ans_user_det.cfm_id', $id)
                 ->groupBy(
                     'cms_form_ans_user_det.p_u_username',
@@ -405,24 +467,51 @@ trait FormsTraits
                     'prh_result',
                     'portaL_rpa_hist.id'
                 )
-                ->orderBy('cfaud_batch')
+                ->orderBy('cfaud_batch', 'asc')
+                // ->orderBy('cfm_seq_name', 'asc')
                 ->get();
 
+            return $data;
+
             $resCols = [];
-            foreach (json_decode($columns) as $key => $Colvalue) {
+            if (empty($columns)) {
+                $resCols = [];
+            } else {
+                foreach (json_decode($columns) as $key => $Colvalue) {
 
-                $dataContent = FormMaster::where(DB::raw('CAST(id AS VARCHAR)'), (string) $Colvalue->value)->first();
+                    $dataContent = FormMaster::where(DB::raw('CAST(id AS VARCHAR)'), (string) $Colvalue->value)->first();
 
-                if (!empty($dataContent)) {
-                    $content = json_decode($dataContent->cfm_content);
+                    if (!empty($dataContent)) {
+                        $content = json_decode($dataContent->cfm_content);
 
-                    $Colvalue->component = $content->component;
+                        $Colvalue->component = $content->component;
+                        $Colvalue->parent = $dataContent->cfm_parent_id;
+                    }
+
+                    $resCols[] = $Colvalue;
                 }
-
-                $resCols[] = $Colvalue;
             }
 
             $columns = json_encode($resCols);
+
+            $getArrPos = [];
+            $colIdx = 0;
+            $rowIdx = -1;
+            foreach ($hasilKeys as $key => $valueArr) {
+                if (isset($valueArr['parent'])) {
+                    if ($key > 0 && $valueArr['parent'] === $hasilKeys[$key - 1]['parent'])
+                        $colIdx++;
+                    else
+                        $rowIdx++;
+
+                    $getArrPos[$valueArr['id']] = [$rowIdx, $colIdx];
+
+                }
+            }
+
+            // return $hasilKeys;
+            // return json_decode($columns);
+            // return $getArrPos;
 
             $result = [];
             foreach ($data as $key => $value) {
@@ -437,7 +526,35 @@ trait FormsTraits
                         $result[$value->cfaud_batch]['progress_detail'] = $value->prh_result ?? '';
                         $result[$value->cfaud_batch]['created_by'] = $value->p_u_username;
                         $result[$value->cfaud_batch]['created_at'] = $value->created_at;
-                        $result[$value->cfaud_batch]['CMS_REPORT_' . $column->value] = $value->cfm_val;
+                        if (strpos($value->cfm_val, 'data:application') === 0) {
+                            $result[$value->cfaud_batch]['CMS_REPORT_' . $column->value] = 'file:cms/openFiles/' . $value->cfm_id . '/' . $value->cfaud_batch;
+                        } else {
+                            $showAs = isset($column->showAs) ? $column->showAs : null;
+                            if ($showAs === 'value' || empty($showAs)) {
+                                $result[$value->cfaud_batch]['CMS_REPORT_' . $column->value] = $value->cfm_val;
+                            } else {
+                                $apiOpt = isset($column->component) && isset($column->component->apiOpt) ? $column->component->apiOpt : [];
+                                if (isset($column->component->apiOpt)) {
+                                    $selectedKeys = isset($column->component) && isset($column->component->apiOpt->selectedKeys) ? $column->component->apiOpt->selectedKeys : (object) [];
+                                    $selectedKey = isset($selectedKeys->{$showAs}) ? $selectedKeys->{$showAs} : 'value';
+                                    $apiResult = $this->searchDataOnAPI($apiOpt, $value->cfm_val, $result[$value->cfaud_batch]);
+                                    $result[$value->cfaud_batch]['CMS_REPORT_' . $column->value] = $apiResult[$selectedKey] ?? '';
+                                } else {
+                                    $selected = collect($column->forms->content->detail_data ?? [])
+                                        ->first(function ($f) use ($value) {
+                                            return isset($f->value) && $f->value == $value->cfm_val;
+                                        });
+
+                                    $result[$value->cfaud_batch]['CMS_REPORT_' . $column->value] = $selected && isset($selected->{$showAs})
+                                        ? $selected->{$showAs}
+                                        : ($selected->label ?? $selected->value ?? '');
+                                }
+
+                            }
+                        }
+
+                        $result[$value->cfaud_batch]['CMS_REPORT_POS_' . $column->value] = $getArrPos[$column->value] ?? [];
+                        $result[$value->cfaud_batch]['CMS_REPORT_VAL_' . $column->value] = $value->cfm_val;
                         $result[$value->cfaud_batch]['prh_id'] = $value->prh_id;
                         $result[$value->cfaud_batch]['prh_flag'] = $value->prh_flag;
                         // $result[$value->cfaud_batch]['CMS_REPORT_' . $column->value . '_API'] = $this->searchDataOnAPI($column->component->apiOpt ?? [], $value->cfm_val, $result[$value->cfaud_batch]);
@@ -451,7 +568,10 @@ trait FormsTraits
                 foreach ($request->filter as $keyFilter => $valueFilter) {
                     if (isset($valueFilter['value']) && !empty($valueFilter['value'])) {
                         if (isset($valueFilter['operator']) && strtolower($valueFilter['operator']) === 'like') {
-                            $result = $result->where($valueFilter['column'], $valueFilter['operator'], '%' . $valueFilter['value'] . '%');
+                            $result = $result->filter(function ($item) use ($valueFilter) {
+                                return isset($item[$valueFilter['column']]) &&
+                                    stripos($item[$valueFilter['column']], $valueFilter['value']) !== false;
+                            });
                         } else {
                             $result = $result->where($valueFilter['column'], $valueFilter['operator'], $valueFilter['value']);
                         }
@@ -485,7 +605,7 @@ trait FormsTraits
 
             $result = [
                 'columns' => json_decode($columns),
-                'data' => $result->values()->toArray(),
+                'data' => !empty($showHistory) ? $result->values()->toArray()[0] : $result->values()->toArray(),
             ];
 
             return $this->handleResponse($result, 'Data found !');
@@ -602,13 +722,14 @@ trait FormsTraits
      * @param array $apiParams
      * @return array
      */
-    protected function buildNestedParams(array $apiParams): array
+    protected function buildNestedParams(array $apiParams, $cfmId = '', $batchID = ''): array
     {
         $result = [];
 
         // If the input is a flat associative array (not a list of param objects)
         $isAssoc = function ($arr) {
-            if ([] === $arr) return false;
+            if ([] === $arr)
+                return false;
             return array_keys($arr) !== range(0, count($arr) - 1);
         };
 
@@ -628,6 +749,7 @@ trait FormsTraits
             foreach ($apiParams as $paramName => $value) {
                 $keys = explode('.', $paramName);
                 $current = &$result;
+
                 foreach ($keys as $key) {
                     // Handle array notation like [0]
                     if (preg_match('/^\[(\d+)\]$/', $key, $matches)) {
@@ -638,6 +760,18 @@ trait FormsTraits
                     }
                     $current = &$current[$key];
                 }
+
+                if (is_int($value)) {
+                    $checkHist = FormAnswerUserDet::where('cfaud_batch', $batchID)
+                        ->where('cfm_id', $cfmId)
+                        ->where('cfmd_id', $value)
+                        ->first();
+
+                    if (!empty($checkHist)) {
+                        $value = $checkHist->cfm_val;
+                    }
+                }
+
                 $current = $value;
                 unset($current);
             }
