@@ -236,6 +236,8 @@ class InstallStatamicProject extends Command
                     'pgm_value' => $id,
                     'pgm_value2' => 'start_symlink_creation_using_symlink_function',
                     'pgm_desc' => $projectName,
+                    'pgm_desc2' => $target,
+                    'pgm_desc3' => $link,
                 ]
             );
             // Use PHP's symlink function if available
