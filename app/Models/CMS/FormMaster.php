@@ -53,6 +53,11 @@ class FormMaster extends Model
         return $this->hasMany(FormMaster::class, 'cfm_parent_id', 'id');
     }
 
+    public function parentContent()
+    {
+        return $this->belongsTo(FormMaster::class, 'cfm_parent_id', 'id');
+    }
+
     public function allChildrenContent()
     {
         return $this->childrenContent()->with('allChildrenContent');

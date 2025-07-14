@@ -95,7 +95,10 @@ Route::group(['prefix' => 'portal', 'middleware' => 'auth:sanctum', 'verify' => 
     Route::resource('gencode', GencodeController::class);
 });
 
-Route::resource('domain', DomainController::class);
+Route::group(['prefix' => 'domain'], function () {
+    Route::resource('', DomainController::class);
+    Route::post('startSetupCMS/{id}', [DomainController::class, 'activateCMS']);
+});
 
 Route::group(['prefix' => 'ams'], function () {
     Route::resource('approval', ApprovalController::class);
@@ -148,6 +151,8 @@ Route::group(['prefix' => 'cms'], function () {
     Route::get('viewByLinkForm/{link}', [FormController::class, 'viewByLinkForm']);
     Route::get('viewByID/{id}', [FormController::class, 'viewByID']);
     Route::post('showHistory/{id}', [FormController::class, 'showHistory']);
+    Route::post('updateApprovalStatus', [FormController::class, 'updateAMSMapping']);
+    Route::post('sendApproval', [FormController::class, 'sendApproval']);
 
     Route::resource('quiz', QuizController::class);
 
