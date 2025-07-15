@@ -85,7 +85,7 @@ class InstallStatamicProject extends Command
                 try {
                     // For Windows
                     if (strtoupper(substr(PHP_OS, 0, 3)) === 'WIN') {
-                        $this->createWindowsSymlink( $publicPath, $symlinkPath,$id, $projectName, $username);
+                        $this->createWindowsSymlink($publicPath, $symlinkPath, $id, $projectName, $username);
                     }
                     // For Linux/Mac
                     else {
@@ -148,13 +148,14 @@ class InstallStatamicProject extends Command
                 );
             }
 
-            // 5. Configure .env
-            $envContent = <<<TEXT
-            APP_NAME="{$projectName}"
-            APP_URL=http://{$projectName}.test
-            TEXT;
+            // 5. Configure .env & generate application key
+            // $envContent = <<<TEXT
+            // APP_NAME="{$projectName}"
+            // APP_URL=http://{$projectName}.test
+            // TEXT;
 
-            file_put_contents("{$parentPath}/.env", $envContent);
+            // file_put_contents("{$parentPath}/.env", $envContent);
+            $this->configureEnvironment($parentPath, $projectName, "http://{$domain->pd_name}.test");
 
             $this->info("Statamic project created at: {$parentPath}");
             $this->info("Accessible via: http://192.168.100.32/statamic-projects/{$domain->pd_name}");
@@ -246,6 +247,54 @@ class InstallStatamicProject extends Command
             );
             // Use PHP's symlink function if available
             symlink($target, $link);
+        }
+    }
+
+    protected function configureEnvironment($path, $projectName, $appUrl)
+    {
+        $envFile = "{$path}/.env";
+
+        // 1. Create .env if doesn't exist
+        if (!File::exists($envFile)) {
+            File::copy("{$path}/.env.example", $envFile);
+        }
+
+        // 2. Update specific values without replacing entire file
+        $envContents = File::get($envFile);
+
+        $updates = [
+            'APP_NAME' => "\"{$projectName}\"",
+            'APP_URL' => $appUrl,
+            'APP_ENV' => 'local',
+            'DB_DATABASE' => 'statamic_' . Str::slug($projectName),
+            'ASSET_URL' => "/statamic-projects/{$projectName}",
+        ];
+
+        foreach ($updates as $key => $value) {
+            $envContents = preg_replace(
+                "/^{$key}=.*/m",
+                "{$key}={$value}",
+                $envContents
+            );
+        }
+
+        File::put($envFile, $envContents);
+
+        // 3. Generate application key
+        $this->info("Generating application key...");
+        $process = new Process([
+            'php',
+            'artisan',
+            'key:generate'
+        ], $path);
+
+        $process->setTimeout(60);
+        $process->mustRun();
+
+        // 4. Verify key was generated
+        $envContents = File::get($envFile);
+        if (!Str::contains($envContents, 'APP_KEY=base64:')) {
+            throw new \Exception('Failed to generate application key');
         }
     }
 }
