@@ -11,6 +11,7 @@ use App\Models\PORTAL\PortalGencode;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\File;
 use App\Models\PORTAL\PortalApp;
+use Redis;
 class InstallStatamicProject extends Command
 {
     use GencodeTraits;
@@ -19,6 +20,13 @@ class InstallStatamicProject extends Command
 
     public function handle()
     {
+        Redis::publish('portalv2', json_encode([
+            'app' => 'domain',
+            'message' => 'Domain CMS installation started.',
+            'type' => 'yellow',
+            'status' => 'warning',
+        ]));
+
         $id = $this->argument('id');
         $projectName = $this->argument('projectName');
         $username = $this->argument('username');
@@ -159,6 +167,14 @@ class InstallStatamicProject extends Command
 
             $this->info("Statamic project created at: {$parentPath}");
             $this->info("Accessible via: http://192.168.100.32/statamic-projects/{$domain->pd_name}");
+
+
+            Redis::publish('portalv2', json_encode([
+                'app' => 'domain',
+                'message' => 'Domain CMS installation successfull !!',
+                'type' => 'green',
+                'status' => 'success',
+            ]));
             return 0;
 
         } catch (\Exception $e) {
@@ -179,6 +195,13 @@ class InstallStatamicProject extends Command
                     'pgm_desc3' => $e->getMessage(),
                 ]
             );
+
+            Redis::publish('portalv2', json_encode([
+                'app' => 'domain',
+                'message' => 'Domain CMS installation failed !!',
+                'type' => 'red',
+                'status' => 'error',
+            ]));
             return 1;
         }
     }
