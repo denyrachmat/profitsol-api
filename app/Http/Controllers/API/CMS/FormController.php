@@ -402,6 +402,7 @@ class FormController extends BaseController
                 $f->where('cfm_parent_id', 0);
                 $f->with('formDetail.formAnswer');
                 $f->with('allChildrenContent.formDetail.formAnswer');
+                $f->orderBy('cfm_seq_name', 'asc');
             }
         ])->with(['quizSetup', 'shared']);
 

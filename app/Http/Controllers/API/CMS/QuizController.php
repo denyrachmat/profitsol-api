@@ -97,16 +97,23 @@ class QuizController extends Controller
      */
     public function show(Request $request, $id, $idDet = '')
     {
-        $dataAnswersHead = FormAnswerDet::select('cms_form_ans_det.*')
-            ->where('cms_form_ans_det.cfm_id', $id);
+        $dataAnswersHead = FormAnswerDet::select('cms_form_ans_det.*', 'cfm_seq_name')
+            ->where('cms_form_ans_det.cfm_id', $id)
+            ->leftjoin('cms_form_mstr', function ($join) {
+                $join->on('cms_form_ans_det.cfmd_id', '=', 'cms_form_mstr.id');
+            })
+            ->orderBy(DB::raw('CAST(cfm_seq_name AS int)'), 'asc');
         $dataHeader = FormMasterTitle::where('id', $id)->with([
             'formMaster' => function ($f2) {
                 $f2->where('cfm_parent_id', 0);
                 // $f2->where('cfm_type', '=', 'form');
                 $f2->with('formDetail.formAnswer');
                 $f2->with('allChildrenContent');
+                // $f2->orderBy(DB::raw('CAST(cfm_seq_name AS int)'), 'asc');
             }
         ])->first();
+
+        // return $dataAnswersHead->get()->toArray();
 
         $cekSetup = FormSetupDet::where('cfmt_id', $id)->first();
         if ($cekSetup->cfsd_quest_limit > 0) {
@@ -122,9 +129,10 @@ class QuizController extends Controller
             $dataAnswers = (clone $dataAnswersHead)->get();
         }
 
+        // return $dataHeader->toArray();
         $dataOri = $this->getHeaderAllForms([$dataHeader->toArray()])[0]['forms'];
 
-        // return $dataAnswers;
+        // return $dataOri;
 
         // return $dataAnswers;
         $hasil = [];
@@ -149,6 +157,8 @@ class QuizController extends Controller
                 if (count($cekOri) > 0) {
                     $hasilOri[] = $cekOri[0];
                 }
+
+                // return $hasilOri;
 
                 $answersUser = !empty($data)
                     ? (is_array(json_decode($data->cfm_val)) ? json_decode($data->cfm_val) : $data->cfm_val)
