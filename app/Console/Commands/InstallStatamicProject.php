@@ -10,7 +10,7 @@ use App\Traits\PORTAL\GencodeTraits;
 use App\Models\PORTAL\PortalGencode;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\File;
-
+use App\Models\PORTAL\PortalApp;
 class InstallStatamicProject extends Command
 {
     use GencodeTraits;
@@ -155,7 +155,7 @@ class InstallStatamicProject extends Command
             // TEXT;
 
             // file_put_contents("{$parentPath}/.env", $envContent);
-            $this->configureEnvironment($parentPath, $projectName, "http://{$domain->pd_name}.test");
+            $this->configureEnvironment($parentPath, $projectName, "http://192.168.100.32/statamic-projects/{$domain->pd_name}");
 
             $this->info("Statamic project created at: {$parentPath}");
             $this->info("Accessible via: http://192.168.100.32/statamic-projects/{$domain->pd_name}");
