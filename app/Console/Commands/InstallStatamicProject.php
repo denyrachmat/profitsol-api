@@ -319,7 +319,7 @@ class InstallStatamicProject extends Command
         // 4. Verify key was generated
         $envContents = File::get($envFile);
         if (!Str::contains($envContents, 'APP_KEY=base64:')) {
-            throw new \Exception('Failed to generate application key');
+            throw new \Exception("Failed to generate application key: " . $process->getOutput());
         }
     }
 }
