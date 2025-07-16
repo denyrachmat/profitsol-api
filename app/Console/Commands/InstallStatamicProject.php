@@ -58,6 +58,8 @@ class InstallStatamicProject extends Command
                 // 1. Create new Statamic project
                 $this->info("Creating Statamic project...");
                 $process = new Process([
+                    'cmd.exe',
+                    '/c',
                     $composerPath,
                     'create-project',
                     'statamic/statamic',
