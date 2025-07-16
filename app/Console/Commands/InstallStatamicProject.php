@@ -158,7 +158,7 @@ class InstallStatamicProject extends Command
                         'pgm_code' => 'CMS_INSTALLED',
                         'pgm_value' => $id,
                         'pgm_value2' => 'failed',
-                        'pgm_desc' => "Failed to create Statamic project process: " . $e->getMessage(),
+                        'pgm_desc3' => "Failed to create Statamic project process: " . $e->getMessage(),
                     ]
                 );
                 Log::error("Failed to create Statamic project process: " . $e->getMessage());
