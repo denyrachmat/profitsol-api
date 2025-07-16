@@ -50,72 +50,134 @@ class InstallStatamicProject extends Command
         $composerPath = 'C:\ProgramData\ComposerSetup\bin\composer.bat';
 
         try {
-            if (
-                !$this->isGencodeExists('CMS_INSTALLED', [
-                    'pgm_value' => (string) $id
-                ])
-            ) {
-                // 1. Create new Statamic project
-                $this->info("Creating Statamic project...");
-                try {
-                    $process = new Process([
-                        $composerPath,
-                        'create-project',
-                        'statamic/statamic',
-                        $domain->pd_name,
-                        '--no-scripts', // Critical fix
-                        '--no-dev',
-                        '--prefer-dist',
-                        '--no-interaction'
-                    ], base_path('statamic-projects'), [
-                        // Disable SSL verification (not recommended for production)
-                        'COMPOSER_SSL_VERIFY' => '0',
-                        'GIT_SSL_NO_VERIFY' => '1'
-                    ]);
+            // if (
+            //     !$this->isGencodeExists('CMS_INSTALLED', [
+            //         'pgm_value' => (string) $id
+            //     ])
+            // ) {
+            //     // 1. Create new Statamic project
+            //     $this->info("Creating Statamic project...");
+            //     try {
+            //         $process = new Process([
+            //             $composerPath,
+            //             'create-project',
+            //             'statamic/statamic',
+            //             $domain->pd_name,
+            //             '--no-scripts', // Critical fix
+            //             '--no-dev',
+            //             '--prefer-dist',
+            //             '--no-interaction'
+            //         ], base_path('statamic-projects'), [
+            //             // Disable SSL verification (not recommended for production)
+            //             'COMPOSER_SSL_VERIFY' => '0',
+            //             'GIT_SSL_NO_VERIFY' => '1'
+            //         ]);
 
-                    // Run with output callback
-                    $process->run(function ($type, $buffer) {
-                        Log::info($type === Process::ERR ? 'ERR: ' . $buffer : 'OUT: ' . $buffer);
-                    });
+            //         // Run with output callback
+            //         $process->run(function ($type, $buffer) {
+            //             Log::info($type === Process::ERR ? 'ERR: ' . $buffer : 'OUT: ' . $buffer);
+            //         });
 
-                    // Also log the final output
-                    Log::info('Process output:', ['output' => $process->getOutput()]);
-                    Log::error('Process errors:', ['errors' => $process->getErrorOutput()]);
-                } catch (\Exception $e) {
-                    PortalGencode::updateOrCreate(
-                        [
-                            'pgm_code' => 'CMS_INSTALLED',
-                            'pgm_value' => $id
-                        ],
-                        [
-                            'pgm_code' => 'CMS_INSTALLED',
-                            'pgm_value' => $id,
-                            'pgm_value2' => 'failed',
-                            'pgm_desc' => "Failed to create Statamic project process: " . $e->getMessage(),
-                        ]
-                    );
-                    Log::error("Failed to create Statamic project process: " . $e->getMessage());
-                    throw $e;
-                }
+            //         // Also log the final output
+            //         Log::info('Process output:', ['output' => $process->getOutput()]);
+            //         Log::error('Process errors:', ['errors' => $process->getErrorOutput()]);
+            //     } catch (\Exception $e) {
+            //         PortalGencode::updateOrCreate(
+            //             [
+            //                 'pgm_code' => 'CMS_INSTALLED',
+            //                 'pgm_value' => $id
+            //             ],
+            //             [
+            //                 'pgm_code' => 'CMS_INSTALLED',
+            //                 'pgm_value' => $id,
+            //                 'pgm_value2' => 'failed',
+            //                 'pgm_desc' => "Failed to create Statamic project process: " . $e->getMessage(),
+            //             ]
+            //         );
+            //         Log::error("Failed to create Statamic project process: " . $e->getMessage());
+            //         throw $e;
+            //     }
 
-                $process->setTimeout(null);
-                // $process->mustRun();
+            //     $process->setTimeout(null);
+            //     // $process->mustRun();
 
 
-                if ($process->isSuccessful()) {
-                    PortalGencode::updateOrCreate(
-                        [
-                            'pgm_code' => 'CMS_INSTALLED',
-                            'pgm_value' => $id
-                        ],
-                        [
-                            'pgm_code' => 'CMS_INSTALLED',
-                            'pgm_value' => $id,
-                            'pgm_value2' => 'installed',
-                            'pgm_desc' => $projectName,
-                        ]
-                    );
-                }
+            //     if ($process->isSuccessful()) {
+            //         PortalGencode::updateOrCreate(
+            //             [
+            //                 'pgm_code' => 'CMS_INSTALLED',
+            //                 'pgm_value' => $id
+            //             ],
+            //             [
+            //                 'pgm_code' => 'CMS_INSTALLED',
+            //                 'pgm_value' => $id,
+            //                 'pgm_value2' => 'installed',
+            //                 'pgm_desc' => $projectName,
+            //             ]
+            //         );
+            //     }
+            // }
+
+            // 1. Create new Statamic project
+            $this->info("Creating Statamic project...");
+            try {
+                $process = new Process([
+                    $composerPath,
+                    'create-project',
+                    'statamic/statamic',
+                    $domain->pd_name,
+                    '--no-scripts', // Critical fix
+                    '--no-dev',
+                    '--prefer-dist',
+                    '--no-interaction'
+                ], base_path('statamic-projects'), [
+                    // Disable SSL verification (not recommended for production)
+                    'COMPOSER_SSL_VERIFY' => '0',
+                    'GIT_SSL_NO_VERIFY' => '1'
+                ]);
+
+                // Run with output callback
+                $process->run(function ($type, $buffer) {
+                    Log::info($type === Process::ERR ? 'ERR: ' . $buffer : 'OUT: ' . $buffer);
+                });
+
+                // Also log the final output
+                Log::info('Process output:', ['output' => $process->getOutput()]);
+                Log::error('Process errors:', ['errors' => $process->getErrorOutput()]);
+            } catch (\Exception $e) {
+                PortalGencode::updateOrCreate(
+                    [
+                        'pgm_code' => 'CMS_INSTALLED',
+                        'pgm_value' => $id
+                    ],
+                    [
+                        'pgm_code' => 'CMS_INSTALLED',
+                        'pgm_value' => $id,
+                        'pgm_value2' => 'failed',
+                        'pgm_desc' => "Failed to create Statamic project process: " . $e->getMessage(),
+                    ]
+                );
+                Log::error("Failed to create Statamic project process: " . $e->getMessage());
+                throw $e;
+            }
+
+            $process->setTimeout(null);
+            // $process->mustRun();
+
+
+            if ($process->isSuccessful()) {
+                PortalGencode::updateOrCreate(
+                    [
+                        'pgm_code' => 'CMS_INSTALLED',
+                        'pgm_value' => $id
+                    ],
+                    [
+                        'pgm_code' => 'CMS_INSTALLED',
+                        'pgm_value' => $id,
+                        'pgm_value2' => 'installed',
+                        'pgm_desc' => $projectName,
+                    ]
+                );
             }
 
             // 2. Create symlink to public folder
