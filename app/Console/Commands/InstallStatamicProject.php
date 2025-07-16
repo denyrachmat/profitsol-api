@@ -120,52 +120,70 @@ class InstallStatamicProject extends Command
 
             // 1. Create new Statamic project
             $this->info("Creating Statamic project...");
-            try {
-                $laragonCertPath = 'D:\laragon\bin\php\php-8.2.13\extras\ssl\cacert.pem';
+            // try {
+            //     $laragonCertPath = 'D:\laragon\bin\php\php-8.2.13\extras\ssl\cacert.pem';
 
-                $process = new Process([
-                    env('COMPOSER_PATH', 'composer'),
-                    'create-project',
-                    'statamic/statamic',
-                    $domain->pd_name,
-                    '--quiet',
-                    // '--no-scripts',
-                    // '--no-dev',
-                    // '--prefer-dist',
-                    '--no-interaction'
-                ], base_path('statamic-projects'));
+            //     $process = new Process([
+            //         $composerPath,
+            //         'create-project',
+            //         'statamic/statamic',
+            //         $domain->pd_name,
+            //         '--quiet',
+            //         // '--no-scripts',
+            //         // '--no-dev',
+            //         // '--prefer-dist',
+            //         '--no-interaction'
+            //     ], base_path('statamic-projects'));
 
-                // Run with output callback
-                // $process->run(function ($type, $buffer) {
-                //     Log::info($type === Process::ERR ? 'ERR: ' . $buffer : 'OUT: ' . $buffer);
-                // });
-                $process->setTimeout(3600); // Set a timeout of 1 hour
-                $process->mustRun();
+            //     // Run with output callback
+            //     // $process->run(function ($type, $buffer) {
+            //     //     Log::info($type === Process::ERR ? 'ERR: ' . $buffer : 'OUT: ' . $buffer);
+            //     // });
+            //     $process->setTimeout(3600); // Set a timeout of 1 hour
+            //     $process->mustRun();
 
 
-                // Also log the final output
-                Log::info('Process output:', ['output' => $process->getOutput()]);
-                Log::error('Process errors:', ['errors' => $process->getErrorOutput()]);
-            } catch (\Exception $e) {
-                PortalGencode::updateOrCreate(
-                    [
-                        'pgm_code' => 'CMS_INSTALLED',
-                        'pgm_value' => $id
-                    ],
-                    [
-                        'pgm_code' => 'CMS_INSTALLED',
-                        'pgm_value' => $id,
-                        'pgm_value2' => 'failed',
-                        'pgm_desc3' => "Failed to create Statamic project process: " . $e->getMessage(),
-                    ]
-                );
-                Log::error("Failed to create Statamic project process: " . $e->getMessage());
-                throw $e;
-            }
+            //     // Also log the final output
+            //     // Log::info('Process output:', ['output' => $process->getOutput()]);
+            //     // Log::error('Process errors:', ['errors' => $process->getErrorOutput()]);
+            // } catch (\Exception $e) {
+            //     PortalGencode::updateOrCreate(
+            //         [
+            //             'pgm_code' => 'CMS_INSTALLED',
+            //             'pgm_value' => $id
+            //         ],
+            //         [
+            //             'pgm_code' => 'CMS_INSTALLED',
+            //             'pgm_value' => $id,
+            //             'pgm_value2' => 'failed',
+            //             'pgm_desc3' => "Failed to create Statamic project process: " . $e->getMessage(),
+            //         ]
+            //     );
+            //     Log::error("Failed to create Statamic project process: " . $e->getMessage());
+            //     throw $e;
+            // }
 
             // $process->setTimeout(null);
             // $process->mustRun();
 
+            $process = new Process([
+                $composerPath,
+                'create-project',
+                'statamic/statamic',
+                $domain->pd_name,
+                '--quiet',
+                // '--no-scripts',
+                // '--no-dev',
+                // '--prefer-dist',
+                '--no-interaction'
+            ], base_path('statamic-projects'));
+
+            // Run with output callback
+            // $process->run(function ($type, $buffer) {
+            //     Log::info($type === Process::ERR ? 'ERR: ' . $buffer : 'OUT: ' . $buffer);
+            // });
+            $process->setTimeout(3600); // Set a timeout of 1 hour
+            $process->mustRun();
 
             if ($process->isSuccessful()) {
                 PortalGencode::updateOrCreate(
