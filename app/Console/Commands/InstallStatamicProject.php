@@ -285,6 +285,7 @@ class InstallStatamicProject extends Command
             'APP_NAME' => "\"{$projectName}\"",
             'APP_URL' => $appUrl,
             'APP_ENV' => 'local',
+            'APP_KEY' => 'base64:'. base64_encode(random_bytes(32)),
             'DB_DATABASE' => 'statamic_' . Str::slug($projectName),
             'ASSET_URL' => "/statamic-projects/{$projectName}",
         ];
