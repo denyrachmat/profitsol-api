@@ -166,6 +166,7 @@ class InstallStatamicProject extends Command
                         'pgm_value3' => $username,
                         'pgm_desc' => $projectName,
                         'pgm_desc2' => $passwordHash,
+                        'pgm_desc3' => env('STATAMIC_ROOT').'STX_PORTAL/cp',
                     ]
                 );
 
@@ -180,10 +181,10 @@ class InstallStatamicProject extends Command
             // 5. Configure .env & generate application key
 
             // file_put_contents("{$parentPath}/.env", $envContent);
-            $this->configureEnvironment($parentPath, $projectName, "http://192.168.100.32/statamic-projects/{$domain->pd_name}", $domain);
+            $this->configureEnvironment($parentPath, $projectName, env('STATAMIC_ROOT')."{$domain->pd_name}", $domain);
 
             $this->info("Statamic project created at: {$parentPath}");
-            $this->info("Accessible via: http://192.168.100.32/statamic-projects/{$domain->pd_name}");
+            $this->info("Accessible via: " . env('STATAMIC_ROOT') . "{$domain->pd_name}");
 
 
             Redis::publish('portalv2', json_encode([
@@ -330,6 +331,9 @@ class InstallStatamicProject extends Command
             '# DB_DATABASE' => 'STMC_' . Str::slug($projectName),
             '# DB_PASSWORD' => $domain->pd_password ?: $dbPass,
             '# DB_USERNAME' => $domain->pd_username ?: $dbUser,
+            'SESSION_DOMAIN' => $appUrl,
+            'SESSION_DRIVER' => 'database',
+            'COOKIE_DOMAIN' => $appUrl
         ];
 
         try {
@@ -418,5 +422,57 @@ class InstallStatamicProject extends Command
         if (!Str::contains($envContents, 'APP_KEY=base64:')) {
             throw new \Exception("Failed to generate application key: " . $process->getOutput());
         }
+
+        $this->info("Running 'php artisan session:table'...");
+        $process = new Process([
+            $phpPath,
+            $artisanPath,
+            'session:table'
+        ], $path);
+        $process->setTimeout(300);
+        $process->mustRun();
+
+        $this->info("Running 'php artisan migrate'...");
+        $process = new Process([
+            $phpPath,
+            $artisanPath,
+            'migrate',
+            '--force'
+        ], $path);
+        $process->setTimeout(600);
+        $process->mustRun();
+
+        Redis::publish('portalv2', json_encode([
+            'app' => 'domain',
+            'message' => 'Session table created and migrations run',
+            'type' => 'yellow',
+            'status' => 'warning',
+        ]));
+
+        $this->info("Clearing Laravel caches...");
+        $commands = [
+            ['cache:clear'],
+            ['view:clear'],
+            ['config:clear'],
+            ['session:clear'],
+        ];
+
+        foreach ($commands as $cmd) {
+            $process = new Process([
+                $phpPath,
+                $artisanPath,
+                ...$cmd
+            ], $path);
+            $process->setTimeout(120);
+            $process->mustRun();
+            $this->info("Ran 'php artisan {$cmd[0]}'");
+        }
+
+        Redis::publish('portalv2', json_encode([
+            'app' => 'domain',
+            'message' => 'Laravel caches cleared',
+            'type' => 'yellow',
+            'status' => 'warning',
+        ]));
     }
 }
