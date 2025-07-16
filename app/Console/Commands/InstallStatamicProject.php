@@ -79,10 +79,17 @@ class InstallStatamicProject extends Command
                     [
                         'pgm_code' => 'CMS_INSTALLED',
                         'pgm_value' => $id,
-                        'pgm_value2' => 'installed',
+                        'pgm_value2' => 'project_installed',
                         'pgm_desc' => $projectName,
                     ]
                 );
+
+                Redis::publish('portalv2', json_encode([
+                    'app' => 'domain',
+                    'message' => 'project installed',
+                    'type' => 'yellow',
+                    'status' => 'warning',
+                ]));
             }
 
             // 2. Create symlink to public folder
@@ -100,6 +107,13 @@ class InstallStatamicProject extends Command
                         symlink($publicPath, $symlinkPath);
                     }
                     $this->info("Symlink created successfully at {$symlinkPath}");
+
+                    Redis::publish('portalv2', json_encode([
+                        'app' => 'domain',
+                        'message' => 'Symlink created successfully',
+                        'type' => 'yellow',
+                        'status' => 'warning',
+                    ]));
                 } catch (\Exception $e) {
                     $this->error("Failed to create symlink: " . $e->getMessage());
                     Log::error("Symlink creation failed: " . $e->getMessage());
@@ -154,6 +168,13 @@ class InstallStatamicProject extends Command
                         'pgm_desc2' => $passwordHash,
                     ]
                 );
+
+                Redis::publish('portalv2', json_encode([
+                    'app' => 'domain',
+                    'message' => 'Admin Project setup done',
+                    'type' => 'yellow',
+                    'status' => 'warning',
+                ]));
             }
 
             // 5. Configure .env & generate application key
@@ -278,6 +299,13 @@ class InstallStatamicProject extends Command
             File::copy("{$path}/.env.example", $envFile);
         }
 
+        Redis::publish('portalv2', json_encode([
+            'app' => 'domain',
+            'message' => '.env file created / found',
+            'type' => 'yellow',
+            'status' => 'warning',
+        ]));
+
         // 2. Update specific values without replacing entire file
         $envContents = File::get($envFile);
 
@@ -310,8 +338,22 @@ class InstallStatamicProject extends Command
             ]);
             $pdo->exec("CREATE DATABASE IF NOT EXISTS `{$dbName}` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;");
             $this->info("Database '{$dbName}' created or already exists.");
+
+            Redis::publish('portalv2', json_encode([
+                'app' => 'domain',
+                'message' => 'Database created or already exists',
+                'type' => 'yellow',
+                'status' => 'warning',
+            ]));
         } catch (\PDOException $e) {
             Log::error("Failed to create database: " . $e->getMessage());
+
+            Redis::publish('portalv2', json_encode([
+                'app' => 'domain',
+                'message' => 'Database failed to create',
+                'type' => 'yellow',
+                'status' => 'warning',
+            ]));
             throw new \Exception("Failed to create database: " . $e->getMessage());
         }
 
@@ -340,6 +382,13 @@ class InstallStatamicProject extends Command
 
         if (!$process->isSuccessful()) {
             Log::error("Failed to generate application key: " . $process->getErrorOutput());
+        } else {
+            Redis::publish('portalv2', json_encode([
+                'app' => 'domain',
+                'message' => 'Environment file updated and application key generated',
+                'type' => 'yellow',
+                'status' => 'warning',
+            ]));
         }
 
         // 4. Verify key was generated
