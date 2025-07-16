@@ -12,6 +12,7 @@ use Illuminate\Support\Str;
 use Illuminate\Support\Facades\File;
 use App\Models\PORTAL\PortalApp;
 use Redis;
+use Symfony\Component\Process\Exception\ProcessFailedException;
 class InstallStatamicProject extends Command
 {
     use GencodeTraits;
@@ -310,6 +311,10 @@ class InstallStatamicProject extends Command
 
         $process->setTimeout(600);
         $process->mustRun();
+
+        if (!$process->isSuccessful()) {
+            Log::error("Failed to generate application key: " . $process->getErrorOutput());
+        }
 
         // 4. Verify key was generated
         $envContents = File::get($envFile);
