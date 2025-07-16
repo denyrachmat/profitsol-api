@@ -67,7 +67,11 @@ class InstallStatamicProject extends Command
                         '--no-dev',
                         '--prefer-dist',
                         '--no-interaction'
-                    ], base_path('statamic-projects'));
+                    ], base_path('statamic-projects'), [
+                        // Disable SSL verification (not recommended for production)
+                        'COMPOSER_SSL_VERIFY' => '0',
+                        'GIT_SSL_NO_VERIFY' => '1'
+                    ]);
                 } catch (\Exception $e) {
                     Log::error("Failed to create Statamic project process: " . $e->getMessage());
                     throw $e;
