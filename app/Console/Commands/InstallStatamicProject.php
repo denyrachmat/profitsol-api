@@ -159,7 +159,7 @@ class InstallStatamicProject extends Command
             // 5. Configure .env & generate application key
 
             // file_put_contents("{$parentPath}/.env", $envContent);
-            $this->configureEnvironment($parentPath, $projectName, "http://192.168.100.32/statamic-projects/{$domain->pd_name}");
+            $this->configureEnvironment($parentPath, $projectName, "http://192.168.100.32/statamic-projects/{$domain->pd_name}", $domain);
 
             $this->info("Statamic project created at: {$parentPath}");
             $this->info("Accessible via: http://192.168.100.32/statamic-projects/{$domain->pd_name}");
@@ -269,7 +269,7 @@ class InstallStatamicProject extends Command
         }
     }
 
-    protected function configureEnvironment($path, $projectName, $appUrl)
+    protected function configureEnvironment($path, $projectName, $appUrl, $domain)
     {
         $envFile = "{$path}/.env";
 
@@ -281,14 +281,39 @@ class InstallStatamicProject extends Command
         // 2. Update specific values without replacing entire file
         $envContents = File::get($envFile);
 
+        $this->info("Creating database for Statamic project...");
+
+        $dbName = 'statamic_' . Str::slug($projectName, '_');
+        $dbUser = env('DB_USERNAME', 'root');
+        $dbPass = env('DB_PASSWORD', '');
+        $dbHost = env('DB_HOST', '127.0.0.1');
+        $dbPort = env('DB_PORT', '3306');
+
+
         $updates = [
             'APP_NAME' => "\"{$projectName}\"",
             'APP_URL' => $appUrl,
             'APP_ENV' => 'local',
-            'APP_KEY' => 'base64:'. base64_encode(random_bytes(32)),
-            'DB_DATABASE' => 'statamic_' . Str::slug($projectName),
+            'APP_KEY' => 'base64:' . base64_encode(random_bytes(32)),
             'ASSET_URL' => "/statamic-projects/{$projectName}",
+            'DB_CONNECTION' => $domain->pd_dbtype,
+            'DB_HOST' => $domain->pd_host ?: $dbHost,
+            'DB_PORT' => $domain->pd_port ?: $dbPort,
+            'DB_DATABASE' => 'STMC_' . Str::slug($projectName),
+            'DB_PASSWORD' => $domain->pd_password ?: $dbPass,
+            'DB_USERNAME' => $domain->pd_username ?: $dbUser,
         ];
+
+        try {
+            $pdo = new \PDO($domain->pd_dbtype . ":host={$dbHost};port={$dbPort}", $dbUser, $dbPass, [
+                \PDO::ATTR_ERRMODE => \PDO::ERRMODE_EXCEPTION,
+            ]);
+            $pdo->exec("CREATE DATABASE IF NOT EXISTS `{$dbName}` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;");
+            $this->info("Database '{$dbName}' created or already exists.");
+        } catch (\PDOException $e) {
+            Log::error("Failed to create database: " . $e->getMessage());
+            throw new \Exception("Failed to create database: " . $e->getMessage());
+        }
 
         foreach ($updates as $key => $value) {
             $envContents = preg_replace(
