@@ -172,9 +172,9 @@ class InstallStatamicProject extends Command
                 'statamic/statamic',
                 $domain->pd_name,
                 '--quiet',
-                // '--no-scripts',
-                // '--no-dev',
-                // '--prefer-dist',
+                '--no-scripts',
+                '--no-dev',
+                '--prefer-dist',
                 '--no-interaction'
             ], base_path('statamic-projects'));
 
