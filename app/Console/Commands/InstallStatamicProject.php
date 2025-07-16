@@ -59,15 +59,19 @@ class InstallStatamicProject extends Command
                 $this->info("Creating Statamic project...");
                 try {
                     $process = new Process([
-                        'cmd.exe',
-                        '/c',
                         $composerPath,
                         'create-project',
                         'statamic/statamic',
                         $domain->pd_name,
-                        '--quiet',
+                        '--no-scripts', // Critical fix
+                        '--no-dev',
+                        '--prefer-dist',
                         '--no-interaction'
-                    ], base_path('statamic-projects'));
+                    ], base_path('statamic-projects'), [
+                        // Disable SSL verification (not recommended for production)
+                        'COMPOSER_SSL_VERIFY' => '0',
+                        'GIT_SSL_NO_VERIFY' => '1'
+                    ]);
                 } catch (\Exception $e) {
                     Log::error("Failed to create Statamic project process: " . $e->getMessage());
                     throw $e;
