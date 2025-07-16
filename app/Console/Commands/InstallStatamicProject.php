@@ -50,121 +50,8 @@ class InstallStatamicProject extends Command
         $composerPath = 'C:\ProgramData\ComposerSetup\bin\composer.bat';
 
         try {
-            // if (
-            //     !$this->isGencodeExists('CMS_INSTALLED', [
-            //         'pgm_value' => (string) $id
-            //     ])
-            // ) {
-            //     // 1. Create new Statamic project
-            //     $this->info("Creating Statamic project...");
-            //     try {
-            //         $process = new Process([
-            //             $composerPath,
-            //             'create-project',
-            //             'statamic/statamic',
-            //             $domain->pd_name,
-            //             '--no-scripts', // Critical fix
-            //             '--no-dev',
-            //             '--prefer-dist',
-            //             '--no-interaction'
-            //         ], base_path('statamic-projects'), [
-            //             // Disable SSL verification (not recommended for production)
-            //             'COMPOSER_SSL_VERIFY' => '0',
-            //             'GIT_SSL_NO_VERIFY' => '1'
-            //         ]);
-
-            //         // Run with output callback
-            //         $process->run(function ($type, $buffer) {
-            //             Log::info($type === Process::ERR ? 'ERR: ' . $buffer : 'OUT: ' . $buffer);
-            //         });
-
-            //         // Also log the final output
-            //         Log::info('Process output:', ['output' => $process->getOutput()]);
-            //         Log::error('Process errors:', ['errors' => $process->getErrorOutput()]);
-            //     } catch (\Exception $e) {
-            //         PortalGencode::updateOrCreate(
-            //             [
-            //                 'pgm_code' => 'CMS_INSTALLED',
-            //                 'pgm_value' => $id
-            //             ],
-            //             [
-            //                 'pgm_code' => 'CMS_INSTALLED',
-            //                 'pgm_value' => $id,
-            //                 'pgm_value2' => 'failed',
-            //                 'pgm_desc' => "Failed to create Statamic project process: " . $e->getMessage(),
-            //             ]
-            //         );
-            //         Log::error("Failed to create Statamic project process: " . $e->getMessage());
-            //         throw $e;
-            //     }
-
-            //     $process->setTimeout(null);
-            //     // $process->mustRun();
-
-
-            //     if ($process->isSuccessful()) {
-            //         PortalGencode::updateOrCreate(
-            //             [
-            //                 'pgm_code' => 'CMS_INSTALLED',
-            //                 'pgm_value' => $id
-            //             ],
-            //             [
-            //                 'pgm_code' => 'CMS_INSTALLED',
-            //                 'pgm_value' => $id,
-            //                 'pgm_value2' => 'installed',
-            //                 'pgm_desc' => $projectName,
-            //             ]
-            //         );
-            //     }
-            // }
-
             // 1. Create new Statamic project
             $this->info("Creating Statamic project...");
-            // try {
-            //     $laragonCertPath = 'D:\laragon\bin\php\php-8.2.13\extras\ssl\cacert.pem';
-
-            //     $process = new Process([
-            //         $composerPath,
-            //         'create-project',
-            //         'statamic/statamic',
-            //         $domain->pd_name,
-            //         '--quiet',
-            //         // '--no-scripts',
-            //         // '--no-dev',
-            //         // '--prefer-dist',
-            //         '--no-interaction'
-            //     ], base_path('statamic-projects'));
-
-            //     // Run with output callback
-            //     // $process->run(function ($type, $buffer) {
-            //     //     Log::info($type === Process::ERR ? 'ERR: ' . $buffer : 'OUT: ' . $buffer);
-            //     // });
-            //     $process->setTimeout(3600); // Set a timeout of 1 hour
-            //     $process->mustRun();
-
-
-            //     // Also log the final output
-            //     // Log::info('Process output:', ['output' => $process->getOutput()]);
-            //     // Log::error('Process errors:', ['errors' => $process->getErrorOutput()]);
-            // } catch (\Exception $e) {
-            //     PortalGencode::updateOrCreate(
-            //         [
-            //             'pgm_code' => 'CMS_INSTALLED',
-            //             'pgm_value' => $id
-            //         ],
-            //         [
-            //             'pgm_code' => 'CMS_INSTALLED',
-            //             'pgm_value' => $id,
-            //             'pgm_value2' => 'failed',
-            //             'pgm_desc3' => "Failed to create Statamic project process: " . $e->getMessage(),
-            //         ]
-            //     );
-            //     Log::error("Failed to create Statamic project process: " . $e->getMessage());
-            //     throw $e;
-            // }
-
-            // $process->setTimeout(null);
-            // $process->mustRun();
 
             $process = new Process([
                 $composerPath,
@@ -175,13 +62,10 @@ class InstallStatamicProject extends Command
                 '--no-scripts',
                 '--no-dev',
                 '--prefer-dist',
-                '--no-interaction'
+                '--no-interaction',
+                '--no-secure-http' // Add this flag
             ], base_path('statamic-projects'));
 
-            // Run with output callback
-            // $process->run(function ($type, $buffer) {
-            //     Log::info($type === Process::ERR ? 'ERR: ' . $buffer : 'OUT: ' . $buffer);
-            // });
             $process->setTimeout(3600); // Set a timeout of 1 hour
             $process->mustRun();
 
@@ -272,10 +156,6 @@ class InstallStatamicProject extends Command
             }
 
             // 5. Configure .env & generate application key
-            // $envContent = <<<TEXT
-            // APP_NAME="{$projectName}"
-            // APP_URL=http://{$projectName}.test
-            // TEXT;
 
             // file_put_contents("{$parentPath}/.env", $envContent);
             $this->configureEnvironment($parentPath, $projectName, "http://192.168.100.32/statamic-projects/{$domain->pd_name}");
