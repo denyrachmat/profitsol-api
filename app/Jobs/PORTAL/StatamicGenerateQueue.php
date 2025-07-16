@@ -50,7 +50,7 @@ class StatamicGenerateQueue implements ShouldQueue
                 'id' => $this->id,
                 'projectName' => $this->projectName,
                 'username' => $this->username,
-            ], $this->getOutput()); // Pass output for real-time feedback
+            ]);
 
             if ($exitCode !== 0) {
                 throw new \RuntimeException("Installation failed with exit code: {$exitCode}");
