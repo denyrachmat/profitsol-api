@@ -73,6 +73,18 @@ class InstallStatamicProject extends Command
                         'GIT_SSL_NO_VERIFY' => '1'
                     ]);
                 } catch (\Exception $e) {
+                    PortalGencode::updateOrCreate(
+                        [
+                            'pgm_code' => 'CMS_INSTALLED',
+                            'pgm_value' => $id
+                        ],
+                        [
+                            'pgm_code' => 'CMS_INSTALLED',
+                            'pgm_value' => $id,
+                            'pgm_value2' => 'failed',
+                            'pgm_desc' => "Failed to create Statamic project process: " . $e->getMessage(),
+                        ]
+                    );
                     Log::error("Failed to create Statamic project process: " . $e->getMessage());
                     throw $e;
                 }
