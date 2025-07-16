@@ -129,7 +129,8 @@ class InstallStatamicProject extends Command
                     '--no-scripts', // Critical fix
                     '--no-dev',
                     '--prefer-dist',
-                    '--no-interaction'
+                    '--no-interaction',
+                    '--ignore-platform-reqs' // Bypass some checks
                 ], base_path('statamic-projects'), [
                     // Disable SSL verification (not recommended for production)
                     'COMPOSER_SSL_VERIFY' => '0',
