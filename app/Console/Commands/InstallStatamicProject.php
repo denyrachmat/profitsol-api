@@ -59,13 +59,13 @@ class InstallStatamicProject extends Command
                 $this->info("Creating Statamic project...");
                 try {
                     $process = new Process([
-                        'cmd.exe',
-                        '/c',
                         $composerPath,
                         'create-project',
                         'statamic/statamic',
                         $domain->pd_name,
-                        '--quiet',
+                        '--no-scripts', // Critical fix
+                        '--no-dev',
+                        '--prefer-dist',
                         '--no-interaction'
                     ], base_path('statamic-projects'));
                 } catch (\Exception $e) {
