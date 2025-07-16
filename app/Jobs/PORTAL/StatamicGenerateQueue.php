@@ -24,25 +24,50 @@ class StatamicGenerateQueue implements ShouldQueue
 
     public function handle()
     {
-        PortalGencode::updateOrCreate(
-            [
-                'pgm_code' => 'CMS_INSTALLED',
-                'pgm_value' => $this->id,
-            ],
-            [
-                'pgm_code' => 'CMS_INSTALLED',
-                'pgm_value' => $this->id,
-                'pgm_value2' => 'setup_started',
-                'pgm_value3' => $this->username,
-                'pgm_desc' => $this->projectName,
-                'pgm_desc2' => '',
-            ]
-        );
+        try {
 
-        Artisan::call('statamic:install-project', [
-            'id' => $this->id,
-            'projectName' => $this->projectName,
-            'username' => $this->username,
-        ]);
+            PortalGencode::updateOrCreate(
+                [
+                    'pgm_code' => 'CMS_INSTALLED',
+                    'pgm_value' => $this->id,
+                ],
+                [
+                    'pgm_code' => 'CMS_INSTALLED',
+                    'pgm_value' => $this->id,
+                    'pgm_value2' => 'setup_started',
+                    'pgm_value3' => $this->username,
+                    'pgm_desc' => $this->projectName,
+                    'pgm_desc2' => '',
+                ]
+            );
+
+            // Artisan::call('statamic:install-project', [
+            //     'id' => $this->id,
+            //     'projectName' => $this->projectName,
+            //     'username' => $this->username,
+            // ]);
+            $exitCode = Artisan::call('statamic:install-project', [
+                'id' => $this->id,
+                'projectName' => $this->projectName,
+                'username' => $this->username,
+            ], $this->getOutput()); // Pass output for real-time feedback
+
+            if ($exitCode !== 0) {
+                throw new \RuntimeException("Installation failed with exit code: {$exitCode}");
+            }
+
+            // Optionally get and log the command output
+            $output = Artisan::output();
+            \Log::info("Statamic installation output:", ['output' => $output]);
+
+        } catch (\Exception $e) {
+            \Log::error("Statamic installation failed", [
+                'project' => $this->projectName,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            $this->fail($e);
+        }
     }
 }
