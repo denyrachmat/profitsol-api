@@ -311,7 +311,7 @@ class InstallStatamicProject extends Command
 
         $this->info("Creating database for Statamic project...");
 
-        $dbName = 'statamic_' . Str::slug($projectName, '_');
+        $dbName = 'STMC_' . Str::slug($projectName);
         $dbUser = env('DB_USERNAME', 'root');
         $dbPass = env('DB_PASSWORD', '');
         $dbHost = env('DB_HOST', '127.0.0.1');
@@ -333,10 +333,30 @@ class InstallStatamicProject extends Command
         ];
 
         try {
-            $pdo = new \PDO($domain->pd_dbtype . ":host={$dbHost};port={$dbPort}", $dbUser, $dbPass, [
+            // Build DSN string based on database type
+            $dsn = '';
+            if ($domain->pd_dbtype === 'mysql') {
+                $dsn = "mysql:host={$dbHost};port={$dbPort}";
+            } elseif ($domain->pd_dbtype === 'pgsql') {
+                $dsn = "pgsql:host={$dbHost};port={$dbPort}";
+            } elseif ($domain->pd_dbtype === 'sqlsrv') {
+                $dsn = "sqlsrv:Server={$dbHost}," . ($dbPort ?: '1433');
+            } else {
+                throw new \Exception("Unsupported database type: {$domain->pd_dbtype}");
+            }
+
+            $pdo = new \PDO($dsn, $dbUser, $dbPass, [
                 \PDO::ATTR_ERRMODE => \PDO::ERRMODE_EXCEPTION,
             ]);
-            $pdo->exec("CREATE DATABASE IF NOT EXISTS `{$dbName}` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;");
+
+            if ($domain->pd_dbtype === 'mysql') {
+                $pdo->exec("CREATE DATABASE IF NOT EXISTS `{$dbName}` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;");
+            } elseif ($domain->pd_dbtype === 'pgsql') {
+                $pdo->exec("CREATE DATABASE IF NOT EXISTS \"{$dbName}\";");
+            } elseif ($domain->pd_dbtype === 'sqlsrv') {
+                $pdo->exec("IF NOT EXISTS (SELECT name FROM sys.databases WHERE name = N'{$dbName}') CREATE DATABASE [{$dbName}];");
+            }
+
             $this->info("Database '{$dbName}' created or already exists.");
 
             Redis::publish('portalv2', json_encode([
