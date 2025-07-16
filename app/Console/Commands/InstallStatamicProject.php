@@ -121,6 +121,9 @@ class InstallStatamicProject extends Command
             // 1. Create new Statamic project
             $this->info("Creating Statamic project...");
             try {
+                $certFile = 'C:\Program Files\Common Files\SSL/cert.pem';
+                $certDir = 'C:\Program Files\Common Files\SSL/certs';
+
                 $process = new Process([
                     $composerPath,
                     'create-project',
@@ -133,8 +136,8 @@ class InstallStatamicProject extends Command
                     '--ignore-platform-reqs' // Bypass some checks
                 ], base_path('statamic-projects'), [
                     // Disable SSL verification (not recommended for production)
-                    'COMPOSER_SSL_VERIFY' => '0',
-                    'GIT_SSL_NO_VERIFY' => '1'
+                    'SSL_CERT_FILE' => $certFile,
+                    'SSL_CERT_DIR' => $certDir,
                 ]);
 
                 // Run with output callback
