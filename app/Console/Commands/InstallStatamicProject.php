@@ -325,11 +325,11 @@ class InstallStatamicProject extends Command
             'APP_KEY' => 'base64:' . base64_encode(random_bytes(32)),
             'ASSET_URL' => "/statamic-projects/{$projectName}",
             'DB_CONNECTION' => $domain->pd_dbtype,
-            'DB_HOST' => $domain->pd_host ?: $dbHost,
-            'DB_PORT' => $domain->pd_port ?: $dbPort,
-            'DB_DATABASE' => 'STMC_' . Str::slug($projectName),
-            'DB_PASSWORD' => $domain->pd_password ?: $dbPass,
-            'DB_USERNAME' => $domain->pd_username ?: $dbUser,
+            '# DB_HOST' => $domain->pd_host ?: $dbHost,
+            '# DB_PORT' => $domain->pd_port ?: $dbPort,
+            '# DB_DATABASE' => 'STMC_' . Str::slug($projectName),
+            '# DB_PASSWORD' => $domain->pd_password ?: $dbPass,
+            '# DB_USERNAME' => $domain->pd_username ?: $dbUser,
         ];
 
         try {
@@ -384,6 +384,8 @@ class InstallStatamicProject extends Command
                 $envContents
             );
         }
+
+        $envContents = preg_replace('/^# (DB_HOST|DB_PORT|DB_DATABASE|DB_PASSWORD|DB_USERNAME)=/m', '$1=', $envContents);
 
         File::put($envFile, $envContents);
 
