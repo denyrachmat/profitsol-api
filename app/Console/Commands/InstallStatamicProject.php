@@ -72,6 +72,15 @@ class InstallStatamicProject extends Command
                         'COMPOSER_SSL_VERIFY' => '0',
                         'GIT_SSL_NO_VERIFY' => '1'
                     ]);
+
+                    // Run with output callback
+                    $process->run(function ($type, $buffer) {
+                        Log::info($type === Process::ERR ? 'ERR: ' . $buffer : 'OUT: ' . $buffer);
+                    });
+
+                    // Also log the final output
+                    Log::info('Process output:', ['output' => $process->getOutput()]);
+                    Log::error('Process errors:', ['errors' => $process->getErrorOutput()]);
                 } catch (\Exception $e) {
                     PortalGencode::updateOrCreate(
                         [
@@ -90,7 +99,8 @@ class InstallStatamicProject extends Command
                 }
 
                 $process->setTimeout(null);
-                $process->mustRun();
+                // $process->mustRun();
+
 
                 if ($process->isSuccessful()) {
                     PortalGencode::updateOrCreate(
