@@ -121,23 +121,21 @@ class InstallStatamicProject extends Command
             // 1. Create new Statamic project
             $this->info("Creating Statamic project...");
             try {
-                $certFile = 'C:\Program Files\Common Files\SSL/cert.pem';
-                $certDir = 'C:\Program Files\Common Files\SSL/certs';
+                $laragonCertPath = 'D:\laragon\bin\php\php-8.2.13\extras\ssl\cacert.pem';
 
                 $process = new Process([
-                    $composerPath,
+                    env('COMPOSER_PATH', 'composer'),
                     'create-project',
                     'statamic/statamic',
                     $domain->pd_name,
-                    '--no-scripts', // Critical fix
+                    '--no-scripts',
                     '--no-dev',
                     '--prefer-dist',
-                    '--no-interaction',
-                    '--ignore-platform-reqs' // Bypass some checks
+                    '--no-interaction'
                 ], base_path('statamic-projects'), [
-                    // Disable SSL verification (not recommended for production)
-                    'SSL_CERT_FILE' => $certFile,
-                    'SSL_CERT_DIR' => $certDir,
+                    'SSL_CERT_FILE' => $laragonCertPath,
+                    'PATH' => getenv('PATH'),
+                    'SYSTEMROOT' => getenv('SYSTEMROOT')
                 ]);
 
                 // Run with output callback
