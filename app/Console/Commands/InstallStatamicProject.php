@@ -129,15 +129,11 @@ class InstallStatamicProject extends Command
                     'statamic/statamic',
                     $domain->pd_name,
                     '--quiet',
-                    '--no-scripts',
-                    '--no-dev',
-                    '--prefer-dist',
+                    // '--no-scripts',
+                    // '--no-dev',
+                    // '--prefer-dist',
                     '--no-interaction'
-                ], base_path('statamic-projects'), [
-                    'SSL_CERT_FILE' => $laragonCertPath,
-                    'PATH' => getenv('PATH'),
-                    'SYSTEMROOT' => getenv('SYSTEMROOT')
-                ]);
+                ], base_path('statamic-projects'));
 
                 // Run with output callback
                 // $process->run(function ($type, $buffer) {
