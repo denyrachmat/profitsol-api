@@ -311,7 +311,7 @@ class InstallStatamicProject extends Command
 
         $this->info("Creating database for Statamic project...");
 
-        $dbName = 'STMC_' . Str::slug($projectName);
+        $dbName = strtoupper('STMC_' . Str::slug($projectName));
         $dbUser = env('DB_USERNAME', 'root');
         $dbPass = env('DB_PASSWORD', '');
         $dbHost = env('DB_HOST', '127.0.0.1');
@@ -380,7 +380,7 @@ class InstallStatamicProject extends Command
         foreach ($updates as $key => $value) {
             $envContents = preg_replace(
                 "/^{$key}=.*/m",
-                "{$key}={$value}",
+                "{$key}={$value} # updated by InstallStatamicProject",
                 $envContents
             );
         }
