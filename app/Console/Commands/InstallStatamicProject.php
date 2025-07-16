@@ -423,31 +423,31 @@ class InstallStatamicProject extends Command
             throw new \Exception("Failed to generate application key: " . $process->getOutput());
         }
 
-        $this->info("Running 'php artisan session:table'...");
-        $process = new Process([
-            $phpPath,
-            $artisanPath,
-            'session:table'
-        ], $path);
-        $process->setTimeout(300);
-        $process->mustRun();
+        // $this->info("Running 'php artisan session:table'...");
+        // $process = new Process([
+        //     $phpPath,
+        //     $artisanPath,
+        //     'session:table'
+        // ], $path);
+        // $process->setTimeout(300);
+        // $process->mustRun();
 
-        $this->info("Running 'php artisan migrate'...");
-        $process = new Process([
-            $phpPath,
-            $artisanPath,
-            'migrate',
-            '--force'
-        ], $path);
-        $process->setTimeout(600);
-        $process->mustRun();
+        // $this->info("Running 'php artisan migrate'...");
+        // $process = new Process([
+        //     $phpPath,
+        //     $artisanPath,
+        //     'migrate',
+        //     '--force'
+        // ], $path);
+        // $process->setTimeout(600);
+        // $process->mustRun();
 
-        Redis::publish('portalv2', json_encode([
-            'app' => 'domain',
-            'message' => 'Session table created and migrations run',
-            'type' => 'yellow',
-            'status' => 'warning',
-        ]));
+        // Redis::publish('portalv2', json_encode([
+        //     'app' => 'domain',
+        //     'message' => 'Session table created and migrations run',
+        //     'type' => 'yellow',
+        //     'status' => 'warning',
+        // ]));
 
         $this->info("Clearing Laravel caches...");
         $commands = [
