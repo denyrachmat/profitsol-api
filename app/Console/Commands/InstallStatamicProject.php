@@ -332,7 +332,7 @@ class InstallStatamicProject extends Command
             '# DB_PASSWORD' => $domain->pd_password ?: $dbPass,
             '# DB_USERNAME' => $domain->pd_username ?: $dbUser,
             'SESSION_DOMAIN' => $appUrl,
-            'SESSION_DRIVER' => 'database',
+            // 'SESSION_DRIVER' => 'database',
             'COOKIE_DOMAIN' => $appUrl
         ];
 
