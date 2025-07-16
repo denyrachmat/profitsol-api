@@ -454,7 +454,7 @@ class InstallStatamicProject extends Command
             ['cache:clear'],
             ['view:clear'],
             ['config:clear'],
-            ['session:clear'],
+            // ['session:clear'],
         ];
 
         foreach ($commands as $cmd) {
