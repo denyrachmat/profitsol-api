@@ -300,9 +300,11 @@ class InstallStatamicProject extends Command
 
         // 3. Generate application key
         $this->info("Generating application key...");
+        $phpPath = 'D:\laragon\bin\php\php-8.2.13\php.exe';
+        $artisanPath = "{$path}/artisan";
         $process = new Process([
-            'php',
-            'artisan',
+            $phpPath,
+            $artisanPath,
             'key:generate'
         ], $path);
 
