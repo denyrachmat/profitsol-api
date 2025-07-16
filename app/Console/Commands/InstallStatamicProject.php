@@ -137,9 +137,12 @@ class InstallStatamicProject extends Command
                 ]);
 
                 // Run with output callback
-                $process->run(function ($type, $buffer) {
-                    Log::info($type === Process::ERR ? 'ERR: ' . $buffer : 'OUT: ' . $buffer);
-                });
+                // $process->run(function ($type, $buffer) {
+                //     Log::info($type === Process::ERR ? 'ERR: ' . $buffer : 'OUT: ' . $buffer);
+                // });
+                $process->setTimeout(3600); // Set a timeout of 1 hour
+                $process->mustRun();
+
 
                 // Also log the final output
                 Log::info('Process output:', ['output' => $process->getOutput()]);
@@ -161,7 +164,7 @@ class InstallStatamicProject extends Command
                 throw $e;
             }
 
-            $process->setTimeout(null);
+            // $process->setTimeout(null);
             // $process->mustRun();
 
 
