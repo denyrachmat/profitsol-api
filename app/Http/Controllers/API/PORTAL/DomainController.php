@@ -29,7 +29,6 @@ class DomainController extends BaseController
         foreach ($data as $key => $value) {
             $checkCMS = $this->isGencodeExists('CMS_INSTALLED', [
                 'pgm_value' => $value['id'],
-                'pgm_value2' => 'setup_admin_done'
             ]);
 
             $checkCMSData = $this->getDataGencode('CMS_INSTALLED', [
@@ -37,6 +36,7 @@ class DomainController extends BaseController
             ], [
                 'idDomain' => 'pgm_value|string',
                 'stateCMS' => 'pgm_value2|string',
+                'urlCMS' => 'pgm_desc3|string',
             ]);
 
             $hasil[] = array_merge($value, [
@@ -64,6 +64,7 @@ class DomainController extends BaseController
                 ],
                 'pd_is_cms' => (string)$checkCMS,
                 'CMSState' => $checkCMS ? $checkCMSData['stateCMS'] : '',
+                'urlCMS' => $checkCMS ? $checkCMSData['urlCMS'] : '',
             ]);
         }
 
