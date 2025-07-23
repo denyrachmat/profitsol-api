@@ -7,41 +7,78 @@ use App\Models\PORTAL\PortalGencode;
 
 trait GencodeTraits
 {
-    public function getDataGencode($id, $filter = [], $selectAs = [])
+    public function getDataGencode($id, $filter = [], $selectAs = [], $firstSelect = false, $withParents = false, $data = [])
     {
-        $gencode = PortalGencode::where('pgm_code', $id);
+        if (count($data) > 0) {
+            $hasilnya = $data;
+        } else {
+            $gencode = PortalGencode::where('pgm_code', $id);
 
-        if (!empty($filter)) {
-            foreach ($filter as $key => $value) {
-                $gencode->where($key, $value);
+            if (!empty($filter)) {
+                foreach ($filter as $key => $value) {
+                    $gencode->where($key, $value);
+                }
             }
+
+            if ($withParents) {
+                $gencode->with('children')->whereNull('pgm_parent');
+            }
+
+            $hasilnya = $gencode->get()->toArray();
         }
 
-
-        if (!empty($selectAs)) {
+        if (!empty($selectAs) && count($selectAs) > 0) {
             $hasil = [];
-            foreach ($gencode->get() as $key => $value) {
+            foreach ($hasilnya as $key => $value) {
                 foreach ($selectAs as $keySel => $valueSel) {
                     $splitTypeString = explode('|', $valueSel);
                     $selectStr = $splitTypeString[0];
 
-                    // return $selectStr;
-
-                    $hasil[$keySel] = $value[$selectStr];
-                    if (count($splitTypeString) > 1) {
-                        if ($splitTypeString[1] === 'int') {
-                            $hasil[$keySel] = (int)$value[$selectStr];
-                        } elseif ($splitTypeString[1] === 'bool') {
-                            $hasil[$keySel] = (bool)$value[$selectStr];
+                    $keysCheck = $value[$keySel] ?? $keySel;
+                    if ($firstSelect) {
+                        $hasil[$keysCheck] = (string) $value[$selectStr];
+                        if (count($splitTypeString) > 1) {
+                            if ($splitTypeString[1] === 'int') {
+                                $hasil[$keysCheck] = (int) $value[$selectStr];
+                            } elseif ($splitTypeString[1] === 'bool') {
+                                $hasil[$keysCheck] = (bool) $value[$selectStr];
+                            } else {
+                                $hasil[$keysCheck] = (string) $value[$selectStr];
+                            }
+                        }
+                    } else {
+                        if (is_array($value[$selectStr])) {
+                            // Recursively process array values
+                            if (count($value[$selectStr]) > 0) {
+                                $hasil[$key][$keySel] = $this->getDataGencode(
+                                    $value['pgm_code'],
+                                    $filter,
+                                    $selectAs,
+                                    $firstSelect,
+                                    $withParents,
+                                    $value[$selectStr]
+                                );
+                            }
+                        } elseif(!is_array($value[$selectStr])) {
+                            $hasil[$key][$keysCheck] = (string) $value[$selectStr];
+                            if (count($splitTypeString) > 1) {
+                                if ($splitTypeString[1] === 'int') {
+                                    $hasil[$key][$keysCheck] = (int) $value[$selectStr];
+                                } elseif ($splitTypeString[1] === 'bool') {
+                                    $hasil[$key][$keysCheck] = (bool) $value[$selectStr];
+                                } else {
+                                    $hasil[$key][$keysCheck] = (string) $value[$selectStr];
+                                }
+                            }
                         }
                     }
                 }
             }
-        } else {
-            $hasil = $gencode->get();
-        }
 
-        return $hasil;
+            return $hasil;
+        } else {
+            return $hasilnya;
+        }
     }
 
     public function isGencodeExists($id, $filter = [])

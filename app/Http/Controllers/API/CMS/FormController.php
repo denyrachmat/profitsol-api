@@ -68,8 +68,21 @@ class FormController extends BaseController
         ], [
             'p_u_username' => $request->header('username'),
             'cfmt_title' => $request->title,
-            'cfmt_quiz_flag' => $request->isQuiz == true ? 1 : 0,
+            'cfmt_quiz_flag' => (int) $request->isQuiz,
         ]);
+
+        if ($request->isQuiz == 2 || $request->isQuiz == 3) {
+            PortalGencode::updateOrCreate([
+                'pgm_code' => 'URL_PAGE_GEN',
+                'pgm_value' => $insertMaster->id,
+            ], [
+                'pgm_code' => 'URL_PAGE_GEN',
+                'pgm_value' => $insertMaster->id,
+                'pgm_desc' => Str::slug($request->title),
+                'pgm_desc2' => $request->desc ?? '',
+                'pgm_created_by' => $request->header('username'),
+            ]);
+        }
 
         if (isset($request->idRef) && !empty($request->idRef)) {
             // FormMaster::where('cfmt_id', $request->idRef)->delete();
@@ -79,7 +92,7 @@ class FormController extends BaseController
             // FormSetupDet::where('cfmt_id', $request->idRef)->delete();
             $cekSetup = FormSetupDet::where('cfmt_id', $request->idRef)->first();
 
-            if ($request->isQuiz) {
+            if ($request->isQuiz == 1 && !empty($request->setupTraining)) {
                 FormSetupDet::updateOrCreate([
                     'cfmt_id' => $request->idRef,
                 ], [
@@ -101,6 +114,18 @@ class FormController extends BaseController
                     'cfsd_quest_limit' => $request->setupTraining['maxQuestionCount'],
                     'cfsd_skip_next_btn_media_done' => $request->setupTraining['maxQuestionCount']
                 ]);
+
+                if ($request->isQuiz == 2) {
+                    PortalGencode::updateOrCreate([
+                        'pgm_code' => 'URL_PAGE_GEN',
+                        'pgm_value' => $request->idRef,
+                    ], [
+                        'pgm_code' => 'URL_PAGE_GEN',
+                        'pgm_value' => $request->idRef,
+                        'pgm_desc' => Str::slug($request->title),
+                        'pgm_created_by' => $request->header('username'),
+                    ]);
+                }
             } else {
                 foreach ($request->setupTraining as $key => $valueSetup) {
                     PortalGencode::updateOrCreate([
@@ -112,6 +137,7 @@ class FormController extends BaseController
                         'pgm_value' => $request->idRef,
                         'pgm_value2' => is_array($valueSetup) ? json_encode($valueSetup) : $valueSetup,
                         'pgm_desc' => $key,
+                        'pgm_desc2' => $request->desc ?? '',
                         'pgm_created_by' => $request->header('username'),
                     ]);
 
@@ -397,19 +423,49 @@ class FormController extends BaseController
      */
     public function show($id)
     {
-        $dataBuild = formMasterTitle::with([
-            'formMaster' => function ($f) {
-                $f->where('cfm_parent_id', 0);
-                $f->with('formDetail.formAnswer');
-                $f->with('allChildrenContent.formDetail.formAnswer');
-                $f->orderBy('cfm_seq_name', 'asc');
-            }
-        ])->with(['quizSetup', 'shared']);
+        $dataBuild = formMasterTitle::with(['quizSetup', 'shared']);
 
         if ($id === 'quiz') {
-            $data = (clone $dataBuild)->where('cfmt_quiz_flag', 1)->get();
+            $data = (clone $dataBuild)->with([
+                'formMaster' => function ($f) {
+                    $f->where('cfm_parent_id', 0);
+                    $f->with('formDetail.formAnswer');
+                    $f->with('allChildrenContent.formDetail.formAnswer');
+                    $f->orderBy('cfm_seq_name', 'asc');
+                }
+            ])->where('cfmt_quiz_flag', 1)->get();
+        } elseif ($id === 'page' || $id === 'post') {
+            $data = (clone $dataBuild)->where('cfmt_quiz_flag', $id === 'page' ? 2 : 3)
+                ->get()
+                ->toArray();
+
+            $hasil = [];
+            foreach ($data as $key => $value) {
+                $getDataGencode = $this->getDataGencode('URL_PAGE_GEN',
+                    ['pgm_value' => $value['id']],
+                    [
+                        'url' => 'pgm_desc|string',
+                        'desc' => 'pgm_desc2|string',
+                        'is_main' => 'pgm_value2|string',
+                    ], true, false);
+
+                $hasil[] = array_merge($value, [
+                    'url' => $getDataGencode['url'] ?? '',
+                    'desc' => $getDataGencode['desc'] ?? '',
+                    'is_main' => $getDataGencode['is_main'] ?? '',
+                ]);
+            }
+
+            return $hasil;
         } else {
-            $data = (clone $dataBuild)->where('cfmt_quiz_flag', 0)->get();
+            $data = (clone $dataBuild)->with([
+                'formMaster' => function ($f) {
+                    $f->where('cfm_parent_id', 0);
+                    $f->with('formDetail.formAnswer');
+                    $f->with('allChildrenContent.formDetail.formAnswer');
+                    $f->orderBy('cfm_seq_name', 'asc');
+                }
+            ])->where('cfmt_quiz_flag', 0)->get();
         }
 
         // return $data;
@@ -462,7 +518,37 @@ class FormController extends BaseController
      */
     public function destroy($id)
     {
-        //
+        // Delete all related data
+        formMasterTitle::where('id', $id)->delete();
+        $fmIds = FormMaster::where('cfmt_id', $id)->pluck('id')->toArray();
+        FormMaster::where('cfmt_id', $id)->delete();
+
+        foreach ($fmIds as $idx) {
+            FormMultiDet::where('cfm_id', $idx)->delete();
+            FormAnswerDet::where('cfmd_id', $idx)->delete();
+            FormLogicsDet::where('cfm_id', $idx)->delete();
+            FormAnswerUserDet::where('cfm_id', $idx)->delete();
+        }
+
+        FormSetupDet::where('cfmt_id', $id)->delete();
+        FormShareDet::where('cfmt_id', $id)->delete();
+
+        // Delete related PortalGencode entries
+        PortalGencode::where('pgm_code', 'URL_PAGE_GEN')
+            ->where('pgm_value', $id)
+            ->orWhere('pgm_code', 'FORMS_SETUP')
+            ->where('pgm_value', $id)
+            ->delete();
+
+        // Delete related PortalApp entries
+        PortalApp::where('am_app_code', 'FRM-' . $id)->delete();
+        PortalRoleAppMap::where('am_app_id', 'FRM-' . $id)->delete();
+        PortalRoleAppMap::where('am_app_parent', 'FRM-' . $id)->delete();
+
+        return response([
+            'status' => true,
+            'message' => 'Form and related data deleted successfully.'
+        ]);
     }
 
     public function destroyAnswers($id, $batchID)

@@ -22,8 +22,23 @@ class PortalGencode extends Model
         'pgm_parent',
     ];
 
-    public function setPgmValue2Attribute($value)
+    public function children()
     {
-        $this->attributes['pgm_value2'] = (string) $value;
+        return $this->hasMany(PortalGencode::class, 'pgm_parent', 'id')->with('children');
     }
+
+    // public function children()
+    // {
+    //     return $this->children()->with('children');
+    // }
+
+    public function parent()
+    {
+        return $this->belongsTo(PortalGencode::class, 'pgm_parent', 'pgm_code');
+    }
+
+    // public function setPgmValue2Attribute($value)
+    // {
+    //     $this->attributes['pgm_value2'] = (string) $value;
+    // }
 }

@@ -88,12 +88,20 @@ trait FormsTraits
                 $setupTrainingRes = $this->getSetupFormsForForm($value['id']);
             }
 
+            $getDataGencode = $this->getDataGencode('URL_PAGE_GEN',
+                    ['pgm_value' => $value['id']],
+                    [
+                        'url' => 'pgm_desc|string',
+                        'desc' => 'pgm_desc2|string'
+                    ], true, false);
+
             $hasil[] = [
                 'id' => $value['id'],
                 'title' => $value['cfmt_title'],
+                'desc' => $getDataGencode['desc'] ?? null,
                 'isQuiz' => $value['cfmt_quiz_flag'],
                 'forms' => $this->convertToFE($value['form_master']),
-                // 'checkFormMaster' => $value['form_master'],
+                'checkFormMaster' => $value['form_master'],
                 'ans' => $answer,
                 'exp' => $exp,
                 'ans_id' => $answerID,
@@ -165,7 +173,7 @@ trait FormsTraits
                 'id' => $value['id'],
                 'type' => $value['cfm_type'],
                 'required' => $value['cfm_type'] === 'form' ? ($value['cfm_required'] == 1) : false,
-                'seq_name' => empty($value['cfm_seq_name']) ? $key + 1 : $value['cfm_seq_name'],
+                'seq_name' => empty($value['cfm_seq_name']) ? $key + 1 : (int)$value['cfm_seq_name'],
                 'content' => $value['cfm_type'] === 'row'
                     ? $this->convertToFE($value['all_children_content'])
                     : (
@@ -471,7 +479,7 @@ trait FormsTraits
                 // ->orderBy('cfm_seq_name', 'asc')
                 ->get();
 
-            return $data;
+            // return $data;
 
             $resCols = [];
             if (empty($columns)) {
@@ -593,6 +601,8 @@ trait FormsTraits
 
                 // Custom pagination response
                 $pagination = [
+                    'total' => $result->total(),
+                    'lastPage' => $result->lastPage(),
                     'page' => $page,
                     'rowsNumber' => $result->total(),
                     'rowsPerPage' => $perPage,
@@ -860,12 +870,18 @@ trait FormsTraits
         $setupTraining = $this->getDataGencode(
             'FORMS_SETUP',
             [
-                'pgm_value' => (string) $id
+                'pgm_value' => $id
             ],
             [
-                'pgm_desc' => 'pgm_value2'
-            ]
+                'pgm_desc' => 'pgm_value2|string'
+            ],
         );
+
+        // [
+        //         'idDomain' => 'pgm_value|string',
+        //         'stateCMS' => 'pgm_value2|string',
+        //         'urlCMS' => 'pgm_desc3|string',
+        //     ]
 
         // Convert numeric 1/0 values in $setupTraining to boolean
         $setupTrainingRes = [];

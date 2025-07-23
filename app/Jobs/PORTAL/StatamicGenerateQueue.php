@@ -38,6 +38,7 @@ class StatamicGenerateQueue implements ShouldQueue
                     'pgm_value3' => $this->username,
                     'pgm_desc' => $this->projectName,
                     'pgm_desc2' => '',
+                    'pgm_parent' => 1,
                 ]
             );
 

@@ -181,7 +181,7 @@ class InstallStatamicProject extends Command
             // 5. Configure .env & generate application key
 
             // file_put_contents("{$parentPath}/.env", $envContent);
-            $this->configureEnvironment($parentPath, $projectName, env('STATAMIC_ROOT')."{$domain->pd_name}", $domain);
+            $this->configureEnvironment($parentPath, $projectName, strtolower("cms.{$domain->pd_name}.intranet"), $domain);
 
             $this->info("Statamic project created at: {$parentPath}");
             $this->info("Accessible via: " . env('STATAMIC_ROOT') . "{$domain->pd_name}");
@@ -321,7 +321,7 @@ class InstallStatamicProject extends Command
 
         $updates = [
             'APP_NAME' => "\"{$projectName}\"",
-            'APP_URL' => $appUrl,
+            'APP_URL' => "http://{$appUrl}",
             'APP_ENV' => 'local',
             'APP_KEY' => 'base64:' . base64_encode(random_bytes(32)),
             'ASSET_URL' => "/statamic-projects/{$projectName}",
@@ -331,9 +331,8 @@ class InstallStatamicProject extends Command
             '# DB_DATABASE' => 'STMC_' . Str::slug($projectName),
             '# DB_PASSWORD' => $domain->pd_password ?: $dbPass,
             '# DB_USERNAME' => $domain->pd_username ?: $dbUser,
-            'SESSION_DOMAIN' => $appUrl,
-            // 'SESSION_DRIVER' => 'database',
-            'COOKIE_DOMAIN' => $appUrl
+            'SESSION_DOMAIN' => ".{$appUrl}",
+            'SESSION_PATH' => '/',
         ];
 
         try {
