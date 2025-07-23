@@ -7,6 +7,7 @@ use App\Http\Controllers\API\PORTAL\DomainController;
 use App\Http\Controllers\API\PORTAL\GencodeController;
 use App\Http\Controllers\API\PORTAL\MobileGencodeController;
 use App\Http\Controllers\STXI\EMS2\labelPrintController;
+use App\Http\Controllers\API\PORTAL\FrontPageController;
 use App\Http\Controllers\STXI\EMS2\TYOAutoBarcodeController;
 use App\Http\Controllers\STXI\EMS2\YPODailyConfController;
 use App\Http\Controllers\STXI\IT\PartScannerController;
@@ -95,9 +96,24 @@ Route::group(['prefix' => 'portal', 'middleware' => 'auth:sanctum', 'verify' => 
     Route::resource('gencode', GencodeController::class);
 });
 
+
+Route::resource('domain', DomainController::class);
 Route::group(['prefix' => 'domain'], function () {
-    Route::resource('', DomainController::class);
     Route::post('startSetupCMS/{id}', [DomainController::class, 'activateCMS']);
+});
+
+Route::group(['prefix' => 'fpmanager'], function () {
+    Route::get('getFPMenu', [FrontPageController::class, 'getFPMenu']);
+    Route::post('saveNavMenu', [FrontPageController::class, 'saveNavMenu']);
+    Route::get('getNavMenu', [FrontPageController::class, 'getNavMenu']);
+    Route::put('updateMainPage/{id}/{state}', [FrontPageController::class, 'updateMainPage']);
+
+    Route::delete('deleteNavMenu/{id}', [FrontPageController::class, 'deleteNavMenu']);
+    Route::get('getNavConf', [FrontPageController::class, 'getNavConf']);
+    Route::get('getNavConf/{id}', [FrontPageController::class, 'getNavConf']);
+
+    Route::get('getMainConf', [FrontPageController::class, 'getMainConf']);
+    Route::post('saveMainConf', [FrontPageController::class, 'saveMainConf']);
 });
 
 Route::group(['prefix' => 'ams'], function () {

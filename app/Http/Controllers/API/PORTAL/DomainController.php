@@ -15,6 +15,7 @@ use Storage;
 use App\Jobs\PORTAL\StatamicGenerateQueue;
 use App\Traits\PORTAL\GencodeTraits;
 use App\Http\Controllers\API\PORTAL\BaseController;
+use App\Models\PORTAL\PortalGencode;
 
 class DomainController extends BaseController
 {
@@ -27,17 +28,16 @@ class DomainController extends BaseController
         $data = PortalDomain::get()->toArray();
         $hasil = [];
         foreach ($data as $key => $value) {
-            $checkCMS = $this->isGencodeExists('CMS_INSTALLED', [
-                'pgm_value' => $value['id'],
-            ]);
-
             $checkCMSData = $this->getDataGencode('CMS_INSTALLED', [
                 'pgm_value' => $value['id'],
             ], [
                 'idDomain' => 'pgm_value|string',
                 'stateCMS' => 'pgm_value2|string',
                 'urlCMS' => 'pgm_desc3|string',
-            ]);
+                'pd_is_cms' => 'pgm_parent|string',
+            ], true);
+
+            $checkCMS = !empty($checkCMSData) ? $checkCMSData['pd_is_cms'] : 0;
 
             $hasil[] = array_merge($value, [
                 'checkCoreDB' => [
@@ -62,7 +62,7 @@ class DomainController extends BaseController
                         'status' => $this->checkIfDatabaseExists($value['pd_prefix_db'] . '_MRS')
                     ],
                 ],
-                'pd_is_cms' => (string)$checkCMS,
+                'pd_is_cms' => $checkCMS,
                 'CMSState' => $checkCMS ? $checkCMSData['stateCMS'] : '',
                 'urlCMS' => $checkCMS ? $checkCMSData['urlCMS'] : '',
             ]);
@@ -85,8 +85,18 @@ class DomainController extends BaseController
     public function store(Request $request)
     {
         $insert = PortalDomain::create(array_merge(['p_u_username' => $request->header('username')], $request->all()));
-
-
+        if($request->has('pd_is_cms')) {
+            if ($request->pd_is_cms == 1) {
+                $this->activateCMS($request, $insert->id);
+            } else {
+                PortalGencode::updateOrCreate([
+                    'pgm_value' => $insert->id,
+                    'pgm_code' => 'CMS_INSTALLED',
+                ], [
+                    'pgm_parent' => $request->pd_is_cms,
+                ]);
+            }
+        }
         return $this->handleResponse($insert, 'Data Stored');
     }
 
@@ -121,6 +131,19 @@ class DomainController extends BaseController
             'pd_img' => $request->pd_img,
             'pd_base_color' => $request->pd_base_color,
         ]);
+
+        if($request->has('pd_is_cms')) {
+            if ($request->pd_is_cms == 1) {
+                $this->activateCMS($request, $insert->id);
+            } else {
+                PortalGencode::updateOrCreate([
+                    'pgm_value' => $insert->id,
+                    'pgm_code' => 'CMS_INSTALLED',
+                ], [
+                    'pgm_parent' => $request->pd_is_cms,
+                ]);
+            }
+        }
 
         return $this->handleResponse($insert, 'Data Stored');
     }

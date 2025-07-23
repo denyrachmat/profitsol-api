@@ -65,7 +65,7 @@ class autoSyncBOMtoPSIController extends Controller
             $cekDataBOM = BOMSTX_TBL::where('MODEL_CODE', $valueData['MODEL CODE'])
                 // ->where('MAIN_PART_CODE', $valueData['MAIN PART CODE'])
                 ->where('REVISION', $valueData['REVISION'])
-                ->orderBy('TEN_UPDATE_DATE', 'desc')
+                ->orderBy('TEN_UPDATE_DATE', 'asc')
                 ->first();
 
             if (!empty($cekDataBOM) && $cekDataBOM->TEN_UPDATE_DATE <> $valueData['TEN_UPDATE_DATE']) {
@@ -133,7 +133,7 @@ class autoSyncBOMtoPSIController extends Controller
             $cekDataBOM = BOMSTX_TBL::where('MODEL_CODE', $valueData['MODEL CODE'])
                 // ->where('MAIN_PART_CODE', $valueData['MAIN PART CODE'])
                 ->where('REVISION', $valueData['REVISION'])
-                ->orderBy('TEN_UPDATE_DATE', 'desc')
+                ->orderBy('TEN_UPDATE_DATE', 'asc')
                 ->first();
 
             if (!empty($cekDataBOM) && $cekDataBOM->TEN_UPDATE_DATE <> $valueData['TEN_UPDATE_DATE']) {
