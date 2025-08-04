@@ -94,6 +94,10 @@ Route::group(['prefix' => 'portal', 'middleware' => 'auth:sanctum', 'verify' => 
     Route::resource('notif', NotifController::class);
 
     Route::resource('gencode', GencodeController::class);
+    Route::group(['prefix' => 'gencode'], function () {
+        Route::post('showDetail/{id}', [GencodeController::class, 'showDetail']);
+        Route::post('deleteDetail/{id}', [GencodeController::class, 'deleteDetail']);
+    });
 });
 
 
@@ -114,6 +118,10 @@ Route::group(['prefix' => 'fpmanager'], function () {
 
     Route::get('getMainConf', [FrontPageController::class, 'getMainConf']);
     Route::post('saveMainConf', [FrontPageController::class, 'saveMainConf']);
+
+    Route::post('saveTags', [FrontPageController::class, 'saveTags']);
+    Route::delete('removeTag/{id}/{tag}', [FrontPageController::class, 'removeTag']);
+    Route::get('publishPost/{id}/{state?}', [FrontPageController::class, 'publishPost']);
 });
 
 Route::group(['prefix' => 'ams'], function () {
