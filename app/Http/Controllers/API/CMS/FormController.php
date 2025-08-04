@@ -328,6 +328,14 @@ class FormController extends BaseController
                 0,
                 $key,
             );
+
+            if ($request->has('tags') && !empty($request->tags)) {
+                app('App\Http\Controllers\API\PORTAL\FrontPageController')->saveTags(new Request([
+                    'id' => $insertMaster->id,
+                    'tags' => $request->tags,
+                    'username' => $request->header('username'),
+                ]));
+            }
         }
 
         return $this->handleResponse([
@@ -441,18 +449,56 @@ class FormController extends BaseController
 
             $hasil = [];
             foreach ($data as $key => $value) {
-                $getDataGencode = $this->getDataGencode('URL_PAGE_GEN',
+                $getDataGencode = $this->getDataGencode(
+                    'URL_PAGE_GEN',
                     ['pgm_value' => $value['id']],
                     [
                         'url' => 'pgm_desc|string',
                         'desc' => 'pgm_desc2|string',
                         'is_main' => 'pgm_value2|string',
-                    ], true, false);
+                    ],
+                    true,
+                    false
+                );
+
+                $getTags = [];
+                if ($id === 'post') {
+                    $getTagsData = $this->getDataGencode(
+                        'FP_TAGS_LIST',
+                        ['pgm_value' => $value['id']],
+                        [
+                            'tags' => 'pgm_value2|string',
+                            'tags_desc' => 'pgm_desc|string',
+                        ],
+                        false,
+                        false
+                    );
+                    $getTags = [];
+                    if (!empty($getTagsData)) {
+                        foreach ($getTagsData as $tagItem) {
+                            if (isset($tagItem['tags'])) {
+                                $getTags[] = $tagItem['tags'];
+                            }
+                        }
+                    }
+                }
+
+                $getPublished = $this->getDataGencode(
+                    'FP_PUBLISH_POSTS',
+                    ['pgm_value' => $value['id']],
+                    [
+                        'is_published' => 'pgm_value2|date',
+                    ],
+                    true,
+                    false
+                );
 
                 $hasil[] = array_merge($value, [
                     'url' => $getDataGencode['url'] ?? '',
                     'desc' => $getDataGencode['desc'] ?? '',
                     'is_main' => $getDataGencode['is_main'] ?? '',
+                    'is_published' => $getPublished && $getPublished['is_published'] ? 1 : 0,
+                    'tags' => $getTags,
                 ]);
             }
 

@@ -239,4 +239,99 @@ class FrontPageController extends BaseController
 
         return $this->handleResponse([], 'Main configuration saved successfully');
     }
+
+    public function saveTags(Request $request)
+    {
+        $data = $request->validate([
+            'id' => 'required|integer',
+            'tags' => 'required|array',
+        ]);
+
+        $getTags = [];
+        foreach ($data['tags'] as $tag) {
+            $getTags[] = PortalGencode::updateOrCreate(
+                [
+                    'pgm_code' => 'FP_TAGS_LIST',
+                    'pgm_value' => $request->id,
+                ],
+                [
+                    'pgm_value' => $request->id,
+                    'pgm_value2' => $tag,
+                    'pgm_desc' => 'Tags assignment',
+                ]
+            )->toArray();
+        }
+
+        return $this->handleResponse($getTags, 'Tags saved successfully');
+    }
+
+    public function removeTag($id, $tag)
+    {
+        $gencode = PortalGencode::where('pgm_code', 'FP_TAGS_LIST')
+            ->where('pgm_value', $id)
+            ->where('pgm_value2', $tag)
+            ->first();
+
+        if (!$gencode) {
+            return $this->handleError('Tag not found', 404);
+        }
+
+        $gencode->delete();
+
+        return $this->handleResponse([], 'Tag removed successfully');
+    }
+
+    public function getPosts(Request $request)
+    {
+        $data = $this->getDataGencode('FP_POSTS', [], [
+            'value' => 'pgm_value',
+            'label' => 'pgm_desc',
+            'icon' => 'pgm_value2',
+            'index' => 'pgm_value3',
+        ]);
+
+        usort($data, function ($a, $b) {
+            return ($a['index'] ?? 0) <=> ($b['index'] ?? 0);
+        });
+
+        if (empty($data)) {
+            return $this->handleError('No posts found', 404);
+        } else {
+            return $this->handleResponse($data, 'Posts retrieved successfully');
+        }
+    }
+
+    public function publishPost($id, $state = 0)
+    {
+        $data = PortalGencode::updateOrCreate(
+            [
+                'pgm_code' => 'FP_PUBLISH_POSTS',
+                'pgm_value' => $id,
+            ],
+            [
+                'pgm_value' => $id,
+                'pgm_value2' => $state == 1 ? date('Y-m-d H:i:s') : null,
+                'pgm_desc' => "Post $id published",
+            ]
+        );
+
+        return $this->handleResponse($data, 'Post published successfully');
+    }
+
+    public function copyPost($id)
+    {
+        $post = PortalGencode::where('pgm_code', 'FP_POSTS')
+            ->where('pgm_value', $id)
+            ->first();
+
+        if (!$post) {
+            return $this->handleError('Post not found', 404);
+        }
+
+        $newPost = $post->replicate();
+        $newPost->pgm_value = null; // Reset the value to create a new post
+        $newPost->save();
+
+        return $this->handleResponse($newPost, 'Post copied successfully');
+    }
 }

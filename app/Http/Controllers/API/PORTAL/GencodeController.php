@@ -5,9 +5,11 @@ namespace App\Http\Controllers\API\PORTAL;
 use App\Http\Controllers\API\PORTAL\BaseController;
 use Illuminate\Http\Request;
 use App\Models\PORTAL\PortalGencode;
+use App\Traits\PORTAL\GencodeTraits;
 
 class GencodeController extends BaseController
 {
+    use GencodeTraits;
     /**
      * Display a listing of the resource.
      */
@@ -57,7 +59,7 @@ class GencodeController extends BaseController
     public function show(string $id)
     {
         return $this->handleResponse(
-            PortalGencode::where('pgm_code', $id)->get(),
+            $this->getDataGencode($id),
             'Data Found !'
         );
     }
@@ -83,6 +85,38 @@ class GencodeController extends BaseController
      */
     public function destroy(string $id)
     {
-        //
+        return PortalGencode::where('pgm_code', $id)->delete()
+            ? $this->handleResponse([], 'Delete Successfull !')
+            : $this->handleError('Delete Failed !');
+    }
+
+    public function showDetail($id, Request $request)
+    {
+        return $this->handleResponse(
+            $this->getDataGencode($id, $request->filter, $request->selectAs, $request->firstSelect, $request->withParents),
+            'Data Found !'
+        );
+        // This method is currently empty, you can implement it as needed.
+    }
+
+    public function deleteDetail($id, Request $request)
+    {
+        $data = PortalGencode::where('pgm_code', $id);
+
+        if ($request->has('filter')) {
+            foreach ($request->filter as $key => $value) {
+                $data->where($value['column'], $value['operator'], $value['value']);
+            }
+        }
+
+        $checkData = (clone $data)->first();
+
+        if (!$checkData) {
+            return $this->handleError('Data not found', 404);
+        }
+
+        $data->delete();
+
+        return $this->handleResponse([], 'Data deleted successfully');
     }
 }

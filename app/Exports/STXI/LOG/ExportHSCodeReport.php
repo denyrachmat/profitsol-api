@@ -183,7 +183,8 @@ class ExportHSCodeReport implements FromCollection, WithHeadings, WithEvents
                 'ZIRD_KDIJIN',
                 DB::raw('CAST(ZIRD_NMIJIN AS VARCHAR(200)) ZIRD_NMIJIN'),
                 'ZIRD_BEALIST',
-                'ZIRD_MODUL'
+                'ZIRD_MODUL',
+                'ZIRD_SKEPNO'
             )
                 ->where('ZID_HSCODE', $value['HSCD_STXICD'])
                 ->groupBy(
@@ -192,7 +193,8 @@ class ExportHSCodeReport implements FromCollection, WithHeadings, WithEvents
                     'ZIRD_KDIJIN',
                     DB::raw('CAST(ZIRD_NMIJIN AS VARCHAR(200))'),
                     'ZIRD_BEALIST',
-                    'ZIRD_MODUL'
+                    'ZIRD_MODUL',
+                    'ZIRD_SKEPNO'
                 );
 
             $listReg = [];
@@ -291,7 +293,20 @@ class ExportHSCodeReport implements FromCollection, WithHeadings, WithEvents
                 'HSCD_PPNBM' => $value['HSCD_PPNBM'],
                 'HSCD_CUKAI' => $value['HSCD_CUKAI'],
                 'HSCD_UOM' => $value['HSCD_UOM'],
-            ], $listReg);
+            ], $listReg, [
+                'KUMHS' => '',
+                'CATATAN_BAB' => '',
+                'EXPLANATORY_NOTE' => '',
+                'EXPORT_RESTRICTION' => '',
+                'HS_CODE_WASTE' => '',
+                'BM_WASTE' => '',
+                'DESCRIPTION_WASTE' => '',
+                'HISTORICAL' => '',
+                'DG_CLASS' => '',
+                'DG_FILE_NUMBER' => '',
+                'DG_REGULATION' => (clone $checkReg)->count() > 0 ? $checkReg->pluck('ZIRD_SKEPNO')->implode(', ') : '',
+                'REMARK_1' => '',
+            ]);
         }
 
         return collect($hasil);
