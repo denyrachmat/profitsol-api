@@ -476,6 +476,8 @@ class ReportController extends BaseController
             ->where('id', $idReport)
             ->first();
 
+        // return $cekReport;
+
         // return stripos($cekReport->mrm_url_gen, 'rpa');
 
         if (!$cekReport) {
