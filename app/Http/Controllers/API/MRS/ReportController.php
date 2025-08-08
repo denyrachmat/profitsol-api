@@ -534,7 +534,7 @@ class ReportController extends BaseController
             ];
 
             return $request->has('pagination')
-                ? $this->handleResponse($result, 'Data report found')
+                ? $result
                 : $data;
         } catch (\Exception $e) {
             return $this->handleError('SP Execution failed: ' . $e->getMessage());
