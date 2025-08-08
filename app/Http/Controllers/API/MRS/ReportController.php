@@ -488,7 +488,7 @@ class ReportController extends BaseController
         }
 
         // 2. Handle stored procedure case
-        if ($cekReport->mrm_url_gen === 'sp') {
+        if ($cekReport->mrm_url_gen == 'sp') {
             return $this->handleResponse($this->handleStoredProcedureReport($cekReport, $request), 'Data report found');
         }
 
