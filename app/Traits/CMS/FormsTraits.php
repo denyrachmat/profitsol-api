@@ -887,7 +887,7 @@ trait FormsTraits
         //         'urlCMS' => 'pgm_desc3|string',
         //     ]
 
-        return $setupTraining;
+        // return $setupTraining;
 
         // Convert numeric 1/0 values in $setupTraining to boolean
         $setupTrainingRes = [];
