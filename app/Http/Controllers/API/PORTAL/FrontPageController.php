@@ -7,6 +7,7 @@ use App\Http\Controllers\API\PORTAL\BaseController;
 use Illuminate\Http\Request;
 use App\Traits\PORTAL\GencodeTraits;
 use App\Models\PORTAL\PortalGencode;
+use Illuminate\Support\Facades\DB;
 
 class FrontPageController extends BaseController
 {
@@ -31,19 +32,27 @@ class FrontPageController extends BaseController
         }
     }
 
-    public function getNavMenu($data = [])
+    public function getNavMenuFromAPI($showAll = false)
+    {
+        return $this->getNavMenu([], (bool) $showAll);
+    }
+
+    public function getNavMenu($data = [], $showAll = false)
     {
         if (empty($data)) {
             $data = $this->getDataGencode('FP_NAV', [], [
+                'idx' => 'id',
                 'value' => 'id',
                 'label' => 'pgm_value',
                 'icon' => 'pgm_value2',
                 'type' => 'pgm_desc',
                 'linkto' => 'pgm_value3',
+                'page' => 'pgm_value3',
                 'url' => 'pgm_value3',
                 'children' => 'children',
                 'parent' => 'pgm_parent',
-            ], false, true);
+                'tags' => 'pgm_desc2',
+            ], [], false, true, $showAll);
         }
 
         $pages = $this->getDataGencode('URL_PAGE_GEN', [], [
@@ -73,6 +82,29 @@ class FrontPageController extends BaseController
             if (isset($navItem['children']) && count($navItem['children']) > 0 && is_array($navItem['children'])) {
                 $navItem['children'] = $this->getNavMenu($navItem['children'])->getOriginalContent()['data'] ?? [];
             }
+
+            if (!empty($navItem['tags'])) {
+                $formController = app(FormController::class);
+                $formShowData = $formController->show('post', base64_encode($navItem['tags']));
+                $resultForm = [];
+                foreach ($formShowData as $keyDataForms => $valueDataForms) {
+                    // Push the requested object structure as an associative array
+                    $value = $valueDataForms;
+                    $resultForm[] = [
+                        'idx' => (string)($value['id'] ?? $navItem['idx'] ?? ''),
+                        'label' => $value['cfmt_title'] ?? '',
+                        'icon' => 'label',
+                        'type' => 'page',
+                        'linkto' => (string)($value['id'] ?? '#'),
+                        'page' => (string)($value['id'] ?? '#'),
+                        'url' => (string)($value['id'] ?? '#'),
+                        'forms' => $formController->viewByID((int) ($value['id']))->getOriginalContent()['data']['value'] ?? [],
+                    ];
+                }
+
+                $navItem['children'] = $resultForm ?? [];
+                // $navItem['children'] = $this->getNavMenu($navItem['children'])->getOriginalContent()['data'] ?? [];
+            }
         }
 
         if (empty($data)) {
@@ -92,9 +124,8 @@ class FrontPageController extends BaseController
 
         $gencode = PortalGencode::updateOrCreate(
             [
+                'id' => $request->id ?? null,
                 'pgm_code' => 'FP_NAV',
-                'pgm_value' => $data['label'],
-                'pgm_desc' => $data['type'],
             ],
             [
                 'pgm_code' => 'FP_NAV',
@@ -102,6 +133,7 @@ class FrontPageController extends BaseController
                 'pgm_value2' => $data['icon'],
                 'pgm_desc' => $data['type'],
                 'pgm_value3' => $data['type'] === 'page' ? (string) $request->page : $request->url ?? null,
+                'pgm_desc2' => json_encode($request->tags) ?? null,
                 'pgm_parent' => $request->parent ?? null,
             ]
         );
@@ -111,11 +143,12 @@ class FrontPageController extends BaseController
     public function deleteNavMenu($id)
     {
         $gencode = PortalGencode::where('id', $id)->first();
-
         if (!$gencode) {
             return $this->handleError('Navigation menu not found', 404);
         }
 
+        // Also delete all children with pgm_parent = $id
+        PortalGencode::where('pgm_parent', $id)->delete();
         $gencode->delete();
 
         return $this->handleResponse([], 'Navigation menu deleted successfully');
@@ -133,7 +166,7 @@ class FrontPageController extends BaseController
             'color' => 'pgm_desc3',
             'idx' => 'id',
             'children' => 'children',
-        ], false, true);
+        ], [], false, true);
 
         if (empty($data)) {
             return $this->handleError('No navigation configuration found', 404);
@@ -171,7 +204,7 @@ class FrontPageController extends BaseController
             'idx' => 'id',
             'children' => 'children',
             'parent' => 'pgm_parent',
-        ], false, true);
+        ], [], false, true);
 
         if (empty($data)) {
             return $this->handleError('No navigation configuration found', 404);
@@ -269,7 +302,7 @@ class FrontPageController extends BaseController
     {
         $gencode = PortalGencode::where('pgm_code', 'FP_TAGS_LIST')
             ->where('pgm_value', $id)
-            ->where('pgm_value2', $tag)
+            ->where(DB::raw('CAST(pgm_value2 AS VARCHAR)'), $tag)
             ->first();
 
         if (!$gencode) {

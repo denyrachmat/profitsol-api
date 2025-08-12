@@ -35,7 +35,7 @@ class DomainController extends BaseController
                 'stateCMS' => 'pgm_value2|string',
                 'urlCMS' => 'pgm_desc3|string',
                 'pd_is_cms' => 'pgm_parent|string',
-            ], true);
+            ], [], true);
 
             $checkCMS = !empty($checkCMSData) ? $checkCMSData['pd_is_cms'] : 0;
 
