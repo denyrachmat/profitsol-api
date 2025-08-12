@@ -93,7 +93,7 @@ class GencodeController extends BaseController
     public function showDetail($id, Request $request)
     {
         return $this->handleResponse(
-            $this->getDataGencode($id, $request->filter, $request->selectAs, $request->firstSelect, $request->withParents),
+            $this->getDataGencode($id, $request->filter, $request->selectAs, [], $request->firstSelect, $request->withParents),
             'Data Found !'
         );
         // This method is currently empty, you can implement it as needed.

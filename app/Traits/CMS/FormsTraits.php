@@ -93,7 +93,7 @@ trait FormsTraits
                     [
                         'url' => 'pgm_desc|string',
                         'desc' => 'pgm_desc2|string'
-                    ], true, false);
+                    ], [], true, false);
 
             $hasil[] = [
                 'id' => $value['id'],
@@ -875,6 +875,10 @@ trait FormsTraits
             [
                 'pgm_desc' => 'pgm_value2|string'
             ],
+            [],
+            true,
+            false,
+            false
         );
 
         // [
@@ -882,6 +886,8 @@ trait FormsTraits
         //         'stateCMS' => 'pgm_value2|string',
         //         'urlCMS' => 'pgm_desc3|string',
         //     ]
+
+        return $setupTraining;
 
         // Convert numeric 1/0 values in $setupTraining to boolean
         $setupTrainingRes = [];

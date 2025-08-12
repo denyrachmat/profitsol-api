@@ -429,7 +429,7 @@ class FormController extends BaseController
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function show($id)
+    public function show($id, $tags = '', $showMax = 0)
     {
         $dataBuild = formMasterTitle::with(['quizSetup', 'shared']);
 
@@ -443,9 +443,15 @@ class FormController extends BaseController
                 }
             ])->where('cfmt_quiz_flag', 1)->get();
         } elseif ($id === 'page' || $id === 'post') {
-            $data = (clone $dataBuild)->where('cfmt_quiz_flag', $id === 'page' ? 2 : 3)
-                ->get()
-                ->toArray();
+            if ($showMax > 0) {
+                $dataBuild->limit($showMax);
+            }
+
+            $query = (clone $dataBuild)->where('cfmt_quiz_flag', $id === 'page' ? 2 : 3);
+            if ($showMax > 0) {
+                $query->limit($showMax);
+            }
+            $data = $query->get()->toArray();
 
             $hasil = [];
             foreach ($data as $key => $value) {
@@ -457,6 +463,7 @@ class FormController extends BaseController
                         'desc' => 'pgm_desc2|string',
                         'is_main' => 'pgm_value2|string',
                     ],
+                    [],
                     true,
                     false
                 );
@@ -470,6 +477,7 @@ class FormController extends BaseController
                             'tags' => 'pgm_value2|string',
                             'tags_desc' => 'pgm_desc|string',
                         ],
+                        [],
                         false,
                         false
                     );
@@ -489,9 +497,21 @@ class FormController extends BaseController
                     [
                         'is_published' => 'pgm_value2|date',
                     ],
+                    $request->orderBy ?? [],
                     true,
                     false
                 );
+
+                if (!empty($tags)) {
+                    $decodedTags = base64_decode($tags);
+                    $parsedTags = json_decode($decodedTags, true);
+                    if (is_array($parsedTags) && count($parsedTags) > 0) {
+                        // Only include if any tag in $parsedTags exists in $getTags
+                        if (!array_intersect($parsedTags, $getTags)) {
+                            continue;
+                        }
+                    }
+                }
 
                 $hasil[] = array_merge($value, [
                     'url' => $getDataGencode['url'] ?? '',

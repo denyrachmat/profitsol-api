@@ -109,7 +109,8 @@ Route::group(['prefix' => 'domain'], function () {
 Route::group(['prefix' => 'fpmanager'], function () {
     Route::get('getFPMenu', [FrontPageController::class, 'getFPMenu']);
     Route::post('saveNavMenu', [FrontPageController::class, 'saveNavMenu']);
-    Route::get('getNavMenu', [FrontPageController::class, 'getNavMenu']);
+    Route::get('getNavMenu', [FrontPageController::class, 'getNavMenuFromAPI']);
+    Route::get('getNavMenu/{id}', [FrontPageController::class, 'getNavMenuFromAPI']);
     Route::put('updateMainPage/{id}/{state}', [FrontPageController::class, 'updateMainPage']);
 
     Route::delete('deleteNavMenu/{id}', [FrontPageController::class, 'deleteNavMenu']);
@@ -168,6 +169,7 @@ Route::group(['prefix' => 'dms'], function () {
 
 Route::group(['prefix' => 'cms'], function () {
     Route::resource('forms', FormController::class);
+    Route::get('forms/{id}/{tags?}', [FormController::class, 'show']);
 
     Route::post('storeAnswers', [FormController::class, 'storeAnswers']);
     Route::delete('deleteAnswers/{id}/{batchID}', [FormController::class, 'destroyAnswers']);

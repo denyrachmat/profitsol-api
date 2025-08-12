@@ -7,7 +7,7 @@ use App\Models\PORTAL\PortalGencode;
 
 trait GencodeTraits
 {
-    public function getDataGencode($id, $filter = [], $selectAs = [], $firstSelect = false, $withParents = false, $data = [])
+    public function getDataGencode($id, $filter = [], $selectAs = [], $orderBy = [], $firstSelect = false, $withParents = false, $forceShowAll = false, $data = [])
     {
         if (count($data) > 0) {
             $hasilnya = $data;
@@ -21,7 +21,11 @@ trait GencodeTraits
             }
 
             if ($withParents) {
-                $gencode->with('children')->whereNull('pgm_parent');
+                if ($forceShowAll) {
+                    $gencode->with('children');
+                } else {
+                    $gencode->with('children')->whereNull('pgm_parent');
+                }
             }
 
             $hasilnya = $gencode->get()->toArray();
@@ -54,8 +58,10 @@ trait GencodeTraits
                                     $value['pgm_code'],
                                     $filter,
                                     $selectAs,
+                                    $orderBy,
                                     $firstSelect,
                                     $withParents,
+                                    $forceShowAll,
                                     $value[$selectStr]
                                 );
                             }
