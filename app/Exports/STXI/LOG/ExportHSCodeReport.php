@@ -179,23 +179,23 @@ class ExportHSCodeReport implements FromCollection, WithHeadings, WithEvents
         foreach ($datanya as $key => $value) {
             $checkReg = INSWDataRegDet::select([
                 DB::raw('CAST(ZID_HSCODE as varchar(200)) as ZID_HSCODE'),
-                'ZIRD_TYPE',
-                'ZIRD_KDIJIN',
-                DB::raw('CAST(ZIRD_NMIJIN AS NVARCHAR(MAX)) as ZIRD_NMIJIN'), // Note: Fixed to NMJIN
-                'ZIRD_BEALIST',
-                'ZIRD_MODUL',
-                'ZIRD_SKEPNO'
+                DB::raw('CAST(ZIRD_TYPE AS NVARCHAR(255)) as ZIRD_TYPE'),
+                DB::raw('CAST(ZIRD_KDIJIN AS NVARCHAR(255)) as ZIRD_KDIJIN'),
+                DB::raw('CAST(ZIRD_NMIJIN AS NVARCHAR(MAX)) as ZIRD_NMIJIN'),
+                DB::raw('CAST(ZIRD_BEALIST AS NVARCHAR(MAX)) as ZIRD_BEALIST'),
+                DB::raw('CAST(ZIRD_MODUL AS NVARCHAR(255)) as ZIRD_MODUL'),
+                DB::raw('CAST(ZIRD_SKEPNO AS NVARCHAR(255)) as ZIRD_SKEPNO')
             ])
                 ->where(DB::raw('CAST(ZID_HSCODE as varchar(200))'), $value['HSCD_STXICD'])
                 ->whereNull('deleted_at')
                 ->groupBy([
                     DB::raw('CAST(ZID_HSCODE as varchar(200))'),
-                    'ZIRD_TYPE',
-                    'ZIRD_KDIJIN',
+                    DB::raw('CAST(ZIRD_TYPE AS NVARCHAR(255))'),
+                    DB::raw('CAST(ZIRD_KDIJIN AS NVARCHAR(255))'),
                     DB::raw('CAST(ZIRD_NMIJIN AS NVARCHAR(MAX))'),
-                    'ZIRD_BEALIST',
-                    'ZIRD_MODUL',
-                    'ZIRD_SKEPNO'
+                    DB::raw('CAST(ZIRD_BEALIST AS NVARCHAR(MAX))'),
+                    DB::raw('CAST(ZIRD_MODUL AS NVARCHAR(255))'),
+                    DB::raw('CAST(ZIRD_SKEPNO AS NVARCHAR(255))')
                 ]);
 
             $listReg = [];
