@@ -177,25 +177,26 @@ class ExportHSCodeReport implements FromCollection, WithHeadings, WithEvents
         $datanya = json_decode(json_encode($data->get()), true);
         $hasil = [];
         foreach ($datanya as $key => $value) {
-            $checkReg = INSWDataRegDet::select(
-                'ZID_HSCODE',
+            $checkReg = INSWDataRegDet::select([
+                DB::raw('CAST(ZID_HSCODE as varchar(200)) as ZID_HSCODE'),
                 'ZIRD_TYPE',
                 'ZIRD_KDIJIN',
-                DB::raw('CAST(ZIRD_NMIJIN AS VARCHAR(200)) ZIRD_NMIJIN'),
+                DB::raw('CAST(ZIRD_NMJIN AS NVARCHAR(MAX)) as ZIRD_NMJIN'), // Note: Fixed to NMJIN
                 'ZIRD_BEALIST',
                 'ZIRD_MODUL',
                 'ZIRD_SKEPNO'
-            )
-                ->where('ZID_HSCODE', $value['HSCD_STXICD'])
-                ->groupBy(
-                    'ZID_HSCODE',
+            ])
+                ->where(DB::raw('CAST(ZID_HSCODE as varchar(200))'), $value['HSCD_STXICD'])
+                ->whereNull('deleted_at')
+                ->groupBy([
+                    DB::raw('CAST(ZID_HSCODE as varchar(200))'),
                     'ZIRD_TYPE',
                     'ZIRD_KDIJIN',
-                    DB::raw('CAST(ZIRD_NMIJIN AS VARCHAR(200))'),
+                    DB::raw('CAST(ZIRD_NMJIN AS NVARCHAR(MAX))'),
                     'ZIRD_BEALIST',
                     'ZIRD_MODUL',
                     'ZIRD_SKEPNO'
-                );
+                ]);
 
             $listReg = [];
             if ((clone $checkReg)->count() > 0) {
