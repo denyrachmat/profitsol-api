@@ -181,7 +181,7 @@ class ExportHSCodeReport implements FromCollection, WithHeadings, WithEvents
                 DB::raw('CAST(ZID_HSCODE as varchar(200)) as ZID_HSCODE'),
                 'ZIRD_TYPE',
                 'ZIRD_KDIJIN',
-                DB::raw('CAST(ZIRD_NMJIN AS NVARCHAR(MAX)) as ZIRD_NMJIN'), // Note: Fixed to NMJIN
+                DB::raw('CAST(ZIRD_NMIJIN AS NVARCHAR(MAX)) as ZIRD_NMIJIN'), // Note: Fixed to NMJIN
                 'ZIRD_BEALIST',
                 'ZIRD_MODUL',
                 'ZIRD_SKEPNO'
@@ -192,7 +192,7 @@ class ExportHSCodeReport implements FromCollection, WithHeadings, WithEvents
                     DB::raw('CAST(ZID_HSCODE as varchar(200))'),
                     'ZIRD_TYPE',
                     'ZIRD_KDIJIN',
-                    DB::raw('CAST(ZIRD_NMJIN AS NVARCHAR(MAX))'),
+                    DB::raw('CAST(ZIRD_NMIJIN AS NVARCHAR(MAX))'),
                     'ZIRD_BEALIST',
                     'ZIRD_MODUL',
                     'ZIRD_SKEPNO'
