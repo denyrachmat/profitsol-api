@@ -409,8 +409,8 @@ class ExportHSCodeReport implements FromCollection, WithHeadings, WithEvents
 
                 for ($row = 4; $row <= $highestRow; $row++) {
                     $cellValue = $event->sheet->getCell("AU{$row}")->getValue();
-                    logger($cellValue);
-                    if (strtoupper(trim($cellValue)) !== 'Consistent') {
+                    // logger($cellValue);
+                    if (strtoupper(trim($cellValue)) !== 'CONSISTENT') {
                         $event->sheet->getStyle("A{$row}:{$highestColumn}{$row}")->applyFromArray([
                             'fill' => [
                                 'fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID,
