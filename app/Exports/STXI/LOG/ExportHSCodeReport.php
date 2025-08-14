@@ -97,6 +97,7 @@ class ExportHSCodeReport implements FromCollection, WithHeadings, WithEvents
                 'DG File Number',
                 'DG Regulation',
                 'Remark-1',
+                'Compare Status'
             ]
         );
 
@@ -307,6 +308,7 @@ class ExportHSCodeReport implements FromCollection, WithHeadings, WithEvents
                 'DG_FILE_NUMBER' => '',
                 'DG_REGULATION' => (clone $checkReg)->count() > 0 ? $checkReg->pluck('ZIRD_SKEPNO')->implode(', ') : '',
                 'REMARK_1' => '',
+                'COMPARE_STAT' => $value['HSCD_DIFFERENCE']
             ]);
         }
 
@@ -400,6 +402,20 @@ class ExportHSCodeReport implements FromCollection, WithHeadings, WithEvents
                         'vertical' => \PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_TOP,
                     ]
                 ]);
+
+                for ($row = 4; $row <= $highestRow; $row++) {
+                    $cellValue = $event->sheet->getCell("AU{$row}")->getValue();
+                    if (strtoupper(trim($cellValue)) !== 'Consistent') {
+                        $event->sheet->getStyle("A{$row}:{$highestColumn}{$row}")->applyFromArray([
+                            'fill' => [
+                                'fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID,
+                                'startColor' => [
+                                    'rgb' => 'FFFF00'
+                                ]
+                            ]
+                        ]);
+                    }
+                }
             }
         ];
     }
