@@ -313,8 +313,8 @@ class ExportHSCodeReport implements FromCollection, WithHeadings, WithEvents
             ]);
         }
 
-        logger($listReg);
-        logger($hasil);
+        // logger($listReg);
+        // logger($hasil);
 
         return collect($hasil);
     }
@@ -409,6 +409,7 @@ class ExportHSCodeReport implements FromCollection, WithHeadings, WithEvents
 
                 for ($row = 4; $row <= $highestRow; $row++) {
                     $cellValue = $event->sheet->getCell("AU{$row}")->getValue();
+                    logger($cellValue);
                     if (strtoupper(trim($cellValue)) !== 'Consistent') {
                         $event->sheet->getStyle("A{$row}:{$highestColumn}{$row}")->applyFromArray([
                             'fill' => [
