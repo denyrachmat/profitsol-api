@@ -306,7 +306,8 @@ class ExportHSCodeReport implements FromCollection, WithHeadings, WithEvents
                 'HISTORICAL' => '',
                 'DG_CLASS' => '',
                 'DG_FILE_NUMBER' => '',
-                'DG_REGULATION' => (clone $checkReg)->count() > 0 ? $checkReg->pluck('ZIRD_SKEPNO')->implode(', ') : '',
+                // 'DG_REGULATION' => (clone $checkReg)->count() > 0 ? $checkReg->pluck('ZIRD_SKEPNO')->implode(', ') : '',
+                'DG_REGULATION' => '',
                 'REMARK_1' => '',
                 'COMPARE_STAT' => $value['HSCD_DIFFERENCE']
             ]);
