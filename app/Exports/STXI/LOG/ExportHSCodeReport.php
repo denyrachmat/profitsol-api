@@ -388,7 +388,7 @@ class ExportHSCodeReport implements FromCollection, WithHeadings, WithEvents
                 $event->sheet->getDelegate()->mergeCells("AG2:AH2");
                 $event->sheet->getDelegate()->mergeCells("AB1:AH1");
 
-                for ($i = 34; $i < 46; $i++) {
+                for ($i = 34; $i < 47; $i++) {
                     $event->sheet->getDelegate()->mergeCells("{$this->toAlpha($i)}1:{$this->toAlpha($i)}3");
                 }
 
