@@ -97,7 +97,9 @@ class ExportHSCodeReport implements FromCollection, WithHeadings, WithEvents
                 'DG File Number',
                 'DG Regulation',
                 'Remark-1',
-                'Compare Status'
+                'Compare Status',
+                'Input By',
+                'QC Approve Date'
             ]
         );
 
@@ -309,7 +311,9 @@ class ExportHSCodeReport implements FromCollection, WithHeadings, WithEvents
                 // 'DG_REGULATION' => (clone $checkReg)->count() > 0 ? $checkReg->pluck('ZIRD_SKEPNO')->implode(', ') : '',
                 'DG_REGULATION' => '',
                 'REMARK_1' => '',
-                'COMPARE_STAT' => $value['HSCD_DIFFERENCE']
+                'COMPARE_STAT' => $value['HSCD_DIFFERENCE'],
+                'INPUT_USERS' => $value['INPUT_USERS'],
+                'QC_APRVDT' => $value['QC_APRVDT']
             ]);
         }
 
