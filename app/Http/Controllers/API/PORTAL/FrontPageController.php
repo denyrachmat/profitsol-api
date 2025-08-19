@@ -133,7 +133,7 @@ class FrontPageController extends BaseController
                 'pgm_value2' => $data['icon'],
                 'pgm_desc' => $data['type'],
                 'pgm_value3' => $data['type'] === 'page' ? (string) $request->page : $request->url ?? null,
-                'pgm_desc2' => json_encode($request->tags) ?? null,
+                'pgm_desc2' => $request->has('tags') && !empty($request->tags) ? json_encode($request->tags) : null,
                 'pgm_parent' => $request->parent ?? null,
             ]
         );
