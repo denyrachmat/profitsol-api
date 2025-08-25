@@ -99,6 +99,7 @@ class ExportHSCodeReport implements FromCollection, WithHeadings, WithEvents
                 'Remark-1',
                 'Compare Status',
                 'Input By',
+                'Input Date',
                 'QC Approve Date'
             ]
         );
@@ -270,9 +271,11 @@ class ExportHSCodeReport implements FromCollection, WithHeadings, WithEvents
             }
 
             $itemnya = $value['HSCD_ITMCD'];
-            if ($key > 0) {
-                if ($value['HSCD_ITMCD'] === $datanya[$key - 1]['HSCD_ITMCD']) {
-                    $itemnya = '';
+            if (count($cekDataOsOnly) === 0) {
+                if ($key > 0) {
+                    if ($value['HSCD_ITMCD'] === $datanya[$key - 1]['HSCD_ITMCD']) {
+                        $itemnya = '';
+                    }
                 }
             }
 
@@ -313,6 +316,7 @@ class ExportHSCodeReport implements FromCollection, WithHeadings, WithEvents
                 'REMARK_1' => '',
                 'COMPARE_STAT' => $value['HSCD_DIFFERENCE'],
                 'INPUT_USERS' => $value['INPUT_USERS'],
+                'INPUT_DATE' => $value['INPUT_DATE'],
                 'QC_APRVDT' => $value['QC_APRVDT']
             ]);
         }
@@ -395,6 +399,9 @@ class ExportHSCodeReport implements FromCollection, WithHeadings, WithEvents
                 $event->sheet->getDelegate()->mergeCells("AE2:AF2");
                 $event->sheet->getDelegate()->mergeCells("AG2:AH2");
                 $event->sheet->getDelegate()->mergeCells("AB1:AH1");
+                $event->sheet->getDelegate()->mergeCells("AV1:AV3");
+                $event->sheet->getDelegate()->mergeCells("AW1:AW3");
+                $event->sheet->getDelegate()->mergeCells("AX1:AX3");
 
                 for ($i = 34; $i < 47; $i++) {
                     $event->sheet->getDelegate()->mergeCells("{$this->toAlpha($i)}1:{$this->toAlpha($i)}3");
