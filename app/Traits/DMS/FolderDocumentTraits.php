@@ -541,7 +541,7 @@ trait FolderDocumentTraits
                         !empty($getData['folder']) ? $this->pathCreator($getData['folder']) : '',
                         $this->getAliasFolderbyAuthor($getData['p_u_username'], 'source') == 1
                         ? $getData['ddm_doc_real_name']
-                        : $getData['ddm_doc_name'],
+                        : $getData['ddm_doc_real_name'],
                         empty($getData['folder']) ? $getData['dfm_root_mstr'] : $getData['folder']['dfm_root_mstr']
                     );
 

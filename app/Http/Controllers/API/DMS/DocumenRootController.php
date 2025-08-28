@@ -16,6 +16,10 @@ use App\Traits\DMS\FolderDocumentTraits;
 class DocumenRootController extends BaseController
 {
     use FolderDocumentTraits;
+    public function __construct()
+    {
+        set_time_limit(1800);
+    }
     /**
      * Display a listing of the resource.
      */
