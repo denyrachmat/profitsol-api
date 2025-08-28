@@ -163,7 +163,6 @@ class DocumentController extends BaseController
             'mime' => $files['mime'],
             'ext' => $files['ext'],
             'filename' => $getData['ddm_doc_real_name'],
-            'check' => $files
         ];
 
         // return $files;
