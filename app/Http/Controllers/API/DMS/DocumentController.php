@@ -162,7 +162,8 @@ class DocumentController extends BaseController
             'base64Files' => 'data:' . $files['mime'] . ';base64,' . base64_encode($files['file']),
             'mime' => $files['mime'],
             'ext' => $files['ext'],
-            'filename' => $getData['ddm_doc_real_name']
+            'filename' => $getData['ddm_doc_real_name'],
+            'check' => $files
         ];
 
         // return $files;
