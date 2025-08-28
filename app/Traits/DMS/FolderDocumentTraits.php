@@ -564,7 +564,12 @@ trait FolderDocumentTraits
                 file_put_contents($path, $contents);
 
                 //download file and delete it
-                return response()->download($path)->deleteFileAfterSend(true);
+                return response()->stream(function () use ($contents) {
+                    echo $contents;
+                }, 200, [
+                    'Content-Type' => $hasil[0]['mime'],
+                    'Content-Disposition' => 'inline; filename="' . $hasil[0]['filename'] . '"',
+                ]);
             }
 
             return $hasil;
