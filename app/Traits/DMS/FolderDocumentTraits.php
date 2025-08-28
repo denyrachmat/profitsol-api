@@ -168,16 +168,15 @@ trait FolderDocumentTraits
             'url' => 'pgm_value3|string'
         ]);
 
-        return array_merge([
+        return [
             'file' => $files,
             'mime' => $mime,
             'ext' => $ext,
-            'test' => $this->getAliasFolderbyAuthor($author, 'path') . '/' . $path . '/' . $file,
-        ], $sharePointData ? [            
             'from_sharepoint' => $sharePointData ? true : false,
-            'sites' => json_decode($sharePointData['sites']) ?? '',
-            'url' => $sharePointData['url'] ?? '',
-        ]: []);
+            'sites' => $sharePointData ? json_decode($sharePointData['sites']) : [],
+            'url' => $sharePointData ? $sharePointData['url'] : '',
+            'test' =>  $this->getAliasFolderbyAuthor($author)
+        ];
     }
 
     public function uploadFiles($author, $path, $file, $contents, $root = '')
@@ -551,7 +550,8 @@ trait FolderDocumentTraits
                         'base64Files' => base64_encode($files['file']),
                         'mime' => $files['mime'],
                         'ext' => $files['ext'],
-                        'filename' => $getData['ddm_doc_real_name']
+                        'filename' => $getData['ddm_doc_real_name'],
+                        'test' => $files
                     ];
                 }
             }
