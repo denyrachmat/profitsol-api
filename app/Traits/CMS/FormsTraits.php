@@ -169,7 +169,14 @@ trait FormsTraits
                 $keysData++;
             }
 
-            $hasil[] = [
+            $style = $this->getDataGencode('CFM_STYLE_ATTR', [
+                'pgm_value' => $value['id'],
+                'pgm_value2' => 'width'
+            ], [
+                'width' => 'pgm_value3|string'
+            ], [], true);
+
+            $hasil[] = array_merge([
                 'id' => $value['id'],
                 'type' => $value['cfm_type'],
                 'required' => $value['cfm_type'] === 'form' ? ($value['cfm_required'] == 1) : false,
@@ -182,7 +189,7 @@ trait FormsTraits
                         : array_merge(json_decode($value['cfm_content'], true), ['detail_data' => $hasilDetail])
                     ),
                 'logics' => array_values($dataLogs),
-            ];
+            ], $style);
         }
 
         return $hasil;
@@ -261,6 +268,36 @@ trait FormsTraits
                     'cfm_content' => $content,
                     'cfm_parent_id' => $parent,
                     'cfm_required' => $data['type'] === 'form' ? $data['required'] : 0,
+                ]);
+            }
+
+            if (isset($data['width']) && !empty($data['width'])) {
+                PortalGencode::where('pgm_code', 'CFM_STYLE_ATTR')
+                    ->where(DB::raw('CAST(pgm_value2 AS VARCHAR)'), 'width')
+                    ->where(DB::raw('CAST(pgm_value AS VARCHAR)'), (string)$insert->id)
+                    ->delete();
+
+                PortalGencode::create([
+                    'pgm_code' => 'CFM_STYLE_ATTR',
+                    'pgm_value2' => 'width',
+                    'pgm_value' => (string)$insert->id,
+                    'pgm_value3' => (string)$data['width'],
+                    'pgm_desc' => 'For width custom cols'
+                ]);
+            }
+
+            if (isset($data['style']) && !empty($data['style'])) {
+                PortalGencode::where('pgm_code', 'CFM_STYLE_ATTR')
+                    ->where(DB::raw('CAST(pgm_value2 AS VARCHAR)'), 'style')
+                    ->where(DB::raw('CAST(pgm_value AS VARCHAR)'), (string)$insert->id)
+                    ->delete();
+
+                PortalGencode::create([
+                    'pgm_code' => 'CFM_STYLE_ATTR',
+                    'pgm_value2' => 'style',
+                    'pgm_value' => (string)$insert->id,
+                    'pgm_value3' => json_encode($data['style']),
+                    'pgm_desc' => 'For style custom cols'
                 ]);
             }
 

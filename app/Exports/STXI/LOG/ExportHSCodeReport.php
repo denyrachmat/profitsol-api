@@ -271,7 +271,7 @@ class ExportHSCodeReport implements FromCollection, WithHeadings, WithEvents
             }
 
             $itemnya = $value['HSCD_ITMCD'];
-            if (count($cekDataOsOnly) === 0) {
+            if (count($cekDataOsOnly) > 0) {
                 if ($key > 0) {
                     if ($value['HSCD_ITMCD'] === $datanya[$key - 1]['HSCD_ITMCD']) {
                         $itemnya = '';

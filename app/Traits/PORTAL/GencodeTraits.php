@@ -16,7 +16,7 @@ trait GencodeTraits
 
             if (!empty($filter)) {
                 foreach ($filter as $key => $value) {
-                    $gencode->where($key, $value);
+                    $gencode->whereRaw("CAST($key AS varchar(max)) = ?", [$value]);
                 }
             }
 
@@ -25,6 +25,12 @@ trait GencodeTraits
                     $gencode->with('children');
                 } else {
                     $gencode->with('children')->whereNull('pgm_parent');
+                }
+            }
+
+            if (count($orderBy) > 0) {
+                foreach ($orderBy as $key => $value) {
+                    $gencode->orderBy($key, $value);
                 }
             }
 

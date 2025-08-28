@@ -170,6 +170,7 @@ Route::group(['prefix' => 'dms'], function () {
 Route::group(['prefix' => 'cms'], function () {
     Route::resource('forms', FormController::class);
     Route::get('forms/{id}/{tags?}', [FormController::class, 'show']);
+    Route::post('formsDetail', [FormController::class, 'showDetail']);
 
     Route::post('storeAnswers', [FormController::class, 'storeAnswers']);
     Route::delete('deleteAnswers/{id}/{batchID}', [FormController::class, 'destroyAnswers']);
