@@ -175,7 +175,7 @@ trait FolderDocumentTraits
             'from_sharepoint' => $sharePointData ? true : false,
             'sites' => $sharePointData ? json_decode($sharePointData['sites']) : [],
             'url' => $sharePointData ? $sharePointData['url'] : '',
-            'test' =>  $this->getAliasFolderbyAuthor($author)
+            'test' =>  $this->getAliasFolderbyAuthor($author) . '/' . $path . '/' . $file
         ];
     }
 
