@@ -12,8 +12,11 @@ use Illuminate\Support\Str;
 use Config;
 use Illuminate\Http\Request;
 
+use App\Traits\PORTAL\GencodeTraits;
+
 trait FolderDocumentTraits
 {
+    use GencodeTraits;
     public function getFolder($author, $id = null, $root = '')
     {
         $users = $this->getAliasFolderbyAuthor($author, 'user');
@@ -22,6 +25,7 @@ trait FolderDocumentTraits
         $dataFolder = DMSFolderMstr::with([
             'childFolders' => function ($q) {
                 $q->orderBy('dfm_folder_name');
+
             }
         ])
             ->with('doc.shared')
@@ -39,11 +43,43 @@ trait FolderDocumentTraits
 
         return !empty($id)
             ? [
-                'child_folders' => $dataFolder->where('id', $id)->get(),
+                'child_folders' => $dataFolder->where('id', $id)->get()->map(function ($item) use ($id) {
+                    $sharePointData = $this->getDataGencode('DMS_SHAREPOINT_SHARED', [
+                        'pgm_value' => $id,
+                    ], [
+                        'sites' => 'pgm_value2|string',
+                        'url' => 'pgm_value3|string'
+                    ]);
+
+                    return array_merge(
+                        $item->toArray(),
+                        [
+                            'from_sharepoint' => $sharePointData ? true : false,
+                            'sites' => json_decode($sharePointData['sites']) ?? '',
+                            'url' => $sharePointData['url'] ?? '',
+                        ]
+                    );
+                }),
                 'doc' => $dataFiles->where('dfm_id', $id)->get()
             ]
             : [
-                'child_folders' => $dataFolder->get(),
+                'child_folders' => $dataFolder->get()->map(function ($item) use ($id) {
+                    $sharePointData = $this->getDataGencode('DMS_SHAREPOINT_SHARED', [
+                        'pgm_value' => $item->id,
+                    ], [
+                        'sites' => 'pgm_value2|string',
+                        'url' => 'pgm_value3|string'
+                    ], [], true);
+
+                    return array_merge(
+                        $item->toArray(),
+                        $sharePointData ? [
+                            'from_sharepoint' => $sharePointData ? true : false,
+                            'sites' => json_decode($sharePointData['sites']) ?? '',
+                            'url' => $sharePointData['url'] ?? '',
+                        ] : []
+                    );
+                }),
                 'doc' => $dataFiles->whereNull('dfm_id')->get()
             ];
     }
@@ -117,19 +153,31 @@ trait FolderDocumentTraits
         return Storage::disk($this->getAliasFolderbyAuthor($author, 'root', $root))->delete($this->getAliasFolderbyAuthor($author) . '/' . $path . '/' . $file);
     }
 
-    public function openFiles($author, $path, $file, $root = '')
+    public function openFiles($author, $path, $file, $root = '', $id = '')
     {
         // logger($this->getAliasFolderbyAuthor($author) . '/' . $path . '/' . $file);
         // return $this->getAliasFolderbyAuthor($author, 'path') . '/' . $path . '/' . $file;
         $files = Storage::disk($this->getAliasFolderbyAuthor($author, 'root', $root))->get($this->getAliasFolderbyAuthor($author) . '/' . $path . '/' . $file);
         $mime = Storage::disk($this->getAliasFolderbyAuthor($author, 'root', $root))->mimeType($this->getAliasFolderbyAuthor($author) . '/' . $path . '/' . $file);
         $ext = explode('.', $file)[1];
-        return [
+
+        $sharePointData = $this->getDataGencode('DMS_SHAREPOINT_SHARED', [
+            'pgm_value' => $id,
+        ], [
+            'sites' => 'pgm_value2|string',
+            'url' => 'pgm_value3|string'
+        ]);
+
+        return array_merge([
             'file' => $files,
             'mime' => $mime,
             'ext' => $ext,
-            'test' => $this->getAliasFolderbyAuthor($author, 'path') . '/' . $path . '/' . $file
-        ];
+            'test' => $this->getAliasFolderbyAuthor($author, 'path') . '/' . $path . '/' . $file,
+        ], $sharePointData ? [            
+            'from_sharepoint' => $sharePointData ? true : false,
+            'sites' => json_decode($sharePointData['sites']) ?? '',
+            'url' => $sharePointData['url'] ?? '',
+        ]: []);
     }
 
     public function uploadFiles($author, $path, $file, $contents, $root = '')

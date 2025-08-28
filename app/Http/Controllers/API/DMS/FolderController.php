@@ -8,9 +8,12 @@ use App\Models\DMS\DMSFolderMstr;
 use App\Models\DMS\DMSDocMstr;
 use App\Traits\DMS\FolderDocumentTraits;
 use App\Http\Controllers\API\PORTAL\BaseController;
+use App\Traits\PORTAL\GencodeTraits;
+use App\Models\PORTAL\PortalGencode;
+
 class FolderController extends BaseController
 {
-    use FolderDocumentTraits;
+    use FolderDocumentTraits, GencodeTraits;
     /**
      * Display a listing of the resource.
      *
@@ -46,7 +49,20 @@ class FolderController extends BaseController
         ]);
 
         $data = DMSFolderMstr::where('id', $stored->id)->with('parentFolders')->first()->toArray();
-
+        if ($request->has('from_sharepoint') && $request->from_sharepoint == true) {
+            PortalGencode::updateOrCreate(
+                [
+                    'pgm_code' => 'DMS_SHAREPOINT_SHARED',
+                    'pgm_value' => $stored->id,
+                ],[
+                    'pgm_code' => 'DMS_SHAREPOINT_SHARED',
+                    'pgm_value' => $stored->id,
+                    'pgm_value2' => json_encode($request->sites),
+                    'pgm_value3' => $request->url,
+                    'pgm_desc' => 'Folder imported from SharePoint'
+                ]
+            );
+        }
         try {
             $createRealFolder = $this->createNewFolder($this->getAliasFolderbyAuthor($request->p_u_username, 'user'), $this->pathCreator($data), $request->dfm_root_mstr);
             return $this->handleResponse([

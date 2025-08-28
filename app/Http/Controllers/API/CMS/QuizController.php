@@ -21,6 +21,13 @@ use Illuminate\Support\Facades\DB;
 class QuizController extends Controller
 {
     use FormsTraits;
+
+    public function __construct()
+    {
+        // Increase script execution time for heavy queries
+        set_time_limit(1800); // 30 minutes, adjust as needed
+        ini_set('max_execution_time', 1800);
+    }
     /**
      * Display a listing of the resource.
      *

@@ -52,7 +52,10 @@ class FrontPageController extends BaseController
                 'children' => 'children',
                 'parent' => 'pgm_parent',
                 'tags' => 'pgm_desc2',
-            ], [], false, true, $showAll);
+            ], [
+                'pgm_order' => 'asc',
+                'id' => 'asc'
+            ], false, true, $showAll);
         }
 
         $pages = $this->getDataGencode('URL_PAGE_GEN', [], [
@@ -65,9 +68,9 @@ class FrontPageController extends BaseController
         // return $pages;
 
         // Sort $pages by 'index' before merging
-        usort($pages, function ($a, $b) {
-            return ($a['index'] ?? 0) <=> ($b['index'] ?? 0);
-        });
+        // usort($pages, function ($a, $b) {
+        //     return ($a['index'] ?? 0) <=> ($b['index'] ?? 0);
+        // });
 
         $hasil = [];
         foreach ($data as &$navItem) {
@@ -85,13 +88,24 @@ class FrontPageController extends BaseController
 
             if (!empty($navItem['tags'])) {
                 $formController = app(FormController::class);
-                $formShowData = $formController->show('post', base64_encode($navItem['tags']));
+                $formShowDataResponse = $formController->show(
+                    'post',
+                    base64_encode($navItem['tags']),
+                    5,
+                    [],
+                    true
+                );
+
+                // return $formShowData;
+                $navItem['test'] = $formShowDataResponse;
+
                 $resultForm = [];
-                foreach ($formShowData as $keyDataForms => $valueDataForms) {
+                foreach ($formShowDataResponse as $keyDataForms => $valueDataForms) {
                     // Push the requested object structure as an associative array
                     $value = $valueDataForms;
                     $resultForm[] = [
                         'idx' => (string)($value['id'] ?? $navItem['idx'] ?? ''),
+                        'value' => (string)($value['id'] ?? $navItem['idx'] ?? ''),
                         'label' => $value['cfmt_title'] ?? '',
                         'icon' => 'label',
                         'type' => 'page',
@@ -102,7 +116,8 @@ class FrontPageController extends BaseController
                     ];
                 }
 
-                $navItem['children'] = $resultForm ?? [];
+                // $navItem['children'] = $resultForm ?? [];
+                $navItem['children'] = $resultForm ;
                 // $navItem['children'] = $this->getNavMenu($navItem['children'])->getOriginalContent()['data'] ?? [];
             }
         }
@@ -184,6 +199,10 @@ class FrontPageController extends BaseController
             ],
             ['pgm_value2' => $state]
         );
+
+        $this->saveNavMenu(new Request([
+            'id' => $id
+        ]));
 
         PortalGencode::where('pgm_code', 'URL_PAGE_GEN')
             ->where('pgm_value', '<>', $id)

@@ -32,7 +32,12 @@ use App\Http\Requests\AMS\ApprovalRunningApproveActionRequest;
 class FormController extends BaseController
 {
     use FormsTraits, ApprovalActionTraits;
-
+    public function __construct()
+    {
+        // Increase script execution time for heavy queries
+        set_time_limit(1800); // 30 minutes, adjust as needed
+        ini_set('max_execution_time', 1800);
+    }
     /**
      * Display a listing of the resource.
      *
@@ -429,8 +434,9 @@ class FormController extends BaseController
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function show($id, $tags = '', $showMax = 0)
+    public function show($id, $tags = '', $showMax = 0, $orderBy = [], $isPublisedOnly = false)
     {
+        // return [$id, $tags, $showMax, $orderBy];
         $dataBuild = formMasterTitle::with(['quizSetup', 'shared']);
 
         if ($id === 'quiz') {
@@ -447,11 +453,19 @@ class FormController extends BaseController
                 $dataBuild->limit($showMax);
             }
 
+            if (count($orderBy) > 0) {
+                foreach ($orderBy as $order) {
+                    foreach ($order as $field => $direction) {
+                        $dataBuild->orderBy($field, $direction);
+                    }
+                }
+            }
+
             $query = (clone $dataBuild)->where('cfmt_quiz_flag', $id === 'page' ? 2 : 3);
             if ($showMax > 0) {
                 $query->limit($showMax);
             }
-            $data = $query->get()->toArray();
+            $data = (clone $query)->get()->toArray();
 
             $hasil = [];
             foreach ($data as $key => $value) {
@@ -513,13 +527,27 @@ class FormController extends BaseController
                     }
                 }
 
-                $hasil[] = array_merge($value, [
-                    'url' => $getDataGencode['url'] ?? '',
-                    'desc' => $getDataGencode['desc'] ?? '',
-                    'is_main' => $getDataGencode['is_main'] ?? '',
-                    'is_published' => $getPublished && $getPublished['is_published'] ? 1 : 0,
-                    'tags' => $getTags,
-                ]);
+                // return $parsedTags;
+
+                if ($isPublisedOnly) {
+                    if ($getPublished && $getPublished['is_published']) {
+                        $hasil[] = array_merge($value, [
+                            'url' => $getDataGencode['url'] ?? '',
+                            'desc' => $getDataGencode['desc'] ?? '',
+                            'is_main' => $getDataGencode['is_main'] ?? '',
+                            'is_published' => $getPublished && $getPublished['is_published'] ? 1 : 0,
+                            'tags' => $getTags,
+                        ]);
+                    }
+                } else {
+                    $hasil[] = array_merge($value, [
+                        'url' => $getDataGencode['url'] ?? '',
+                        'desc' => $getDataGencode['desc'] ?? '',
+                        'is_main' => $getDataGencode['is_main'] ?? '',
+                        'is_published' => $getPublished && $getPublished['is_published'] ? 1 : 0,
+                        'tags' => $getTags,
+                    ]);
+                }
             }
 
             return $hasil;
@@ -551,6 +579,11 @@ class FormController extends BaseController
             'status' => count($hasil) > 0,
             'data' => $hasil
         ]);
+    }
+
+    public function showDetail(Request $request)
+    {
+        return $this->show($request->id, $request->tags ?? '', $request->showMax ?? 0, $request->orderBy ?? []);
     }
 
     /**
