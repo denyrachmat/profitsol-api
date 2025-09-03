@@ -9,6 +9,11 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 class HSCodeUplMaster extends Model
 {
     use HasFactory,SoftDeletes;
+
+    public $incrementing = false;
+    protected $primaryKey = [
+        'HSCD_BG', 'HSCD_ITMCD'
+    ];
     protected $connection = 'sqlsrv_log';
     protected $table = 'HSCD_UPL_TBL';
     protected $fillable = [
