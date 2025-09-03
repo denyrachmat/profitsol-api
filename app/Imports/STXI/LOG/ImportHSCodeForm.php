@@ -150,7 +150,7 @@ class ImportHSCodeForm implements ToModel, WithEvents
 
             if ($this->keys >= 12 && !empty($row[1])) {
                 HSCodeUplMaster::where('HSCD_BG', $this->bg)
-                    ->where('HSCD_ITMCD', $row[1])
+                    ->where('HSCD_ITMCD', (string)$row[1])
                     ->delete();
 
                 HSCodeUplMaster::create([
