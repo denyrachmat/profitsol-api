@@ -107,6 +107,10 @@ class DocumenRootController extends BaseController
             ]);
         }
 
+        DMSFolderRootMstr::where('dudrm_source', $request->ddrm_name)
+            ->whereNotIn('p_u_username', $request->det)
+            ->delete();
+
         return $this->handleResponse($insert, 'Data Updated');
     }
 

@@ -51,9 +51,9 @@ class DocumentController extends BaseController
                 $fileNameFormat = 'DMS_' . Str::random(50) . '.' . explode(".", $value)[1];
                 $file = base64_decode(explode(",", $req->file_all[$key])[1]);
                 $storeRealFile = $this->uploadFiles(
-                    $req->p_u_username,
+                    $req->header('username'),
                     !empty($dataFolder) ? $this->pathCreator($dataFolder->toArray()) : '',
-                    $this->getAliasFolderbyAuthor($req->p_u_username, 'source') == 1
+                    $this->getAliasFolderbyAuthor($req->header('username'), 'source') == 1
                     ? $value
                     : $fileNameFormat,
                     $file,
@@ -64,16 +64,16 @@ class DocumentController extends BaseController
                 // logger($storeRealFile);
 
                 if ($storeRealFile) {
-                    logger($this->getAliasFolderbyAuthor($req->p_u_username, 'source'));
+                    logger($this->getAliasFolderbyAuthor($req->header('username'), 'source'));
                     $stored = DMSDocMstr::create([
-                        'p_u_username' => $req->p_u_username,
+                        'p_u_username' => $req->header('username'),
                         'dfm_id' => $req->dfm_id,
                         'ddm_doc_name' => $fileNameFormat,
                         'ddm_doc_real_name' => $value,
                         'ddm_doc_size' => $this->getSizeFiles(
-                            $req->p_u_username,
+                            $req->header('username'),
                             !empty($dataFolder) ? $this->pathCreator($dataFolder->toArray()) : '',
-                            $this->getAliasFolderbyAuthor($req->p_u_username, 'source') == 1
+                            $this->getAliasFolderbyAuthor($req->header('username'), 'source') == 1
                             ? $value
                             : $fileNameFormat,
                             $req->dfm_root_mstr
@@ -92,9 +92,9 @@ class DocumentController extends BaseController
             $fileNameFormat = 'DMS_' . Str::random(50) . '.' . explode(".", $req->filename)[1];
             // $file = base64_decode(explode(",", $req->file)[1]);
             $storeRealFile = $this->uploadFiles(
-                $req->p_u_username,
+                $req->header('username'),
                 !empty($dataFolder) ? $this->pathCreator($dataFolder->toArray()) : '',
-                $this->getAliasFolderbyAuthor($req->p_u_username, 'source') == 1
+                $this->getAliasFolderbyAuthor($req->header('username'), 'source') == 1
                 ? $req->filename
                 : $fileNameFormat,
                 file_get_contents($req->file),
@@ -109,12 +109,12 @@ class DocumentController extends BaseController
                     'ddm_doc_real_name' => $req->filename,
                     'dfm_root_mstr' => $req->dfm_root_mstr
                 ], [
-                    'p_u_username' => $req->p_u_username,
+                    'p_u_username' => $req->header('username'),
                     'dfm_id' => $req->dfm_id,
                     'ddm_doc_name' => $fileNameFormat,
                     'ddm_doc_real_name' => $req->filename,
                     'ddm_doc_size' => $this->getSizeFiles(
-                        $req->p_u_username,
+                        $req->header('username'),
                         !empty($dataFolder) ? $this->pathCreator($dataFolder->toArray()) : '',
                         $req->filename,
                         $req->dfm_root_mstr

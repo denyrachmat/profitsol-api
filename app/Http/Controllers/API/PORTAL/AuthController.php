@@ -62,17 +62,10 @@ class AuthController extends BaseController
 
             // return Auth::check();
             $auth = Auth::user();
-            $edu = PortalEduDet::select(
-                DB::raw('pusd_level as sch_type'),
-                DB::raw('pusd_sch_name as sch_name'),
-                DB::raw('pusd_sch_majors as sch_major'),
-                DB::raw('pusd_sch_minors as sch_minor'),
-                DB::raw('pusd_sch_end as sch_grade_years'),
-                DB::raw('pusd_grade as sch_grade'),
-            )->where('u_username', $auth->username)
+            $edu = PortalEduDet::where('u_username', $auth->username)
                 ->get()->toArray();
 
-            $dataUsers = User::where('username', $auth->username)->first();
+            $dataUsers = User::where('username', $auth->username)->with('fam')->first();
 
             $username = $auth->username;
 

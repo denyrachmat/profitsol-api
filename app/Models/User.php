@@ -54,7 +54,7 @@ class User extends Authenticatable implements MustVerifyEmail
 
     public function fam()
     {
-        return $this->hasMany(PortalFamDet::class, 'username', 'u_username');
+        return $this->hasMany(PortalFamDet::class, 'u_username', 'username');
     }
 
     public function det()
