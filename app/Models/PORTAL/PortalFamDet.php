@@ -14,6 +14,8 @@ class PortalFamDet extends Model
         'u_username',
         'pufd_first_name',
         'pufd_last_name',
-        'pufd_relation'
+        'pufd_relation',
+        'pufd_phone',
+        'pufd_birthday'
     ];
 }

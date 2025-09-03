@@ -120,22 +120,25 @@ class ProfilesController extends BaseController
 
         $userDet = PortalUserDet::updateOrCreate(['u_username' => $id], $request->form);
 
-        $userEdu = null;
-        $userFam = null;
+        $userEdu = [];
+        $userFam = [];
         if ($request->has('educations') && count($request->educations) > 0) {
             $edu = $request->educations;
             // return $edu;
-            PortalEduDet::where('u_username', $id)->delete();
+            // PortalEduDet::where('u_username', $id)->delete();
             foreach ($edu as $key => $value) {
-                PortalEduDet::create([
+                $userEdu[] = PortalEduDet::updateOrCreate([
                     'u_username' => $id,
-                    'pusd_level' => $value->sch_type,
-                    'pusd_sch_name' => $value->sch_name,
-                    'pusd_sch_majors' => $value->sch_major,
-                    'pusd_sch_minors' => $value->sch_minor,
-                    'pusd_sch_end' => $value->sch_grade_years,
-                    'pusd_grade' => $value->sch_grade,
-                    'pusd_sch_passed' => $value->sch_grade_years ? 1 : 0,
+                    'pusd_level' => $value['pusd_level'],
+                ], [
+                    'u_username' => $id,
+                    'pusd_level' => $value['pusd_level'],
+                    'pusd_sch_name' => $value['pusd_sch_name'],
+                    'pusd_sch_majors' => $value['pusd_sch_majors'],
+                    'pusd_sch_minors' => $value['pusd_sch_minors'],
+                    'pusd_sch_end' => $value['pusd_sch_end'],
+                    'pusd_grade' => $value['pusd_grade'],
+                    'pusd_sch_passed' => $value['pusd_sch_passed'] ? 1 : 0,
                 ]);
             }
         }
@@ -143,12 +146,18 @@ class ProfilesController extends BaseController
         if ($request->has('families') && count($request->families) > 0) {
             $fam = $request->families;
 
-            PortalFamDet::where('u_username', $id)->delete();
             foreach ($fam as $key => $value) {
-                PortalFamDet::create([
-                    'pufd_first_name' => $value->fam_f_name,
-                    'pufd_last_name' => $value->fam_l_name,
-                    'pufd_relation' => $value->fam_rel
+                $userFam[] = PortalFamDet::updateOrcreate([
+                    'u_username' => $id,
+                    'pufd_relation' => $value['pufd_relation'],
+                    'pufd_phone' => $value['pufd_phone'],
+                ], [
+                    'u_username' => $id,
+                    'pufd_phone' => $value['pufd_phone'],
+                    'pufd_first_name' => $value['pufd_first_name'],
+                    'pufd_last_name' => $value['pufd_last_name'],
+                    'pufd_birthday' => $value['pufd_birthday'],
+                    'pufd_relation' => $value['pufd_relation']
                 ]);
             }
         }
