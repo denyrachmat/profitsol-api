@@ -69,11 +69,15 @@ class ExportHSCodeReport implements FromCollection, WithHeadings, WithEvents
         $cols2 = [
             'TATANIAGA POST BORDER'
         ];
-
-        for ($i = 0; $i < count($getBCData) - 1; $i++) {
+        for ($i = 0; $i < (count($getBCData)) - 1; $i++) {
             $cols1[] = '';
+        }
+
+        for ($i = 0; $i < (count($getBCData) + 12) - 1; $i++) {
             $cols2[] = '';
         }
+
+        $cols2[] = 'HS CODE';
 
         $firstPartEmpty = [];
         for ($j = 0; $j < count($firstPart); $j++) {
@@ -290,7 +294,7 @@ class ExportHSCodeReport implements FromCollection, WithHeadings, WithEvents
                 'HSCD_SERIES' => $value['HSCD_SERIES'],
                 'HSCD_MKRECCD' => $value['HSCD_MKRECCD'],
                 'HSCD_QCDOC' => $value['HSCD_QCDOC'],
-                'HSCD_STXICD' => $value['HSCD_STXICD'],
+                // 'HSCD_STXICD' => $value['HSCD_STXICD'],
                 'HSCD_SECT' => $value['HSCD_SECT'],
                 'HSCD_TARIF' => $value['HSCD_TARIF'],
                 'HSCD_PPN' => $value['HSCD_PPN'],
@@ -312,6 +316,9 @@ class ExportHSCodeReport implements FromCollection, WithHeadings, WithEvents
                 'DG_REGULATION' => (clone $checkReg)->count() > 0 ? $checkReg->pluck('ZIRD_SKEPNO')->implode(', ') : '',
                 // 'DG_REGULATION' => '',
                 'REMARK_1' => '',
+                'HSCD_STXICD' => $value['HSCD_STXICD'],
+                'MEGA_HSCODE' => $value['MEGA_HSCODE'],
+                'QC_HSCODE' => $value['QC_HSCODE'],
                 'COMPARE_STAT' => $value['HSCD_DIFFERENCE'],
                 'HSCD_APPRVDT' => $value['HSCD_APPRVDT'],
                 'HSCD_LASTAPPRV' => $value['HSCD_LASTAPPRV'],
