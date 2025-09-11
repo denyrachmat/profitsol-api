@@ -71,13 +71,14 @@ class ExportHSCodeReport implements FromCollection, WithHeadings, WithEvents
         ];
         for ($i = 0; $i < (count($getBCData)) - 1; $i++) {
             $cols1[] = '';
-        }
-
-        for ($i = 0; $i < (count($getBCData) + 12) - 1; $i++) {
             $cols2[] = '';
         }
 
-        $cols2[] = 'HS CODE';
+        // for ($i = 0; $i < (count($getBCData) + 12) - 1; $i++) {
+        //     $cols2[] = '';
+        // }
+
+        // $cols2[] = 'HS CODE';
 
         $firstPartEmpty = [];
         for ($j = 0; $j < count($firstPart); $j++) {
@@ -101,6 +102,7 @@ class ExportHSCodeReport implements FromCollection, WithHeadings, WithEvents
                 'DG File Number',
                 'Regulation',
                 'Remark-1',
+                'HS Code',
                 'Compare Status',
                 'Input By',
                 'Input Date',
