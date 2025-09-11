@@ -361,7 +361,7 @@ class SyncINSWDetail implements ShouldQueue
         $content = [];
         $guzz = new \GuzzleHttp\Client([
             'headers' => [
-                'Authorization' => 'Basic aW5zd18yOmJhYzJiYXM2'
+                'Authorization' => 'Basic eyJhbGciOiJSUzI1NiIsInR5cCI6ImJzYStqd3QiLCJraWQiOiJoUUNJcUJsWXRTYVZ1UjFWaFpGWGZpTWdrR2NoLS1hMG84NU5OTmxMR2xnIn0.eyJpYXQiOjE3NTc1NzI3MjksImV4cCI6MTc1NzYwOTk5OSwiYXVkIjoiaHR0cHM6Ly9pbnN3LmdvLmlkIiwiaXNzIjoiaHR0cHM6Ly9zc28uaW5zdy5nby5pZCIsInN1YiI6ImEwYWMwOWZhLTU2NzMtNDJjNi05ZmUxLTQxMWU2YzkzNzEwYSIsImp0aSI6IlUyRnNkR1ZrWDEvK2JvUTduZ3pnTHBSMWJRblNXVEFxYUw5dlVWZ2VpR3QvZG1PbWE3cm02NWRGN2Q5a0xpMUNWdEI4Qkp2ZG5mcmk1bVR2ZEZEeEVNTjBPZDBZWHl1Tm8zUktFcHBIVkhUczFicGN4T2dtNEU3bEpja3hDWEpBbk5xc0xCSmVTdjBJTE4yOFVUVlROVmtJdVBKTUpDMUxWRnJuMHJJMzhSRVkxbVBOYkVkajFiaFpMUHIyZmVmWk4vOVZkV3l3ei9TRnZqcmt1L0FVQnJyQ3o5dVNQR2dscndpTXBRZGlQNk9wQnhmWmJnclNOY3dEcFJISmpaUkkifQ.NQ24Rpuppzqq5viOmFh3aVgTpTWDZj-VCOVxSpePuJV_GxmPgRVJTimr_5D_GxNFNHm2S4bpxPA6VJtADapsi1S90cdBFuw76d6cq_Za-5Gpxftwfv26JT5PmRdU5ctXloZXqJvyRo4fL9PTrAi2m5-qSfMCWoXayHp-S4OKorxWKPeB2OOdeIedsBtEplETLhIQBj8QC8zq_rj_ucGI7iADbkexZyixNe3wSaR8sOjaigZO97goHoQd3SWIoPz-1QZZECutEueOOCNOiijFYYKkRxr5GYt8HbjZDL6SttKN4BReqlle2bjn0LTX8-gYO3hLbJiMWup3maSJM94HNA'
             ]
         ]);
 
