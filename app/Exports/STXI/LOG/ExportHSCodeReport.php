@@ -331,7 +331,7 @@ class ExportHSCodeReport implements FromCollection, WithHeadings, WithEvents
         }
 
         // logger($listReg);
-        // logger($hasil);
+        logger($hasil);
 
         return collect($hasil);
     }
