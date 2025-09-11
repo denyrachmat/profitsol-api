@@ -157,7 +157,7 @@ Route::group(['prefix' => 'dms'], function () {
 
     Route::resource('folders', FolderController::class);
     Route::group(['prefix' => 'folderList'], function () {
-        Route::get('list/{username}/{root}/{id?}', [FolderController::class, 'showList']);
+        Route::get('list/{username}/{root}/{id?}/{isFetchAll?}', [FolderController::class, 'showList']);
     });
     Route::get('migrateToDB/{users}/{path?}/{isCheck?}', [FolderController::class, 'migrateRealFileToDB']);
     // Tester
@@ -338,6 +338,7 @@ Route::group(['prefix' => 'div'], function () {
         Route::get('INSWGetDataDetail/{filter}', [INSWDataController::class, 'getData']);
         Route::get('INSWGetData/{filter?}/{size?}', [INSWDataController::class, 'getListHSCode']);
         Route::get('runINSWSyncData/{filter?}', [INSWDataController::class, 'syncINSWData']);
+        Route::get('runINSWSyncDataHeader/{filter?}', [INSWDataController::class, 'syncINSWDirectHeader']);
         Route::get('resyncUnsyncedRegulationDet', [INSWDataController::class, 'resyncUnsyncedRegulationDet']);
 
         Route::post('uploadData', [Ceisa40UploaderController::class, 'uploadData']);
