@@ -103,9 +103,13 @@ class ExportHSCodeReport implements FromCollection, WithHeadings, WithEvents
                 'Regulation',
                 'Remark-1',
                 'HS Code',
+                '',
+                '',
                 'Compare Status',
                 'Input By',
                 'Input Date',
+                'Approved By',
+                'Approved Date',
                 'QC Approve Date'
             ]
         );
@@ -145,11 +149,21 @@ class ExportHSCodeReport implements FromCollection, WithHeadings, WithEvents
             $colsComb
         );
 
+        $thirdRowsCols = (clone $getBCData)->pluck('ZIDBD_DOCNM')->toArray();
+        for ($i=0; $i < 12; $i++) {
+            $thirdRowsCols[] = '';
+        }
+            $thirdRowsCols[] = 'WEB';
+            $thirdRowsCols[] = 'MEGA';
+            $thirdRowsCols[] = 'QC';
+
         $hasil[] = array_merge(
             $firstPartEmpty,
             (clone $getBCData)->pluck('ZIDBD_DOCNM')->toArray(),
-            (clone $getBCData)->pluck('ZIDBD_DOCNM')->toArray(),
+            $thirdRowsCols,
         );
+
+        // logger($hasil);
 
         return $hasil;
     }
@@ -305,7 +319,7 @@ class ExportHSCodeReport implements FromCollection, WithHeadings, WithEvents
                 'HSCD_CUKAI' => $value['HSCD_CUKAI'],
                 'HSCD_UOM' => $value['HSCD_UOM'],
             ], $listReg, [
-                'KUMHS' => '',
+                // 'KUMHS' => '',
                 'CATATAN_BAB' => '',
                 'EXPLANATORY_NOTE' => '',
                 'EXPORT_RESTRICTION' => '',
@@ -322,16 +336,16 @@ class ExportHSCodeReport implements FromCollection, WithHeadings, WithEvents
                 'MEGA_HSCODE' => $value['MEGA_HSCODE'],
                 'QC_HSCODE' => $value['QC_HSCODE'],
                 'COMPARE_STAT' => $value['HSCD_DIFFERENCE'],
-                'HSCD_APPRVDT' => $value['HSCD_APPRVDT'],
-                'HSCD_LASTAPPRV' => $value['HSCD_LASTAPPRV'],
                 'INPUT_USERS' => $value['INPUT_USERS'],
                 'INPUT_DATE' => $value['INPUT_DATE'],
+                'HSCD_LASTAPPRV' => $value['HSCD_LASTAPPRV'],
+                'HSCD_APPRVDT' => $value['HSCD_APPRVDT'],
                 'QC_APRVDT' => $value['QC_APRVDT']
             ]);
         }
 
         // logger($listReg);
-        logger($hasil);
+        // logger($hasil);
 
         return collect($hasil);
     }
@@ -408,11 +422,20 @@ class ExportHSCodeReport implements FromCollection, WithHeadings, WithEvents
                 $event->sheet->getDelegate()->mergeCells("AE2:AF2");
                 $event->sheet->getDelegate()->mergeCells("AG2:AH2");
                 $event->sheet->getDelegate()->mergeCells("AB1:AH1");
-                $event->sheet->getDelegate()->mergeCells("AV1:AV3");
-                $event->sheet->getDelegate()->mergeCells("AW1:AW3");
+                $event->sheet->getDelegate()->mergeCells("AU1:AW2");
+                // $event->sheet->getDelegate()->mergeCells("AU3:AU2");
+                // $event->sheet->getDelegate()->mergeCells("AV3:AV2");
+                // $event->sheet->getDelegate()->mergeCells("AW3:AW2");
+                // $event->sheet->getDelegate()->mergeCells("AV1:AV3");
+                // $event->sheet->getDelegate()->mergeCells("AW1:AW3");
                 $event->sheet->getDelegate()->mergeCells("AX1:AX3");
+                $event->sheet->getDelegate()->mergeCells("AY1:AY3");
+                $event->sheet->getDelegate()->mergeCells("AZ1:AZ3");
+                $event->sheet->getDelegate()->mergeCells("BA1:BA3");
+                $event->sheet->getDelegate()->mergeCells("BB1:BB3");
+                $event->sheet->getDelegate()->mergeCells("BC1:BC3");
 
-                for ($i = 34; $i < 47; $i++) {
+                for ($i = 34; $i < 46; $i++) {
                     $event->sheet->getDelegate()->mergeCells("{$this->toAlpha($i)}1:{$this->toAlpha($i)}3");
                 }
 
