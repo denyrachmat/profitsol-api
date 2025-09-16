@@ -284,7 +284,7 @@ class FormController extends BaseController
         if (!empty($request->idRef)) {
             function extractIds($array, &$ids = [])
             {
-                if (isset($array['id'])) {
+                if (isset($array['id']) && is_int($array['id'])) {
                     $ids[] = $array['id'];
                 }
 
@@ -534,7 +534,7 @@ class FormController extends BaseController
                         $hasil[] = array_merge($value, [
                             'url' => $getDataGencode['url'] ?? '',
                             'desc' => $getDataGencode['desc'] ?? '',
-                            'is_main' => $getDataGencode['is_main'] ?? '',
+                            'is_main' => !empty($getDataGencode['is_main']) ?$getDataGencode['is_main'] : '0',
                             'is_published' => $getPublished && $getPublished['is_published'] ? 1 : 0,
                             'tags' => $getTags,
                         ]);
@@ -543,7 +543,7 @@ class FormController extends BaseController
                     $hasil[] = array_merge($value, [
                         'url' => $getDataGencode['url'] ?? '',
                         'desc' => $getDataGencode['desc'] ?? '',
-                        'is_main' => $getDataGencode['is_main'] ?? '',
+                        'is_main' => !empty($getDataGencode['is_main']) ?$getDataGencode['is_main'] : '0',
                         'is_published' => $getPublished && $getPublished['is_published'] ? 1 : 0,
                         'tags' => $getTags,
                     ]);
