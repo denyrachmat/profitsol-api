@@ -90,9 +90,9 @@ class FolderController extends BaseController
         return $this->handleResponse($files, 'Data Found !!');
     }
 
-    public function showList($username, $root, $id = null)
+    public function showList($username, $root, $id = null, $isFetchAll = false)
     {
-        $files = $this->getFolder($username, $id, $root);
+        $files = $this->getFolder($username, $id, $root, $isFetchAll);
 
         return $this->handleResponse($files, 'Data Found !!');
     }

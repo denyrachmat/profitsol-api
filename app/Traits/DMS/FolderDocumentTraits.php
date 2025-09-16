@@ -17,22 +17,24 @@ use App\Traits\PORTAL\GencodeTraits;
 trait FolderDocumentTraits
 {
     use GencodeTraits;
-    public function getFolder($author, $id = null, $root = '')
+    public function getFolder($author, $id = 0, $root = '', $isFetchAll = false)
     {
         $users = $this->getAliasFolderbyAuthor($author, 'user');
 
         // return $users;
-        $dataFolder = DMSFolderMstr::with([
-            'childFolders' => function ($q) {
-                $q->orderBy('dfm_folder_name');
-
-            }
-        ])
-            ->with('doc.shared')
-            ->with('shared')
+        $dataFolder = DMSFolderMstr::with('shared')
             ->where('p_u_username', $users)
-            ->whereNull('dfm_parent_id')
             ->orderBy('dfm_folder_name');
+
+        if ($isFetchAll) {
+            $dataFolder->with('doc.shared')
+                ->with([
+                    'childFolders' => function ($q) {
+                        $q->orderBy('dfm_folder_name');
+
+                    }
+                ]);
+        }
 
         $dataFiles = DMSDocMstr::where('p_u_username', $users)->with('shared');
 
@@ -41,47 +43,86 @@ trait FolderDocumentTraits
             $dataFiles->where('dfm_root_mstr', $root);
         }
 
-        return !empty($id)
-            ? [
-                'child_folders' => $dataFolder->where('id', $id)->get()->map(function ($item) use ($id) {
-                    $sharePointData = $this->getDataGencode('DMS_SHAREPOINT_SHARED', [
-                        'pgm_value' => $id,
-                    ], [
-                        'sites' => 'pgm_value2|string',
-                        'url' => 'pgm_value3|string'
-                    ]);
+        if (!empty($id)) {
+            $dataFolder->where('dfm_parent_id', $id);
+            $doc = $dataFiles->where('dfm_id', $id)->get();
+        } else {
+            $dataFolder->whereNull('dfm_parent_id');
+            $doc = $dataFiles->whereNull('dfm_id')->get();
+        }
 
-                    return array_merge(
-                        $item->toArray(),
-                        [
-                            'from_sharepoint' => $sharePointData ? true : false,
-                            'sites' => json_decode($sharePointData['sites']) ?? '',
-                            'url' => $sharePointData['url'] ?? '',
-                        ]
-                    );
-                }),
-                'doc' => $dataFiles->where('dfm_id', $id)->get()
-            ]
-            : [
-                'child_folders' => $dataFolder->get()->map(function ($item) use ($id) {
-                    $sharePointData = $this->getDataGencode('DMS_SHAREPOINT_SHARED', [
-                        'pgm_value' => $item->id,
-                    ], [
-                        'sites' => 'pgm_value2|string',
-                        'url' => 'pgm_value3|string'
-                    ], [], true);
+        return [
+            'child_folders' => $dataFolder->get()->map(function ($item) use ($id) {
+                $sharePointData = $this->getDataGencode('DMS_SHAREPOINT_SHARED', [
+                    'pgm_value' => $item->id,
+                ], [
+                    'sites' => 'pgm_value2|string',
+                    'url' => 'pgm_value3|string'
+                ], [], true);
 
-                    return array_merge(
-                        $item->toArray(),
-                        $sharePointData ? [
-                            'from_sharepoint' => $sharePointData ? true : false,
-                            'sites' => json_decode($sharePointData['sites']) ?? '',
-                            'url' => $sharePointData['url'] ?? '',
-                        ] : []
-                    );
-                }),
-                'doc' => $dataFiles->whereNull('dfm_id')->get()
-            ];
+                return array_merge(
+                    $item->toArray(),
+                    [
+                        'from_sharepoint' => $sharePointData ? true : false,
+                        'sites' => $sharePointData ? json_decode($sharePointData['sites']) : '',
+                        'url' => $sharePointData['url'] ?? '',
+                        'type' => 'folder',
+                    ]
+                );
+            }),
+            'doc' => $doc->map(function ($item) use ($id) {
+                return array_merge(
+                    $item->toArray(),
+                    [
+                        'type' => 'file'
+                    ]
+                );
+            })
+        ];
+
+        // return !empty($id)
+        //     ? [
+        //         'child_folders' => $dataFolder->get()
+        //             ->map(function ($item) use ($id) {
+        //                 $sharePointData = $this->getDataGencode('DMS_SHAREPOINT_SHARED', [
+        //                     'pgm_value' => $id,
+        //                 ], [
+        //                     'sites' => 'pgm_value2|string',
+        //                     'url' => 'pgm_value3|string'
+        //                 ]);
+
+        //                 return array_merge(
+        //                     $item->toArray(),
+        //                     [
+        //                         'from_sharepoint' => $sharePointData ? true : false,
+        //                         'sites' => $sharePointData ? json_decode($sharePointData['sites']) : '',
+        //                         'url' => $sharePointData['url'] ?? '',
+        //                     ]
+        //                 );
+        //             }),
+        //         'doc' => $dataFiles->where('dfm_id', $id)->get()
+        //     ]
+        //     : [
+        //         'child_folders' => $dataFolder->get()
+        //             ->map(function ($item) use ($id) {
+        //                 $sharePointData = $this->getDataGencode('DMS_SHAREPOINT_SHARED', [
+        //                     'pgm_value' => $item->id,
+        //                 ], [
+        //                     'sites' => 'pgm_value2|string',
+        //                     'url' => 'pgm_value3|string'
+        //                 ], [], true);
+
+        //                 return array_merge(
+        //                     $item->toArray(),
+        //                     $sharePointData ? [
+        //                         'from_sharepoint' => $sharePointData ? true : false,
+        //                         'sites' => $sharePointData ? json_decode($sharePointData['sites']) : '',
+        //                         'url' => $sharePointData['url'] ?? '',
+        //                     ] : []
+        //                 );
+        //             }),
+        //         'doc' => $dataFiles->whereNull('dfm_id')->get()
+        //     ];
     }
 
     public function getAllFolder($author, $root = '')
@@ -105,6 +146,7 @@ trait FolderDocumentTraits
                 : ($checkRootAlias->dudrm_path)
             );
 
+        // return $users;
 
         if (empty($root)) {
             $root = empty($checkRootAlias->dudrm_source)
@@ -175,7 +217,7 @@ trait FolderDocumentTraits
             'from_sharepoint' => $sharePointData ? true : false,
             'sites' => $sharePointData ? json_decode($sharePointData['sites']) : [],
             'url' => $sharePointData ? $sharePointData['url'] : '',
-            'test' =>  $this->getAliasFolderbyAuthor($author) . '/' . $path . '/' . $file
+            'test' => $this->getAliasFolderbyAuthor($author) . '/' . $path . '/' . $file
         ];
     }
 
@@ -305,7 +347,7 @@ trait FolderDocumentTraits
                     $insertFile = DMSDocMstr::create([
                         'p_u_username' => $author,
                         'dfm_id' => $idFolder,
-                        'ddm_doc_name' => $docName,
+                        'ddm_doc_name' => $getRealName,
                         'ddm_doc_real_name' => $getRealName,
                         'ddm_doc_size' => 0,
                         'ddm_doc_flag' => 0,
@@ -321,7 +363,7 @@ trait FolderDocumentTraits
                     $insertFile = DMSDocMstr::where('id', $dataDBFile->id)->create([
                         'p_u_username' => $author,
                         'dfm_id' => $idFolder,
-                        'ddm_doc_name' => $docName,
+                        'ddm_doc_name' => $getRealName,
                         'ddm_doc_real_name' => $getRealName,
                         'ddm_doc_size' => 0,
                         'ddm_doc_flag' => 0,
