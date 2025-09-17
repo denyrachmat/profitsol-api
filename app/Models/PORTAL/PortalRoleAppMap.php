@@ -30,7 +30,7 @@ class PortalRoleAppMap extends Model
 
     public function child()
     {
-        return $this->hasMany('App\Models\PORTAL\PortalRoleAppMap', ['am_app_parent', 'rm_role_id', 'u_username'], ['am_app_id', 'rm_role_id', 'u_username']);
+        return $this->hasMany('App\Models\PORTAL\PortalRoleAppMap', ['am_app_parent', 'rm_role_id'], ['am_app_id', 'rm_role_id']);
     }
 
     public function childRoles($depth = 8)
