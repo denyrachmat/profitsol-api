@@ -65,7 +65,7 @@ class RoleController extends BaseController
         $data = PortalRole::with('users_map')
             ->with(['role_app_map' => function($query) use ($request) {
                 $query->whereNull('am_app_parent');
-                $query->where('u_username', $request->header('username'));
+                // $query->where('u_username', $request->header('username'));
                 $query->with('childRoles');
             }, 'role_app_map.apps.childApps'])
             ->find($id);
