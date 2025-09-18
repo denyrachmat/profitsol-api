@@ -247,7 +247,11 @@ class ExportHSCodeReport implements FromCollection, WithHeadings, WithEvents
                     // Tataniaga Post Border
                     foreach ($this->headerDet as $keyHeader => $valueHeader) {
                         if (in_array($valueHeader, $getParseJsonBeaList) && $valueReg->ZIRD_TYPE === 'import_regulation_post_border') {
-                            $listReg['TPB-' . $valueHeader] = $valueReg->ZIRD_NMIJIN;
+                            if (isset($listReg['TPB-' . $valueHeader]) && !empty($listReg['TPB-' . $valueHeader]) && $listReg['TPB-' . $valueHeader] !== '-') {
+                                $listReg['TPB-' . $valueHeader] .= "\n -" . $valueReg->ZIRD_NMIJIN;
+                            } else {
+                                $listReg['TPB-' . $valueHeader] = '- '. $valueReg->ZIRD_NMIJIN;
+                            }
                         } else {
                             if (!isset($listReg['TPB-' . $valueHeader]) && empty($listReg['TPB-' . $valueHeader])) {
                                 $listReg['TPB-' . $valueHeader] = '-';
@@ -329,7 +333,12 @@ class ExportHSCodeReport implements FromCollection, WithHeadings, WithEvents
                 'HISTORICAL' => '',
                 'DG_CLASS' => '',
                 'DG_FILE_NUMBER' => '',
-                'DG_REGULATION' => (clone $checkReg)->count() > 0 ? $checkReg->pluck('ZIRD_SKEPNO')->implode(', ') : '',
+                'DG_REGULATION' => (clone $checkReg)->count() > 0
+                    ? collect($checkReg->pluck('ZIRD_SKEPNO')->toArray())
+                        ->unique()
+                        ->filter(fn($v) => !empty($v) && $v !== '-')
+                        ->implode(', ')
+                    : '',
                 // 'DG_REGULATION' => '',
                 'REMARK_1' => '',
                 'HSCD_STXICD' => $value['HSCD_STXICD'],
