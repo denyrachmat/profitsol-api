@@ -43,9 +43,9 @@ class ExportHSCodeReport implements FromCollection, WithHeadings, WithEvents
             'Series',
             'Maker Recomendation',
             'QC Doc',
-            'Approval Date',
-            'Approved By',
-            'HS Code',
+            // 'Approval Date',
+            // 'Approved By',
+            // 'HS Code',
             'Section',
             'Tarif (%)',
             'PPN (%)',
@@ -324,9 +324,9 @@ class ExportHSCodeReport implements FromCollection, WithHeadings, WithEvents
                 'HSCD_UOM' => $value['HSCD_UOM'],
             ], $listReg, [
                 // 'KUMHS' => '',
-                'CATATAN_BAB' => '',
-                'EXPLANATORY_NOTE' => '',
-                'EXPORT_RESTRICTION' => '',
+                // 'CATATAN_BAB' => '',
+                // 'EXPLANATORY_NOTE' => '',
+                // 'EXPORT_RESTRICTION' => '',
                 'HS_CODE_WASTE' => '',
                 'BM_WASTE' => '',
                 'DESCRIPTION_WASTE' => '',
@@ -419,32 +419,45 @@ class ExportHSCodeReport implements FromCollection, WithHeadings, WithEvents
                         'bold' => true
                     ]
                 ]);
-                for ($i = 0; $i < 20; $i++) {
+                for ($i = 0; $i < 17; $i++) {
                     $event->sheet->getDelegate()->mergeCells("{$this->toAlpha($i)}1:{$this->toAlpha($i)}3");
                 }
 
-                $event->sheet->getDelegate()->mergeCells("U1:AA1");
+                // Tataniaga Border Start
+                $event->sheet->getDelegate()->mergeCells("R1:X1");
+                // PLB
+                $event->sheet->getDelegate()->mergeCells("R2:S2");
+                // TPB
                 $event->sheet->getDelegate()->mergeCells("U2:V2");
-                $event->sheet->getDelegate()->mergeCells("X2:Y2");
-                $event->sheet->getDelegate()->mergeCells("Z2:AA2");
+                // FTZ
+                $event->sheet->getDelegate()->mergeCells("W2:X2");
+                // Tataniaga Border End
+
+                // Tataniaga Post Border Start
+                $event->sheet->getDelegate()->mergeCells("Y1:AE1");
+                // PLB
+                $event->sheet->getDelegate()->mergeCells("Y2:Z2");
+                // TPB
                 $event->sheet->getDelegate()->mergeCells("AB2:AC2");
-                $event->sheet->getDelegate()->mergeCells("AE2:AF2");
-                $event->sheet->getDelegate()->mergeCells("AG2:AH2");
-                $event->sheet->getDelegate()->mergeCells("AB1:AH1");
-                $event->sheet->getDelegate()->mergeCells("AU1:AW2");
-                // $event->sheet->getDelegate()->mergeCells("AU3:AU2");
-                // $event->sheet->getDelegate()->mergeCells("AV3:AV2");
-                // $event->sheet->getDelegate()->mergeCells("AW3:AW2");
-                // $event->sheet->getDelegate()->mergeCells("AV1:AV3");
-                // $event->sheet->getDelegate()->mergeCells("AW1:AW3");
+                // FTZ
+                $event->sheet->getDelegate()->mergeCells("AD2:AE2");
+                // Tataniaga Post Border End
+
+
+                $event->sheet->getDelegate()->mergeCells("AF1:AF3");
+                $event->sheet->getDelegate()->mergeCells("AG1:AG3");
+                $event->sheet->getDelegate()->mergeCells("AH1:AH3");
+
+
+                $event->sheet->getDelegate()->mergeCells("AR1:AT2");
+                $event->sheet->getDelegate()->mergeCells("AU1:AU3");
+                $event->sheet->getDelegate()->mergeCells("AV1:AV3");
+                $event->sheet->getDelegate()->mergeCells("AW1:AW3");
                 $event->sheet->getDelegate()->mergeCells("AX1:AX3");
                 $event->sheet->getDelegate()->mergeCells("AY1:AY3");
                 $event->sheet->getDelegate()->mergeCells("AZ1:AZ3");
-                $event->sheet->getDelegate()->mergeCells("BA1:BA3");
-                $event->sheet->getDelegate()->mergeCells("BB1:BB3");
-                $event->sheet->getDelegate()->mergeCells("BC1:BC3");
 
-                for ($i = 34; $i < 46; $i++) {
+                for ($i = 34; $i < 43; $i++) {
                     $event->sheet->getDelegate()->mergeCells("{$this->toAlpha($i)}1:{$this->toAlpha($i)}3");
                 }
 
@@ -458,6 +471,10 @@ class ExportHSCodeReport implements FromCollection, WithHeadings, WithEvents
                         'vertical' => \PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_TOP,
                     ]
                 ]);
+
+                foreach (range('A', $highestColumn) as $col) {
+                    $event->sheet->getDelegate()->getColumnDimension($col)->setAutoSize(true);
+                }
 
                 for ($row = 4; $row <= $highestRow; $row++) {
                     $cellValue = $event->sheet->getCell("AU{$row}")->getValue();
