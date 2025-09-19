@@ -4,6 +4,7 @@ namespace App\Http\Controllers\API\PORTAL;
 
 use App\Http\Controllers\API\CMS\FormController;
 use App\Http\Controllers\API\PORTAL\BaseController;
+use App\Models\CMS\FormMaster;
 use Illuminate\Http\Request;
 use App\Traits\PORTAL\GencodeTraits;
 use App\Models\PORTAL\PortalGencode;
@@ -52,6 +53,7 @@ class FrontPageController extends BaseController
                 'children' => 'children',
                 'parent' => 'pgm_parent',
                 'tags' => 'pgm_desc2',
+                'dmsShared' => 'pgm_desc3|bool',
             ], [
                 'pgm_order' => 'asc',
                 'id' => 'asc'
@@ -135,6 +137,7 @@ class FrontPageController extends BaseController
             'type' => 'required|string',
             'label' => 'required|string',
             'icon' => 'nullable|string',
+            'dmsShared' => 'nullable|boolean',
         ]);
 
         $gencode = PortalGencode::updateOrCreate(
@@ -149,6 +152,7 @@ class FrontPageController extends BaseController
                 'pgm_desc' => $data['type'],
                 'pgm_value3' => $data['type'] === 'page' ? (string) $request->page : $request->url ?? null,
                 'pgm_desc2' => $request->has('tags') && !empty($request->tags) ? json_encode($request->tags) : null,
+                'pgm_desc3' => isset($data['dmsShared']) && $data['dmsShared'] == true ? '1' : '0',
                 'pgm_parent' => $request->parent ?? null,
             ]
         );
@@ -385,5 +389,53 @@ class FrontPageController extends BaseController
         $newPost->save();
 
         return $this->handleResponse($newPost, 'Post copied successfully');
+    }
+
+    public function getNavAssignedDMS() {
+        $data = $this->getDataGencode('FP_NAV', ['pgm_desc3' => '1'], [
+            'idx' => 'id',
+            'value' => 'id',
+            'label' => 'pgm_value',
+            'icon' => 'pgm_value2',
+            'type' => 'pgm_desc',
+            'linkto' => 'pgm_value3',
+            'page' => 'pgm_value3',
+            'url' => 'pgm_value3',
+            'children' => 'children',
+            'parent' => 'pgm_parent',
+            'tags' => 'pgm_desc2',
+            'dmsShared' => 'pgm_desc3|bool',
+        ], [
+            'pgm_order' => 'asc',
+            'id' => 'asc'
+        ], false, true, true);
+
+        $hasil = [];
+        foreach ($data as $key => $value) {
+            $getCMSForms = FormMaster::where('cfmt_id', $value['page'])->where('cfm_type', 'files')->get()->toArray();
+
+            $dataCMS = [];
+            foreach ($getCMSForms as $keyData => $valueData) {
+                $dataCMS[] = array_merge(
+                    $valueData,
+                    [
+                        'cfm_content' => json_decode($valueData['cfm_content'], true),
+                    ]
+                );
+            }
+
+            $hasil[] = [
+                'label' => $value['label'],
+                'icon' => $value['icon'],
+                'idPage' => $value['page'],
+                'forms' => $dataCMS,
+            ];
+        }
+
+        if (empty($data)) {
+            return $this->handleError('No navigation menu found', 404);
+        } else {
+            return $this->handleResponse($hasil, 'Navigation menu retrieved successfully');
+        }
     }
 }

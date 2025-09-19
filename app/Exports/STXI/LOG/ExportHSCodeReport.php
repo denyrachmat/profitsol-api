@@ -443,12 +443,12 @@ class ExportHSCodeReport implements FromCollection, WithHeadings, WithEvents
                 $event->sheet->getDelegate()->mergeCells("AD2:AE2");
                 // Tataniaga Post Border End
 
-
+                // HS Code Detail
                 $event->sheet->getDelegate()->mergeCells("AF1:AF3");
                 $event->sheet->getDelegate()->mergeCells("AG1:AG3");
                 $event->sheet->getDelegate()->mergeCells("AH1:AH3");
 
-
+                // After HS Code Detail
                 $event->sheet->getDelegate()->mergeCells("AR1:AT2");
                 $event->sheet->getDelegate()->mergeCells("AU1:AU3");
                 $event->sheet->getDelegate()->mergeCells("AV1:AV3");
