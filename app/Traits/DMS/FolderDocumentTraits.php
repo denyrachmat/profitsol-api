@@ -11,20 +11,28 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Config;
 use Illuminate\Http\Request;
-
+use App\Models\CMS\FormMaster;
 use App\Traits\PORTAL\GencodeTraits;
 
 trait FolderDocumentTraits
 {
     use GencodeTraits;
-    public function getFolder($author, $id = 0, $root = '', $isFetchAll = false)
+    public function getFolder($author, $idParentFolder = 0, $root = '', $isFetchAll = false, $isFetchShared = true, $id = 0, $sharedOnly = false)
     {
+        set_time_limit(60);
         $users = $this->getAliasFolderbyAuthor($author, 'user');
 
         // return $users;
         $dataFolder = DMSFolderMstr::with('shared')
             ->where('p_u_username', $users)
+            // ->whereDoesntHave('shared')
             ->orderBy('dfm_folder_name');
+
+        if ($sharedOnly) {
+            $dataFolder->whereHas('shared');
+        } else {
+            $dataFolder->whereDoesntHave('shared');
+        }
 
         if ($isFetchAll) {
             $dataFolder->with('doc.shared')
@@ -36,93 +44,177 @@ trait FolderDocumentTraits
                 ]);
         }
 
-        $dataFiles = DMSDocMstr::where('p_u_username', $users)->with('shared');
-
         if (!empty($root)) {
             $dataFolder->where('dfm_root_mstr', $root);
+        }
+
+        $docs = [];
+        if ($idParentFolder > 0) {
+            $dataFolder->where('dfm_parent_id', $idParentFolder);
+            $docs = $this->getDoc($author, 0, $idParentFolder, $root);
+        } elseif ($idParentFolder == 0) {
+            $dataFolder->whereNull('dfm_parent_id');
+            $docs = $this->getDoc($author, 0, 0, $root);
+        }
+
+        if ($id > 0) {
+            $dataFolder->where('id', $id);
+        }
+
+        $getSharedHeader = DMSShareDet::select(
+            'dfm_id',
+            'p_u_username',
+            'ddm_id',
+            // 'ddfus_p_u_username',
+        )
+
+            ->groupBy(
+                'dfm_id',
+                'p_u_username',
+                'ddm_id',
+                // 'ddfus_p_u_username'
+            );
+
+        $getShared = (clone $getSharedHeader)->whereIn('ddfus_p_u_username', [$users, 'all'])
+            ->where('p_u_username', '<>', $users)
+            ->get()
+            ->toArray();
+
+        $getShared = array_merge(
+            $getShared,
+            (clone $getSharedHeader)
+                ->where('p_u_username', $users)
+                // ->where('ddfus_p_u_username', '<>', 'all')
+                ->get()
+                ->toArray()
+        );
+
+        // return $getShared;
+        $dataShared = [];
+
+        if ($isFetchShared) {
+            foreach ($getShared as $item) {
+                // If Shared is Folder
+                if (!empty($item['dfm_id'])) {
+                    $getFolder = $this->getFolder($item['p_u_username'], -1, '', false, false, $item['dfm_id'], true)['child_folders'];
+
+                    if (count($getFolder) > 0) {
+                        foreach ($getFolder as $folder) {
+                            $dataShared[] = $folder;
+                        }
+                    }
+                }
+
+                // If Shared is File
+                if (!empty($item['ddm_id'])) {
+                    $getDoc = $this->getDoc(
+                        $item['p_u_username'],
+                        $item['ddm_id'],
+                        -1,
+                        '',
+                        true
+                    );
+
+                    if (count($getDoc) > 0) {
+                        // $dataShared[] = $getDoc ;
+                        foreach ($getDoc as $doc) {
+                            $dataShared[] = $doc;
+                        }
+                    }
+                }
+            }
+        }
+
+        $dataFolder = $dataFolder->get()->map(function ($item) {
+            $sharePointData = $this->getDataGencode('DMS_SHAREPOINT_SHARED', [
+                'pgm_value' => $item->id,
+            ], [
+                'sites' => 'pgm_value2|string',
+                'url' => 'pgm_value3|string'
+            ], [], true);
+
+            return array_merge(
+                $item->toArray(),
+                [
+                    'from_sharepoint' => $sharePointData ? true : false,
+                    'sites' => $sharePointData ? json_decode($sharePointData['sites']) : '',
+                    'url' => $sharePointData['url'] ?? '',
+                    'type' => 'folder',
+                ]
+            );
+        })->toArray();
+
+        return [
+            'child_folders' => array_values(array_filter(
+                array_merge($dataFolder, $dataShared),
+                function ($item) {
+                    return isset($item['type']) && $item['type'] === 'folder';
+                }
+            )),
+            'doc' => array_values(array_filter(
+                array_merge($docs, $dataShared),
+                function ($item) {
+                    return isset($item['type']) && $item['type'] === 'file';
+                }
+            )),
+            'shared' => $dataShared,
+            'author' => $this->getAliasFolderbyAuthor($author, 'user')
+        ];
+    }
+
+    public function getDoc($author, $id = 0, $idFolder = 0, $root = '', $sharedOnly = false)
+    {
+        $users = $this->getAliasFolderbyAuthor($author, 'user');
+
+        $dataFiles = DMSDocMstr::where('p_u_username', $users)->with('shared');
+
+        if (!$sharedOnly) {
+            $dataFiles->whereDoesntHave('shared');
+        }
+
+        if (!empty($root)) {
             $dataFiles->where('dfm_root_mstr', $root);
         }
 
         if (!empty($id)) {
-            $dataFolder->where('dfm_parent_id', $id);
-            $doc = $dataFiles->where('dfm_id', $id)->get();
-        } else {
-            $dataFolder->whereNull('dfm_parent_id');
-            $doc = $dataFiles->whereNull('dfm_id')->get();
+            $dataFiles->where('id', $id);
         }
 
-        return [
-            'child_folders' => $dataFolder->get()->map(function ($item) use ($id) {
-                $sharePointData = $this->getDataGencode('DMS_SHAREPOINT_SHARED', [
-                    'pgm_value' => $item->id,
-                ], [
-                    'sites' => 'pgm_value2|string',
-                    'url' => 'pgm_value3|string'
-                ], [], true);
+        if (!empty($idFolder) && $idFolder > 0) {
+            $dataFiles->where('dfm_id', $idFolder);
+        } elseif ($idFolder === 0) {
+            $dataFiles->whereNull('dfm_id');
+        }
 
-                return array_merge(
-                    $item->toArray(),
-                    [
-                        'from_sharepoint' => $sharePointData ? true : false,
-                        'sites' => $sharePointData ? json_decode($sharePointData['sites']) : '',
-                        'url' => $sharePointData['url'] ?? '',
-                        'type' => 'folder',
-                    ]
-                );
-            }),
-            'doc' => $doc->map(function ($item) use ($id) {
-                return array_merge(
-                    $item->toArray(),
-                    [
-                        'type' => 'file'
-                    ]
-                );
-            })
-        ];
+        return $dataFiles->get()->map(function ($item) use ($id, $sharedOnly) {
+            $sharePointData = $this->getDataGencode('DMS_SHAREPOINT_SHARED', [
+                'pgm_value' => $item->id,
+            ], [
+                'sites' => 'pgm_value2|string',
+                'url' => 'pgm_value3|string'
+            ], [], true);
 
-        // return !empty($id)
-        //     ? [
-        //         'child_folders' => $dataFolder->get()
-        //             ->map(function ($item) use ($id) {
-        //                 $sharePointData = $this->getDataGencode('DMS_SHAREPOINT_SHARED', [
-        //                     'pgm_value' => $id,
-        //                 ], [
-        //                     'sites' => 'pgm_value2|string',
-        //                     'url' => 'pgm_value3|string'
-        //                 ]);
+            $dataShared = [];
+            if ($sharedOnly) {
+                $dataShared = DMSShareDet::where('ddm_id', $item->id)
+                    ->first()
+                    ?->toArray();
+            }
 
-        //                 return array_merge(
-        //                     $item->toArray(),
-        //                     [
-        //                         'from_sharepoint' => $sharePointData ? true : false,
-        //                         'sites' => $sharePointData ? json_decode($sharePointData['sites']) : '',
-        //                         'url' => $sharePointData['url'] ?? '',
-        //                     ]
-        //                 );
-        //             }),
-        //         'doc' => $dataFiles->where('dfm_id', $id)->get()
-        //     ]
-        //     : [
-        //         'child_folders' => $dataFolder->get()
-        //             ->map(function ($item) use ($id) {
-        //                 $sharePointData = $this->getDataGencode('DMS_SHAREPOINT_SHARED', [
-        //                     'pgm_value' => $item->id,
-        //                 ], [
-        //                     'sites' => 'pgm_value2|string',
-        //                     'url' => 'pgm_value3|string'
-        //                 ], [], true);
-
-        //                 return array_merge(
-        //                     $item->toArray(),
-        //                     $sharePointData ? [
-        //                         'from_sharepoint' => $sharePointData ? true : false,
-        //                         'sites' => $sharePointData ? json_decode($sharePointData['sites']) : '',
-        //                         'url' => $sharePointData['url'] ?? '',
-        //                     ] : []
-        //                 );
-        //             }),
-        //         'doc' => $dataFiles->whereNull('dfm_id')->get()
-        //     ];
+            return array_merge(
+                $item->toArray(),
+                [
+                    'type' => 'file',
+                    'from_sharepoint' => $sharePointData ? true : false,
+                    'sites' => $sharePointData ? json_decode($sharePointData['sites']) : '',
+                    'url' => isset($sharePointData['url'])
+                        ? $sharePointData['url']
+                        : ($sharedOnly
+                            ? env('APP_URL') . '/api/dms/documentsRoots/getSharedFilesFolder/' . $dataShared['ddfus_token'] . '/' . $dataShared['id']
+                            : '')
+                ]
+            );
+        })->toArray();
     }
 
     public function getAllFolder($author, $root = '')
@@ -476,6 +568,26 @@ trait FolderDocumentTraits
                         'ddfus_token' => $token,
                     ]
                 );
+            }
+        }
+
+        if ($request->has('frontPageList') && count($request->frontPageList) > 0) {
+            foreach ($request->frontPageList as $fp) {
+                foreach ($fp['forms'] as $fpDetail) {
+                    if (isset($fpDetail['checked']) && $fpDetail['checked'] === true) {
+                        FormMaster::where('id', $fpDetail['id'])->update([
+                            'cfm_content' => json_encode(array_merge(
+                                $fpDetail['cfm_content'],
+                                [
+                                    'files' => array_merge(
+                                        isset($fpDetail['cfm_content']['files']) ? $fpDetail['cfm_content']['files'] : [],
+                                        $request->sharedData
+                                    )
+                                ]
+                            ))
+                        ]);
+                    }
+                }
             }
         }
 

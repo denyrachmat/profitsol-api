@@ -123,6 +123,8 @@ Route::group(['prefix' => 'fpmanager'], function () {
     Route::post('saveTags', [FrontPageController::class, 'saveTags']);
     Route::delete('removeTag/{id}/{tag}', [FrontPageController::class, 'removeTag']);
     Route::get('publishPost/{id}/{state?}', [FrontPageController::class, 'publishPost']);
+
+    Route::get('getNavAssignedDMS', [FrontPageController::class, 'getNavAssignedDMS']);
 });
 
 Route::group(['prefix' => 'ams'], function () {
