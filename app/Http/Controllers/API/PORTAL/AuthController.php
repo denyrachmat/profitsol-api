@@ -87,6 +87,7 @@ class AuthController extends BaseController
             $success['fam'] = $dataUsers->fam;
             $success['rolesGroup'] = $getRolesGroup;
             $success['menus'] = PortalApp::where('am_app_parent', null)->with('childApps')->get();
+            $success['is_ms_checking'] = $cekUser->is_ms_checking;
 
             if (count($getRolesGroup['roles']) === 0) {
                 return $this->handleError([

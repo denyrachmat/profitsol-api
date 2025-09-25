@@ -20,11 +20,12 @@ class PortalGencode extends Model
         'pgm_desc3',
         'pgm_created_by',
         'pgm_parent',
+        'pgm_order',
     ];
 
     public function children()
     {
-        return $this->hasMany(PortalGencode::class, 'pgm_parent', 'id')->with('children');
+        return $this->hasMany(PortalGencode::class, 'pgm_parent', 'id')->with('children')->orderBy('pgm_order','asc');
     }
 
     // public function children()

@@ -5,6 +5,8 @@ namespace App\Http\Controllers\API\PORTAL;
 use App\Http\Controllers\API\CMS\FormController;
 use App\Http\Controllers\API\PORTAL\BaseController;
 use App\Models\CMS\FormMaster;
+use App\Models\CMS\FormMasterTitle;
+use App\Models\DMS\DMSShareDet;
 use Illuminate\Http\Request;
 use App\Traits\PORTAL\GencodeTraits;
 use App\Models\PORTAL\PortalGencode;
@@ -38,10 +40,10 @@ class FrontPageController extends BaseController
         return $this->getNavMenu([], (bool) $showAll);
     }
 
-    public function getNavMenu($data = [], $showAll = false)
+    public function getNavMenu($data = [], $showAll = false, $id = '')
     {
         if (empty($data)) {
-            $data = $this->getDataGencode('FP_NAV', [], [
+            $data = $this->getDataGencode('FP_NAV', !empty($id) ? ['id' => $id] : [], [
                 'idx' => 'id',
                 'value' => 'id',
                 'label' => 'pgm_value',
@@ -54,6 +56,7 @@ class FrontPageController extends BaseController
                 'parent' => 'pgm_parent',
                 'tags' => 'pgm_desc2',
                 'dmsShared' => 'pgm_desc3|bool',
+                'order' => 'pgm_order',
             ], [
                 'pgm_order' => 'asc',
                 'id' => 'asc'
@@ -67,14 +70,8 @@ class FrontPageController extends BaseController
             'desc' => 'pgm_desc2',
         ]);
 
-        // return $pages;
-
-        // Sort $pages by 'index' before merging
-        // usort($pages, function ($a, $b) {
-        //     return ($a['index'] ?? 0) <=> ($b['index'] ?? 0);
-        // });
-
         $hasil = [];
+        $keyOrderForms = 1;
         foreach ($data as &$navItem) {
             $filterData = array_filter($pages, function ($page) use ($navItem) {
                 return $page['value'] == $navItem['linkto'];
@@ -83,10 +80,12 @@ class FrontPageController extends BaseController
 
             $navItem['is_main'] = isset($filterData) && count($filterData) > 0 ? array_values($filterData)[0]['is_main'] : 0;
             $navItem['pages'] = count($filterData) > 0 ? array_values($filterData)[0] : [];
-            $navItem['forms'] = $formController->viewByID((int) $navItem['linkto'])->getOriginalContent()['data']['value'] ?? [];
-            if (isset($navItem['children']) && count($navItem['children']) > 0 && is_array($navItem['children'])) {
-                $navItem['children'] = $this->getNavMenu($navItem['children'])->getOriginalContent()['data'] ?? [];
-            }
+            // $navItem['forms'] = $formController->viewByID((int) $navItem['linkto'])->getOriginalContent()['data']['value'] ?? [];
+            // if (isset($navItem['children']) && count($navItem['children']) > 0 && is_array($navItem['children'])) {
+            //     $navItem['children'] = $this->getNavMenu($navItem['children'])->getOriginalContent()['data'] ?? [];
+            // }
+
+            $navItem['forms'] = [];
 
             if (!empty($navItem['tags'])) {
                 $formController = app(FormController::class);
@@ -106,20 +105,20 @@ class FrontPageController extends BaseController
                     // Push the requested object structure as an associative array
                     $value = $valueDataForms;
                     $resultForm[] = [
-                        'idx' => (string)($value['id'] ?? $navItem['idx'] ?? ''),
-                        'value' => (string)($value['id'] ?? $navItem['idx'] ?? ''),
+                        'idx' => (string) ($value['id'] ?? $navItem['idx'] ?? ''),
+                        'value' => (string) ($value['id'] ?? $navItem['idx'] ?? ''),
                         'label' => $value['cfmt_title'] ?? '',
                         'icon' => 'label',
                         'type' => 'page',
-                        'linkto' => (string)($value['id'] ?? '#'),
-                        'page' => (string)($value['id'] ?? '#'),
-                        'url' => (string)($value['id'] ?? '#'),
+                        'linkto' => (string) ($value['id'] ?? '#'),
+                        'page' => (string) ($value['id'] ?? '#'),
+                        'url' => (string) ($value['id'] ?? '#'),
                         'forms' => $formController->viewByID((int) ($value['id']))->getOriginalContent()['data']['value'] ?? [],
                     ];
                 }
 
                 // $navItem['children'] = $resultForm ?? [];
-                $navItem['children'] = $resultForm ;
+                $navItem['children'] = $resultForm;
                 // $navItem['children'] = $this->getNavMenu($navItem['children'])->getOriginalContent()['data'] ?? [];
             }
         }
@@ -194,6 +193,36 @@ class FrontPageController extends BaseController
         }
     }
 
+    public function updateOrderNav(Request $request)
+    {
+        $data = $request->validate([
+            'id' => 'required|integer',
+            'order' => 'required|integer',
+            'parentID' => 'nullable|integer',
+        ]);
+
+        $datas = PortalGencode::where('id', $data['id'])->first();
+
+        if (!$datas) {
+            return $this->handleError('Navigation item not found', 404);
+        } else {
+            $checkPrevOrder = PortalGencode::where('pgm_parent', $data['parentID'])
+                ->where('pgm_order', $data['order'])
+                ->first();
+
+            if ($checkPrevOrder) {
+                $checkPrevOrder->pgm_order = $datas->pgm_order;
+                $checkPrevOrder->save();
+            }
+
+            $datas->pgm_order = $data['order'];
+
+            $datas->save();
+        }
+
+        return $this->handleResponse([], 'Navigation order updated successfully');
+    }
+
     public function updateMainPage($id, $state)
     {
         $gencode = PortalGencode::updateOrCreate(
@@ -215,7 +244,7 @@ class FrontPageController extends BaseController
         return $this->handleResponse($gencode, 'Main page content updated successfully');
     }
 
-    public function getMainConf()
+    public function getMainConf($id = '')
     {
         $data = $this->getDataGencode('FP_GENERAL_CONF', !empty($id) ? ['id' => $id] : [], [
             'keys' => 'pgm_value',
@@ -391,7 +420,8 @@ class FrontPageController extends BaseController
         return $this->handleResponse($newPost, 'Post copied successfully');
     }
 
-    public function getNavAssignedDMS() {
+    public function getNavAssignedDMS()
+    {
         $data = $this->getDataGencode('FP_NAV', ['pgm_desc3' => '1'], [
             'idx' => 'id',
             'value' => 'id',
@@ -425,6 +455,7 @@ class FrontPageController extends BaseController
             }
 
             $hasil[] = [
+                'id' => $value['idx'],
                 'label' => $value['label'],
                 'icon' => $value['icon'],
                 'idPage' => $value['page'],
@@ -437,5 +468,179 @@ class FrontPageController extends BaseController
         } else {
             return $this->handleResponse($hasil, 'Navigation menu retrieved successfully');
         }
+    }
+
+    public function saveDMStoFrontPage(Request $request)
+    {
+        $data = $request->validate([
+            'idPage' => 'required|array',
+            'idPage.*' => 'required|string',
+            'sharedData' => 'required|array|min:1',
+            'options' => 'required|array',
+            'options.createPage' => 'required|boolean',
+            'userId' => 'required|string',
+            'editedShared' => 'array',
+        ]);
+
+        // return $data;
+
+        // Check Navigation Menu and get the forms
+        $listSelectedNav = [];
+        foreach ($data['idPage'] as $idPage) {
+            $getNav = $this->getNavMenu([], true, $idPage)->getOriginalContent();
+            if ($getNav['status']) {
+                $getEditedShared = array_filter($data['editedShared'], function ($item) use ($idPage) {
+                    return $item['formId'] == $idPage;
+                });
+
+                $getNavDetail = $this->getDataGencode('FP_NAV', ['id' => $idPage], [
+                    'code' => 'pgm_code',
+                    'name' => 'pgm_value',
+                    'icon' => 'pgm_value2',
+                    'idForm' => 'pgm_value3',
+                    'type' => 'pgm_desc',
+                    'parent' => 'pgm_parent',
+                ], [], true) ?? null;
+
+                $getNavDetailID = $getNavDetail['idForm'] ?? null;
+
+                // Combine existing files with new sharedData
+                if (!empty($getEditedShared)) {
+                    $editedSharedItem = array_values($getEditedShared)[0];
+                    $mergedFiles = array_merge($editedSharedItem['files'] ?? [], $data['sharedData']);
+                    $editedSharedItem['files'] = $mergedFiles;
+                    // $listSelectedNav[] = $editedSharedItem;
+                }
+
+                $formMaster = FormMaster::where('cfmt_id', $getNavDetailID)
+                    ->where('cfm_type', 'files')
+                    ->first();
+
+                if ($formMaster) {
+                    $formMaster->update([
+                        'cfm_content' => json_encode([
+                            'files' => $editedSharedItem['files'] ?? [],
+                            'orderBy' => 'created_at',
+                            'order' => 'desc',
+                            'layout' => 'grid',
+                            'maxShow' => 5,
+                            'username' => 'deny-rachmat@sumitronics.co.jp',
+                            'mode' => 'all',
+                        ]),
+                    ]);
+
+                    $idForm = FormMasterTitle::where('id', $formMaster->cfmt_id)->first()->id ?? null;
+                } else {
+                    $storeHeaderForm = FormMasterTitle::create([
+                        'cfmt_title' => 'DMS Shared - ' . ($getNavDetail['name'] ?? 'No Name'),
+                        'cfmt_quiz_flag' => 2,
+                        'p_u_username' => $request->header('username'),
+                    ]);
+
+                    $storeRow = FormMaster::create([
+                        'cfmt_id' => $storeHeaderForm->id,
+                        'cfm_type' => 'row',
+                        'cfm_seq_name' => '1',
+                        'cfm_parent_id' => 0,
+                        'p_u_username' => $request->header('username'),
+                    ]);
+
+                    $formsCreate = FormMaster::create([
+                        'cfmt_id' => $storeHeaderForm->id,
+                        'cfm_type' => 'files',
+                        'cfm_content' => json_encode([
+                            'files' => $data['sharedData'] ?? [],
+                            'orderBy' => 'created_at',
+                            'order' => 'desc',
+                            'layout' => 'grid',
+                            'maxShow' => 5,
+                            'username' => '',
+                            'mode' => 'all',
+                        ]),
+                        'cfm_parent_id' => $storeRow->id,
+                        'cfm_seq_name' => '1',
+                        'p_u_username' => $request->header('username'),
+                    ]);
+
+                    $idForm = $storeHeaderForm->id;
+                }
+
+                PortalGencode::updateOrCreate(
+                    [
+                        'pgm_code' => 'FP_NAV',
+                        'pgm_value' => $getNavDetail['name'],
+                        // 'pgm_value3' => (string)$idForm,
+                    ],
+                    [
+                        'pgm_code' => 'FP_NAV',
+                        'pgm_value' => $getNavDetail['name'],
+                        'pgm_value2' => $getNavDetail['icon'] ?? null,
+                        'pgm_value3' => (string) $idForm,
+                        'pgm_desc' => 'page',
+                        'pgm_parent' => $getNavDetail['parent'] ?? null,
+                        'pgm_desc3' => '1', // Mark as DMS Shared
+                    ]
+                );
+
+                // If Create new navigation based on files
+                if ($data['options']['createPage']) {
+                    foreach ($data['sharedData'] as $keyFiles => $valueFiles) {
+                        if ($valueFiles['type'] == 'file') {
+                            $getSharedFiles = DMSShareDet::where('ddm_id', $valueFiles['id'])->first();
+
+                            if (!empty($getSharedFiles)) {
+                                $storeHeaderForm = FormMasterTitle::create([
+                                    'cfmt_title' => 'DMS Shared - ' . ($valueFiles['editValue'] ?? $valueFiles['ddm_doc_name']),
+                                    'cfmt_quiz_flag' => 2,
+                                    'p_u_username' => $request->header('username'),
+                                ]);
+
+                                $storeRow = FormMaster::create([
+                                    'cfmt_id' => $storeHeaderForm->id,
+                                    'cfm_type' => 'row',
+                                    'cfm_seq_name' => '1',
+                                    'cfm_parent_id' => 0,
+                                    'p_u_username' => $request->header('username'),
+                                ]);
+
+                                $formsCreate = FormMaster::create([
+                                    'cfmt_id' => $storeHeaderForm->id,
+                                    'cfm_type' => 'html',
+                                    'cfm_content' => '<p><iframe width="100%" style="border: none;height: 80vh;" src="https://mozilla.github.io/pdf.js/web/viewer.html?file=https%3A%2F%2Fapi.sumitronics-indonesia.com%2Fapi%2Fdms%2FdocumentsRoots%2FgetSharedFilesFolder%2F' . $getSharedFiles->ddfus_token . '%2F' . $getSharedFiles->id . '"></iframe></p>',
+                                    'cfm_parent_id' => $storeRow->id,
+                                    'cfm_seq_name' => '1',
+                                    'p_u_username' => $request->header('username'),
+                                ]);
+
+                                PortalGencode::updateOrCreate(
+                                    [
+                                        'pgm_code' => 'FP_NAV',
+                                        'pgm_value' => $valueFiles['editValue'] ?? $valueFiles['ddm_doc_name'],
+                                        'pgm_value3' => (string) $storeRow->id,
+                                    ],
+                                    [
+                                        'pgm_code' => 'FP_NAV',
+                                        'pgm_value' => $valueFiles['editValue'] ?? $valueFiles['ddm_doc_name'],
+                                        'pgm_value2' => 'file_open',
+                                        'pgm_value3' => (string) $storeHeaderForm->id,
+                                        'pgm_desc' => 'page',
+                                        'pgm_parent' => $idPage ?? null,
+                                        'pgm_desc3' => '0', // Mark as DMS Shared
+                                    ]
+                                );
+                            }
+                        }
+                    }
+                }
+
+                $listSelectedNav[] = $getNavDetailID;
+            }
+        }
+
+        // return $listSelectedNav;
+        // Process the data as needed, e.g., save to database
+        // For demonstration, we'll just return the received data
+
+        return $this->handleResponse($listSelectedNav, 'DMS items saved to front page successfully');
     }
 }

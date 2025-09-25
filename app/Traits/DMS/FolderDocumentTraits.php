@@ -65,14 +65,12 @@ trait FolderDocumentTraits
             'dfm_id',
             'p_u_username',
             'ddm_id',
-            // 'ddfus_p_u_username',
         )
 
             ->groupBy(
                 'dfm_id',
                 'p_u_username',
                 'ddm_id',
-                // 'ddfus_p_u_username'
             );
 
         $getShared = (clone $getSharedHeader)->whereIn('ddfus_p_u_username', [$users, 'all'])
@@ -92,7 +90,7 @@ trait FolderDocumentTraits
         // return $getShared;
         $dataShared = [];
 
-        if ($isFetchShared) {
+        if ($isFetchShared && $idParentFolder == 0) {
             foreach ($getShared as $item) {
                 // If Shared is Folder
                 if (!empty($item['dfm_id'])) {
@@ -125,7 +123,19 @@ trait FolderDocumentTraits
             }
         }
 
-        $dataFolder = $dataFolder->get()->map(function ($item) {
+        $formsCheck = FormMaster::where('cfm_type', 'files')->get();
+        $listFilesOnForms = [];
+        foreach ($formsCheck as $form) {
+            $files[$form->cfmt_id] = [
+                'idForms' => $form->cfmt_id,
+                'files' => json_decode($form->cfm_content)->files ?? []
+            ];
+            if (is_array($files[$form->cfmt_id]['files'])) {
+                $listFilesOnForms[] = $files[$form->cfmt_id];
+            }
+        }
+
+        $dataFolder = $dataFolder->get()->map(function ($item) use ($listFilesOnForms) {
             $sharePointData = $this->getDataGencode('DMS_SHAREPOINT_SHARED', [
                 'pgm_value' => $item->id,
             ], [
@@ -133,9 +143,19 @@ trait FolderDocumentTraits
                 'url' => 'pgm_value3|string'
             ], [], true);
 
+            $idNya = $item->id;
+
+            // return $listFilesOnForms;
+            $filterByID = array_values(array_filter($listFilesOnForms, function ($valueDet) use ($idNya) {
+                return count(array_filter($valueDet['files'], function ($file) use ($idNya) {
+                    return $file->id == $idNya;
+                })) > 0;
+            }));
+
             return array_merge(
                 $item->toArray(),
                 [
+                    'sent_to_fp' => $filterByID,
                     'from_sharepoint' => $sharePointData ? true : false,
                     'sites' => $sharePointData ? json_decode($sharePointData['sites']) : '',
                     'url' => $sharePointData['url'] ?? '',
@@ -157,7 +177,6 @@ trait FolderDocumentTraits
                     return isset($item['type']) && $item['type'] === 'file';
                 }
             )),
-            'shared' => $dataShared,
             'author' => $this->getAliasFolderbyAuthor($author, 'user')
         ];
     }
@@ -186,7 +205,19 @@ trait FolderDocumentTraits
             $dataFiles->whereNull('dfm_id');
         }
 
-        return $dataFiles->get()->map(function ($item) use ($id, $sharedOnly) {
+        $formsCheck = FormMaster::where('cfm_type', 'files')->get();
+        $listFilesOnForms = [];
+        foreach ($formsCheck as $form) {
+            $files[$form->cfmt_id] = [
+                'idForms' => $form->cfmt_id,
+                'files' => json_decode($form->cfm_content)->files ?? []
+            ];
+            if (is_array($files[$form->cfmt_id]['files'])) {
+                $listFilesOnForms[] = $files[$form->cfmt_id];
+            }
+        }
+
+        return $dataFiles->get()->map(function ($item) use ($id, $sharedOnly, $listFilesOnForms) {
             $sharePointData = $this->getDataGencode('DMS_SHAREPOINT_SHARED', [
                 'pgm_value' => $item->id,
             ], [
@@ -198,12 +229,21 @@ trait FolderDocumentTraits
             if ($sharedOnly) {
                 $dataShared = DMSShareDet::where('ddm_id', $item->id)
                     ->first()
-                    ?->toArray();
+                        ?->toArray();
             }
+
+            $idNya = $item->id;
+
+            $filterByID = array_values(array_filter($listFilesOnForms, function ($valueDet) use ($idNya) {
+                return count(array_filter($valueDet['files'], function ($file) use ($idNya) {
+                    return $file->id == $idNya;
+                })) > 0;
+            }));
 
             return array_merge(
                 $item->toArray(),
                 [
+                    'sent_to_fp' => $filterByID,
                     'type' => 'file',
                     'from_sharepoint' => $sharePointData ? true : false,
                     'sites' => $sharePointData ? json_decode($sharePointData['sites']) : '',

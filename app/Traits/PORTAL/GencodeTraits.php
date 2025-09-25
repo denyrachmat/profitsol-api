@@ -39,6 +39,7 @@ trait GencodeTraits
 
         if (!empty($selectAs) && count($selectAs) > 0) {
             $hasil = [];
+            $keyOrderForms = 1;
             foreach ($hasilnya as $key => $value) {
                 foreach ($selectAs as $keySel => $valueSel) {
                     $splitTypeString = explode('|', $valueSel);
@@ -71,7 +72,7 @@ trait GencodeTraits
                                     $value[$selectStr]
                                 );
                             }
-                        } elseif(!is_array($value[$selectStr])) {
+                        } elseif (!is_array($value[$selectStr])) {
                             $hasil[$key][$keysCheck] = (string) $value[$selectStr];
                             if (count($splitTypeString) > 1) {
                                 if ($splitTypeString[1] === 'int') {
@@ -82,6 +83,14 @@ trait GencodeTraits
                                     $hasil[$key][$keysCheck] = (string) $value[$selectStr];
                                 }
                             }
+                        }
+                    }
+
+                    if ($keySel === 'order') {
+                        if (empty($value[$keySel])) {
+                            $hasil[$key][$keySel] = $keyOrderForms++;
+                        } else {
+                            $hasil[$key][$keySel] = (int) $value[$keySel];
                         }
                     }
                 }

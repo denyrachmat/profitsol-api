@@ -112,6 +112,7 @@ Route::group(['prefix' => 'fpmanager'], function () {
     Route::get('getNavMenu', [FrontPageController::class, 'getNavMenuFromAPI']);
     Route::get('getNavMenu/{id}', [FrontPageController::class, 'getNavMenuFromAPI']);
     Route::put('updateMainPage/{id}/{state}', [FrontPageController::class, 'updateMainPage']);
+    Route::post('updateOrderNavMenu', [FrontPageController::class, 'updateOrderNav']);
 
     Route::delete('deleteNavMenu/{id}', [FrontPageController::class, 'deleteNavMenu']);
     Route::get('getNavConf', [FrontPageController::class, 'getNavConf']);
@@ -125,6 +126,7 @@ Route::group(['prefix' => 'fpmanager'], function () {
     Route::get('publishPost/{id}/{state?}', [FrontPageController::class, 'publishPost']);
 
     Route::get('getNavAssignedDMS', [FrontPageController::class, 'getNavAssignedDMS']);
+    Route::post('saveDMStoFrontPage', [FrontPageController::class, 'saveDMStoFrontPage']);
 });
 
 Route::group(['prefix' => 'ams'], function () {
