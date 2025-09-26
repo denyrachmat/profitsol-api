@@ -102,6 +102,7 @@ class HSCodeUploadController extends BaseController
 
     public function exportData(Request $request, $withHist = false)
     {
+        ini_set('max_execution_time', '300');
         Excel::store(new ExportHSCodeReport($request->filter, $withHist), 'export_hscode.xlsx', 'public');
 
         return 'storage/export_hscode.xlsx';
@@ -233,6 +234,7 @@ class HSCodeUploadController extends BaseController
 
     public function HSCodeFilter(Request $request): array
     {
+        ini_set('memory_limit', '2048M');
         $data = HSCodeUplMaster::join('CRPTWEB.dbo.VIEW_MITM_TBL', 'MITM_ITMCD', 'HSCD_ITMCD');
 
         if ($request->has('select')) {
@@ -245,7 +247,9 @@ class HSCodeUploadController extends BaseController
             })) > 0
         ) {
             foreach ($request->filter as $key => $value) {
-                $data->where($value['cols'], $value['param'], $value['param'] === 'like' ? "%{$value['value']}%" : $value['value']);
+                if (isset($value['value'])) {
+                    $data->where($value['cols'], $value['param'], $value['param'] === 'like' ? "%{$value['value']}%" : $value['value']);
+                }
             }
         }
 

@@ -161,7 +161,7 @@ Route::group(['prefix' => 'dms'], function () {
 
     Route::resource('folders', FolderController::class);
     Route::group(['prefix' => 'folderList'], function () {
-        Route::get('list/{username}/{root}/{id?}/{isFetchAll?}', [FolderController::class, 'showList']);
+        Route::get('list/{username}/{root}/{idParent?}/{isFetchAll?}/{id?}', [FolderController::class, 'showList']);
     });
     Route::get('migrateToDB/{users}/{path?}/{isCheck?}', [FolderController::class, 'migrateRealFileToDB']);
     // Tester
