@@ -346,7 +346,7 @@ class ExportHSCodeReport implements FromCollection, WithHeadings, WithEvents
                 'QC_HSCODE' => $value['QC_HSCODE'],
                 'COMPARE_STAT' => $value['HSCD_DIFFERENCE'],
                 'INPUT_USERS' => $value['INPUT_USERS'],
-                'INPUT_DATE' => $value['INPUT_DATE'],
+                'INPUT_DATE' => $value['INPUT_DATE'] ?? '-',
                 'HSCD_LASTAPPRV' => $value['HSCD_LASTAPPRV'],
                 'HSCD_APPRVDT' => $value['HSCD_APPRVDT'],
                 'QC_APRVDT' => $value['QC_APRVDT']
