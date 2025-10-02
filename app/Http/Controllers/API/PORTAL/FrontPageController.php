@@ -80,10 +80,11 @@ class FrontPageController extends BaseController
 
             $navItem['is_main'] = isset($filterData) && count($filterData) > 0 ? array_values($filterData)[0]['is_main'] : 0;
             $navItem['pages'] = count($filterData) > 0 ? array_values($filterData)[0] : [];
+            $navItem['url'] = count($filterData) > 0 ? (string)array_values($filterData)[0]['url'] : '';
             // $navItem['forms'] = $formController->viewByID((int) $navItem['linkto'])->getOriginalContent()['data']['value'] ?? [];
-            // if (isset($navItem['children']) && count($navItem['children']) > 0 && is_array($navItem['children'])) {
-            //     $navItem['children'] = $this->getNavMenu($navItem['children'])->getOriginalContent()['data'] ?? [];
-            // }
+            if (isset($navItem['children']) && count($navItem['children']) > 0 && is_array($navItem['children'])) {
+                $navItem['children'] = $this->getNavMenu($navItem['children'])->getOriginalContent()['data'] ?? [];
+            }
 
             $navItem['forms'] = [];
 
@@ -91,7 +92,7 @@ class FrontPageController extends BaseController
                 $formController = app(FormController::class);
                 $formShowDataResponse = $formController->show(
                     'post',
-                    base64_encode($navItem['tags']),
+                    base64_encode(json_encode(json_decode($navItem['tags'], true))),
                     5,
                     [],
                     true
@@ -120,6 +121,8 @@ class FrontPageController extends BaseController
                 // $navItem['children'] = $resultForm ?? [];
                 $navItem['children'] = $resultForm;
                 // $navItem['children'] = $this->getNavMenu($navItem['children'])->getOriginalContent()['data'] ?? [];
+
+                // $navItem['tagsList'] = $formShowDataResponse;
             }
         }
 

@@ -456,7 +456,10 @@ class FormController extends BaseController
             if (count($orderBy) > 0) {
                 foreach ($orderBy as $order) {
                     foreach ($order as $field => $direction) {
-                        $dataBuild->orderBy($field, $direction);
+                        // Remove quotes from field and direction if they exist
+                        $cleanField = trim($field, '"');
+                        $cleanDirection = trim($direction, '"');
+                        $dataBuild->orderBy($cleanField, $cleanDirection);
                     }
                 }
             }
@@ -516,6 +519,7 @@ class FormController extends BaseController
                     false
                 );
 
+                $parsedTags = [];
                 if (!empty($tags)) {
                     $decodedTags = base64_decode($tags);
                     $parsedTags = json_decode($decodedTags, true);
@@ -534,18 +538,20 @@ class FormController extends BaseController
                         $hasil[] = array_merge($value, [
                             'url' => $getDataGencode['url'] ?? '',
                             'desc' => $getDataGencode['desc'] ?? '',
-                            'is_main' => !empty($getDataGencode['is_main']) ?$getDataGencode['is_main'] : '0',
+                            'is_main' => !empty($getDataGencode['is_main']) ? $getDataGencode['is_main'] : '0',
                             'is_published' => $getPublished && $getPublished['is_published'] ? 1 : 0,
                             'tags' => $getTags,
+                            'parsed_tags' => $parsedTags,
                         ]);
                     }
                 } else {
                     $hasil[] = array_merge($value, [
                         'url' => $getDataGencode['url'] ?? '',
                         'desc' => $getDataGencode['desc'] ?? '',
-                        'is_main' => !empty($getDataGencode['is_main']) ?$getDataGencode['is_main'] : '0',
+                        'is_main' => !empty($getDataGencode['is_main']) ? $getDataGencode['is_main'] : '0',
                         'is_published' => $getPublished && $getPublished['is_published'] ? 1 : 0,
                         'tags' => $getTags,
+                        'parsed_tags' => $parsedTags,
                     ]);
                 }
             }
@@ -702,12 +708,102 @@ class FormController extends BaseController
         ])->with(['quizSetup', 'shared'])->where('id', $id)
             ->first();
 
-        if (!$data) {
-            return response([
-                'status' => false,
-                'message' => 'Form not found'
-            ]);
+        // return $data;
+
+        if ($data->isQuiz === 2 || $data->isQuiz === 3) {
+            $dataBuild = formMasterTitle::with(['quizSetup', 'shared']);
+            $query = (clone $dataBuild)->where('cfmt_quiz_flag', $id === 'page' ? 2 : 3);
+            // if ($showMax > 0) {
+            //     $query->limit($showMax);
+            // }
+            $data = (clone $query)->get()->toArray();
+
+            $hasil = [];
+            foreach ($data as $key => $value) {
+                $getDataGencode = $this->getDataGencode(
+                    'URL_PAGE_GEN',
+                    ['pgm_value' => $value['id']],
+                    [
+                        'url' => 'pgm_desc|string',
+                        'desc' => 'pgm_desc2|string',
+                        'is_main' => 'pgm_value2|string',
+                    ],
+                    [],
+                    true,
+                    false
+                );
+
+                $getTags = [];
+                if ($id === 'post') {
+                    $getTagsData = $this->getDataGencode(
+                        'FP_TAGS_LIST',
+                        ['pgm_value' => $value['id']],
+                        [
+                            'tags' => 'pgm_value2|string',
+                            'tags_desc' => 'pgm_desc|string',
+                        ],
+                        [],
+                        false,
+                        false
+                    );
+                    $getTags = [];
+                    if (!empty($getTagsData)) {
+                        foreach ($getTagsData as $tagItem) {
+                            if (isset($tagItem['tags'])) {
+                                $getTags[] = $tagItem['tags'];
+                            }
+                        }
+                    }
+                }
+
+                $getPublished = $this->getDataGencode(
+                    'FP_PUBLISH_POSTS',
+                    ['pgm_value' => $value['id']],
+                    [
+                        'is_published' => 'pgm_value2|date',
+                    ],
+                    $request->orderBy ?? [],
+                    true,
+                    false
+                );
+
+                if (!empty($tags)) {
+                    $decodedTags = base64_decode($tags);
+                    $parsedTags = json_decode($decodedTags, true);
+                    if (is_array($parsedTags) && count($parsedTags) > 0) {
+                        // Only include if any tag in $parsedTags exists in $getTags
+                        if (!array_intersect($parsedTags, $getTags)) {
+                            continue;
+                        }
+                    }
+                }
+
+                // return $parsedTags;
+
+                if ($getPublished && $getPublished['is_published']) {
+                    $hasil[] = array_merge($value, [
+                        'url' => $getDataGencode['url'] ?? '',
+                        'desc' => $getDataGencode['desc'] ?? '',
+                        'is_main' => !empty($getDataGencode['is_main']) ? $getDataGencode['is_main'] : '0',
+                        'is_published' => $getPublished && $getPublished['is_published'] ? 1 : 0,
+                        'tags' => $getTags,
+                    ]);
+                }
+            }
+
+            if (!$data) {
+                return response([
+                    'status' => false,
+                    'message' => 'Form not found'
+                ]);
+            } else {
+                return response([
+                    'status' => count($hasil) > 0,
+                    'data' => $hasil
+                ]);
+            }
         }
+
 
         $hasilHeader = $this->getHeaderAllForms([$data->toArray()]);
 
@@ -720,6 +816,31 @@ class FormController extends BaseController
             'status' => count($hasil) > 0,
             'data' => $hasil
         ]);
+    }
+
+    public function viewBySlug($slug)
+    {
+        // Check if slug is an integer
+        if (is_numeric($slug) && ctype_digit($slug)) {
+            $checkByID = $this->viewByID($slug)->getOriginalContent();
+
+            if ($checkByID['status'] == true) {
+                return $checkByID;
+            }
+        }
+
+        $getGencode = PortalGencode::where('pgm_code', 'URL_PAGE_GEN')
+            ->where('pgm_desc', $slug)
+            ->first();
+
+        if (!$getGencode) {
+            return response([
+                'status' => false,
+                'message' => 'Form not found'
+            ]);
+        }
+
+        return $this->viewByID($getGencode->pgm_value)->getOriginalContent();
     }
 
     public function updateAMSMapping(Request $request, $id)
