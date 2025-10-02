@@ -181,6 +181,7 @@ Route::group(['prefix' => 'cms'], function () {
     Route::get('getConnectedMRS/{id}', [FormController::class, 'getConnectedMRS']);
     Route::get('viewByLinkForm/{link}', [FormController::class, 'viewByLinkForm']);
     Route::get('viewByID/{id}', [FormController::class, 'viewByID']);
+    Route::get('viewBySlug/{id}', [FormController::class, 'viewBySlug']);
     Route::post('showHistory/{id}', [FormController::class, 'showHistory']);
     Route::post('updateApprovalStatus', [FormController::class, 'updateAMSMapping']);
     Route::post('sendApproval', [FormController::class, 'sendApproval']);
