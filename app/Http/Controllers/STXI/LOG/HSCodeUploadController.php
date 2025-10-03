@@ -200,6 +200,8 @@ class HSCodeUploadController extends BaseController
 
         if ($request->has('select')) {
             $data->select($request->select);
+        } else {
+            $data->select('HSCD_UPL_TBL.*');
         }
 
         if (
