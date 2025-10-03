@@ -22,15 +22,17 @@ class ExportHSCodeQueue implements ShouldQueue
     public $filter;
     public $withHist;
     public $type;
+    public $username;
 
     /**
      * Create a new job instance.
      */
-    public function __construct($filter, $withHist = false, $type = 'excel')
+    public function __construct($filter, $withHist = false, $type = 'excel', $username = '')
     {
         $this->filter = $filter;
         $this->withHist = $withHist;
         $this->type = $type;
+        $this->username = $username;
     }
 
     /**
@@ -38,12 +40,13 @@ class ExportHSCodeQueue implements ShouldQueue
      */
     public function handle(): void
     {
-        ini_set('max_execution_time', '300');
+        ini_set('max_execution_time', '3000');
 
         $codeQueue = 'HSC_' . uniqid() . '_' . rand(1000, 9999);
 
         Redis::publish('portalv2', json_encode([
             'app' => 'hs_code',
+            'username' => $this->username,
             'message' => 'start download HS Code export now...',
             'type' => 'info',
             'status' => 'hs_code_export_start',
@@ -105,6 +108,7 @@ class ExportHSCodeQueue implements ShouldQueue
         
         Redis::publish('portalv2', json_encode([
             'app' => 'hs_code',
+            'username' => $this->username,
             'message' => 'HS Code export done, download will start shortly.',
             'type' => 'success',
             'status' => 'hs_code_export_done',

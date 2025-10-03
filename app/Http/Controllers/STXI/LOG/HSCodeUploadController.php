@@ -17,6 +17,7 @@ use App\Models\STXI\LOG\HSCodeGroupBeaDetail;
 use App\Exports\STXI\LOG\ExportHSCodeReport;
 use App\Traits\AMS\ApprovalActionTraits;
 use App\Http\Requests\AMS\ApprovalRunningApproveActionRequest;
+use App\Jobs\STXI\LOG\ExportHSCodeQueue;
 
 class HSCodeUploadController extends BaseController
 {
@@ -102,10 +103,8 @@ class HSCodeUploadController extends BaseController
 
     public function exportData(Request $request, $withHist = false)
     {
-        ini_set('max_execution_time', '300');
-        Excel::store(new ExportHSCodeReport($request->filter, $withHist), 'export_hscode.xlsx', 'public');
-
-        return 'storage/export_hscode.xlsx';
+        ExportHSCodeQueue::dispatch($request->filter, $withHist, 'excel', $request->username)->onQueue('hsCodeDownloader');
+        return 'Export in queue, you will be notified when it is ready to download';
     }
 
     public function exportDataWithHistory() {
@@ -114,6 +113,9 @@ class HSCodeUploadController extends BaseController
 
     public function exportDataPDF(Request $request)
     {
+        ExportHSCodeQueue::dispatch($request->filter, false, 'pdf', $request->username)->onQueue('hsCodeDownloader');
+        return 'Export in queue, you will be notified when it is ready to download';
+
         $arrReq = array_merge($request->all(), [
             'select' => [
                 '*'
