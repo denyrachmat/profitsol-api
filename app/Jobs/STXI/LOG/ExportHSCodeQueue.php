@@ -122,7 +122,7 @@ class ExportHSCodeQueue implements ShouldQueue
     {
         ini_set('memory_limit', '2048M');
         $data = HSCodeUplMaster::join(DB::raw('CRPTWEB.dbo.VIEW_MITM_TBL as vm'), 'vm.MITM_ITMCD', '=', 'HSCD_ITMCD')
-            ->join(DB::raw('(SELECT MITM_ITMCD FROM MGSVR.VMI_DB.dbo.Z_STXI_VW_ITEM_AGE WHERE LATEST_PO_DATE IS NOT NULL AND DAYS_DIFF <= 1095) as zs'), 'zs.MITM_ITMCD', '=', 'HSCD_ITMCD');
+            ->join(DB::raw('(SELECT DISTINCT MITM_ITMCD FROM MGSVR.VMI_DB.dbo.Z_STXI_VW_ITEM_AGE WHERE LATEST_PO_DATE IS NOT NULL AND DAYS_DIFF <= 1095) as zs'), 'zs.MITM_ITMCD', '=', 'HSCD_ITMCD');
 
         if ($request->has('select')) {
             $data->select($request->select);
