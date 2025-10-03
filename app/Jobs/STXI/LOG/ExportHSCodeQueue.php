@@ -7,6 +7,7 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
+use Illuminate\Support\Facades\DB;
 
 use Excel;
 use Redis;
@@ -120,7 +121,8 @@ class ExportHSCodeQueue implements ShouldQueue
     public function HSCodeFilter(Request $request): array
     {
         ini_set('memory_limit', '2048M');
-        $data = HSCodeUplMaster::join('CRPTWEB.dbo.VIEW_MITM_TBL', 'MITM_ITMCD', 'HSCD_ITMCD');
+        $data = HSCodeUplMaster::join(DB::raw('CRPTWEB.dbo.VIEW_MITM_TBL as vm'), 'vm.MITM_ITMCD', '=', 'HSCD_ITMCD')
+            ->join(DB::raw('(SELECT * FROM MGSVR.VMI_DB.dbo.Z_STXI_VW_ITEM_AGE WHERE LATEST_PO_DATE IS NOT NULL) as zs'), 'zs.MITM_ITMCD', '=', 'HSCD_ITMCD');
 
         if ($request->has('select')) {
             $data->select($request->select);
