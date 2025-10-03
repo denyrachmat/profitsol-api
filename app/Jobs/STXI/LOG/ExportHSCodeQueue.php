@@ -126,6 +126,8 @@ class ExportHSCodeQueue implements ShouldQueue
 
         if ($request->has('select')) {
             $data->select($request->select);
+        } else {
+            $data->select(['HSCD_UPL_TBL.*', 'vm.*']);
         }
 
         if (
