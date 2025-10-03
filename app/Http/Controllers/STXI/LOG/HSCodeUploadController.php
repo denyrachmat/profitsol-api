@@ -195,8 +195,8 @@ class HSCodeUploadController extends BaseController
     public function HSCodeFilter(Request $request): array
     {
         ini_set('memory_limit', '2048M');
-        $data = HSCodeUplMaster::join('CRPTWEB.dbo.VIEW_MITM_TBL', 'MITM_ITMCD', 'HSCD_ITMCD')
-            ->join(DB::raw('(SELECT * FROM MGSVR.VMI_DB.dbo.Z_STXI_VW_ITEM_AGE WHERE LATEST_PO_DATE IS NOT NULL)'), 'MITM_ITMCD', 'HSCD_ITMCD');
+        $data = HSCodeUplMaster::join(DB::raw('CRPTWEB.dbo.VIEW_MITM_TBL as vm'), 'vm.MITM_ITMCD', 'HSCD_ITMCD')
+            ->join(DB::raw('(SELECT * FROM MGSVR.VMI_DB.dbo.Z_STXI_VW_ITEM_AGE WHERE LATEST_PO_DATE IS NOT NULL) zs'), 'zs.MITM_ITMCD', 'HSCD_ITMCD');
 
         if ($request->has('select')) {
             $data->select($request->select);
