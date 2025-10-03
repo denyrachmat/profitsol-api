@@ -115,49 +115,6 @@ class HSCodeUploadController extends BaseController
     {
         ExportHSCodeQueue::dispatch($request->filter, false, 'pdf', $request->username)->onQueue('hsCodeDownloader');
         return 'Export in queue, you will be notified when it is ready to download';
-
-        $arrReq = array_merge($request->all(), [
-            'select' => [
-                '*'
-            ],
-            'with' => 'insw_reg'
-        ]);
-
-        $data = $this->HSCodeFilter(new Request($arrReq));
-
-        $hasil = [];
-        foreach ($data as $keyData => $valueData) {
-            $listImport = '';
-            $listImportPost = '';
-            if (count($valueData['insw_reg']) > 0) {
-                $arrImport = [];
-                $arrImportPost = [];
-                foreach ($valueData['insw_reg'] as $keyInswReg => $valueInswReg) {
-                    if ($valueInswReg['ZIRD_TYPE'] == 'import_regulation') {
-                        $arrImport[] = '- '.$valueInswReg['ZIRD_NMIJIN'];
-                    }
-
-                    if ($valueInswReg['ZIRD_TYPE'] == 'import_regulation_post_border') {
-                        $arrImportPost[] = '- '.$valueInswReg['ZIRD_NMIJIN'];
-                    }
-                }
-
-                $listImport = implode("<br>", $arrImport);
-                $listImportPost = implode("<br>", $arrImportPost);
-            }
-
-            $hasil[] = array_merge($valueData, [
-                'LIST_IMPORT' => $listImport,
-                'LIST_IMPORT_POST' => $listImportPost
-            ]);
-        }
-
-        $pdf = PDF::loadView('STXI/LOG/hsCodeDraft', ['data' => $hasil])->setOrientation('landscape');
-        $datetime = date('y-m-d his');
-
-        // return view('STXI/LOG/hsCodeDraft', ['data' => $data]);
-
-        return $pdf->download("hscode_draft_" . $datetime . ".pdf");
     }
 
     public function testHeaderData()
