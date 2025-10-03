@@ -10,6 +10,7 @@ use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 use Illuminate\Http\File;
 use Illuminate\Support\Facades\Http;
 use PDF;
+use Illuminate\Support\Facades\DB;
 
 use App\Models\STXI\LOG\HSCodeUplMaster;
 use App\Models\STXI\LOG\HSCodeGroupBeaDetail;
@@ -194,7 +195,8 @@ class HSCodeUploadController extends BaseController
     public function HSCodeFilter(Request $request): array
     {
         ini_set('memory_limit', '2048M');
-        $data = HSCodeUplMaster::join('CRPTWEB.dbo.VIEW_MITM_TBL', 'MITM_ITMCD', 'HSCD_ITMCD');
+        $data = HSCodeUplMaster::join('CRPTWEB.dbo.VIEW_MITM_TBL', 'MITM_ITMCD', 'HSCD_ITMCD')
+            ->join(DB::raw('(SELECT * FROM MGSVR.VMI_DB.dbo.Z_STXI_VW_ITEM_AGE WHERE LATEST_PO_DATE IS NOT NULL)'), 'MITM_ITMCD', 'HSCD_ITMCD');
 
         if ($request->has('select')) {
             $data->select($request->select);
