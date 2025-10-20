@@ -372,7 +372,7 @@ trait FolderDocumentTraits
     {
         // return [$this->getAliasFolderbyAuthor($author, 'root'), $path === '' ? $this->getAliasFolderbyAuthor($author) : $path];
         $data = Storage::disk($this->getAliasFolderbyAuthor($author, 'root', $root))->directories($path === '' ? $this->getAliasFolderbyAuthor($author) : $path);
-        // return $path === '' ? $this->getAliasFolderbyAuthor($author) : $path;
+        // return $this->getAliasFolderbyAuthor($author, 'root', $root);
 
         // return $data;
         $kunci = 1;
@@ -389,11 +389,11 @@ trait FolderDocumentTraits
             $kunci++;
         }
 
-        if ($parentKey === 0) {
+        if ($parentKey == 0) {
             return [
                 'key' => 0,
                 'folders_name' => $path,
-                'list_files' => Storage::disk($this->getAliasFolderbyAuthor($author, 'root', $root))->files($pathDet),
+                'list_files' => Storage::disk($this->getAliasFolderbyAuthor($author, 'root', $root))->files($path),
                 'children' => $hasil
             ];
         }
@@ -407,24 +407,34 @@ trait FolderDocumentTraits
             $data = [$this->convertFolderPathToArray($author, $path, 0, [], $root)];
         }
 
+        // return $data;
+
         $hasil = [];
+        $listUpdatedData = [];
         foreach ($data as $key => $value) {
+            // If Folders
+            $cekParent = null;
+            $idFolder = null;
             if (empty($value['folders_name'])) {
-                $idFolder = null;
                 $hasilTemp = [
                     'status' => 'Inserted successfully !',
                     'children' => count($value['children']) > 0 ? $this->migrateFolderToDB($author, '', $value['children'], $root) : []
                 ];
             } else {
-
                 $expFolder = explode('/', $value['folders_name']);
 
-                $dataDBFolder = DMSFolderMstr::where('dfm_folder_name', $expFolder[count($expFolder) - 1])->first();
-
-                $cekParent = null;
                 if (count($expFolder) > 1) {
-                    $cekParent = DMSFolderMstr::where('dfm_folder_name', $expFolder[count($expFolder) - 2])->orderBy('id', 'desc')->first();
+                    $cekParent = DMSFolderMstr::where('dfm_folder_name', $expFolder[count($expFolder) - 2])
+                        ->where('p_u_username', $author)
+                        ->orderBy('id', 'desc')
+                        ->first();
                 }
+
+                $dataDBFolder = DMSFolderMstr::where('dfm_folder_name', $expFolder[count($expFolder) - 1])
+                    ->where('dfm_parent_id', !empty($cekParent) ? $cekParent->id : null)
+                    ->where('p_u_username', $author)
+                    ->where('dfm_root_mstr', $root)
+                    ->first();
 
                 $checkParent = !empty($cekParent) && count($expFolder) > 1
                     ? $cekParent->id
@@ -442,36 +452,56 @@ trait FolderDocumentTraits
                         $insert->toArray(),
                         [
                             'status' => 'Inserted successfully !',
+                            'folderName' => $expFolder[count($expFolder) - 1],
+                            'parents' => $expFolder[count($expFolder) - 2] ?? null,
+                            'created_data' => [
+                                'p_u_username' => $author,
+                                'dfm_folder_name' => $expFolder[count($expFolder) - 1],
+                                'dfm_parent_id' => $checkParent,
+                                'dfm_root_mstr' => $root
+                            ],
                             'children' => count($value['children']) > 0 ? $this->migrateFolderToDB($author, '', $value['children'], $root) : []
                         ]
                     );
+
+                    $listUpdatedData[] = array_merge($insert->toArray(), ['type' => 'folder']);
                 } else {
                     $idFolder = $dataDBFolder->id;
-                    $checkParent2 = DMSFolderMstr::where('id', $idFolder)->where('dfm_parent_id', $checkParent)->first();
+                    $listUpdatedData[] = array_merge($dataDBFolder->toArray(), ['type' => 'folder']);
+                    // $checkParent2 = DMSFolderMstr::where('id', $idFolder)->where('dfm_parent_id', $checkParent)->first();
 
-                    $update = DMSFolderMstr::create([
-                        'p_u_username' => $author,
-                        'dfm_folder_name' => $expFolder[count($expFolder) - 1],
-                        'dfm_parent_id' => $checkParent,
-                        'dfm_root_mstr' => $root
-                    ]);
+                    // $update = DMSFolderMstr::create([
+                    //     'p_u_username' => $author,
+                    //     'dfm_folder_name' => $expFolder[count($expFolder) - 1],
+                    //     'dfm_parent_id' => $checkParent,
+                    //     'dfm_root_mstr' => $root
+                    // ]);
 
-                    $idFolder = $update->id;
+                    // $idFolder = $update->id;
                     $hasilTemp = array_merge(
                         $dataDBFolder->toArray(),
                         [
-                            'status' => 'Alredy exists !',
-                            'update' => $update,
+                            'status' => 'Folder Already exists !',
                             'children' => count($value['children']) > 0 ? $this->migrateFolderToDB($author, '', $value['children'], $root) : []
                         ]
                     );
                 }
             }
 
+            // If Files
             $files = [];
             foreach ($value['list_files'] as $keyFile => $valueFile) {
                 $expFile = explode('/', $valueFile);
-                $dataDBFile = DMSDocMstr::where('ddm_doc_real_name', $expFile[count($expFile) - 1])->first();
+                $dataDBFileCheck = DMSDocMstr::where('ddm_doc_real_name', $expFile[count($expFile) - 1])
+                    ->where('p_u_username', $author);
+
+                if (!empty($idFolder)) {
+                    $dataDBFileCheck->where('dfm_id', $idFolder);
+                } else {
+                    $dataDBFileCheck->whereNull('dfm_id');
+                }
+
+                $dataDBFile = $dataDBFileCheck->first();
 
                 $getRealName = $expFile[count($expFile) - 1];
                 $docName = 'DMS_' . Str::random(50) . '.' . explode(".", $getRealName)[count(explode(".", $getRealName)) - 1];
@@ -491,16 +521,10 @@ trait FolderDocumentTraits
                             'status' => 'Inserted successfully !'
                         ]
                     );
+
+                    $listUpdatedData[] = array_merge($insertFile->toArray(), ['type' => 'file']);
                 } else {
-                    $insertFile = DMSDocMstr::where('id', $dataDBFile->id)->create([
-                        'p_u_username' => $author,
-                        'dfm_id' => $idFolder,
-                        'ddm_doc_name' => $getRealName,
-                        'ddm_doc_real_name' => $getRealName,
-                        'ddm_doc_size' => 0,
-                        'ddm_doc_flag' => 0,
-                        'dfm_root_mstr' => $root
-                    ]);
+                    $listUpdatedData[] = array_merge($dataDBFile->toArray(), ['type' => 'file']);
                     $files[] = array_merge(
                         $dataDBFile->toArray(),
                         [
@@ -518,7 +542,36 @@ trait FolderDocumentTraits
             );
         }
 
-        return $hasil;
+        // Remove Data Not in List
+        $folderNames = array_column(array_filter($listUpdatedData, function ($item) {
+            return $item['type'] == 'folder';
+        }), 'dfm_folder_name');
+
+        $fileNames = array_column(array_filter($listUpdatedData, function ($item) {
+            return $item['type'] == 'file';
+        }), 'ddm_doc_real_name');
+
+        if (count($folderNames) > 0) {
+            $dataDBFolder = DMSFolderMstr::whereNotIn('dfm_folder_name', $folderNames)
+                ->where('dfm_parent_id', !empty($cekParent) ? $cekParent->id : null)
+                ->where('p_u_username', $author)
+                ->where('dfm_root_mstr', $root)
+                ->delete();
+        }
+
+        if (count($fileNames) > 0) {
+            $dataDBFile = DMSDocMstr::whereNotIn('ddm_doc_real_name', $fileNames)
+                ->where('dfm_id', $idFolder)
+                ->where('p_u_username', $author)
+                ->where('dfm_root_mstr', $root)
+                ->delete();
+        }
+
+        return [
+            'data' => $hasil,
+            'listFolderFile' => $folderNames,
+            'listFile' => $fileNames
+        ];
     }
 
     public function dbSyncToRealDoc($author, $root = '')
@@ -721,6 +774,8 @@ trait FolderDocumentTraits
     public function getSharedFilesFolder($token, $sharedId = '', $users = 'all')
     {
         $data = $this->getSharedToken($token, $sharedId, $users);
+
+        // return $data;
 
         if (count($data) > 0) {
             $hasil = [];

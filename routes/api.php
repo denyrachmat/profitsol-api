@@ -127,6 +127,8 @@ Route::group(['prefix' => 'fpmanager'], function () {
 
     Route::get('getNavAssignedDMS', [FrontPageController::class, 'getNavAssignedDMS']);
     Route::post('saveDMStoFrontPage', [FrontPageController::class, 'saveDMStoFrontPage']);
+
+    Route::post('subscribe', [FrontPageController::class, 'subscribePosts']);
 });
 
 Route::group(['prefix' => 'ams'], function () {

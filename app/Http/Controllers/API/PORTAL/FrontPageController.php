@@ -353,6 +353,47 @@ class FrontPageController extends BaseController
         return $this->handleResponse($getTags, 'Tags saved successfully');
     }
 
+    public function saveHashTags(Request $request)
+    {
+        $data = $request->validate([
+            'id' => 'required|integer',
+            'hashtags' => 'required|array',
+        ]);
+
+        $getTags = [];
+        foreach ($data['hashtags'] as $tag) {
+            $getTags[] = PortalGencode::updateOrCreate(
+                [
+                    'pgm_code' => 'FP_HASHTAGS_LIST',
+                    'pgm_value' => $request->id,
+                ],
+                [
+                    'pgm_value' => $request->id,
+                    'pgm_value2' => $tag,
+                    'pgm_desc' => 'Hashtags assignment',
+                ]
+            )->toArray();
+        }
+
+        return $this->handleResponse($getTags, 'Hashtags saved successfully');
+    }
+
+    public function removeHashTag($id, $tag)
+    {
+        $gencode = PortalGencode::where('pgm_code', 'FP_HASHTAGS_LIST')
+            ->where('pgm_value', $id)
+            ->where(DB::raw('CAST(pgm_value2 AS VARCHAR)'), $tag)
+            ->first();
+
+        if (!$gencode) {
+            return $this->handleError('Hashtag not found', 404);
+        }
+
+        $gencode->delete();
+
+        return $this->handleResponse([], 'Hashtag removed successfully');
+    }
+
     public function removeTag($id, $tag)
     {
         $gencode = PortalGencode::where('pgm_code', 'FP_TAGS_LIST')
@@ -645,5 +686,31 @@ class FrontPageController extends BaseController
         // For demonstration, we'll just return the received data
 
         return $this->handleResponse($listSelectedNav, 'DMS items saved to front page successfully');
+    }
+
+    public function subscribePosts(Request $request) : \Illuminate\Http\JsonResponse {
+        $validated = $request->validate([
+            'type' => 'required|string|in:users,categories,tags,all',
+            'id' => 'required|string',
+            'user_id' => 'required|string',
+        ]);
+
+        PortalGencode::updateOrCreate(
+            [
+                'pgm_code' => 'FP_SUBSCRIBE_POSTS',
+                'pgm_value' => $validated['type'],
+                'pgm_value2' => $validated['id'],
+                'pgm_value3' => $validated['user_id'],
+            ],
+            [
+                'pgm_code' => 'FP_SUBSCRIBE_POSTS',
+                'pgm_value' => $validated['type'],
+                'pgm_value2' => $validated['id'],
+                'pgm_value3' => $validated['user_id'],
+                'pgm_desc' => 'Subscription to post',
+            ]
+        );
+
+        return response()->json(['message' => 'Subscribed to post successfully'], 200);
     }
 }

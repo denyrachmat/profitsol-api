@@ -126,9 +126,6 @@ class DocumenRootController extends BaseController
     }
 
     public function folderFilesSync($users, $root) {
-        DMSFolderMstr::where('dfm_root_mstr', $root)->delete();
-        DMSDocMstr::where('dfm_root_mstr', $root)->delete();
-
         return $this->migrateFolderToDB($users, '', [], $root);
     }
 

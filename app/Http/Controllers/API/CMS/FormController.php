@@ -334,13 +334,32 @@ class FormController extends BaseController
                 $key,
             );
 
+            $listValForSubscribers = [];
             if ($request->has('tags') && !empty($request->tags)) {
                 app('App\Http\Controllers\API\PORTAL\FrontPageController')->saveTags(new Request([
                     'id' => $insertMaster->id,
                     'tags' => $request->tags,
                     'username' => $request->header('username'),
                 ]));
+
+                foreach ($request->tags as $key => $valueCat) {
+                    $listValForSubscribers[] = ['type' => 'categories', 'value' => $valueCat, 'user_id' => $request->header('username')];
+                }
             }
+
+            if ($request->has('hashtags') && !empty($request->hashtags)) {
+                app('App\Http\Controllers\API\PORTAL\FrontPageController')->saveHashTags(new Request([
+                    'id' => $insertMaster->id,
+                    'hashtags' => $request->hashtags,
+                    'username' => $request->header('username'),
+                ]));
+
+                foreach ($request->tags as $key => $valueCat) {
+                    $listValForSubscribers[] = ['type' => 'tags', 'value' => $valueCat, 'user_id' => $request->header('username')];
+                }
+            }
+
+            $listValForSubscribers[] = ['type' => 'users', 'value' => $request->header('username'), 'user_id' => $request->header('username')];
         }
 
         return $this->handleResponse([
@@ -434,7 +453,7 @@ class FormController extends BaseController
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function show($id, $tags = '', $showMax = 0, $orderBy = [], $isPublisedOnly = false)
+    public function show($id, $tags = '', $showMax = 10, $orderBy = [], $isPublisedOnly = false, $isPaginated = false, $page = 1)
     {
         // return [$id, $tags, $showMax, $orderBy];
         $dataBuild = formMasterTitle::with(['quizSetup', 'shared']);
@@ -447,9 +466,13 @@ class FormController extends BaseController
                     $f->with('allChildrenContent.formDetail.formAnswer');
                     $f->orderBy('cfm_seq_name', 'asc');
                 }
-            ])->where('cfmt_quiz_flag', 1)->get();
+            ])->where('cfmt_quiz_flag', 1)
+                ->get();
         } elseif ($id === 'page' || $id === 'post') {
-            if ($showMax > 0) {
+
+            $dataBuild->where('cfmt_quiz_flag', $id === 'page' ? 2 : 3);
+
+            if ($showMax > 0 && !$isPaginated) {
                 $dataBuild->limit($showMax);
             }
 
@@ -464,14 +487,17 @@ class FormController extends BaseController
                 }
             }
 
-            $query = (clone $dataBuild)->where('cfmt_quiz_flag', $id === 'page' ? 2 : 3);
-            if ($showMax > 0) {
-                $query->limit($showMax);
+            if ($isPaginated && $showMax > 0) {
+                $data = $dataBuild->paginate((int) $showMax, ['*'], 'page', $page);
+            } else {
+                $data = $dataBuild->get();
             }
-            $data = (clone $query)->get()->toArray();
 
             $hasil = [];
-            foreach ($data as $key => $value) {
+            // Handle pagination vs regular collection
+            $items = $isPaginated ? $data->items() : $data;
+
+            foreach ($items as $key => $value) {
                 $getDataGencode = $this->getDataGencode(
                     'URL_PAGE_GEN',
                     ['pgm_value' => $value['id']],
@@ -535,25 +561,54 @@ class FormController extends BaseController
 
                 if ($isPublisedOnly) {
                     if ($getPublished && $getPublished['is_published']) {
-                        $hasil[] = array_merge($value, [
+                        $hasil[] = array_merge($value->toArray(), [
                             'url' => $getDataGencode['url'] ?? '',
                             'desc' => $getDataGencode['desc'] ?? '',
                             'is_main' => !empty($getDataGencode['is_main']) ? $getDataGencode['is_main'] : '0',
-                            'is_published' => $getPublished && $getPublished['is_published'] ? 1 : 0,
+                            'is_published' => $getPublished ? 1 : 0,
                             'tags' => $getTags,
                             'parsed_tags' => $parsedTags,
                         ]);
                     }
                 } else {
-                    $hasil[] = array_merge($value, [
+                    $hasil[] = array_merge($value->toArray(), [
                         'url' => $getDataGencode['url'] ?? '',
                         'desc' => $getDataGencode['desc'] ?? '',
                         'is_main' => !empty($getDataGencode['is_main']) ? $getDataGencode['is_main'] : '0',
-                        'is_published' => $getPublished && $getPublished['is_published'] ? 1 : 0,
+                        'is_published' => $getPublished ? 1 : 0,
                         'tags' => $getTags,
                         'parsed_tags' => $parsedTags,
                     ]);
                 }
+            }
+
+            // If paginated, include pagination meta data
+            if ($isPaginated) {
+                // Convert $hasil to collection and paginate
+                $collection = collect($hasil);
+                $total = $collection->count();
+                $currentPage = $page;
+                $perPage = (int) $showMax;
+                $offset = ($currentPage - 1) * $perPage;
+                $items = $collection->slice($offset, $perPage)->values();
+
+                // Create pagination manually
+                $lastPage = ceil($total / $perPage);
+                $from = $offset + 1;
+                $to = min($offset + $perPage, $total);
+
+                $hasil = $items->toArray();
+                return [
+                    'data' => $hasil,
+                    'pagination' => [
+                        'current_page' => $currentPage,
+                        'last_page' => $lastPage,
+                        'per_page' => $perPage,
+                        'total' => $total,
+                        'from' => $from,
+                        'to' => $to,
+                    ]
+                ];
             }
 
             return $hasil;
@@ -589,7 +644,15 @@ class FormController extends BaseController
 
     public function showDetail(Request $request)
     {
-        return $this->show($request->id, $request->tags ?? '', $request->showMax ?? 0, $request->orderBy ?? []);
+        return $this->show(
+            $request->id,
+            $request->tags ?? '',
+            $request->limit ?? 5,
+            $request->orderBy ?? [],
+            $request->isPublisedOnly ?? false,
+            $request->isPaginated ?? false,
+            $request->page ?? 1
+        );
     }
 
     /**
@@ -697,7 +760,7 @@ class FormController extends BaseController
         ]);
     }
 
-    public function viewByID($id)
+    public function viewByID($id, $username = '')
     {
         $data = formMasterTitle::with([
             'formMaster' => function ($f) {
@@ -705,60 +768,53 @@ class FormController extends BaseController
                 $f->with('formDetail.formAnswer');
                 $f->with('allChildrenContent.formDetail.formAnswer');
             }
-        ])->with(['quizSetup', 'shared'])->where('id', $id)
+        ])->with(['quizSetup', 'shared'])
+            ->where('id', $id)
             ->first();
 
-        // return $data;
+        // return response($data);
 
-        if ($data->isQuiz === 2 || $data->isQuiz === 3) {
-            $dataBuild = formMasterTitle::with(['quizSetup', 'shared']);
-            $query = (clone $dataBuild)->where('cfmt_quiz_flag', $id === 'page' ? 2 : 3);
-            // if ($showMax > 0) {
-            //     $query->limit($showMax);
-            // }
-            $data = (clone $query)->get()->toArray();
+        if ($data->cfmt_quiz_flag == 2 || $data->cfmt_quiz_flag == 3) {
+            $getDataGencode = $this->getDataGencode(
+                'URL_PAGE_GEN',
+                ['pgm_value' => $id],
+                [
+                    'url' => 'pgm_desc|string',
+                    'desc' => 'pgm_desc2|string',
+                    'is_main' => 'pgm_value2|string',
+                ],
+                [],
+                true,
+                false
+            );
 
-            $hasil = [];
-            foreach ($data as $key => $value) {
-                $getDataGencode = $this->getDataGencode(
-                    'URL_PAGE_GEN',
-                    ['pgm_value' => $value['id']],
+            if ($data->cfmt_quiz_flag == 3) {
+                $getTagsData = $this->getDataGencode(
+                    'FP_TAGS_LIST',
+                    ['pgm_value' => $id],
                     [
-                        'url' => 'pgm_desc|string',
-                        'desc' => 'pgm_desc2|string',
-                        'is_main' => 'pgm_value2|string',
+                        'tags' => 'pgm_value2|string',
+                        'tags_desc' => 'pgm_desc|string',
                     ],
                     [],
-                    true,
+                    false,
                     false
                 );
 
                 $getTags = [];
-                if ($id === 'post') {
-                    $getTagsData = $this->getDataGencode(
-                        'FP_TAGS_LIST',
-                        ['pgm_value' => $value['id']],
-                        [
-                            'tags' => 'pgm_value2|string',
-                            'tags_desc' => 'pgm_desc|string',
-                        ],
-                        [],
-                        false,
-                        false
-                    );
-                    $getTags = [];
-                    if (!empty($getTagsData)) {
-                        foreach ($getTagsData as $tagItem) {
-                            if (isset($tagItem['tags'])) {
-                                $getTags[] = $tagItem['tags'];
-                            }
+                if (!empty($getTagsData)) {
+                    foreach ($getTagsData as $tagItem) {
+                        if (isset($tagItem['tags'])) {
+                            $getTags[] = $tagItem['tags'];
                         }
                     }
                 }
 
+                // return response($getTags);
+
                 $getPublished = $this->getDataGencode(
                     'FP_PUBLISH_POSTS',
-                    ['pgm_value' => $value['id']],
+                    ['pgm_value' => $id],
                     [
                         'is_published' => 'pgm_value2|date',
                     ],
@@ -767,39 +823,58 @@ class FormController extends BaseController
                     false
                 );
 
-                if (!empty($tags)) {
-                    $decodedTags = base64_decode($tags);
-                    $parsedTags = json_decode($decodedTags, true);
-                    if (is_array($parsedTags) && count($parsedTags) > 0) {
-                        // Only include if any tag in $parsedTags exists in $getTags
-                        if (!array_intersect($parsedTags, $getTags)) {
-                            continue;
-                        }
-                    }
-                }
+                $hasil = null;
+                $includeResult = true;
+                // return response($getPublished);
 
-                // return $parsedTags;
+                $getSubscription = $this->getDataGencode(
+                    'FP_SUBSCRIBE_POSTS',
+                    ['pgm_value3' => $username],
+                    [
+                        'type' => 'pgm_value|string',
+                        'value' => 'pgm_value2|string',
+                        'user_id' => 'pgm_value3|string',
+                    ],
+                );
 
                 if ($getPublished && $getPublished['is_published']) {
-                    $hasil[] = array_merge($value, [
+                    $hasil = array_merge($data->toArray(), [
                         'url' => $getDataGencode['url'] ?? '',
                         'desc' => $getDataGencode['desc'] ?? '',
                         'is_main' => !empty($getDataGencode['is_main']) ? $getDataGencode['is_main'] : '0',
                         'is_published' => $getPublished && $getPublished['is_published'] ? 1 : 0,
                         'tags' => $getTags,
+                        'subscription' => $getSubscription
                     ]);
                 }
+            } else {
+                $hasil = array_merge($data->toArray(), [
+                    'url' => $getDataGencode['url'] ?? '',
+                    'desc' => $getDataGencode['desc'] ?? '',
+                    'is_main' => !empty($getDataGencode['is_main']) ? $getDataGencode['is_main'] : '0',
+                    'tags' => [],
+                    'subscription' => !empty($getSubscription) ? $getSubscription : []
+                ]);
             }
 
-            if (!$data) {
+            if (empty($hasil)) {
                 return response([
                     'status' => false,
                     'message' => 'Form not found'
                 ]);
             } else {
+                $hasilHeader = $this->getHeaderAllForms([$hasil]);
+
+                // return response($hasilHeader);
+
+                $hasils = [
+                    'label' => $hasilHeader[0]['title'] . ' (' . count($hasilHeader[0]['forms']) . ' Rows Content)',
+                    'value' => $hasilHeader[0]
+                ];
+
                 return response([
-                    'status' => count($hasil) > 0,
-                    'data' => $hasil
+                    'status' => count($hasils) > 0,
+                    'data' => $hasils
                 ]);
             }
         }
@@ -818,11 +893,11 @@ class FormController extends BaseController
         ]);
     }
 
-    public function viewBySlug($slug)
+    public function viewBySlug(Request $request, $slug)
     {
         // Check if slug is an integer
         if (is_numeric($slug) && ctype_digit($slug)) {
-            $checkByID = $this->viewByID($slug)->getOriginalContent();
+            $checkByID = $this->viewByID($slug, $request->header('username'))->getOriginalContent();
 
             if ($checkByID['status'] == true) {
                 return $checkByID;
@@ -840,7 +915,7 @@ class FormController extends BaseController
             ]);
         }
 
-        return $this->viewByID($getGencode->pgm_value)->getOriginalContent();
+        return $this->viewByID($getGencode->pgm_value,$request->header('username'))->getOriginalContent();
     }
 
     public function updateAMSMapping(Request $request, $id)
