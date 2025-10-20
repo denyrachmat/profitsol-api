@@ -21,6 +21,7 @@ class PortalNotif extends Model
         'pnm_start_date',
         'pnm_end_date',
         'pnm_is_read',
+        'pnm_notif_loc'
     ];
 
     public function shared()

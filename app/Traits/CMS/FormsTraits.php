@@ -113,6 +113,10 @@ trait FormsTraits
                 'shareFormsMenuIcon' => count((clone $shared)) > 0 && !empty((clone $shared)[0]->cfsd_role_id) ? (clone $shared)[0]->am_app_icon : '',
                 'shareFormsRoleID' => count((clone $shared)) > 0 && !empty((clone $shared)[0]->cfsd_role_id) ? array_values($roleList) : '',
                 'connectedMRS' => $this->getConnectedMRS((string) $value['id']),
+                'created_at' => $value['created_at'],
+                'tags' => $value['tags'] ?? [],
+                'p_u_username' => $value['p_u_username'] ?? '',
+                'subscription' => $value['subscription'] ?? [],
             ];
         }
 
