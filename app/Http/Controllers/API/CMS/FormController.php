@@ -453,10 +453,10 @@ class FormController extends BaseController
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function show($id, $tags = '', $showMax = 10, $orderBy = [], $isPublisedOnly = false, $isPaginated = false, $page = 1)
+    public function show($id, $tags = '', $showMax = 0, $orderBy = [], $isPublisedOnly = false, $isPaginated = false, $page = 1)
     {
-        // return [$id, $tags, $showMax, $orderBy];
-        $dataBuild = formMasterTitle::with(['quizSetup', 'shared']);
+        // return [$id, $tags, $showMax, $orderBy, $isPublisedOnly, $isPaginated, $page];
+        $dataBuild = formMasterTitle::select('cms_form_mstr_title.*', 'pgTags.pgm_value2 as tags')->with(['quizSetup', 'shared']);
 
         if ($id === 'quiz') {
             $data = (clone $dataBuild)->with([
@@ -469,12 +469,13 @@ class FormController extends BaseController
             ])->where('cfmt_quiz_flag', 1)
                 ->get();
         } elseif ($id === 'page' || $id === 'post') {
-
             $dataBuild->where('cfmt_quiz_flag', $id === 'page' ? 2 : 3);
 
-            if ($showMax > 0 && !$isPaginated) {
-                $dataBuild->limit($showMax);
-            }
+            $dataBuild->leftjoin(DB::raw('STX_PORTAL.dbo.portal_gencode_mstr as pgTags'), function ($join) {
+                $join->on(DB::raw('STX_CMS.dbo.cms_form_mstr_title.id'), '=', 'pgTags.pgm_value')
+                    ->where('pgTags.pgm_code', 'FP_TAGS_LIST')
+                    ->whereNotNull('pgTags.pgm_value2');
+            });
 
             if (count($orderBy) > 0) {
                 foreach ($orderBy as $order) {
@@ -482,22 +483,37 @@ class FormController extends BaseController
                         // Remove quotes from field and direction if they exist
                         $cleanField = trim($field, '"');
                         $cleanDirection = trim($direction, '"');
-                        $dataBuild->orderBy($cleanField, $cleanDirection);
+                        $dataBuild->orderBy(DB::raw('cms_form_mstr_title.' . $cleanField), $cleanDirection);
                     }
                 }
+            }
+
+            if ($isPublisedOnly) {
+                $data = $dataBuild->join(DB::raw('STX_PORTAL.dbo.portal_gencode_mstr as pg'), function ($join) {
+                    $join->on(DB::raw('STX_CMS.dbo.cms_form_mstr_title.id'), '=', 'pg.pgm_value')
+                        ->where('pg.pgm_code', 'FP_PUBLISH_POSTS')
+                        ->whereNotNull('pg.pgm_value2');
+                });
+            }
+
+            if (!empty($tags)) {
+                $decodedTags = base64_decode($tags);
+                $dataBuild->whereIn('pgTags.pgm_value2', json_decode($decodedTags, true));
             }
 
             if ($isPaginated && $showMax > 0) {
                 $data = $dataBuild->paginate((int) $showMax, ['*'], 'page', $page);
             } else {
+                if ($showMax > 0 && !$isPaginated) {
+                    $dataBuild->limit($showMax);
+                }
                 $data = $dataBuild->get();
             }
 
             $hasil = [];
-            // Handle pagination vs regular collection
-            $items = $isPaginated ? $data->items() : $data;
+            $items = $data;
 
-            foreach ($items as $key => $value) {
+            $hasil = $items->map(function ($value) use ($id, $tags, $isPublisedOnly, $orderBy, $isPaginated) {
                 $getDataGencode = $this->getDataGencode(
                     'URL_PAGE_GEN',
                     ['pgm_value' => $value['id']],
@@ -511,28 +527,7 @@ class FormController extends BaseController
                     false
                 );
 
-                $getTags = [];
-                if ($id === 'post') {
-                    $getTagsData = $this->getDataGencode(
-                        'FP_TAGS_LIST',
-                        ['pgm_value' => $value['id']],
-                        [
-                            'tags' => 'pgm_value2|string',
-                            'tags_desc' => 'pgm_desc|string',
-                        ],
-                        [],
-                        false,
-                        false
-                    );
-                    $getTags = [];
-                    if (!empty($getTagsData)) {
-                        foreach ($getTagsData as $tagItem) {
-                            if (isset($tagItem['tags'])) {
-                                $getTags[] = $tagItem['tags'];
-                            }
-                        }
-                    }
-                }
+                // return $value;
 
                 $getPublished = $this->getDataGencode(
                     'FP_PUBLISH_POSTS',
@@ -540,78 +535,35 @@ class FormController extends BaseController
                     [
                         'is_published' => 'pgm_value2|date',
                     ],
-                    $request->orderBy ?? [],
+                    [],
                     true,
                     false
                 );
 
-                $parsedTags = [];
-                if (!empty($tags)) {
-                    $decodedTags = base64_decode($tags);
-                    $parsedTags = json_decode($decodedTags, true);
-                    if (is_array($parsedTags) && count($parsedTags) > 0) {
-                        // Only include if any tag in $parsedTags exists in $getTags
-                        if (!array_intersect($parsedTags, $getTags)) {
-                            continue;
-                        }
-                    }
-                }
+                return array_merge($value->toArray(), [
+                    'url' => $getDataGencode['url'] ?? '',
+                    'desc' => $getDataGencode['desc'] ?? '',
+                    'is_main' => !empty($getDataGencode['is_main']) ? $getDataGencode['is_main'] : '0',
+                    'is_published' => $getPublished ? 1 : 0,
+                    'tags' => base64_decode($tags),
+                ]);
+            })->filter();
 
-                // return $parsedTags;
-
-                if ($isPublisedOnly) {
-                    if ($getPublished && $getPublished['is_published']) {
-                        $hasil[] = array_merge($value->toArray(), [
-                            'url' => $getDataGencode['url'] ?? '',
-                            'desc' => $getDataGencode['desc'] ?? '',
-                            'is_main' => !empty($getDataGencode['is_main']) ? $getDataGencode['is_main'] : '0',
-                            'is_published' => $getPublished ? 1 : 0,
-                            'tags' => $getTags,
-                            'parsed_tags' => $parsedTags,
-                        ]);
-                    }
-                } else {
-                    $hasil[] = array_merge($value->toArray(), [
-                        'url' => $getDataGencode['url'] ?? '',
-                        'desc' => $getDataGencode['desc'] ?? '',
-                        'is_main' => !empty($getDataGencode['is_main']) ? $getDataGencode['is_main'] : '0',
-                        'is_published' => $getPublished ? 1 : 0,
-                        'tags' => $getTags,
-                        'parsed_tags' => $parsedTags,
-                    ]);
-                }
-            }
-
-            // If paginated, include pagination meta data
             if ($isPaginated) {
-                // Convert $hasil to collection and paginate
-                $collection = collect($hasil);
-                $total = $collection->count();
-                $currentPage = $page;
-                $perPage = (int) $showMax;
-                $offset = ($currentPage - 1) * $perPage;
-                $items = $collection->slice($offset, $perPage)->values();
-
-                // Create pagination manually
-                $lastPage = ceil($total / $perPage);
-                $from = $offset + 1;
-                $to = min($offset + $perPage, $total);
-
-                $hasil = $items->toArray();
                 return [
-                    'data' => $hasil,
+                    'data' => array_values($hasil->toArray()),
                     'pagination' => [
-                        'current_page' => $currentPage,
-                        'last_page' => $lastPage,
-                        'per_page' => $perPage,
-                        'total' => $total,
-                        'from' => $from,
-                        'to' => $to,
+                        'current_page' => $items->currentPage(),
+                        'last_page' => $items->lastPage(),
+                        'per_page' => $items->perPage(),
+                        'total' => $items->total(),
+                        'from' => $items->firstItem(),
+                        'to' => $items->lastItem(),
                     ]
                 ];
             }
 
-            return $hasil;
+            return array_values($hasil->toArray());
         } else {
             $data = (clone $dataBuild)->with([
                 'formMaster' => function ($f) {
@@ -837,16 +789,14 @@ class FormController extends BaseController
                     ],
                 );
 
-                if ($getPublished && $getPublished['is_published']) {
-                    $hasil = array_merge($data->toArray(), [
-                        'url' => $getDataGencode['url'] ?? '',
-                        'desc' => $getDataGencode['desc'] ?? '',
-                        'is_main' => !empty($getDataGencode['is_main']) ? $getDataGencode['is_main'] : '0',
-                        'is_published' => $getPublished && $getPublished['is_published'] ? 1 : 0,
-                        'tags' => $getTags,
-                        'subscription' => $getSubscription
-                    ]);
-                }
+                $hasil = array_merge($data->toArray(), [
+                    'url' => $getDataGencode['url'] ?? '',
+                    'desc' => $getDataGencode['desc'] ?? '',
+                    'is_main' => !empty($getDataGencode['is_main']) ? $getDataGencode['is_main'] : '0',
+                    'is_published' => $getPublished && $getPublished['is_published'] ? 1 : 0,
+                    'tags' => $getTags,
+                    'subscription' => $getSubscription
+                ]);
             } else {
                 $hasil = array_merge($data->toArray(), [
                     'url' => $getDataGencode['url'] ?? '',
@@ -915,7 +865,7 @@ class FormController extends BaseController
             ]);
         }
 
-        return $this->viewByID($getGencode->pgm_value,$request->header('username'))->getOriginalContent();
+        return $this->viewByID($getGencode->pgm_value, $request->header('username'))->getOriginalContent();
     }
 
     public function updateAMSMapping(Request $request, $id)

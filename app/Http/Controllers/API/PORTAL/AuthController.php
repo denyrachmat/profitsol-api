@@ -15,9 +15,11 @@ use Illuminate\Contracts\Hashing\Hasher as HasherContract;
 use App\Models\PORTAL\PortalEduDet;
 use App\Models\User;
 use App\Models\PORTAL\PortalApp;
+use App\Traits\PORTAL\GencodeTraits;
 
 class AuthController extends BaseController
 {
+    use GencodeTraits;
     public function __construct(HasherContract $hasher)
     {
         $this->hasher = $hasher;
@@ -60,6 +62,12 @@ class AuthController extends BaseController
             $cekUser = User::where('username', $request->username)->first();
             Auth::loginUsingId($cekUser->id, $request->has('remember') && $request->remember);
 
+            if ($cekUser->is_ms_checking == 1 && $request->isMSLogin !== true) {
+                return $this->handleError([
+                    'password' => ["This user set as MS Login only, please login using Microsoft Authentication !"]
+                ]);
+            }
+
             // return Auth::check();
             $auth = Auth::user();
             $edu = PortalEduDet::where('u_username', $auth->username)
@@ -88,6 +96,19 @@ class AuthController extends BaseController
             $success['rolesGroup'] = $getRolesGroup;
             $success['menus'] = PortalApp::where('am_app_parent', null)->with('childApps')->get();
             $success['is_ms_checking'] = $cekUser->is_ms_checking;
+            
+            // For checking gencode user update FP
+            $dataGencode = $this->getDataGencode(
+                'UPDATE_FP', 
+                ['pgm_value' => $username], 
+                [
+                    'ID_MENU' => 'pgm_value2|int'
+                ]);
+            
+            $success['is_fpconf'] = [];
+            foreach ($dataGencode as $key => $valueGencode) {
+                $success['is_fpconf'][] = app(\App\Http\Controllers\API\PORTAL\FrontPageController::class)->getFPMenu($valueGencode['ID_MENU'])->getOriginalContent()['data'][0] ?? [];
+            }
 
             if (count($getRolesGroup['roles']) === 0) {
                 return $this->handleError([

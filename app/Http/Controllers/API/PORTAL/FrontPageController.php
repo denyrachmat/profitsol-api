@@ -17,12 +17,23 @@ class FrontPageController extends BaseController
     use GencodeTraits;
     public function getFPMenu($id = '')
     {
-        $data = $this->getDataGencode('FP_CONF_MENU', [], [
-            'value' => 'pgm_value',
-            'label' => 'pgm_desc',
-            'icon' => 'pgm_value2',
-            'index' => 'pgm_value3',
-        ]);
+        if (empty($id)) {
+            $data = $this->getDataGencode('FP_CONF_MENU', [], [
+                'idx' => 'id',
+                'value' => 'pgm_value',
+                'label' => 'pgm_desc',
+                'icon' => 'pgm_value2',
+                'index' => 'pgm_value3',
+            ]);
+        } else {
+            $data = $this->getDataGencode('FP_CONF_MENU', ['id' => $id], [
+                'idx' => 'id',
+                'value' => 'pgm_value',
+                'label' => 'pgm_desc',
+                'icon' => 'pgm_value2',
+                'index' => 'pgm_value3',
+            ]);
+        }
 
         usort($data, function ($a, $b) {
             return ($a['index'] ?? 0) <=> ($b['index'] ?? 0);
@@ -80,7 +91,7 @@ class FrontPageController extends BaseController
 
             $navItem['is_main'] = isset($filterData) && count($filterData) > 0 ? array_values($filterData)[0]['is_main'] : 0;
             $navItem['pages'] = count($filterData) > 0 ? array_values($filterData)[0] : [];
-            $navItem['url'] = count($filterData) > 0 ? (string)array_values($filterData)[0]['url'] : '';
+            $navItem['url'] = count($filterData) > 0 ? (string) array_values($filterData)[0]['url'] : '';
             // $navItem['forms'] = $formController->viewByID((int) $navItem['linkto'])->getOriginalContent()['data']['value'] ?? [];
             if (isset($navItem['children']) && count($navItem['children']) > 0 && is_array($navItem['children'])) {
                 $navItem['children'] = $this->getNavMenu($navItem['children'])->getOriginalContent()['data'] ?? [];
@@ -688,7 +699,8 @@ class FrontPageController extends BaseController
         return $this->handleResponse($listSelectedNav, 'DMS items saved to front page successfully');
     }
 
-    public function subscribePosts(Request $request) : \Illuminate\Http\JsonResponse {
+    public function subscribePosts(Request $request): \Illuminate\Http\JsonResponse
+    {
         $validated = $request->validate([
             'type' => 'required|string|in:users,categories,tags,all',
             'id' => 'required|string',

@@ -9,9 +9,11 @@ use App\Models\User;
 use App\Models\PORTAL\PortalUserDet;
 
 use App\Http\Requests\PORTAL\usersControllerUpdateRequest;
+use App\Traits\PORTAL\GencodeTraits;
 
 class UsersController extends BaseController
 {
+    use GencodeTraits;
     /**
      * @OA\Get(
      *     path="/api/portal/users",
@@ -25,7 +27,22 @@ class UsersController extends BaseController
         $data = User::with('det')->orderBy('email')->get()->toArray();
 
         return $this->handleResponse(array_map(function ($item) {
-            $hasil = array_merge($item, $item['det']);
+            $dataGencode = $this->getDataGencode(
+                'UPDATE_FP', 
+                ['pgm_value' => $item['username']], 
+                [
+                    'ID_MENU' => 'pgm_value2|int'
+                ]);
+            
+            $dataFP = [];
+            foreach ($dataGencode as $key => $valueGencode) {
+                $dataFP[] = app(\App\Http\Controllers\API\PORTAL\FrontPageController::class)->getFPMenu($valueGencode['ID_MENU'])->getOriginalContent()['data'][0] ?? [];
+            }
+
+            $hasil = array_merge($item, $item['det'], [
+                'is_fpconf' => $dataFP
+            ]);
+            
             unset($hasil['det']);
 
             return $hasil;

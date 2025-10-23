@@ -63,12 +63,21 @@ class RoleController extends BaseController
     public function show(Request $request, $id)
     {
         $data = PortalRole::with('users_map')
-            ->with(['role_app_map' => function($query) use ($request) {
-                $query->whereNull('am_app_parent');
-                // $query->where('u_username', $request->header('username'));
-                $query->with('childRoles');
-            }, 'role_app_map.apps.childApps'])
+            ->with([
+                'role_app_map' => function ($query) use ($id) {
+                    $query->whereNull('am_app_parent');
+                    // $query->where('u_username', $request->header('username'));
+                    $query->with([
+                        'childRoles' => function ($queryChild) use ($id) {
+                        $queryChild->where('rm_role_id', $id);
+                        // $queryChild->where('u_username', $request->header('username'));
+                    }
+                    ]);
+                },
+                'role_app_map.apps.childApps'
+            ])
             ->find($id);
+
         return $this->handleResponse($data, 'Data found !');
     }
 
@@ -93,28 +102,37 @@ class RoleController extends BaseController
     public function update(RoleRequest $req, $id)
     {
         // return $req->all()['role_app_map'];
-        $update = PortalRole::where('id', $id)->update([
-            'u_username' => $req->u_username,
-            'rm_role_name' => $req->rm_role_name,
-            'rm_role_desc' => $req->rm_role_desc,
-        ]);
+        // $update = PortalRole::where('id', $id)->update([
+        //     'u_username' => $req->u_username,
+        //     'rm_role_name' => $req->rm_role_name,
+        //     'rm_role_desc' => $req->rm_role_desc,
+        // ]);
 
         if (count($req->role_app_map) > 0) {
-            PortalRoleAppMap::where('rm_role_id', $id)->where('u_username', $req->u_username)->delete();
+            PortalRoleAppMap::where('rm_role_id', $id)->delete();
             foreach ($req->role_app_map as $key => $valueRole) {
-                // PortalRoleAppMap::where('rm_role_id', $valueRole['rm_role_id'])->where('u_username', $valueRole['u_username'])->delete();
+                $checkExist = PortalRoleAppMap::where('rm_role_id', $valueRole['rm_role_id'])
+                    ->where('am_app_id', $valueRole['am_app_id'])
+                    ->first();
+
+                if ($checkExist) {
+                    PortalRoleAppMap::where('rm_role_id', $valueRole['rm_role_id'])
+                        ->where('am_app_id', $valueRole['am_app_id'])
+                        ->delete();
+                }
+
                 PortalRoleAppMap::create($valueRole);
             }
         }
 
         if (count($req->users_map) > 0) {
+            PortalRoleUserMap::where('rm_role_id', $req->id)->delete();
             foreach ($req->users_map as $key => $valueUsers) {
-                PortalRoleUserMap::where('rm_role_id', $valueUsers['rm_role_id'])->where('u_username', $valueUsers['u_username'])->delete();
                 PortalRoleUserMap::create($valueUsers);
             }
         }
 
-        return $this->handleResponse($update, 'Update Successfull !');
+        return $this->handleResponse([], 'Update Successfull !');
     }
 
     /**
