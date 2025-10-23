@@ -540,12 +540,30 @@ class FormController extends BaseController
                     false
                 );
 
+                $getTagsData = $this->getDataGencode(
+                    'FP_TAGS_LIST',
+                    ['pgm_value' => (string)$value['id']],
+                    [
+                        'tags' => 'pgm_value2',
+                    ],
+                    [],
+                );
+
+                $getTags = [];
+                if (!empty($getTagsData)) {
+                    foreach ($getTagsData as $tagItem) {
+                        if (isset($tagItem['tags'])) {
+                            $getTags[] = $tagItem['tags'];
+                        }
+                    }
+                }
+
                 return array_merge($value->toArray(), [
                     'url' => $getDataGencode['url'] ?? '',
                     'desc' => $getDataGencode['desc'] ?? '',
                     'is_main' => !empty($getDataGencode['is_main']) ? $getDataGencode['is_main'] : '0',
                     'is_published' => $getPublished ? 1 : 0,
-                    'tags' => base64_decode($tags),
+                    'tags' => $getTags ?? [],
                 ]);
             })->filter();
 
