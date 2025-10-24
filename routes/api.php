@@ -72,6 +72,16 @@ Route::get('phpinfo', function () {
     return phpinfo();
 });
 
+Route::get('/whoami', function () {
+    return [
+        'auth' => auth()->check(),
+        'user' => optional(auth()->user())->only('id','email'),
+        'secure' => request()->isSecure(),
+        'ip' => request()->ip(),
+        'host' => request()->getHost(),
+    ];
+})->middleware('auth:sanctum');
+
 Route::group(['prefix' => 'portal', 'middleware' => 'auth:sanctum', 'verify' => true], function () {
 
     // Settings Menu
