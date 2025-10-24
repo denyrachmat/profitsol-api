@@ -15,19 +15,29 @@ return [
     |
     */
 
-    'paths' => ['api/*', 'sanctum/csrf-cookie','login','logout','user'],
+    'paths' => ['api/*', 'sanctum/csrf-cookie', 'login', 'logout', 'user'],
 
-    'allowed_methods' => ['*'],
+    // 'allowed_methods' => ['*'],
 
-    'allowed_origins' => ['*'],
+    // 'allowed_origins' => ['*'],
 
     'allowed_origins_patterns' => [],
 
-    'allowed_headers' => ['*'], // this is the line i needed to update to solve the issue.
+    // 'allowed_headers' => ['*'], // this is the line i needed to update to solve the issue.
 
-    'exposed_headers' => ['*'],
+    'allowed_methods' => ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    'allowed_origins' => [
+        'https://portal.sumitronics-indonesia.com',
+        'https://intranet.sumitronics-indonesia.com',
+        'https://api.sumitronics-indonesia.com',
+        'http://localhost',
+        'http://127.0.0.1:9000',
+    ],
+    'allowed_headers' => ['X-Requested-With', 'Content-Type', 'X-XSRF-TOKEN', 'Authorization'],
 
-    'max_age' => 0,
+    'exposed_headers' => [],
+
+    'max_age' => 86400,
 
     'supports_credentials' => true,
 
