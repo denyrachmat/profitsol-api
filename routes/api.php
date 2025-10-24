@@ -82,7 +82,7 @@ Route::get('/whoami', function () {
     ];
 })->middleware('auth:sanctum');
 
-Route::group(['prefix' => 'portal', 'middleware' => ['auth:sanctum','verified']], function () {
+Route::group(['prefix' => 'portal'], function () {
 
     // Settings Menu
     Route::group(['prefix' => 'users'], function () {
