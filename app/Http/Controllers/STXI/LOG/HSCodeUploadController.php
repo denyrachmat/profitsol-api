@@ -268,7 +268,7 @@ class HSCodeUploadController extends BaseController
                     'params' => [
                         'HSCD_DOCNO' => $value['HSCD_DOCNO'],
                     ],
-                    'url' => 'http://192.168.100.32/public/api/div/log/updateApprovalHSCode'
+                    'url' => 'http://192.168.100.32/api/div/log/updateApprovalHSCode'
                     // 'url' => 'http://localhost/STX/stx-api/public/api/div/log/updateApprovalHSCode'
                 ],
                 'onDone' => [
@@ -277,7 +277,7 @@ class HSCodeUploadController extends BaseController
                         'HSCD_DOCNO' => $value['HSCD_DOCNO'],
                         'ISDONE' => 1
                     ],
-                    'url' => 'http://192.168.100.32/public/api/div/log/updateApprovalHSCode'
+                    'url' => 'http://192.168.100.32/api/div/log/updateApprovalHSCode'
                     // 'url' => 'http://localhost/STX/stx-api/public/api/div/log/updateApprovalHSCode'
                 ],
                 'msgkey' => 'HSCD_DOCNO'

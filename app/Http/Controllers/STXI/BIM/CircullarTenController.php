@@ -649,8 +649,8 @@ class CircullarTenController extends BaseController
         return $pdf;
         $dataMstr = CircularTenMstr::where('CIRTEN_TENIEI', $ten)->first();
         $storepdf = Storage::disk('local')->put('/public/circular_ten/' . $dataMstr->CIRTEN_NO . '/' . $ten . '.pdf', $pdf);
-        $target_url = 'http://192.168.100.32/public/api/'; // Write your URL here
-        $pathFile = 'http://192.168.100.32/public/storage/circular_ten/' . $dataMstr->CIRTEN_NO . '/' . $ten . '.pdf';
+        $target_url = 'http://192.168.100.32/api/'; // Write your URL here
+        $pathFile = 'http://192.168.100.32/storage/circular_ten/' . $dataMstr->CIRTEN_NO . '/' . $ten . '.pdf';
 
         // $cekData = DB::connection('sqlsrv_dms_old')->table('dms_doc_mstr')->where('doc_real_name', $ten . '.pdf')->first();
 
@@ -666,7 +666,7 @@ class CircullarTenController extends BaseController
 
             if (!empty($model) && !empty($sch) && !empty($reason) && !empty($content)) {
                 logger('start send to AMS');
-                $res = $client->request('POST', 'http://192.168.100.32/public/api/ams/approveAction', [
+                $res = $client->request('POST', 'http://192.168.100.32/api/ams/approveAction', [
                     'multipart' => [
                         [
                             'name' => 'username',
@@ -709,7 +709,7 @@ class CircullarTenController extends BaseController
                             'name' => 'downloadLinks[]',
                             'contents' => json_encode([
                                 'method' => 'get',
-                                'url' => 'http://192.168.100.32/public/api/dms/documents/{{$id}}',
+                                'url' => 'http://192.168.100.32/api/dms/documents/{{$id}}',
                             ]),
                             'headers' => ['Content-Type' => 'application/json']
                         ],

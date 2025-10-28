@@ -202,7 +202,7 @@ class SyncCirTentoOldDMS implements ShouldQueue
             $target_url = 'http://192.168.100.32:8081/stx_api/public/api/'; // Write your URL here
             // $pathFile = '../storage/app/public/circular_ten/' . $ten . '/' . $ten . '.pdf';
             // $pathFile = Storage::url('circular_ten/' . $ten . '/' . $ten . '.pdf');
-            $pathFile = 'http://192.168.100.32/public/storage/circular_ten/' . $ten . '/' . $ten . '.pdf';
+            $pathFile = 'http://192.168.100.32/storage/circular_ten/' . $ten . '/' . $ten . '.pdf';
 
             $cekData = DB::connection('sqlsrv_dms_old')->table('dms_doc_mstr')->where('doc_real_name', $ten . '.pdf')->first();
 
@@ -349,7 +349,7 @@ class SyncCirTentoOldDMS implements ShouldQueue
         $pdf = $this->generateDocument($ten, true);
         Storage::disk('local')->put('/public/circular_ten/' . $ten . '/' . $dataMstr->CIRTEN_NO . '-AUTOGEN-COVER.pdf', $pdf);
 
-        $pathFile = 'http://192.168.100.32/public/storage/circular_ten/' . $ten . '/' . $dataMstr->CIRTEN_NO . '-AUTOGEN-COVER.pdf';
+        $pathFile = 'http://192.168.100.32/storage/circular_ten/' . $ten . '/' . $dataMstr->CIRTEN_NO . '-AUTOGEN-COVER.pdf';
         $pathFile = str_replace(' ', '%20', $pathFile);
 
         $getTenlistData = CircularTenList::where('CTT_IEITENNO', $ten)->with('models')->first();
@@ -376,7 +376,7 @@ class SyncCirTentoOldDMS implements ShouldQueue
                         continue;
                     }
 
-                    $res = $client->request('POST', 'http://192.168.100.32/public/api/ams/approveAction', [
+                    $res = $client->request('POST', 'http://192.168.100.32/api/ams/approveAction', [
                         'multipart' => [
                             [
                                 'name' => 'username',
@@ -428,7 +428,7 @@ class SyncCirTentoOldDMS implements ShouldQueue
                                 'name' => 'downloadLinks[]',
                                 'contents' => json_encode([
                                     'method' => 'get',
-                                    'url' => 'http://192.168.100.32/public/api/dms/documents/{{$id}}',
+                                    'url' => 'http://192.168.100.32/api/dms/documents/{{$id}}',
                                 ]),
                                 'headers' => ['Content-Type' => 'application/json']
                             ],

@@ -540,6 +540,18 @@ class FormController extends BaseController
                     false
                 );
 
+                $getCategoriesUsers = $this->getDataGencode(
+                    'FP_CATEGORY_USERS_POSTS',
+                    ['pgm_value' => $value['p_u_username']],
+                    [
+                        'users_posts' => 'pgm_value|string',
+                        'note' => 'pgm_desc|string',
+                    ],
+                    [],
+                    true,
+                    false
+                );
+
                 $getTagsData = $this->getDataGencode(
                     'FP_TAGS_LIST',
                     ['pgm_value' => (string)$value['id']],
@@ -563,6 +575,7 @@ class FormController extends BaseController
                     'desc' => $getDataGencode['desc'] ?? '',
                     'is_main' => !empty($getDataGencode['is_main']) ? $getDataGencode['is_main'] : '0',
                     'is_published' => $getPublished ? 1 : 0,
+                    'categories_users' => $getCategoriesUsers ?? null,
                     'tags' => $getTags ?? [],
                 ]);
             })->filter();
@@ -928,7 +941,7 @@ class FormController extends BaseController
                     'amstd_token' => 'token',
                     'amshd_remarks' => 'Remarks',
                 ],
-                'url' => 'http://192.168.100.32/public/api/cms/updateApprovalStatus'
+                'url' => 'http://192.168.100.32/api/cms/updateApprovalStatus'
                 // 'url' => 'http://localhost/STX/stx-api/public/api/cms/updateApprovalStatus'
             ],
             'onDone' => [
@@ -937,7 +950,7 @@ class FormController extends BaseController
                     'amstd_token' => 'token',
                     'amshd_remarks' => 'Remarks',
                 ],
-                'url' => 'http://192.168.100.32/public/api/cms/updateApprovalStatus'
+                'url' => 'http://192.168.100.32/api/cms/updateApprovalStatus'
                 // 'url' => 'http://localhost/STX/stx-api/public/api/cms/updateApprovalStatus'
             ],
             'msgkey' => ''
