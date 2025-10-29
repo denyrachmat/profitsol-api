@@ -215,12 +215,13 @@ class FrontPageController extends BaseController
             'parentID' => 'nullable|integer',
         ]);
 
-        $datas = PortalGencode::where('id', $data['id'])->first();
+        $datas = PortalGencode::where('id', $data['id'])->where('pgm_code', 'FP_NAV')->first();
 
         if (!$datas) {
             return $this->handleError('Navigation item not found', 404);
         } else {
             $checkPrevOrder = PortalGencode::where('pgm_parent', $data['parentID'])
+                ->where('pgm_code', 'FP_NAV')
                 ->where('pgm_order', $data['order'])
                 ->first();
 
@@ -233,6 +234,16 @@ class FrontPageController extends BaseController
 
             $datas->save();
         }
+
+        PortalGencode::where('pgm_parent', $data['parentID'])
+            ->where('pgm_code', 'FP_NAV')
+            ->orderBy('pgm_order', 'asc')
+            ->orderBy('id', 'asc')
+        ->get()->each(function ($item, $index) {
+            $item->pgm_order = $index + 1;
+            $item->save();
+        });
+
 
         return $this->handleResponse([], 'Navigation order updated successfully');
     }
@@ -702,7 +713,7 @@ class FrontPageController extends BaseController
     public function subscribePosts(Request $request): \Illuminate\Http\JsonResponse
     {
         $validated = $request->validate([
-            'type' => 'required|string|in:users,categories,tags,all',
+            'type' => 'required|string|in:users,categories,tags,_all',
             'id' => 'required|string',
             'user_id' => 'required|string',
         ]);
@@ -724,5 +735,42 @@ class FrontPageController extends BaseController
         );
 
         return response()->json(['message' => 'Subscribed to post successfully'], 200);
+    }
+
+    public function updateBulkSubscribePosts(Request $request): \Illuminate\Http\JsonResponse
+    {
+        $validated = $request->validate([
+            'email' => 'required|array',
+            'status' => 'required|in:0,1,2',
+            'type' => 'required|string|in:users,categories,tags,_all',
+        ]);
+
+        foreach ($validated['email'] as $subscription) {
+            $valueDatas = $validated['type'] === 'users'
+                ? $request->valAuthor
+                : ($validated['type'] === 'categories'
+                    ? $request->valCategories
+                    : $request->valHashtags);
+
+            foreach ($valueDatas as $key => $valueData) {
+                PortalGencode::updateOrCreate(
+                    [
+                        'pgm_code' => 'FP_SUBSCRIBE_POSTS',
+                        'pgm_value' => $validated['type'],
+                        'pgm_value2' => $valueData,
+                        'pgm_value3' => $subscription,
+                    ],
+                    [
+                        'pgm_code' => 'FP_SUBSCRIBE_POSTS',
+                        'pgm_value' => $validated['type'],
+                        'pgm_value2' => $valueData,
+                        'pgm_value3' => $subscription,
+                        'pgm_desc' => $validated['status']
+                    ]
+                );
+            }
+        }
+
+        return response()->json(['message' => 'Bulk subscriptions updated successfully'], 200);
     }
 }
