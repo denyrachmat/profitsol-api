@@ -24,6 +24,7 @@ class FrontPageController extends BaseController
                 'label' => 'pgm_desc',
                 'icon' => 'pgm_value2',
                 'index' => 'pgm_value3',
+                'isFrontData' => 'pgm_desc2',
             ]);
         } else {
             $data = $this->getDataGencode('FP_CONF_MENU', ['id' => $id], [
@@ -32,8 +33,11 @@ class FrontPageController extends BaseController
                 'label' => 'pgm_desc',
                 'icon' => 'pgm_value2',
                 'index' => 'pgm_value3',
+                'isFrontData' => 'pgm_desc2',
             ]);
         }
+
+        
 
         usort($data, function ($a, $b) {
             return ($a['index'] ?? 0) <=> ($b['index'] ?? 0);
@@ -166,7 +170,7 @@ class FrontPageController extends BaseController
                 'pgm_value3' => $data['type'] === 'page' ? (string) $request->page : $request->url ?? null,
                 'pgm_desc2' => $request->has('tags') && !empty($request->tags) ? json_encode($request->tags) : null,
                 'pgm_desc3' => isset($data['dmsShared']) && $data['dmsShared'] == true ? '1' : '0',
-                'pgm_parent' => trim($request->parent) ?? null,
+                'pgm_parent' => !empty(trim($request->parent)) ? trim($request->parent) : null,
             ]
         );
 
@@ -643,7 +647,7 @@ class FrontPageController extends BaseController
                         'pgm_value2' => $getNavDetail['icon'] ?? null,
                         'pgm_value3' => (string) $idForm,
                         'pgm_desc' => 'page',
-                        'pgm_parent' => trim($getNavDetail['parent']) ?? null,
+                        'pgm_parent' => !empty(trim($getNavDetail['parent'])) ? trim($getNavDetail['parent']) : null,
                         'pgm_desc3' => '1', // Mark as DMS Shared
                     ]
                 );
@@ -690,7 +694,7 @@ class FrontPageController extends BaseController
                                         'pgm_value2' => 'file_open',
                                         'pgm_value3' => (string) $storeHeaderForm->id,
                                         'pgm_desc' => 'page',
-                                        'pgm_parent' => trim($idPage) ?? null,
+                                        'pgm_parent' => !empty(trim($idPage)) ? trim(trim($idPage)) : null,
                                         'pgm_desc3' => '0', // Mark as DMS Shared
                                     ]
                                 );
