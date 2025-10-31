@@ -31,7 +31,8 @@ class UsersController extends BaseController
                 'UPDATE_FP', 
                 ['pgm_value' => $item['username']], 
                 [
-                    'ID_MENU' => 'pgm_value2|int'
+                    'ID_MENU' => 'pgm_value2|int',
+                    'view_option' => 'pgm_value3|string'
                 ]);
             
             $dataFP = [];

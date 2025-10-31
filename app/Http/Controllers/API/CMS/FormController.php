@@ -453,13 +453,17 @@ class FormController extends BaseController
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function show($id, $tags = '', $showMax = 0, $orderBy = [], $isPublisedOnly = false, $isPaginated = false, $page = 1)
+    public function show($id, $tags = '', $showMax = 0, $orderBy = [], $isPublisedOnly = false, $isPaginated = false, $page = 1, $users = '')
     {
         // return [$id, $tags, $showMax, $orderBy, $isPublisedOnly, $isPaginated, $page];
-        $dataBuild = formMasterTitle::select('cms_form_mstr_title.*', 'pgTags.pgm_value2 as tags')->with(['quizSetup', 'shared']);
+        $dataBuild = formMasterTitle::with(['quizSetup', 'shared']);
+
+        if (!empty($users)) {
+            $dataBuild->where('cms_form_mstr_title.p_u_username', $users);
+        }
 
         if ($id === 'quiz') {
-            $data = (clone $dataBuild)->with([
+            $data = (clone $dataBuild)->select('cms_form_mstr_title.*')->with([
                 'formMaster' => function ($f) {
                     $f->where('cfm_parent_id', 0);
                     $f->with('formDetail.formAnswer');
@@ -469,7 +473,7 @@ class FormController extends BaseController
             ])->where('cfmt_quiz_flag', 1)
                 ->get();
         } elseif ($id === 'page' || $id === 'post') {
-            $dataBuild->where('cfmt_quiz_flag', $id === 'page' ? 2 : 3);
+            $dataBuild->select('cms_form_mstr_title.*', 'pgTags.pgm_value2 as tags')->where('cfmt_quiz_flag', $id === 'page' ? 2 : 3);
 
             $dataBuild->leftjoin(DB::raw('STX_PORTAL.dbo.portal_gencode_mstr as pgTags'), function ($join) {
                 $join->on(DB::raw('STX_CMS.dbo.cms_form_mstr_title.id'), '=', 'pgTags.pgm_value')
@@ -574,7 +578,7 @@ class FormController extends BaseController
                     'url' => $getDataGencode['url'] ?? '',
                     'desc' => $getDataGencode['desc'] ?? '',
                     'is_main' => !empty($getDataGencode['is_main']) ? $getDataGencode['is_main'] : '0',
-                    'is_published' => $getPublished ? 1 : 0,
+                    'is_published' => !empty($getPublished) ? 1 : 0,
                     'categories_users' => $getCategoriesUsers ?? null,
                     'tags' => $getTags ?? [],
                 ]);
@@ -634,7 +638,8 @@ class FormController extends BaseController
             $request->orderBy ?? [],
             $request->isPublisedOnly ?? false,
             $request->isPaginated ?? false,
-            $request->page ?? 1
+            $request->page ?? 1,
+            $request->users ?? ''
         );
     }
 
@@ -824,7 +829,7 @@ class FormController extends BaseController
                     'url' => $getDataGencode['url'] ?? '',
                     'desc' => $getDataGencode['desc'] ?? '',
                     'is_main' => !empty($getDataGencode['is_main']) ? $getDataGencode['is_main'] : '0',
-                    'is_published' => $getPublished && $getPublished['is_published'] ? 1 : 0,
+                    'is_published' => !empty($getPublished) && $getPublished['is_published'] ? 1 : 0,
                     'tags' => $getTags,
                     'subscription' => $getSubscription
                 ]);

@@ -33,6 +33,7 @@ use App\Http\Controllers\API\TOS\TrainingListController;
 use App\Http\Controllers\Scheduller\EMS2\WEBEdiTYOExtractor;
 use App\Http\Controllers\STXI\BIM\CircullarTenController;
 use App\Http\Controllers\STXI\BIM\CirtenUpdateController;
+use App\Http\Controllers\STXI\BIM\MRPWeeklyBasedController;
 use App\Http\Controllers\STXI\EMS2\ForcastDOTYOController;
 use App\Http\Controllers\STXI\EMS2\yeidPOConfirmController;
 use App\Http\Controllers\STXI\EMS2\YMICDCUController;
@@ -82,7 +83,7 @@ Route::get('/whoami', function () {
     ];
 })->middleware('auth:sanctum');
 
-Route::group(['prefix' => 'portal'], function () {
+Route::group(['prefix' => 'portal' /* , 'middleware' => ['auth:sanctum','verified']*/], function () {
 
     // Settings Menu
     Route::group(['prefix' => 'users'], function () {
@@ -107,6 +108,7 @@ Route::group(['prefix' => 'portal'], function () {
     Route::group(['prefix' => 'gencode'], function () {
         Route::post('showDetail/{id}', [GencodeController::class, 'showDetail']);
         Route::post('deleteDetail/{id}', [GencodeController::class, 'deleteDetail']);
+        Route::post('saveGencode', [GencodeController::class, 'saveGencode']);
     });
 });
 
@@ -139,6 +141,7 @@ Route::group(['prefix' => 'fpmanager'], function () {
     Route::post('saveDMStoFrontPage', [FrontPageController::class, 'saveDMStoFrontPage']);
 
     Route::post('subscribe', [FrontPageController::class, 'subscribePosts']);
+    Route::post('saveSubscriber', [FrontPageController::class, 'updateBulkSubscribePosts']);
 });
 
 Route::group(['prefix' => 'ams'], function () {
@@ -391,6 +394,8 @@ Route::group(['prefix' => 'div'], function () {
         Route::get('HSCodeBeaDetail', [HSCodeReportController::class, 'HSCodeBeaDetail']);
         Route::get('HSCodeRegulationDet/{hsCode}', [HSCodeReportController::class, 'HSCodeRegulationDet']);
 
+        Route::get('autoExportData/{withHist}', [HSCodeUploadController::class, 'autoExportData']);
+
     });
 
     Route::group(['prefix' => 'pu'], function () {
@@ -421,6 +426,7 @@ Route::group(['prefix' => 'div'], function () {
         Route::get('sendToDMSNew/{ten}', [CircullarTenController::class, 'sendToDMSNew']);
 
         Route::get('viewListItemDesc/{ten}', [CirtenUpdateController::class, 'viewListItemDesc']);
+        Route::get('getDataMRPWeek/{fdate}/{ldate}', [MRPWeeklyBasedController::class, 'getData']);
 
         // CirtenUpdateController
     });

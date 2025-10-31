@@ -108,8 +108,40 @@ class HSCodeUploadController extends BaseController
         return 'Export in queue, you will be notified when it is ready to download';
     }
 
-    public function exportDataWithHistory() {
+    public function autoExportData($withHist)
+    {
+        ini_set('max_execution_time', '3600');
+        $filter = [
+            [
+                "cols" => "HSCD_APRVSTAT",
+                "param" => "=",
+                "value" => "1"
+            ]
+        ];
 
+        $datetime = date('y-m-d his');
+        Excel::store(new ExportHSCodeReport($filter, $withHist), 'export_hscode_auto.xlsx', 'public');
+
+        $download = 'storage/export_hscode_auto.xlsx';
+        
+        return 'Done exporting HS Code data, download at ' . url($download);
+    }
+
+    public function exportDataWithHistory() {
+        $filter = [
+            [
+                "cols" => "HSCD_APRVSTAT",
+                "param" => "=",
+                "value" => "1"
+            ]
+        ];
+
+        $datetime = date('y-m-d his');
+        Excel::store(new ExportHSCodeReport($filter, true), 'export_hscode_auto.xlsx', 'public');
+
+        $download = 'storage/export_hscode_auto.xlsx';
+
+        return 'Done exporting HS Code data, download at ' . url($download);
     }
 
     public function exportDataPDF(Request $request)

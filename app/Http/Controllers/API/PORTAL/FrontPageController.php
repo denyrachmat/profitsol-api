@@ -157,6 +157,11 @@ class FrontPageController extends BaseController
             'dmsShared' => 'nullable|boolean',
         ]);
 
+        $getLastOrder = PortalGencode::where('pgm_code', 'FP_NAV')
+            ->where('pgm_parent', $request->parent ?? null)
+            ->orderBy('pgm_order', 'desc')
+            ->first();
+
         $gencode = PortalGencode::updateOrCreate(
             [
                 'id' => $request->id ?? null,
@@ -171,6 +176,7 @@ class FrontPageController extends BaseController
                 'pgm_desc2' => $request->has('tags') && !empty($request->tags) ? json_encode($request->tags) : null,
                 'pgm_desc3' => isset($data['dmsShared']) && $data['dmsShared'] == true ? '1' : '0',
                 'pgm_parent' => !empty(trim($request->parent)) ? trim($request->parent) : null,
+                'pgm_order' => $getLastOrder ? $getLastOrder->pgm_order + 1 : 1,
             ]
         );
 
