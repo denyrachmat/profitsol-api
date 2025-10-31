@@ -111,6 +111,7 @@ class HSCodeUploadController extends BaseController
     public function autoExportData($withHist)
     {
         ini_set('max_execution_time', '3600');
+        ini_set('memory_limit', '2048M');
         $filter = [
             [
                 "cols" => "HSCD_APRVSTAT",
@@ -119,7 +120,7 @@ class HSCodeUploadController extends BaseController
             ]
         ];
 
-        $datetime = date('y-m-d his');
+
         Excel::store(new ExportHSCodeReport($filter, $withHist), 'export_hscode_auto.xlsx', 'public');
 
         $download = 'storage/export_hscode_auto.xlsx';
