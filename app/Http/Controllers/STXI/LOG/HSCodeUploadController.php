@@ -102,9 +102,9 @@ class HSCodeUploadController extends BaseController
         return HSCodeUplMaster::where('id', $id)->delete();
     }
 
-    public function exportData(Request $request, $withHist = false)
+    public function exportData(Request $request, $withHist = false, $downloadLast = false)
     {
-        ExportHSCodeQueue::dispatch($request->filter, $withHist, 'excel', $request->username)->onQueue('hsCodeDownloader');
+        ExportHSCodeQueue::dispatch($request->filter, $withHist, 'excel', $request->username, $downloadLast)->onQueue('hsCodeDownloader');
         return 'Export in queue, you will be notified when it is ready to download';
     }
 
@@ -112,6 +112,8 @@ class HSCodeUploadController extends BaseController
     {
         ini_set('max_execution_time', '3600');
         ini_set('memory_limit', '2048M');
+
+        $startTime = microtime(true);
         $filter = [
             [
                 "cols" => "HSCD_APRVSTAT",
@@ -124,11 +126,15 @@ class HSCodeUploadController extends BaseController
         Excel::store(new ExportHSCodeReport($filter, $withHist), 'export_hscode_auto.xlsx', 'public');
 
         $download = 'storage/export_hscode_auto.xlsx';
-        
-        return 'Done exporting HS Code data, download at ' . url($download);
+
+        $endTime = microtime(true);
+        $executionTime = round($endTime - $startTime, 2);
+
+        return 'Done exporting HS Code data in ' . $executionTime . ' seconds, download at ' . url($download);
     }
 
-    public function exportDataWithHistory() {
+    public function exportDataWithHistory()
+    {
         $filter = [
             [
                 "cols" => "HSCD_APRVSTAT",

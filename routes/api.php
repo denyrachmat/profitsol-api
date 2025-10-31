@@ -384,7 +384,7 @@ Route::group(['prefix' => 'div'], function () {
         Route::resource('HSCode', HSCodeUploadController::class);
         Route::post('HSCodeFilter', [HSCodeUploadController::class, 'HSCodeFilter']);
         Route::get('testRecurs', [HSCodeUploadController::class, 'testHeaderData']);
-        Route::post('exportData/{hist?}', [HSCodeUploadController::class, 'exportData']);
+        Route::post('exportData/{hist?}/{lastDonwload?}', [HSCodeUploadController::class, 'exportData']);
         Route::post('exportDataPDF', [HSCodeUploadController::class, 'exportDataPDF']);
         Route::post('HSCodeSendApproval', [HSCodeUploadController::class, 'sendApproval']);
         Route::post('updateApprovalHSCode', [HSCodeUploadController::class, 'updateApprovalHSCode']);

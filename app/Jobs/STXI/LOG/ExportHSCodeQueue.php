@@ -24,16 +24,18 @@ class ExportHSCodeQueue implements ShouldQueue
     public $withHist;
     public $type;
     public $username;
+    public $lastDownload;
 
     /**
      * Create a new job instance.
      */
-    public function __construct($filter, $withHist = false, $type = 'excel', $username = '')
+    public function __construct($filter, $withHist = false, $type = 'excel', $username = '', $lastDownload = false)
     {
         $this->filter = $filter;
         $this->withHist = $withHist;
         $this->type = $type;
         $this->username = $username;
+        $this->lastDownload = $lastDownload;
     }
 
     /**
@@ -54,59 +56,65 @@ class ExportHSCodeQueue implements ShouldQueue
             'code_queue' => $codeQueue
         ]));
 
-        $download = '';
-        if ($this->type === 'excel') {
-            $datetime = date('y-m-d his');
-            Excel::store(new ExportHSCodeReport($this->filter, $this->withHist), 'export_hscode_' . $datetime . '.xlsx', 'public');
-
-            $download = 'storage/export_hscode_' . $datetime . '.xlsx';
+        if ($this->lastDownload) {
+            if ($this->type === 'excel') {
+                $download = 'storage/export_hscode_auto.xlsx';
+            } else {
+                $download = 'storage/export_hscode_auto.pdf';
+            }
         } else {
-            $arrReq = array_merge($this->filter, [
-                'select' => [
-                    '*'
-                ],
-                'with' => 'insw_reg'
-            ]);
+            $download = '';
+            if ($this->type === 'excel') {
+                $datetime = date('y-m-d his');
+                Excel::store(new ExportHSCodeReport($this->filter, $this->withHist), 'export_hscode_' . $datetime . '.xlsx', 'public');
 
-            $data = $this->HSCodeFilter(new Request($arrReq));
+                $download = 'storage/export_hscode_' . $datetime . '.xlsx';
+            } else {
+                $arrReq = array_merge($this->filter, [
+                    'select' => [
+                        '*'
+                    ],
+                    'with' => 'insw_reg'
+                ]);
 
-            $hasil = [];
-            foreach ($data as $keyData => $valueData) {
-                $listImport = '';
-                $listImportPost = '';
-                if (count($valueData['insw_reg']) > 0) {
-                    $arrImport = [];
-                    $arrImportPost = [];
-                    foreach ($valueData['insw_reg'] as $keyInswReg => $valueInswReg) {
-                        if ($valueInswReg['ZIRD_TYPE'] == 'import_regulation') {
-                            $arrImport[] = '- ' . $valueInswReg['ZIRD_NMIJIN'];
+                $data = $this->HSCodeFilter(new Request($arrReq));
+
+                $hasil = [];
+                foreach ($data as $keyData => $valueData) {
+                    $listImport = '';
+                    $listImportPost = '';
+                    if (count($valueData['insw_reg']) > 0) {
+                        $arrImport = [];
+                        $arrImportPost = [];
+                        foreach ($valueData['insw_reg'] as $keyInswReg => $valueInswReg) {
+                            if ($valueInswReg['ZIRD_TYPE'] == 'import_regulation') {
+                                $arrImport[] = '- ' . $valueInswReg['ZIRD_NMIJIN'];
+                            }
+
+                            if ($valueInswReg['ZIRD_TYPE'] == 'import_regulation_post_border') {
+                                $arrImportPost[] = '- ' . $valueInswReg['ZIRD_NMIJIN'];
+                            }
                         }
 
-                        if ($valueInswReg['ZIRD_TYPE'] == 'import_regulation_post_border') {
-                            $arrImportPost[] = '- ' . $valueInswReg['ZIRD_NMIJIN'];
-                        }
+                        $listImport = implode("<br>", $arrImport);
+                        $listImportPost = implode("<br>", $arrImportPost);
                     }
 
-                    $listImport = implode("<br>", $arrImport);
-                    $listImportPost = implode("<br>", $arrImportPost);
+                    $hasil[] = array_merge($valueData, [
+                        'LIST_IMPORT' => $listImport,
+                        'LIST_IMPORT_POST' => $listImportPost
+                    ]);
                 }
 
-                $hasil[] = array_merge($valueData, [
-                    'LIST_IMPORT' => $listImport,
-                    'LIST_IMPORT_POST' => $listImportPost
-                ]);
+                $pdf = PDF::loadView('STXI/LOG/hsCodeDraft', ['data' => $hasil])->setOrientation('landscape');
+                $datetime = date('y-m-d his');
+
+                $pdf->save(public_path('storage/hscode_export_' . $datetime . '.pdf'));
+
+                $download = 'storage/hscode_draft_' . $datetime . '.pdf';
             }
-
-            $pdf = PDF::loadView('STXI/LOG/hsCodeDraft', ['data' => $hasil])->setOrientation('landscape');
-            $datetime = date('y-m-d his');
-
-            // return view('STXI/LOG/hsCodeDraft', ['data' => $data]);
-
-            $pdf->save(public_path('storage/hscode_export_' . $datetime . '.pdf'));
-
-            $download = 'storage/hscode_draft_' . $datetime . '.pdf';
         }
-        
+
         Redis::publish('portalv2', json_encode([
             'app' => 'hs_code',
             'username' => $this->username,
