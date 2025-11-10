@@ -112,6 +112,7 @@ class NotifController extends BaseController
     
     public function sendTeamsNotification(Request $request)
     {
+        logger()->info('sendTeamsNotification called with request: ' . $request->toJson());
         $accessToken = $request->accessToken;
         $messageContent = $request->message;
         $recipientId = $request->userID; // The user ID or UPN of the person you're messaging
@@ -164,8 +165,10 @@ class NotifController extends BaseController
 
         // --- FIX 2: Correct Error Handling for the Second Call ---
         if ($messageResponse->successful()) {
+            logger()->info('Message sent successfully: ' . $messageResponse->toJson());
             return response()->json(['status' => 'success', 'message' => 'Notification sent successfully.']);
         } else {
+            logger()->error('Failed to send message: ' . $messageResponse->toJson());
             // If sending the message fails, return its specific error
             return response()->json(['status' => 'error', 'message' => 'Chat created, but failed to send message.', 'details' => $messageResponse->json()], 400);
         }
