@@ -109,27 +109,66 @@ class NotifController extends BaseController
 
         return $this->handleResponse($insert, 'Notification Created !');
     }
-
+    
     public function sendTeamsNotification(Request $request)
     {
-        $accessToken = $request->input('accessToken');
-        $teamId = $request->input('teamId');
-        $channelId = $request->input('channelId');
-        $messageContent = $request->input('message'); // Bisa berupa JSON Adaptive Card
+        $accessToken = $request->accessToken;
+        $messageContent = $request->message;
+        $recipientId = $request->userID; // The user ID or UPN of the person you're messaging
 
-        $response = Http::withToken($accessToken)
-            ->post("https://graph.microsoft.com/v1.0/teams/{$teamId}/channels/{$channelId}/messages", [
+        // --- FIX 1: Get the Sender's User ID ---
+        // You need the ID of the user/app making the API call.
+        // The most reliable way is to get it from the '/me' endpoint.
+        $senderResponse = Http::withToken($accessToken)->get("https://graph.microsoft.com/v1.0/me");
+
+        if ($senderResponse->failed()) {
+            return response()->json(['status' => 'error', 'message' => 'Failed to get sender details.', 'details' => $senderResponse->json()], 400);
+        }
+        $senderId = $senderResponse->json()['id'];
+
+        // --- Create the Chat ---
+        $createChatResponse = Http::withToken($accessToken)
+            ->post("https://graph.microsoft.com/v1.0/chats", [
+                'chatType' => 'oneOnOne',
+                'members' => [
+                    // Member 1: The Sender (logged-in user)
+                    [
+                        '@odata.type' => '#microsoft.graph.aadUserConversationMember',
+                        'roles' => ['owner'],
+                        'user@odata.bind' => "https://graph.microsoft.com/v1.0/users('{$senderId}')"
+                    ],
+                    // Member 2: The Recipient
+                    [
+                        '@odata.type' => '#microsoft.graph.aadUserConversationMember',
+                        'roles' => ['owner'],
+                        'user@odata.bind' => "https://graph.microsoft.com/v1.0/users('{$recipientId}')"
+                    ]
+                ]
+            ]);
+
+        if ($createChatResponse->failed()) {
+            // Correctly return the error from this specific call
+            return response()->json(['status' => 'error', 'message' => 'Failed to create chat.', 'details' => $createChatResponse->json()], 400);
+        }
+
+        $chatId = $createChatResponse->json()['id'];
+
+        // --- Send the Message to the newly created chat ---
+        $messageResponse = Http::withToken($accessToken)
+            ->post("https://graph.microsoft.com/v1.0/chats/{$chatId}/messages", [
                 'body' => [
-                    'contentType' => 'html', // atau 'application/vnd.microsoft.card.adaptive'
+                    'contentType' => 'html', // Or 'text'
                     'content' => $messageContent
                 ]
             ]);
 
-        if ($response->successful()) {
-            return response()->json(['status' => 'success']);
+        // --- FIX 2: Correct Error Handling for the Second Call ---
+        if ($messageResponse->successful()) {
+            return response()->json(['status' => 'success', 'message' => 'Notification sent successfully.']);
+        } else {
+            // If sending the message fails, return its specific error
+            return response()->json(['status' => 'error', 'message' => 'Chat created, but failed to send message.', 'details' => $messageResponse->json()], 400);
         }
-
-        return response()->json(['status' => 'error', 'details' => $response->json()], 400);
     }
 
 
