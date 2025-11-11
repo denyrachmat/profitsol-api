@@ -7,7 +7,7 @@ use Maatwebsite\Excel\Concerns\ToModel;
 use Maatwebsite\Excel\Concerns\WithHeadingRow;
 use Maatwebsite\Excel\Concerns\SkipsEmptyRows;
 use Illuminate\Support\Facades\DB;
-use Redis;
+use Illuminate\Support\Facades\Redis;
 
 use App\Models\STXI\LOG\ITINVIncoming;
 use App\Models\STXI\LOG\ITINVOutgoing;
@@ -46,7 +46,7 @@ class ImportBarang implements ToModel, WithHeadingRow, SkipsEmptyRows
                     if ($cekBCStatus->STAT_MEGABCDOC == 1 && !empty($cekItemMega)) {
                         $cekHeaderMega = DB::connection('sqlsrv_mega_db')
                             ->table('Z_STXI_VW_CBCDOC')
-                            ->where('CBCDOC_BCDOCNO', $noDaftar)
+                            ->where('CBCDOC_BCDOCNO', 'like',$noDaftar.'%')
                             ->where('CBCDOC_BCDOCDT', $cekTempData['TGL_DAFTAR'])
                             ->where('CBCDOCPRC_ITMCD', trim($row['kode_barang']))
                             ->where('DB', $cekItemMega->DB)
