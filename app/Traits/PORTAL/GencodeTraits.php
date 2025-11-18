@@ -57,6 +57,42 @@ trait GencodeTraits
             foreach ($hasilnya as $key => $value) {
                 foreach ($selectAs as $keySel => $valueSel) {
                     $splitTypeString = explode('|', $valueSel);
+                    
+                    // Check if there's a :max or :min modifier
+                    if (count($splitTypeString) > 1) {
+                        if (strpos($splitTypeString[1], ':max') !== false) {
+                            // Find max value for this field across all items
+                            $maxValue = null;
+                            foreach ($hasilnya as $item) {
+                                $currentValue = $item[$splitTypeString[0]] ?? null;
+                                if ($currentValue !== null) {
+                                    if ($maxValue === null || $currentValue > $maxValue) {
+                                        $maxValue = $currentValue;
+                                    }
+                                }
+                            }
+                            // Override current value with max
+                            if ($maxValue !== null) {
+                                $value[$splitTypeString[0]] = $maxValue;
+                            }
+                        } elseif (strpos($splitTypeString[1], ':min') !== false) {
+                            // Find min value for this field across all items
+                            $minValue = null;
+                            foreach ($hasilnya as $item) {
+                                $currentValue = $item[$splitTypeString[0]] ?? null;
+                                if ($currentValue !== null) {
+                                    if ($minValue === null || $currentValue < $minValue) {
+                                        $minValue = $currentValue;
+                                    }
+                                }
+                            }
+                            // Override current value with min
+                            if ($minValue !== null) {
+                                $value[$splitTypeString[0]] = $minValue;
+                            }
+                        }
+                    }
+                    
                     $selectStr = $splitTypeString[0];
 
                     $keysCheck = $value[$keySel] ?? $keySel;
@@ -193,7 +229,7 @@ trait GencodeTraits
 
             return $hasil;
         } else {
-            return $hasilnya;
+            return $firstSelect ? $hasilnya[0] : $hasilnya;
         }
     }
 

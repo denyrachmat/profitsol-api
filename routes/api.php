@@ -135,7 +135,7 @@ Route::group(['prefix' => 'fpmanager'], function () {
 
     Route::post('saveTags', [FrontPageController::class, 'saveTags']);
     Route::delete('removeTag/{id}/{tag}', [FrontPageController::class, 'removeTag']);
-    Route::get('publishPost/{id}/{state?}', [FrontPageController::class, 'publishPost']);
+    Route::post('publishPost/{id}/{state?}', [FrontPageController::class, 'publishPost']);
 
     Route::get('getNavAssignedDMS', [FrontPageController::class, 'getNavAssignedDMS']);
     Route::post('saveDMStoFrontPage', [FrontPageController::class, 'saveDMStoFrontPage']);
@@ -426,7 +426,8 @@ Route::group(['prefix' => 'div'], function () {
         Route::get('sendToDMSNew/{ten}', [CircullarTenController::class, 'sendToDMSNew']);
 
         Route::get('viewListItemDesc/{ten}', [CirtenUpdateController::class, 'viewListItemDesc']);
-        Route::get('getDataMRPWeek/{fdate}/{ldate}', [MRPWeeklyBasedController::class, 'getData']);
+        Route::get('getDataMRPWeekDatas/{fdate}/{ldate}', [MRPWeeklyBasedController::class, 'getData']);
+        Route::post('getDataMRPWeek', [MRPWeeklyBasedController::class, 'getReport']);
 
         // CirtenUpdateController
     });

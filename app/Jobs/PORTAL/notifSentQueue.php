@@ -34,13 +34,13 @@ class notifSentQueue implements ShouldQueue
         $this->to = $to;
         $this->title = $title;
         $this->message = $message;
-        $this->link = $link;
-        $this->icon = $icon;
-        $this->hashIdLocation = $hashIdLocation;
         $this->startDate = $startDate;
         $this->endDate = $endDate;
         $this->type = $type;
         $this->loc = $loc;
+        $this->link = $link;
+        $this->icon = $icon;
+        $this->hashIdLocation = $hashIdLocation;
         $this->graph = $graph;
     }
 

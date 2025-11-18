@@ -11,10 +11,16 @@ use Illuminate\Http\Request;
 use App\Traits\PORTAL\GencodeTraits;
 use App\Models\PORTAL\PortalGencode;
 use Illuminate\Support\Facades\DB;
+use App\Jobs\PORTAl\notifSentQueue;
 
 class FrontPageController extends BaseController
 {
     use GencodeTraits;
+
+    function __construct()
+    {
+        $this->headerImage = null;
+    }
     public function getFPMenu($id = '')
     {
         if (empty($id)) {
@@ -37,7 +43,7 @@ class FrontPageController extends BaseController
             ]);
         }
 
-        
+
 
         usort($data, function ($a, $b) {
             return ($a['index'] ?? 0) <=> ($b['index'] ?? 0);
@@ -249,10 +255,10 @@ class FrontPageController extends BaseController
             ->where('pgm_code', 'FP_NAV')
             ->orderBy('pgm_order', 'asc')
             ->orderBy('id', 'asc')
-        ->get()->each(function ($item, $index) {
-            $item->pgm_order = $index + 1;
-            $item->save();
-        });
+            ->get()->each(function ($item, $index) {
+                $item->pgm_order = $index + 1;
+                $item->save();
+            });
 
 
         return $this->handleResponse([], 'Navigation order updated successfully');
@@ -462,7 +468,7 @@ class FrontPageController extends BaseController
         }
     }
 
-    public function publishPost($id, $state = 0)
+    public function publishPost(Request $request, $id, $state = 0)
     {
         $data = PortalGencode::updateOrCreate(
             [
@@ -472,11 +478,173 @@ class FrontPageController extends BaseController
             [
                 'pgm_value' => $id,
                 'pgm_value2' => $state == 1 ? date('Y-m-d H:i:s') : null,
-                'pgm_desc' => "Post $id published",
+                'pgm_desc' => $state == 1 ? "Post $id published" : 'Post unpublished',
             ]
         );
 
+        if ($state == 1) {
+            $getPublishedData = $this->getDataGencode(
+                'FP_PUBLISH_POSTS',
+                [
+                    'pgm_value' => $id,
+                ],
+                [],
+                [],
+                true
+            );
+
+            // return $getPublishedData;
+
+            $listNotifData = [];
+
+            $formController = app(FormController::class);
+            $dataForm = $formController->viewByID((int)  $id)->getOriginalContent()['data']['value'] ?? [];
+
+            // return $dataForm['hashtags'] ?? [];
+
+            // get list notification by category
+            foreach ($dataForm['tags'] ?? [] as $category) {
+                $dataSubscriberByCategory = $this->getSubscribedData(
+                    'categories',
+                    $category
+                );
+
+                $listNotifData = array_merge($listNotifData, $dataSubscriberByCategory);
+            }
+
+            // return $listNotifData;
+
+            // Get list notification by creator
+            $dataSubscriberByCreator = $this->getSubscribedData(
+                'users',
+                $dataForm['p_u_username'] ?? ''
+            );
+
+            if (count($dataSubscriberByCreator) > 0) {
+                $listNotifData = array_merge($listNotifData, $dataSubscriberByCreator);
+            }
+
+            // Get list notification by all hashtags
+            $dataSubscriberByHashtags = $this->getSubscribedData(
+                'hashtags',
+                '',
+                $dataForm['hashtags'] ?? []
+            );
+
+            if (count($dataSubscriberByHashtags) > 0) {
+                $listNotifData = array_merge($listNotifData, $dataSubscriberByHashtags);
+            }
+
+            $getUsersDetail = $getListActiveUsers = app(UsersController::class)->userActiveOnly($dataForm['p_u_username'])->getOriginalContent()['data'][0] ?? null;
+            
+            // return $listNotifData;
+            foreach ($listNotifData as $keyNotif => $valueNotif) {
+                $getListActiveUsers = app(UsersController::class)->userActiveOnly($valueNotif['subscriber'] === '_ALL' ? '' : $valueNotif['subscriber'])->getOriginalContent()['data'] ?? [];
+
+                foreach ($getListActiveUsers as $keyUser => $valueUser) {
+                    notifSentQueue::dispatch(
+                        $dataForm['p_u_username'],
+                        $valueUser['username'],
+                        'New Post Published : ' . ($dataForm['title'] ?? 'Untitled'),
+                        'A new post has been published by ' . ($getUsersDetail ? $getUsersDetail['pud_first_name'] . ' ' . $getUsersDetail['pud_last_name'] : 'Unknown') . '. Check it out!<br><br>Title: ' . ($dataForm['title'] ?? 'Untitled') . '<br>Category: ' . implode(', ', $dataForm['tags'] ?? []) . '<br><br>' . $this->extractHtmlPreview($dataForm['forms'] ?? []),
+                        date('Y-m-d H:i:s'),
+                        null,
+                        'post',
+                        'email',
+                        env('FE_URL') . '/pages/' . ($dataForm['tags'][0] ?? 'uncategorized') . '/' . $dataForm['url'],
+                        '',
+                        '',
+                        $request->graph ?? null
+                    )->onQueue('notifications');
+                }
+            }
+        }
+
+        // return $listNotifData;
+
         return $this->handleResponse($data, 'Post published successfully');
+    }
+
+    public function extractHtmlPreview($forms)
+    {
+        $preview = '';
+
+        foreach ($forms as $form) {
+            // initialize/clear last header image
+            $this->headerImage = $this->headerImage ?? null;
+
+            $preview = '';
+
+            // recursive search for first HTML content (handles rows -> content arrays)
+            $findHtml = function ($items) use (&$findHtml, &$preview) {
+                foreach ($items as $it) {
+                    if (!is_array($it)) {
+                        continue;
+                    }
+
+                    // direct html block
+                    if (isset($it['type']) && $it['type'] === 'html' && isset($it['content'])) {
+                        $html = (string) $it['content'];
+
+                        // extract first image src if present
+                        libxml_use_internal_errors(true);
+                        $doc = new \DOMDocument();
+                        // ensure proper encoding to avoid warnings
+                        $doc->loadHTML(mb_convert_encoding($html, 'HTML-ENTITIES', 'UTF-8'));
+                        $imgs = $doc->getElementsByTagName('img');
+                        if ($imgs->length > 0) {
+                            $src = $imgs->item(0)->getAttribute('src');
+                            // store header image on the controller for later use
+                            $this->headerImage = $src;
+                        }
+                        // extract text preview (first 200 chars)
+                        $preview = substr(trim(strip_tags($html)), 0, 200) . '...';
+                        return true; // found, stop recursion
+                    }
+
+                    // nested content (e.g., row -> content array)
+                    if (isset($it['content']) && is_array($it['content']) && count($it['content']) > 0) {
+                        if ($findHtml($it['content'])) {
+                            return true;
+                        }
+                    }
+                }
+                return false;
+            };
+
+            // start search
+            if (is_array($forms) && count($forms) > 0) {
+                $findHtml($forms);
+            }
+
+            // $preview will be returned below (preserving original function return type)
+        }
+
+        return $preview;
+    }
+
+    public function getSubscribedData($type, $value, $subscriber = '')
+    {
+        // get list notification by category
+        return $this->getDataGencode(
+            'FP_SUBSCRIBE_POSTS',
+            $subscriber ?
+            [
+                'pgm_value' => $type,
+                'pgm_value2' => $value,
+                'pgm_value3' => $subscriber,
+                'pgm_desc2' => '1'
+            ]
+            : [
+                'pgm_value' => $type,
+                'pgm_value2' => $value,
+            ],
+            [
+                'type' => 'pgm_value|string',
+                'value' => 'pgm_value2|string',
+                'subscriber' => 'pgm_value3|string',
+            ]
+        );
     }
 
     public function copyPost($id)
@@ -762,6 +930,11 @@ class FrontPageController extends BaseController
                     ? $request->valCategories
                     : $request->valHashtags);
 
+            PortalGencode::where('pgm_code', 'FP_SUBSCRIBE_POSTS')
+                ->where('pgm_value', $validated['type'])
+                ->where('pgm_value3', $subscription)
+                ->delete();
+
             foreach ($valueDatas as $key => $valueData) {
                 PortalGencode::updateOrCreate(
                     [
@@ -775,7 +948,8 @@ class FrontPageController extends BaseController
                         'pgm_value' => $validated['type'],
                         'pgm_value2' => $valueData,
                         'pgm_value3' => $subscription,
-                        'pgm_desc' => $validated['status']
+                        'pgm_desc' =>  'Subscription to post',
+                        'pgm_desc2' => $validated['status']
                     ]
                 );
             }

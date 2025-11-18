@@ -4,6 +4,8 @@ namespace App\Http\Controllers\STXI\BIM;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
+use App\Exports\STXI\BIM\ExportMRPSchemeWeekly;
+use Maatwebsite\Excel\Facades\Excel;
 
 class MRPWeeklyBasedController extends Controller
 {
@@ -28,5 +30,24 @@ class MRPWeeklyBasedController extends Controller
         }
 
         return $mondays;
+    }
+
+    public function getReport(Request $request)
+    {
+        logger($request);
+        $firstDate = $request->input('first_date');
+        $weekCount = $request->input('week_count', 98);
+        $lastDate = (new \DateTime($firstDate))->modify('+' . ($weekCount * 7 - 1) . ' days')->format('Y-m-d');
+        $lt = $request->input('lt', 21);
+
+        // return [$firstDate, $lastDate, $lt];
+
+        $dataHeaders = $this->getData($firstDate, $lastDate, $lt);
+
+        return Excel::download(new ExportMRPSchemeWeekly(
+            [
+                'headers' => $dataHeaders
+            ]
+        ), 'mrp_scheme_weekly.xlsx');
     }
 }

@@ -2,11 +2,14 @@
 
 namespace App\Http\Controllers\API\PORTAL;
 
+use App\Models\User;
+use App\Notifications\PORTAL\PortalEmailNotification;
 use Illuminate\Http\Request;
 use App\Models\PORTAL\PortalNotif;
 use App\Http\Controllers\API\PORTAL\BaseController as BaseController;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Notification;
 use App\Models\CMS\FormAnswerUserDet;
 use App\Models\CMS\FormShareDet;
 use App\Traits\TOS\TrainingTraits;
@@ -107,9 +110,18 @@ class NotifController extends BaseController
             $this->sendTeamsNotification(new Request($request->graph));
         }
 
+        if ($request->pnm_notif_loc == 'email') {
+            $this->sendEmailNotification(
+                $request->pnm_to_users,
+                $request->pnm_title,
+                $request->pnm_message,
+                $request->pnm_link
+            );
+        }
+
         return $this->handleResponse($insert, 'Notification Created !');
     }
-    
+
     public function sendTeamsNotification(Request $request)
     {
         logger()->info('sendTeamsNotification called with request: ' . json_encode($request->all()));
@@ -117,12 +129,16 @@ class NotifController extends BaseController
         $messageContent = $request->message;
         $recipientId = $request->userID; // The user ID or UPN of the person you're messaging
 
+        // Note: Ensure your access token has 'Chat.Create' or 'Chat.ReadWrite' scope
+        // This must be configured in your Azure AD app registration and token acquisition
+
         // --- FIX 1: Get the Sender's User ID ---
         // You need the ID of the user/app making the API call.
         // The most reliable way is to get it from the '/me' endpoint.
         $senderResponse = Http::withToken($accessToken)->get("https://graph.microsoft.com/v1.0/me");
 
         if ($senderResponse->failed()) {
+            logger()->error('Failed to get sender details: ' . $senderResponse->body());
             return response()->json(['status' => 'error', 'message' => 'Failed to get sender details.', 'details' => $senderResponse->json()], 400);
         }
         $senderId = $senderResponse->json()['id'];
@@ -148,6 +164,7 @@ class NotifController extends BaseController
             ]);
 
         if ($createChatResponse->failed()) {
+            logger()->error('Failed to create chat: ' . $createChatResponse->body());
             // Correctly return the error from this specific call
             return response()->json(['status' => 'error', 'message' => 'Failed to create chat.', 'details' => $createChatResponse->json()], 400);
         }
@@ -172,6 +189,20 @@ class NotifController extends BaseController
             // If sending the message fails, return its specific error
             return response()->json(['status' => 'error', 'message' => 'Chat created, but failed to send message.', 'details' => $messageResponse->json()], 400);
         }
+    }
+
+    public function sendEmailNotification($to, $subject, $content, $linkPost)
+    {
+        // Convert fullname Recepient variable
+        // $convertContent = str_replace(search: "{{recipient_fullname}}", replace: $to, subject: $content);
+
+        Notification::route('mail', $to)->notify(new PortalEmailNotification(
+            $subject,
+            $content,
+            'STX-I Intranet Notification',
+            $linkPost,
+            User::where('username', $to)->with('det')->first()
+        ));
     }
 
 

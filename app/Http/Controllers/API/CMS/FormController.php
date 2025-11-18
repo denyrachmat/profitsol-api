@@ -76,6 +76,7 @@ class FormController extends BaseController
             'cfmt_quiz_flag' => (int) $request->isQuiz,
         ]);
 
+        // This is for Frontpage posts and pages
         if ($request->isQuiz == 2 || $request->isQuiz == 3) {
             PortalGencode::updateOrCreate([
                 'pgm_code' => 'URL_PAGE_GEN',
@@ -183,7 +184,9 @@ class FormController extends BaseController
                             $header['id'] = $getReport->id;
                         }
 
-                        $getDataForDet = $this->showHistory(new Request(), $request->idRef);
+                        $getDataForDet = $this->showHistory(new Request([
+                            'histTableList' => $request->setupTraining['historyTableList']
+                        ]), $request->idRef);
                         // Decode the response content to access data
                         $responseData = json_decode($getDataForDet->getContent(), true);
 
@@ -443,6 +446,40 @@ class FormController extends BaseController
 
         }
 
+        if (isset($checkSetup['isNotif']) && $checkSetup['isNotif'] == 1) {
+            $this->sendNotifFormsSubmitted(new Request([
+                'idRef' => $request->id,
+                'username' => $request->header('username'),
+            ]));
+        }
+
+        if ($checkSetup['isAPI'] == 1 && !empty($checkSetup['apiOpt'])) {
+            $hasilAPICall = [];
+            foreach ($checkSetup['apiOpt'] as $keyApi => $valueApi) {
+                $buildParams = [];
+                foreach ($valueApi['params'] as $keyParam => $valueParam) {
+                    // Get the value from form answers using form_id
+                    $formValue = $dataAnswers[$valueParam['form_id']] ?? $valueParam['param_default'] ?? null;
+                    $buildParams[$valueParam['param_name']] = $formValue;
+                }
+
+                $hasilAPICall[] = $this->sendAPIFormsSubmitted(new Request([
+                    'idRef' => $request->id,
+                    'username' => $request->header('username'),
+                    'apiUrl' => $valueApi['apiUrl'],
+                    'method' => $valueApi['method'],
+                    'headers' => $valueApi['headers'],
+                    'isDownload' => isset($valueApi['isDownload']) ? $valueApi['isDownload'] : false,
+                    'params' => $buildParams,
+                ]));
+            }
+
+            return $this->handleResponse([
+                'formSubmission' => $hasil,
+                'apiCalls' => $hasilAPICall
+            ], 'Form submited !');
+        }
+
         return $this->handleResponse($hasil, 'Form submited !');
 
     }
@@ -558,9 +595,18 @@ class FormController extends BaseController
 
                 $getTagsData = $this->getDataGencode(
                     'FP_TAGS_LIST',
-                    ['pgm_value' => (string)$value['id']],
+                    ['pgm_value' => (string) $value['id']],
                     [
                         'tags' => 'pgm_value2',
+                    ],
+                    [],
+                );
+
+                $getHashTagsData = $this->getDataGencode(
+                    'FP_HASHTAGS_LIST',
+                    ['pgm_value' => (string) $value['id']],
+                    [
+                        'hashtags' => 'pgm_value2',
                     ],
                     [],
                 );
@@ -574,13 +620,23 @@ class FormController extends BaseController
                     }
                 }
 
+                $getHashTags = [];
+                if (!empty($getHashTagsData)) {
+                    foreach ($getHashTagsData as $hashTagItem) {
+                        if (isset($hashTagItem['hashtags'])) {
+                            $getHashTags[] = $hashTagItem['hashtags'];
+                        }
+                    }
+                }
+
                 return array_merge($value->toArray(), [
                     'url' => $getDataGencode['url'] ?? '',
                     'desc' => $getDataGencode['desc'] ?? '',
                     'is_main' => !empty($getDataGencode['is_main']) ? $getDataGencode['is_main'] : '0',
-                    'is_published' => !empty($getPublished) ? 1 : 0,
+                    'is_published' => !empty($getPublished) && !empty($getPublished['is_published']) ? 1 : 0,
                     'categories_users' => $getCategoriesUsers ?? null,
                     'tags' => $getTags ?? [],
+                    'hashtags' => $getHashTags ?? [],
                 ]);
             })->filter();
 
@@ -798,7 +854,26 @@ class FormController extends BaseController
                     }
                 }
 
-                // return response($getTags);
+                $getHashTagsData = $this->getDataGencode(
+                    'FP_HASHTAGS_LIST',
+                    ['pgm_value' => $id],
+                    [
+                        'hashtags' => 'pgm_value2|string',
+                        'hashtags_desc' => 'pgm_desc|string',
+                    ],
+                    [],
+                    false,
+                    false
+                );
+
+                $getHashTags = [];
+                if (!empty($getHashTagsData)) {
+                    foreach ($getHashTagsData as $hashTagItem) {
+                        if (isset($hashTagItem['hashtags'])) {
+                            $getHashTags[] = $hashTagItem['hashtags'];
+                        }
+                    }
+                }
 
                 $getPublished = $this->getDataGencode(
                     'FP_PUBLISH_POSTS',
@@ -812,7 +887,6 @@ class FormController extends BaseController
                 );
 
                 $hasil = null;
-                $includeResult = true;
                 // return response($getPublished);
 
                 $getSubscription = $this->getDataGencode(
@@ -829,8 +903,9 @@ class FormController extends BaseController
                     'url' => $getDataGencode['url'] ?? '',
                     'desc' => $getDataGencode['desc'] ?? '',
                     'is_main' => !empty($getDataGencode['is_main']) ? $getDataGencode['is_main'] : '0',
-                    'is_published' => !empty($getPublished) && $getPublished['is_published'] ? 1 : 0,
-                    'tags' => $getTags,
+                    'is_published' => !empty($getPublished) && !empty($getPublished['is_published']) ? 1 : 0,
+                    'tags' => $getTags ?? [],
+                    'hashtags' => $getHashTags ?? [],
                     'subscription' => $getSubscription
                 ]);
             } else {
@@ -839,6 +914,7 @@ class FormController extends BaseController
                     'desc' => $getDataGencode['desc'] ?? '',
                     'is_main' => !empty($getDataGencode['is_main']) ? $getDataGencode['is_main'] : '0',
                     'tags' => [],
+                    'hashtags' => [],
                     'subscription' => !empty($getSubscription) ? $getSubscription : []
                 ]);
             }
@@ -976,5 +1052,105 @@ class FormController extends BaseController
         }
 
         return $getApproval;
+    }
+
+    public function sendAPIFormsSubmitted(Request $request)
+    {
+        // Validate the request
+        $request->validate([
+            'idRef' => 'required|integer',
+            'username' => 'required|string',
+            'apiUrl' => 'required|string',
+            'method' => 'required|string',
+            'headers' => 'nullable|string',
+            'isDownload' => 'required|boolean',
+            'params' => 'nullable|array',
+        ]);
+        $dataAnswers = $this->showHistory(new Request(), $request->idRef, $request->batch_id)->getOriginalContent()['data']['data'][0];
+        $headersArray = [];
+        if (!empty($request->headers)) {
+            $headersArray = json_decode($request->headers, true);
+        }
+        // Merge params from request if provided
+        if (!empty($request->params)) {
+            $dataAnswers = array_merge($dataAnswers, $request->params);
+        }
+        $client = new \GuzzleHttp\Client();
+
+        try {
+            $options = [
+                'headers' => $headersArray,
+                'json' => $dataAnswers,
+            ];
+
+            if ($request->isDownload) {
+                $contentType = '';
+                // Make a HEAD request first to get content type
+                try {
+                    $headResponse = $client->head($request->input('apiUrl'), ['headers' => $headersArray]);
+                    $contentType = $headResponse->getHeaderLine('Content-Type');
+                } catch (\Exception $e) {
+                    // If HEAD fails, we'll determine extension from actual response later
+                }
+
+                // Determine extension from content type
+                $extension = 'pdf'; // default
+                if (strpos($contentType, 'application/pdf') !== false) {
+                    $extension = 'pdf';
+                } elseif (strpos($contentType, 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet') !== false) {
+                    $extension = 'xlsx';
+                } elseif (strpos($contentType, 'application/vnd.ms-excel') !== false) {
+                    $extension = 'xls';
+                } elseif (strpos($contentType, 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') !== false) {
+                    $extension = 'docx';
+                } elseif (strpos($contentType, 'application/msword') !== false) {
+                    $extension = 'doc';
+                } elseif (strpos($contentType, 'image/jpeg') !== false) {
+                    $extension = 'jpg';
+                } elseif (strpos($contentType, 'image/png') !== false) {
+                    $extension = 'png';
+                } elseif (strpos($contentType, 'text/csv') !== false) {
+                    $extension = 'csv';
+                } elseif (strpos($contentType, 'application/json') !== false) {
+                    $extension = 'json';
+                } elseif (strpos($contentType, 'text/plain') !== false) {
+                    $extension = 'txt';
+                }
+
+                $downloadPath = \Illuminate\Support\Facades\Storage::path('downloads');
+                if (!file_exists($downloadPath)) {
+                    mkdir($downloadPath, 0755, true);
+                }
+                $options['sink'] = $downloadPath . '/' . time() . '_response.' . $extension;
+            }
+
+            $response = $client->request(
+                strtoupper($request->input('method')),
+                $request->input('apiUrl'),
+                $options
+            );
+
+            if ($request->isDownload) {
+                return response()->json([
+                    'status' => true,
+                    'message' => 'File downloaded successfully',
+                    'file_path' => $options['sink']
+                ]);
+            }
+
+            $response = [
+                'status' => true,
+                'message' => 'API request sent successfully',
+                'response' => json_decode($response->getBody()->getContents(), true),
+                'status_code' => $response->getStatusCode()
+            ];
+        } catch (\GuzzleHttp\Exception\RequestException $e) {
+            $response = [
+                'status' => false,
+                'message' => 'API request failed',
+                'error' => $e->getMessage()
+            ];
+        }
+        return $response;
     }
 }

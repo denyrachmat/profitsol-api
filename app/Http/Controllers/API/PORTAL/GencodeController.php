@@ -104,7 +104,7 @@ class GencodeController extends BaseController
         );
         
         return $this->handleResponse(
-            $data,
+            array_values($data),
             'Data Found !'
         );
         // This method is currently empty, you can implement it as needed.

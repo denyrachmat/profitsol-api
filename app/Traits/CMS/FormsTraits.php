@@ -115,8 +115,11 @@ trait FormsTraits
                 'connectedMRS' => $this->getConnectedMRS((string) $value['id']),
                 'created_at' => $value['created_at'],
                 'tags' => $value['tags'] ?? [],
+                'url' => $value['url'] ?? '',
+                'hashtags' => $value['hashtags'] ?? [],
                 'p_u_username' => $value['p_u_username'] ?? '',
                 'subscription' => $value['subscription'] ?? [],
+                'publish_list' => $value['publish_list'] ?? []
             ];
         }
 
@@ -424,9 +427,9 @@ trait FormsTraits
 
         if (!empty($checkHist) && $checkHist->pgm_value2 == 1) {
             $columns = (clone $getData)->where('pgm_desc', 'historyTableList')->pluck('pgm_value2')->first();
-
+            $colList = $request->has('histTableList') ? $request->input('histTableList') : json_decode($columns);
             $values = [];
-            foreach (json_decode($columns) as $col) {
+            foreach ($colList as $col) {
                 if (isset($col->value)) {
                     $values[] = (int) $col->value;
                 }

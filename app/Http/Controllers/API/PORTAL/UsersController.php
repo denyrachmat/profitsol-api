@@ -50,13 +50,19 @@ class UsersController extends BaseController
         }, $data), 'Data fetched !');
     }
 
-    public function userActiveOnly()
+    public function userActiveOnly($username = '')
     {
-        $data = User::with(['det' => function($f) {
+        $q = User::with(['det' => function($f) {
             $f->where('pud_is_active', 1);
         }])->whereHas('det', function($f) {
             $f->where('pud_is_active', 1);
-        })->orderBy('email')->get()->toArray();
+        })->orderBy('email');
+
+        if ($username != '') {
+            $q->where('username', $username);
+        }
+
+        $data = $q->get()->toArray();
 
         return $this->handleResponse(array_map(function ($item) {
             $hasil = array_merge($item, $item['det']);
