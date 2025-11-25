@@ -495,7 +495,8 @@ class ReportController extends BaseController
         }
 
         // 3. Handle regular query report
-        return $this->handleResponse($this->handleRegularReport($cekReport, $request), 'Data report found');
+        $result = $this->handleRegularReport($cekReport, $request)->getOriginalContent();
+        return $this->handleResponse($result, 'Data report found');
     }
 
     protected function handleStoredProcedureReport($report, $request)
