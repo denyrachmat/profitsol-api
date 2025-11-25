@@ -495,7 +495,7 @@ class ReportController extends BaseController
         }
 
         // 3. Handle regular query report
-        $result = $this->handleRegularReport($cekReport, $request)->getOriginalContent();
+        $result = $this->handleRegularReport($cekReport, $request)->getOriginalContent()['data'];
         return $this->handleResponse($result, 'Data report found');
     }
 
