@@ -104,7 +104,7 @@ class HSCodeUploadController extends BaseController
 
     public function exportData(Request $request, $withHist = false, $downloadLast = false)
     {
-        ExportHSCodeQueue::dispatch($request->filter, $withHist, 'excel', $request->username, $downloadLast)->onQueue('hsCodeDownloader');
+        ExportHSCodeQueue::dispatch($request->filter, $withHist === 'false' ? false : (bool)$withHist, 'excel', $request->username, $downloadLast)->onQueue('hsCodeDownloader');
         return 'Export in queue, you will be notified when it is ready to download';
     }
 
@@ -123,7 +123,7 @@ class HSCodeUploadController extends BaseController
         ];
 
 
-        Excel::store(new ExportHSCodeReport($filter, $withHist), 'export_hscode_auto.xlsx', 'public');
+        Excel::store(new ExportHSCodeReport($filter, $withHist === 'false' ? false : (bool)$withHist), 'export_hscode_auto.xlsx', 'public');
 
         $download = 'storage/export_hscode_auto.xlsx';
 
