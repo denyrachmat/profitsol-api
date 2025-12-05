@@ -12,6 +12,8 @@ use App\Traits\PORTAL\GencodeTraits;
 use App\Models\PORTAL\PortalGencode;
 use Illuminate\Support\Facades\DB;
 use App\Jobs\PORTAl\notifSentQueue;
+use App\Models\User;
+use Illuminate\Support\Facades\Auth;
 
 class FrontPageController extends BaseController
 {
@@ -21,7 +23,7 @@ class FrontPageController extends BaseController
     {
         $this->headerImage = null;
     }
-    public function getFPMenu($id = '')
+    public function getFPMenu($id = '', Request $request = null)
     {
         if (empty($id)) {
             $data = $this->getDataGencode('FP_CONF_MENU', [], [
@@ -43,7 +45,26 @@ class FrontPageController extends BaseController
             ]);
         }
 
-
+        foreach ($data as $key => $value) {
+            $dataMapFP = $this->getDataGencode(
+                'FP_CONF_MENU_VIEW',
+                [
+                    'pgm_value' => !empty($request) ? $request->header('username', '') : '' ,
+                    'pgm_value2' => $value['idx']
+                ],
+                [
+                    'idx' => 'id',
+                    'value' => 'pgm_value3',
+                    'label' => 'pgm_desc',
+                    'icon' => 'pgm_value2',
+                ],
+                [],
+                true
+            );
+            $data[$key]['view_option'] = $dataMapFP['value'] ?? (
+                $value['isFrontData'] == 1 ? 'all' : 'own'
+            );
+        }
 
         usort($data, function ($a, $b) {
             return ($a['index'] ?? 0) <=> ($b['index'] ?? 0);
@@ -498,7 +519,7 @@ class FrontPageController extends BaseController
             $listNotifData = [];
 
             $formController = app(FormController::class);
-            $dataForm = $formController->viewByID((int)  $id)->getOriginalContent()['data']['value'] ?? [];
+            $dataForm = $formController->viewByID((int) $id)->getOriginalContent()['data']['value'] ?? [];
 
             // return $dataForm['hashtags'] ?? [];
 
@@ -536,7 +557,7 @@ class FrontPageController extends BaseController
             }
 
             $getUsersDetail = $getListActiveUsers = app(UsersController::class)->userActiveOnly($dataForm['p_u_username'])->getOriginalContent()['data'][0] ?? null;
-            
+
             // return $listNotifData;
             foreach ($listNotifData as $keyNotif => $valueNotif) {
                 $getListActiveUsers = app(UsersController::class)->userActiveOnly($valueNotif['subscriber'] === '_ALL' ? '' : $valueNotif['subscriber'])->getOriginalContent()['data'] ?? [];
@@ -719,7 +740,7 @@ class FrontPageController extends BaseController
         $data = $request->validate([
             'idPage' => 'required|array',
             'idPage.*' => 'required|string',
-            'sharedData' => 'required|array|min:1',
+            'sharedData' => 'nullable|array',
             'options' => 'required|array',
             'options.createPage' => 'required|boolean',
             'userId' => 'required|string',
@@ -948,7 +969,7 @@ class FrontPageController extends BaseController
                         'pgm_value' => $validated['type'],
                         'pgm_value2' => $valueData,
                         'pgm_value3' => $subscription,
-                        'pgm_desc' =>  'Subscription to post',
+                        'pgm_desc' => 'Subscription to post',
                         'pgm_desc2' => $validated['status']
                     ]
                 );
@@ -956,5 +977,30 @@ class FrontPageController extends BaseController
         }
 
         return response()->json(['message' => 'Bulk subscriptions updated successfully'], 200);
+    }
+
+    public function subscribe(Request $request)
+    {
+        $user = User::where('username', $request->header('username'))->first();
+
+        if (!$user) {
+            return response()->json(['success' => false, 'message' => 'User not authenticated.'], 401);
+        }
+
+        // Validasi data dari frontend
+        $request->validate([
+            'endpoint' => 'required',
+            'keys.auth' => 'required',
+            'keys.p256dh' => 'required',
+        ]);
+
+        // Simpan data subscription ke tabel push_subscriptions
+        $user->updatePushSubscription(
+            $request->endpoint,
+            $request->keys['p256dh'],
+            $request->keys['auth']
+        );
+
+        return response()->json(['success' => true, 'message' => 'Subscribed to push notifications successfully.'], 200);
     }
 }

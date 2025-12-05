@@ -11,10 +11,11 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
+use NotificationChannels\WebPush\HasPushSubscriptions;
 
 class User extends Authenticatable implements MustVerifyEmail
 {
-    use HasApiTokens, HasFactory, Notifiable;
+    use HasApiTokens, HasFactory, Notifiable, HasPushSubscriptions;
     /**
      * The attributes that are mass assignable.
      *
@@ -82,5 +83,15 @@ class User extends Authenticatable implements MustVerifyEmail
              $user->edu()->delete();
              // do the rest of the cleanup...
         });
+    }
+
+    /**
+     * Route notifications for the WebPush channel.
+     *
+     * @return \Illuminate\Database\Eloquent\Collection
+     */
+    public function routeNotificationForWebPush()
+    {
+        return $this->pushSubscriptions;
     }
 }

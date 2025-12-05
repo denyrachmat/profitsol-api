@@ -193,16 +193,35 @@ class NotifController extends BaseController
 
     public function sendEmailNotification($to, $subject, $content, $linkPost)
     {
-        // Convert fullname Recepient variable
-        // $convertContent = str_replace(search: "{{recipient_fullname}}", replace: $to, subject: $content);
+        // 1. CARI USER DULU (Berdasarkan username/email sesuai variabel $to kamu)
+        // Saya lihat di bawah kamu pakai 'username', jadi saya ikuti logic itu.
+        $user = User::where('username', $to)->with('det')->first();
 
-        Notification::route('mail', $to)->notify(new PortalEmailNotification(
-            $subject,
-            $content,
-            'STX-I Intranet Notification',
-            $linkPost,
-            User::where('username', $to)->with('det')->first()
-        ));
+        // 2. LOGIC PENGIRIMAN
+        if ($user) {
+            $count = $user->pushSubscriptions()->count();
+            logger('User found with ' . $count . ' push subscriptions.');
+            // --- SKENARIO A: User Ditemukan di Database ---
+            // Kita notifikasi OBJECT User-nya langsung.
+            // Kelebihannya: Laravel otomatis tau Email-nya DAN WebPush Subscription-nya.
+            $user->notify(new PortalEmailNotification(
+                $subject,
+                $content,
+                'STX-I Intranet Notification',
+                $linkPost,
+                $user
+            ));
+        } else {
+            // --- SKENARIO B: User Tidak Ditemukan (Mungkin Email Eksternal) ---
+            // Kita pakai cara lama (Route Mail), WebPush otomatis di-skip (karena logic via() tadi).
+            Notification::route('mail', $to)->notify(new PortalEmailNotification(
+                $subject,
+                $content,
+                'STX-I Intranet Notification',
+                $linkPost,
+                null // User null karena tidak ketemu
+            ));
+        }
     }
 
 

@@ -104,7 +104,7 @@ class GencodeController extends BaseController
         );
         
         return $this->handleResponse(
-            array_values($data),
+            $request->firstSelect ? $data : array_values($data),
             'Data Found !'
         );
         // This method is currently empty, you can implement it as needed.

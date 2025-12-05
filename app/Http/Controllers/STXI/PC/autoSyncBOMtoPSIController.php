@@ -86,11 +86,11 @@ class autoSyncBOMtoPSIController extends Controller
             'PSI-PPC.Partcontrol@smt.co.id',
             'andy@smt.co.id',
         ],[
-            'dadan-setiawan@sumitronics.co.jp',
+            // 'dadan-setiawan@sumitronics.co.jp',
             'wawan-setiawan@sumitronics.co.jp',
             'rexon-julianto@sumitronics.co.jp',
             'mohammad-mujib@sumitronics.co.jp',
-            'bella-setivany@sumitronics.co.jp',
+            // 'bella-setivany@sumitronics.co.jp',
             'ludh-praditto@sumitronics.co.jp',
             'widiatama-rahayu@sumitronics.co.jp',
             'retno-astuti@sumitronics.co.jp',

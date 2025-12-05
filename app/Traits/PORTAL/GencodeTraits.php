@@ -32,13 +32,17 @@ trait GencodeTraits
 
             if ($withParents) {
                 if ($forceShowAll) {
-                    $gencode->with(['children' => function($query) {
-                        $query->limit(1000); // Prevent infinite recursion
-                    }]);
+                    $gencode->with([
+                        'children' => function ($query) {
+                            $query->limit(1000); // Prevent infinite recursion
+                        }
+                    ]);
                 } else {
-                    $gencode->with(['children' => function($query) {
-                        $query->limit(1000); // Prevent infinite recursion
-                    }])->whereNull('pgm_parent');
+                    $gencode->with([
+                        'children' => function ($query) {
+                            $query->limit(1000); // Prevent infinite recursion
+                        }
+                    ])->whereNull('pgm_parent');
                 }
             }
 
@@ -57,7 +61,7 @@ trait GencodeTraits
             foreach ($hasilnya as $key => $value) {
                 foreach ($selectAs as $keySel => $valueSel) {
                     $splitTypeString = explode('|', $valueSel);
-                    
+
                     // Check if there's a :max or :min modifier
                     if (count($splitTypeString) > 1) {
                         if (strpos($splitTypeString[1], ':max') !== false) {
@@ -92,7 +96,7 @@ trait GencodeTraits
                             }
                         }
                     }
-                    
+
                     $selectStr = $splitTypeString[0];
 
                     $keysCheck = $value[$keySel] ?? $keySel;
@@ -250,31 +254,35 @@ trait GencodeTraits
     {
         $data = $request->input('data', []);
         $keys = $request->input('keys', []);
-        // Extract all key fields including store_separately ones for conditions
+
+        /**
+         * 1) Ambil semua key fields yang store_separately=true
+         *    Ini dipakai buat kondisi delete & updateOrCreate
+         */
         $allKeyFields = [];
         foreach ($keys as $key => $value) {
-            if (is_array($value) && isset($value['store_separately']) && $value['store_separately'] === true) {
-                // For store_separately fields, we need to include them in conditions
-                $allKeyFields[$key] = $value;
-            } else {
+            if (is_array($value) && ($value['store_separately'] ?? false) === true) {
                 $allKeyFields[$key] = $value;
             }
         }
-        // Delete existing records that match base keys before creating new ones
+
+        /**
+         * 2) Delete existing records yang match base keys
+         */
         if (!empty($allKeyFields)) {
             $deleteConditions = [];
+
             foreach ($allKeyFields as $key => $value) {
-                if (is_array($value) && isset($value['store_separately']) && $value['store_separately'] === true) {
-                    // For store_separately fields, include them in delete conditions
+                if (($value['store_separately'] ?? false) === true) {
                     if (isset($data[$key]) && is_array($data[$key])) {
-                        // If it's an array with store_separately, we need to delete all combinations
-                        // So we include the field but will use whereIn for arrays
+                        // ambil array values
                         $deleteConditions[$key] = $data[$key]['value'] ?? $data[$key];
                     }
                 } else {
-                    // Use the key from $keys as condition
                     if (isset($data[$key])) {
-                        $deleteConditions[$key] = is_array($data[$key]) ? json_encode($data[$key]) : $data[$key];
+                        $deleteConditions[$key] = is_array($data[$key])
+                            ? json_encode($data[$key])
+                            : $data[$key];
                     }
                 }
             }
@@ -285,7 +293,6 @@ trait GencodeTraits
                 $query = PortalGencode::query();
                 foreach ($deleteConditions as $field => $value) {
                     if (is_array($value)) {
-                        // Use whereIn for array values
                         $query->whereIn($field, $value);
                     } else {
                         $query->where($field, $value);
@@ -294,57 +301,83 @@ trait GencodeTraits
                 $query->delete();
             }
         }
-        // Update keys array to use processed keys
+
+        /**
+         * 3) Update keys jadi cuma yang store_separately=true
+         */
         $keys = $allKeyFields;
 
-        // Identify fields with store_separately
+        /**
+         * 4) Pisahkan data:
+         *    - $separateFields = field store_separately
+         *    - $baseData = field biasa
+         */
         $separateFields = [];
         $baseData = [];
 
         foreach ($data as $key => $value) {
-            if (is_array($value) && isset($value['store_separately']) && $value['store_separately'] === true) {
+            if (is_array($value) && ($value['store_separately'] ?? false) === true) {
                 $separateFields[$key] = $value['value'] ?? [];
             } else {
-                if (is_array($value)) {
-                    $baseData[$key] = json_encode($value);
-                } else {
-                    $baseData[$key] = $value;
-                }
+                $baseData[$key] = is_array($value) ? json_encode($value) : $value;
             }
         }
 
-        // If there are fields to store separately, create combinations
+        /**
+         * 5) Kalau ada separateFields -> bikin kombinasi cartesian
+         */
         if (!empty($separateFields)) {
-            $fieldNames = array_keys($separateFields);
-            $fieldValues = array_values($separateFields);
 
-            // Generate all combinations (Cartesian product)
-            $combinations = [[]];
-            foreach ($fieldValues as $values) {
-                $append = [];
-                foreach ($combinations as $combination) {
-                    foreach ($values as $value) {
-                        $append[] = array_merge($combination, [$value]);
+            // Pivot selalu pgm_value
+            $pivotValues = $separateFields['pgm_value'] ?? [];
+
+            // Other separate fields (boleh kosong / beda panjang)
+            $v2 = $separateFields['pgm_value2'] ?? [];
+            $v3 = $separateFields['pgm_value3'] ?? [];
+
+            // Field order FIX sesuai kolom tabel
+            $fieldNames = array_values(array_filter(
+                ['pgm_value', 'pgm_value2', 'pgm_value3'],
+                fn($f) => array_key_exists($f, $separateFields)
+            ));
+
+            // Build combinations: pivot x v2 x v3 (cartesian)
+            $combinations = [];
+
+            if (!empty($pivotValues)) {
+                foreach ($pivotValues as $pv) {
+
+                    // kalau kosong, biar tetep 1 variasi null
+                    $v2List = !empty($v2) ? $v2 : [null];
+                    $v3List = !empty($v3) ? $v3 : [null];
+
+                    foreach ($v2List as $val2) {
+                        foreach ($v3List as $val3) {
+                            // urutan harus match fieldNames
+                            $combinations[] = [$pv, $val2, $val3];
+                        }
                     }
                 }
-                $combinations = $append;
             }
 
-            // Create records for each combination
+            logger()->info('Creating Gencode combinations (cartesian pivot pgm_value): ' . json_encode($combinations));
+
+            /**
+             * 6) Insert / update record per kombinasi
+             */
             foreach ($combinations as $combination) {
                 $recordData = $baseData;
 
-                // Add each separate field value
+                // isi field separate sesuai urutan fixed fieldNames
                 foreach ($fieldNames as $idx => $fieldName) {
-                    $recordData[$fieldName] = $combination[$idx];
+                    $recordData[$fieldName] = $combination[$idx] ?? null;
                 }
 
-                // Build conditions for updateOrCreate
+                // Build conditions untuk updateOrCreate
                 if (!empty($keys)) {
                     $conditions = [];
                     foreach ($keys as $keyField => $keyValue) {
-                        if (is_array($keyValue) && isset($keyValue['store_separately'])) {
-                            // Use the current iteration value
+                        if (($keyValue['store_separately'] ?? false) === true) {
                             if (isset($recordData[$keyField])) {
                                 $conditions[$keyField] = $recordData[$keyField];
                             }
@@ -354,8 +387,9 @@ trait GencodeTraits
                     }
 
                     if (!empty($conditions)) {
-                        logger()->info('Updating or creating Gencode with conditions: ' . json_encode($conditions) . ' and data: ' . json_encode($recordData));
                         PortalGencode::updateOrCreate($conditions, $recordData);
+                    } else {
+                        PortalGencode::create($recordData);
                     }
                 } else {
                     PortalGencode::create($recordData);
@@ -365,7 +399,9 @@ trait GencodeTraits
             return response()->json(['success' => true]);
         }
 
-        // No separate fields, process normally
+        /**
+         * 7) Kalau gak ada separateFields -> normal insert/update
+         */
         if (!empty($keys)) {
             $conditions = [];
             foreach ($keys as $key => $value) {
@@ -381,4 +417,5 @@ trait GencodeTraits
 
         return PortalGencode::create($baseData);
     }
+
 }

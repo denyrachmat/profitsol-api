@@ -141,6 +141,8 @@ Route::group(['prefix' => 'fpmanager'], function () {
     Route::post('saveDMStoFrontPage', [FrontPageController::class, 'saveDMStoFrontPage']);
 
     Route::post('subscribe', [FrontPageController::class, 'subscribePosts']);
+    Route::post('subscribeAllow', [FrontPageController::class, 'subscribe']);
+    
     Route::post('saveSubscriber', [FrontPageController::class, 'updateBulkSubscribePosts']);
 });
 
