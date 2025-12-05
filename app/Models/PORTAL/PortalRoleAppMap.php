@@ -30,24 +30,17 @@ class PortalRoleAppMap extends Model
 
     public function child()
     {
-        return $this->hasMany('App\Models\PORTAL\PortalRoleAppMap', ['am_app_parent', 'rm_role_id'], ['am_app_id', 'rm_role_id']);
+        return $this->hasMany(
+            PortalRoleAppMap::class,
+            'am_app_parent',   // foreign key di tabel child
+            'am_app_id'        // local key di tabel parent (this)
+        )->whereColumn(
+                'portal_role_app_map.rm_role_id',   // kolom child
+                'portal_role_app_map.rm_role_id'    // kolom parent
+            );
     }
 
     public function childRoles($depth = 8)
-    // {
-    //     if ($depth <= 0)
-    //         return $this->child();
-
-    //     return $this->child()
-    //         ->with([
-    //             'childRoles' => function ($query) use ($depth) {
-    //                 $query->with('apps')->take($depth - 1);
-    //             }
-    //         ])
-    //         ->whereNotNull('am_app_id')
-    //         ->with('apps')
-    //         ->orderBy('am_app_id');
-    // }
     {
         return $this->child()->with('childRoles')->with('apps')->orderBy('am_app_id');
     }
