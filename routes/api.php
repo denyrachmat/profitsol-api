@@ -142,6 +142,7 @@ Route::group(['prefix' => 'fpmanager'], function () {
 
     Route::post('subscribe', [FrontPageController::class, 'subscribePosts']);
     Route::post('subscribeAllow', [FrontPageController::class, 'subscribe']);
+    //Test
     
     Route::post('saveSubscriber', [FrontPageController::class, 'updateBulkSubscribePosts']);
 });
