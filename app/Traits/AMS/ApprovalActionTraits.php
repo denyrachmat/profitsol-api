@@ -278,28 +278,17 @@ trait ApprovalActionTraits
     public function getMasterApprovalByToken($token, $tokenHist, $isView = false)
     {
         $cekToken = ApprovalTokenDetail::with([
-            'hist' => function ($f) use ($tokenHist) {
+            'hist' => function ($f) {
                 $f->with('mapdet')
                     ->whereHas('mapdet')
-                    // ->withTrashed()
-                    ->orderBy('id', 'asc')
-                    ->get()
-                    ->toArray();
-            }
+                    ->orderBy('id', 'asc');
+            },
+            'selectedHist' => function ($f) use ($tokenHist) {
+                $f->with('mapdet', 'attch')
+                    ->where('amshd_token', $tokenHist)
+                    ->orderBy('id', 'asc');
+            },
         ])
-            ->with([
-                'selectedHist' => function ($f) use ($tokenHist) {
-                    $f->with(
-                        'mapdet',
-                        'attch'
-                    )
-                        ->where('amshd_token', $tokenHist)
-                        // ->withTrashed()
-                        ->orderBy('id', 'asc')
-                        ->get()
-                        ->toArray();
-                },
-            ])
             ->where('amstd_token', $token)
             ->withTrashed()
             ->first();
@@ -764,7 +753,8 @@ trait ApprovalActionTraits
         return Storage::disk('local')->url($imageName);
     }
 
-    public function viewApprovalMasterByApprvCode($apvcd)  {
+    public function viewApprovalMasterByApprvCode($apvcd)
+    {
         $getData = ApprovalMaster::where('ams_idapv', $apvcd)
             ->first();
 
