@@ -37,18 +37,18 @@ class ApprovalHistDetail extends Model
         return $this->setConnection('sqlsrv')->hasOne(PortalUserDet::class, 'u_username', 'amshd_username_apprv');
     }
 
-    // public function mapdet()
-    // {
-    //     return $this->hasOne(ApprovalMapDetail::class, ['id', 'amsmd_username'], ['amsmd_id', 'p_u_username']);
-    // }
     public function mapdet()
     {
-        $mapTable = (new ApprovalMapDetail)->getTable();
-        $histTable = $this->getTable(); // 'ams_apprv_hist_det'
-
-        return $this->hasOne(ApprovalMapDetail::class, 'id', 'amsmd_id')
-            ->whereColumn("$mapTable.amsmd_username", "$histTable.p_u_username");
+        return $this->hasOne(ApprovalMapDetail::class, ['id', 'amsmd_username'], ['amsmd_id', 'p_u_username']);
     }
+    // public function mapdet()
+    // {
+    //     $mapTable = (new ApprovalMapDetail)->getTable();
+    //     $histTable = $this->getTable(); // 'ams_apprv_hist_det'
+
+    //     return $this->hasOne(ApprovalMapDetail::class, 'id', 'amsmd_id')
+    //         ->whereColumn("$mapTable.amsmd_username", "$histTable.p_u_username");
+    // }
 
 
     public function master()
