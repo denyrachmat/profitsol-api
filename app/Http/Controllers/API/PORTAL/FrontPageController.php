@@ -1003,4 +1003,23 @@ class FrontPageController extends BaseController
 
         return response()->json(['success' => true, 'message' => 'Subscribed to push notifications successfully.'], 200);
     }
+
+    public function unsubscribe(Request $request)
+    {
+        $user = User::where('username', $request->header('username'))->first();
+
+        if (!$user) {
+            return response()->json(['success' => false, 'message' => 'User not authenticated.'], 401);
+        }
+
+        // Validasi data dari frontend
+        $request->validate([
+            'endpoint' => 'required',
+        ]);
+
+        // Hapus data subscription dari tabel push_subscriptions
+        $user->deletePushSubscription($request->endpoint);
+
+        return response()->json(['success' => true, 'message' => 'Unsubscribed from push notifications successfully.'], 200);
+    }
 }

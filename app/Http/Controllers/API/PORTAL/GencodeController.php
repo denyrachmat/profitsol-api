@@ -36,7 +36,7 @@ class GencodeController extends BaseController
     {
         $data = PortalGencode::updateOrCreate([
             'id' => $request->id,
-        ],[
+        ], [
             'pgm_code' => $request->pgm_code,
             'pgm_desc' => $request->pgm_desc,
             'pgm_desc2' => $request->pgm_desc2,
@@ -93,16 +93,16 @@ class GencodeController extends BaseController
     public function showDetail($id, Request $request)
     {
         $data = $this->getDataGencode(
-                $id, 
-                $request->filter ?? [], 
-                $request->selectAs ?? [], 
-                $request->orderBy ?? [], 
-                $request->firstSelect ?? false, 
-                $request->withParents ?? false, 
-                $request->forceShowAll ?? false, 
-                $request->groupBy ?? []
+            $id,
+            $request->filter ?? [],
+            $request->selectAs ?? [],
+            $request->orderBy ?? [],
+            $request->firstSelect ?? false,
+            $request->withParents ?? false,
+            $request->forceShowAll ?? false,
+            $request->groupBy ?? []
         );
-        
+
         return $this->handleResponse(
             $request->firstSelect ? $data : array_values($data),
             'Data Found !'

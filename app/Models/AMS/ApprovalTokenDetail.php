@@ -5,6 +5,7 @@ namespace App\Models\AMS;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Awobaz\Compoships\Compoships;
 
 class ApprovalTokenDetail extends Model
 {

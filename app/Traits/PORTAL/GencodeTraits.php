@@ -5,6 +5,9 @@ namespace App\Traits\PORTAL;
 use Illuminate\Support\Facades\DB;
 use App\Models\PORTAL\PortalGencode;
 use Illuminate\Http\Request;
+use App\Notifications\PORTAL\PortalEmailNotification;
+use Illuminate\Support\Facades\Notification;
+use App\Models\User;
 
 trait GencodeTraits
 {
@@ -26,7 +29,11 @@ trait GencodeTraits
 
             if (!empty($filter)) {
                 foreach ($filter as $key => $value) {
-                    $gencode->whereRaw("CAST($key AS varchar(max)) = ?", [$value]);
+                    if (is_array($value)) {
+                        $gencode->whereIn(DB::raw("CAST($key AS varchar(max))"), $value);
+                    } else {
+                        $gencode->whereRaw("CAST($key AS varchar(max)) = ?", [$value]);
+                    }
                 }
             }
 
@@ -135,68 +142,8 @@ trait GencodeTraits
                                 } elseif ($splitTypeString[1] === 'bool') {
                                     $hasil[$key][$keysCheck] = (bool) $value[$selectStr];
                                 } elseif ($splitTypeString[1] === 'array') {
-                                    if (isset($splitTypeString[2]) && $splitTypeString[2] === 'grouped') {
-
-                                        // Build/append grouped array for dynamic key ($keysCheck) and merge rows with same other fields
-                                        $currentVal = $value[$selectStr];
-
-                                        // Try to find an existing row in $hasil that matches all already-set fields (except the grouped field)
-                                        $existingIndex = null;
-                                        $compareFields = $hasil[$key] ?? [];
-                                        if (!empty($compareFields)) {
-                                            // Do not compare the grouped field itself
-                                            if (array_key_exists($keysCheck, $compareFields)) {
-                                                unset($compareFields[$keysCheck]);
-                                            }
-                                            // Optional: ignore 'order' when grouping
-                                            if (array_key_exists('order', $compareFields)) {
-                                                unset($compareFields['order']);
-                                            }
-
-                                            if (!empty($compareFields)) {
-                                                foreach ($hasil as $idx => $rowCandidate) {
-                                                    if ($idx === $key) {
-                                                        continue;
-                                                    }
-                                                    $match = true;
-                                                    foreach ($compareFields as $ck => $cv) {
-                                                        if (!array_key_exists($ck, $rowCandidate) || $rowCandidate[$ck] !== $cv) {
-                                                            $match = false;
-                                                            break;
-                                                        }
-                                                    }
-                                                    if ($match) {
-                                                        $existingIndex = $idx;
-                                                        break;
-                                                    }
-                                                }
-                                            }
-                                        }
-
-                                        // Determine where to place the grouped values
-                                        $targetIndex = $existingIndex !== null ? $existingIndex : $key;
-
-                                        // Ensure target has an array for the grouped key
-                                        if (!isset($hasil[$targetIndex][$keysCheck]) || !is_array($hasil[$targetIndex][$keysCheck])) {
-                                            $hasil[$targetIndex][$keysCheck] = [];
-                                        }
-
-                                        // Append unique value
-                                        if ($currentVal !== null && $currentVal !== '') {
-                                            if (!in_array($currentVal, $hasil[$targetIndex][$keysCheck], true)) {
-                                                $hasil[$targetIndex][$keysCheck][] = $currentVal;
-                                            }
-                                        }
-
-                                        // If merged into an existing row, remove the current row to avoid duplicates.
-                                        // Note: for reliable behavior, ensure the grouped field is processed last in $selectAs.
-                                        if ($existingIndex !== null && $targetIndex !== $key) {
-                                            unset($hasil[$key]);
-                                        }
-                                    } else {
-                                        // Just convert to array with single value
-                                        $hasil[$key][$keysCheck] = json_decode($value[$selectStr], true);
-                                    }
+                                    // sementara set value single dulu (akan digroup di akhir bila grouped)
+                                    $hasil[$key][$keysCheck] = $value[$selectStr];
                                 } else {
                                     $hasil[$key][$keysCheck] = (string) $value[$selectStr];
                                 }
@@ -213,6 +160,66 @@ trait GencodeTraits
                     }
                 }
             }
+
+            // =========================
+            // NEW GROUPED ARRAY HANDLER
+            // =========================
+
+            // cari field mana aja yang bertipe array|grouped
+            $groupedFields = [];
+            $normalFields = [];
+
+            foreach ($selectAs as $alias => $spec) {
+                $parts = explode('|', $spec);
+                $type = $parts[1] ?? 'string';
+                $isGrouped = ($type === 'array' && ($parts[2] ?? null) === 'grouped');
+
+                if ($isGrouped) {
+                    $groupedFields[] = $alias;   // alias output, misal 'category', 'email'
+                } else {
+                    $normalFields[] = $alias;    // field lain jadi signature grouping
+                }
+            }
+
+            if (!empty($groupedFields)) {
+                $tmp = [];
+
+                foreach ($hasil as $row) {
+                    // build signature dari normal fields
+                    $sigParts = [];
+                    foreach ($normalFields as $nf) {
+                        $sigParts[$nf] = $row[$nf] ?? null;
+                    }
+                    $sigKey = md5(json_encode($sigParts));
+
+                    if (!isset($tmp[$sigKey])) {
+                        // init row baru
+                        $tmp[$sigKey] = $sigParts;
+
+                        // init grouped fields sebagai array kosong
+                        foreach ($groupedFields as $gf) {
+                            $tmp[$sigKey][$gf] = [];
+                        }
+                    }
+
+                    // append grouped values
+                    foreach ($groupedFields as $gf) {
+                        $val = $row[$gf] ?? null;
+                        if ($val !== null && $val !== '') {
+                            if (!in_array($val, $tmp[$sigKey][$gf], true)) {
+                                $tmp[$sigKey][$gf][] = $val;
+                            }
+                        }
+                    }
+                }
+
+                // overwrite hasil jadi versi grouped
+                $hasil = array_values($tmp);
+            }
+
+            // =========================
+            // END NEW GROUPED HANDLER
+            // =========================
 
             if (count($groupBy) > 0) {
                 $grouped = [];
@@ -254,6 +261,7 @@ trait GencodeTraits
     {
         $data = $request->input('data', []);
         $keys = $request->input('keys', []);
+        $notify = $request->input('notify', []);
 
         /**
          * 1) Ambil semua key fields yang store_separately=true
@@ -415,7 +423,59 @@ trait GencodeTraits
             }
         }
 
+        if (!empty($notify)) {
+            // Kirim notifikasi
+            $subject = $notify['title'] ?? 'Notification';
+            $content = $notify['message'] ?? '';
+            $fromDesc = config('app.name');
+            $linkPost = $notify['link'] ?? env('FE_URL');
+            $toUser = $notify['to'] ?? null;
+            $sentMode = $notify['methods'] ?? ['email', 'webpush'];
+
+            if (is_array($toUser)) {
+                $users = User::whereIn('username', $toUser)->with('det')->get();
+            } else {
+                $users = User::where('username', $toUser)->with('det')->get();
+            }
+
+            foreach ($users as $keyUser => $valueUsers) {
+                $notification = new PortalEmailNotification(
+                    $subject,
+                    $content,
+                    $fromDesc,
+                    $linkPost,
+                    $valueUsers,
+                    $sentMode
+                );
+
+                if ($toUser) {
+                    // Kirim ke user spesifik
+                    Notification::route('mail', $valueUsers->username)->notify($notification);
+                }
+            }
+        }
+
         return PortalGencode::create($baseData);
     }
 
+    public function deleteGencode(Request $request)
+    {
+        $id = $request->input('id', null);
+        $filter = $request->input('filter', []);
+
+        $gencode = PortalGencode::where('pgm_code', $id);
+
+        if (!empty($filter)) {
+            foreach ($filter as $key => $value) {
+                $gencode->whereRaw("CAST($key AS nvarchar(max)) = ?", [$value]);
+            }
+        }
+
+        $deletedCount = $gencode->delete();
+
+        return response()->json([
+            'success' => true,
+            'deleted_count' => $deletedCount,
+        ]);
+    }
 }

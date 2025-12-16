@@ -150,7 +150,7 @@ class TrainingListController extends BaseController
         $title = FormMasterTitle::where('cms_form_mstr_title.id', $id)->join('cms_form_setup_det', 'cms_form_mstr_title.id', 'cfmt_id')->first()->toArray();
         Excel::store(new ExportListPerTraining($this->show($id, 1), $title), $title['cfmt_title'].'-'.date('ddmmyyyy').'.xlsx', 'public');
 
-        return 'storage/'.$title['cfmt_title'].'-'.date('ddmmyyyy').'.xlsx';
+        return '/storage/'.$title['cfmt_title'].'-'.date('ddmmyyyy').'.xlsx';
     }
 
     public function showHistoryPerUser($email, $id, $dataOnly = false){
@@ -253,6 +253,6 @@ class TrainingListController extends BaseController
 
         Excel::store(new ExportQuestionAnalytics($dataFinal, $title), 'analytics-'.$title['cfmt_title'].'-'.date('ddmmyyyy').'.xlsx', 'public');
 
-        return 'storage/analytics-'.$title['cfmt_title'].'-'.date('ddmmyyyy').'.xlsx';
+        return '/storage/analytics-'.$title['cfmt_title'].'-'.date('ddmmyyyy').'.xlsx';
     }
 }

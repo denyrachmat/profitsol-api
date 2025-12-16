@@ -142,6 +142,7 @@ Route::group(['prefix' => 'fpmanager'], function () {
 
     Route::post('subscribe', [FrontPageController::class, 'subscribePosts']);
     Route::post('subscribeAllow', [FrontPageController::class, 'subscribe']);
+    Route::post('unsubscribe', [FrontPageController::class, 'unsubscribe']);
     //Test
     
     Route::post('saveSubscriber', [FrontPageController::class, 'updateBulkSubscribePosts']);
@@ -187,6 +188,7 @@ Route::group(['prefix' => 'dms'], function () {
     Route::get('checkPath/{users}/{path?}', [FolderController::class, 'checkPath']);
     Route::get('checkDeletedFolders/{users}', [FolderController::class, 'dbSyncToRealDoc']);
     Route::get('syncRootFiles/{users}', [FolderController::class, 'syncRootFiles']);
+    Route::post('uploadFiles', [DocumentController::class, 'uploadFiles']);
 });
 
 Route::group(['prefix' => 'cms'], function () {

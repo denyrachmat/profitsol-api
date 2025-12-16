@@ -235,4 +235,22 @@ class DocumentController extends BaseController
             'delete_real_folder' => $deleteRealFiles
         ], 'Files deleted successfully !');
     }
+
+    public function uploadFiles(Request $request)
+    {
+        $request->validate([
+            'file' => 'required|file|max:10240'
+        ]);
+        $file = $request->file('file');
+        
+        $path = $file->store('editor', 'public');
+        
+        return response()->json([
+            'url' => asset('storage/' . $path),
+            'path' => $path,
+            'name' => $file->getClientOriginalName(),
+            'mime' => $file->getMimeType(),
+            'size' => $file->getSize(),
+        ]);
+    }
 }

@@ -14,27 +14,33 @@ class PortalEmailNotification extends Notification
 {
     use Queueable;
 
-    public $subject, $content, $fromDesc, $linkPost, $user;
+    public $subject, $content, $fromDesc, $linkPost, $user, $sentMode;
 
-    public function __construct($subject, $content, $fromDesc, $linkPost, $user = null)
+    public function __construct($subject, $content, $fromDesc, $linkPost, $user = null, $sentMode = ['email', 'webpush'])
     {
         $this->subject = $subject;
         $this->content = $content;
         $this->fromDesc = $fromDesc;
         $this->linkPost = $linkPost;
         $this->user = $user;
+        $this->sentMode = $sentMode;
     }
 
     public function via(object $notifiable): array
     {
-        $channels = ['mail'];
+        $channels = [];
+
+        // Add mail channel if included in sentMode
+        if (in_array('email', $this->sentMode)) {
+            $channels[] = 'mail';
+        }
 
         // Cek apakah penerima adalah Object User asli (bukan string email anonim)
         // Kita log dulu identitas penerimanya
         Log::info("PortalEmailNotification: Memeriksa channel untuk ID: " . ($notifiable->id ?? 'Anonim') . " Class: " . get_class($notifiable));
 
         // Cek apakah dia punya trait WebPush
-        if (method_exists($notifiable, 'routeNotificationForWebPush')) {
+        if (in_array('webpush', $this->sentMode) && method_exists($notifiable, 'routeNotificationForWebPush')) {
             Log::info("PortalEmailNotification: User valid untuk WebPush. Menambahkan channel.");
             $channels[] = WebPushChannel::class;
         } else {

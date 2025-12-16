@@ -278,18 +278,16 @@ trait ApprovalActionTraits
     public function getMasterApprovalByToken($token, $tokenHist, $isView = false)
     {
         $cekToken = ApprovalTokenDetail::with([
-            'hist' => function ($f) {
-                $f->with('mapdet')
-                    ->whereHas('mapdet')
+            'hist' => function ($q) {
+                $q->with('mapdet')
                     ->orderBy('id', 'asc');
             },
-            'selectedHist' => function ($f) use ($tokenHist) {
-                $f->with('mapdet', 'attch')
+            'selectedHist' => function ($q) use ($tokenHist) {
+                $q->with('mapdet', 'attch')
                     ->where('amshd_token', $tokenHist)
                     ->orderBy('id', 'asc');
             },
-        ])
-            ->where('amstd_token', $token)
+        ])->where('amstd_token', $token)
             ->withTrashed()
             ->first();
 
