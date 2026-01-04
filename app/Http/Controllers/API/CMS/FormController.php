@@ -11,6 +11,7 @@ use App\Models\PORTAL\PortalRoleUserMap;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 
 use App\Models\CMS\FormMaster;
 use App\Models\CMS\FormMultiDet;
@@ -28,6 +29,7 @@ use App\Http\Requests\MRS\ReportCreateRequest;
 use App\Traits\CMS\FormsTraits;
 use App\Traits\AMS\ApprovalActionTraits;
 use App\Http\Requests\AMS\ApprovalRunningApproveActionRequest;
+use function PHPUnit\Framework\returnArgument;
 
 class FormController extends BaseController
 {
@@ -379,6 +381,8 @@ class FormController extends BaseController
             ->orderBy('created_at', 'desc')
             ->first();
 
+        $needStores = true;
+
         if (empty($getID)) {
             $getDeletedID = FormAnswerUserDet::withTrashed()->where('cfm_id', $request->id)
                 ->orderBy('created_at', 'desc')
@@ -387,6 +391,10 @@ class FormController extends BaseController
             $nextID = empty($getDeletedID) ? 1 : $getDeletedID['cfaud_batch'] + 1;
         } else {
             $nextID = $getID['cfaud_batch'] + 1;
+        }
+
+        if ($request->has('batch_id') && !empty($request->batch_id)) {
+            $nextID = $request->batch_id;
         }
 
         $cekForm = FormMaster::where('cfmt_id', $request->id)->where('cfm_type', 'form')->where('cfm_required', 1)->get()->toArray();
@@ -408,17 +416,6 @@ class FormController extends BaseController
 
         if (count($hasilError) > 0) {
             return $this->handleError('There is required field not filled yet !', $hasilError);
-        }
-
-        $hasil = [];
-        foreach ($spreadAnswer as $key => $value) {
-            $hasil[] = FormAnswerUserDet::create([
-                'p_u_username' => $request->header('username'),
-                'cfaud_batch' => $nextID,
-                'cfm_id' => $request->id,
-                'cfmd_id' => $key,
-                'cfm_val' => (string) $value,
-            ]);
         }
 
         $checkSetup = $this->getSetupFormsForForm($request->id);
@@ -453,13 +450,15 @@ class FormController extends BaseController
             ]));
         }
 
+        // return $checkSetup;
+
+        $hasilAPICall = [];
         if ($checkSetup['isAPI'] == 1 && !empty($checkSetup['apiOpt'])) {
-            $hasilAPICall = [];
             foreach ($checkSetup['apiOpt'] as $keyApi => $valueApi) {
                 $buildParams = [];
                 foreach ($valueApi['params'] as $keyParam => $valueParam) {
                     // Get the value from form answers using form_id
-                    $formValue = $dataAnswers[$valueParam['form_id']] ?? $valueParam['param_default'] ?? null;
+                    $formValue = $spreadAnswer[$valueParam['form_id']] ?? $valueParam['param_default'] ?? null;
                     $buildParams[$valueParam['param_name']] = $formValue;
                 }
 
@@ -474,14 +473,54 @@ class FormController extends BaseController
                 ]));
             }
 
-            return $this->handleResponse([
-                'formSubmission' => $hasil,
-                'apiCalls' => $hasilAPICall
-            ], 'Form submited !');
+            $apiCallsList = array_map(function ($index) use ($hasilAPICall, $checkSetup) {
+                $item = $hasilAPICall[$index];
+                // Handle JsonResponse objects
+                $data = $item;
+                if ($item instanceof \Illuminate\Http\JsonResponse) {
+                    $data = json_decode($item->getContent(), true);
+                }
+                // Handle both array and object responses
+                if (is_array($item)) {
+                    $data = $item['original'] ?? $item;
+                }
+
+                return array_merge($data,[
+                    'opt' => $checkSetup['apiOpt'][$index]
+                ]);
+            }, array_keys($hasilAPICall));
+
+            if (
+                count(array_filter($apiCallsList, function ($item) {
+                    return isset($item['status']) && $item['status'] === true;
+                })) !== count($apiCallsList)
+            ) {
+                return $this->handleError('One or more API calls failed during form submission, cancel the operation.', [
+                    'apiCalls' => $apiCallsList
+                ]);
+            }
         }
 
-        return $this->handleResponse($hasil, 'Form submited !');
+        $hasil = [];
 
+        foreach ($spreadAnswer as $key => $value) {
+            $result = FormAnswerUserDet::updateOrCreate([
+                'p_u_username' => $request->header('username'),
+                'cfaud_batch' => $nextID,
+                'cfm_id' => $request->id,
+                'cfmd_id' => $key,
+            ],[
+                'p_u_username' => $request->header('username'),
+                'cfaud_batch' => $nextID,
+                'cfm_id' => $request->id,
+                'cfmd_id' => $key,
+                'cfm_val' => (string) $value,
+            ])->toArray();
+
+            $hasil[] = $result;
+        }
+
+        return $this->handleResponse($checkSetup['isAPI'] == 1 && !empty($checkSetup['apiOpt']) ? $apiCallsList : $hasil, 'Form submited !');
     }
 
     /**
@@ -813,12 +852,18 @@ class FormController extends BaseController
                 $f->with('allChildrenContent.formDetail.formAnswer');
             }
         ])->with(['quizSetup', 'shared'])
+            ->whereHas('formMaster')
             ->where('id', $id)
             ->first();
 
-        // return response($data);
+        if (empty($data)) {
+            return response([
+                'status' => false,
+                'message' => 'Form not found'
+            ]);
+        }
 
-        if ($data->cfmt_quiz_flag == 2 || $data->cfmt_quiz_flag == 3) {
+        if ($data && ($data->cfmt_quiz_flag == 2 || $data->cfmt_quiz_flag == 3)) {
             $getDataGencode = $this->getDataGencode(
                 'URL_PAGE_GEN',
                 ['pgm_value' => $id],
@@ -1081,18 +1126,34 @@ class FormController extends BaseController
             $options = [
                 'headers' => $headersArray,
                 'json' => $dataAnswers,
+                'timeout' => 60,
+                'connect_timeout' => 30,
+                'allow_redirects' => true,
             ];
 
             if ($request->isDownload) {
                 $contentType = '';
                 // Make a HEAD request first to get content type
+                logger('Starting HEAD request to determine content type for download...');
                 try {
-                    $headResponse = $client->head($request->input('apiUrl'), ['headers' => $headersArray]);
+                    $headOptions = array_merge($options, ['timeout' => 10, 'connect_timeout' => 5]);
+                    $headResponse = $client->head($request->input('apiUrl'), $headOptions);
                     $contentType = $headResponse->getHeaderLine('Content-Type');
                 } catch (\Exception $e) {
+                    logger('HEAD request failed: ' . $e->getMessage());
                     // If HEAD fails, we'll determine extension from actual response later
+                    $response = [
+                        'status' => false,
+                        'message' => 'API request failed',
+                        'error' => $e->getMessage(),
+                        'request' => $request->all(),
+                        'params_sent' => $dataAnswers
+                    ];
+
+                    return $response;
                 }
 
+                logger('Header is done, content type: ' . $contentType);
                 // Determine extension from content type
                 $extension = 'pdf'; // default
                 if (strpos($contentType, 'application/pdf') !== false) {
@@ -1117,24 +1178,39 @@ class FormController extends BaseController
                     $extension = 'txt';
                 }
 
-                $downloadPath = \Illuminate\Support\Facades\Storage::path('downloads');
+                $downloadPath = Storage::disk('public')->path('downloads');
                 if (!file_exists($downloadPath)) {
                     mkdir($downloadPath, 0755, true);
                 }
-                $options['sink'] = $downloadPath . '/' . time() . '_response.' . $extension;
+                $fileName = time() . '_response.' . $extension;
+                $options['sink'] = $downloadPath . '/' . $fileName;
+
+                // After successful download, construct URL using APP_URL_DOWNLOAD env variable
+                $downloadUrl = rtrim(env('APP_URL_DOWNLOAD', config('app.url')), '/') . '/downloads/' . $fileName;
             }
 
+            $httpMethod = strtoupper($request->input('method'));
+            $apiUrl = $request->input('apiUrl');
+            
+            // For non-download requests, use form_params instead of json for better compatibility
+            if (!$request->isDownload && $httpMethod !== 'GET') {
+                unset($options['json']);
+                $options['form_params'] = $dataAnswers;
+            }
+            
             $response = $client->request(
-                strtoupper($request->input('method')),
-                $request->input('apiUrl'),
-                $options
+                $httpMethod,
+                $apiUrl,
+                $options,
             );
+
+            logger('API request to ' . $apiUrl . ' completed with status ' . $response->getStatusCode());
 
             if ($request->isDownload) {
                 return response()->json([
                     'status' => true,
                     'message' => 'File downloaded successfully',
-                    'file_path' => $options['sink']
+                    'file_path' => $downloadUrl
                 ]);
             }
 
@@ -1151,6 +1227,9 @@ class FormController extends BaseController
                 'error' => $e->getMessage()
             ];
         }
-        return $response;
+
+        return array_merge([
+            'request' => $request->all()
+        ], $response);
     }
 }

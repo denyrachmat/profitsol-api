@@ -129,7 +129,9 @@ class UsersController extends BaseController
      */
     public function show($id)
     {
-        //
+        $data = User::with('det')->where('username', $id)->orderBy('email')->first();
+
+        return $this->handleResponse($data, 'Data fetched !');
     }
 
     /**

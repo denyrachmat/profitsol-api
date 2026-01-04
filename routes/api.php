@@ -76,7 +76,7 @@ Route::get('phpinfo', function () {
 Route::get('/whoami', function () {
     return [
         'auth' => auth()->check(),
-        'user' => optional(auth()->user())->only('id','email'),
+        'user' => optional(auth()->user())->only('id', 'email'),
         'secure' => request()->isSecure(),
         'ip' => request()->ip(),
         'host' => request()->getHost(),
@@ -84,10 +84,9 @@ Route::get('/whoami', function () {
 })->middleware('auth:sanctum');
 
 Route::group(['prefix' => 'portal' /* , 'middleware' => ['auth:sanctum','verified']*/], function () {
-
     // Settings Menu
+    Route::resource('users', UsersController::class);
     Route::group(['prefix' => 'users'], function () {
-        Route::resource('', UsersController::class);
         Route::get('ActiveOnly', [UsersController::class, 'userActiveOnly']);
     });
 
@@ -144,7 +143,7 @@ Route::group(['prefix' => 'fpmanager'], function () {
     Route::post('subscribeAllow', [FrontPageController::class, 'subscribe']);
     Route::post('unsubscribe', [FrontPageController::class, 'unsubscribe']);
     //Test
-    
+
     Route::post('saveSubscriber', [FrontPageController::class, 'updateBulkSubscribePosts']);
 });
 
@@ -432,7 +431,10 @@ Route::group(['prefix' => 'div'], function () {
 
         Route::get('viewListItemDesc/{ten}', [CirtenUpdateController::class, 'viewListItemDesc']);
         Route::get('getDataMRPWeekDatas/{fdate}/{ldate}', [MRPWeeklyBasedController::class, 'getData']);
-        Route::post('getDataMRPWeek', [MRPWeeklyBasedController::class, 'getReport']);
+        // Route::post('getDataMRPWeek', [MRPWeeklyBasedController::class, 'getReport']);
+        Route::match(['post', 'head'], 'getDataMRPWeek', [MRPWeeklyBasedController::class, 'getReport']);
+        Route::get('getReportTest/{fdate}', [MRPWeeklyBasedController::class, 'getReportTest']);
+
 
         // CirtenUpdateController
     });

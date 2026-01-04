@@ -32,12 +32,9 @@ class PortalRoleAppMap extends Model
     {
         return $this->hasMany(
             PortalRoleAppMap::class,
-            'am_app_parent',   // foreign key di tabel child
-            'am_app_id'        // local key di tabel parent (this)
-        )->whereColumn(
-                'portal_role_app_map.rm_role_id',   // kolom child
-                'portal_role_app_map.rm_role_id'    // kolom parent
-            );
+            ['am_app_parent', 'rm_role_id'],   // foreign key di tabel child
+            ['am_app_id', 'rm_role_id']        // local key di tabel parent (this)
+        );
     }
 
     public function childRoles($depth = 8)
