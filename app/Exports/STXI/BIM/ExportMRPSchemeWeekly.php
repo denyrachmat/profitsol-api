@@ -9,6 +9,7 @@ use Maatwebsite\Excel\Concerns\RegistersEventListeners;
 use Maatwebsite\Excel\Concerns\Exportable;
 use Maatwebsite\Excel\Concerns\WithEvents;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Http;
 
 class ExportMRPSchemeWeekly implements FromCollection, WithHeadings, WithEvents
 {
@@ -311,17 +312,15 @@ class ExportMRPSchemeWeekly implements FromCollection, WithHeadings, WithEvents
     }
 
     public function getListLT() {
-        $ch = curl_init();
-        curl_setopt($ch, CURLOPT_URL, env('APP_URL').'/api/mrs/runningReportFromAPI/MRSAPI_69662c0fd6adf');
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($ch, CURLOPT_TIMEOUT, 10);
-
-        $response = curl_exec($ch);
-        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        curl_close($ch);
-
-        if ($httpCode === 200) {
-            return json_decode($response, true);
+        try {
+            $response = Http::timeout(10)->get(env('APP_URL').'/api/mrs/runningReportFromAPI/MRSAPI_69662c0fd6adf');
+            
+            if ($response->successful()) {
+                return $response->json();
+            }
+        } catch (\Exception $e) {
+            // Log the error if needed
+            logger('Error fetching LT list: ' . $e->getMessage());
         }
 
         return [];
