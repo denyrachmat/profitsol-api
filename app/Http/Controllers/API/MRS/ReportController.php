@@ -726,7 +726,7 @@ class ReportController extends BaseController
             }
         }
 
-        logger('Applied filter', ['column' => $column, 'operator' => $filter['opr'], 'values' => $values]);
+        // logger('Applied filter', ['column' => $column, 'operator' => $filter['opr'], 'values' => $values]);
     }
 
     public function valueChecker($val)
