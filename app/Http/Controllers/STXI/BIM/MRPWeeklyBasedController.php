@@ -6,7 +6,6 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Exports\STXI\BIM\ExportMRPSchemeWeekly;
 use Maatwebsite\Excel\Facades\Excel;
-use Illuminate\Support\Facades\DB;
 
 class MRPWeeklyBasedController extends Controller
 {
@@ -23,6 +22,22 @@ class MRPWeeklyBasedController extends Controller
         }
 
         // DatePeriod dengan langkah 1 minggu, inklusif sampai $end
+        /**
+         * Creates a date period that iterates through weeks starting from the first Monday.
+         * 
+         * The period starts at $firstMonday and increments by 1 week (P1W) intervals.
+         * It continues until one day after the $end date (modified with '+1 day').
+         * 
+         * DatePeriod includes the start date but excludes the end date by default.
+         * Since the end is modified to '+1 day', the iteration will include dates up to
+         * and including the original $end date.
+         * 
+         * Note: This creates a weekly iterator based on Monday start dates. If the intent
+         * is to include full weeks (Monday-Sunday), ensure $firstMonday is correctly set
+         * to a Monday and the $end date calculation accounts for the full week range needed.
+         * 
+         * @var \DatePeriod $period Collection of dates at weekly intervals
+         */
         $period = new \DatePeriod($firstMonday, new \DateInterval('P1W'), (clone $end)->modify('+1 day'));
 
         $mondays = [];
@@ -45,41 +60,17 @@ class MRPWeeklyBasedController extends Controller
         }
 
         set_time_limit(300);
-        $firstDate = $request->input('first_date');
-        $weekCount = $request->input('week_count', 98);
-
-        $lastDate = (new \DateTime($firstDate))->modify('+' . ($weekCount * 7 - 1) . ' days')->format('Y-m-d');
-        $lt = $request->input('lt', 21);
-
-        $firstDayOfMonth = (new \DateTime($firstDate))->modify('first day of this month')->format('Y-m-d');
-        $dataHeaders = $this->getData($firstDayOfMonth, $lastDate, $lt);
-
-        $getLeadTimeList = DB::connection('sqlsrv_mega_sme')->table('MITM_TBL')->select('MITM_ETALT')->distinct()->where('MITM_ETALT', '>', 0)->get()->toArray();
-        $listDataPerLTMega = [];
-        foreach ($getLeadTimeList as $key => $valueLT) {
-            // logger("CheckLT", ['MITM_ETALT' => $valueLT->MITM_ETALT]);
-            $fDateLT = $request->input('mrp_date');
-            $lastDatePerLT = (new \DateTime($fDateLT))->modify('+' . ((int) ($valueLT->MITM_ETALT + 49) + 1) . ' days')->format('Y-m-d');
-            $getDateData = $this->getData($request->input('mrp_date'), $lastDatePerLT);
-
-            if (!empty($getDateData)) {
-                $listDataPerLTMega[(int) $valueLT->MITM_ETALT] = $this->getData($request->input('mrp_date'), $lastDatePerLT);
-            }
-        }
-
-        // logger($listDataPerLTMega);
+        // logger($dataHeaders);
 
         return Excel::download(new ExportMRPSchemeWeekly(
             [
-                'headers' => $dataHeaders
-            ],
-            [
                 'mrp_date' => $request->input('mrp_date'),
-                'first_date' => $request->input(key: 'first_date'),
+                'first_date' => $request->input('first_date'),
                 'po_rel_date' => $request->input('po_rel_date'),
                 'mrp_cutoff_date' => $request->input('mrp_cutoff_date'),
             ],
-            $listDataPerLTMega
+            $request->input('type_mrp', 'New MRP scheme (weekly base)'),
+            49
         ), 'mrp_scheme_weekly.xlsx');
     }
 

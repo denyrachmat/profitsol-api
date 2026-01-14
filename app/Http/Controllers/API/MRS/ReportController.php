@@ -19,6 +19,7 @@ use Doctrine\DBAL\Query\QueryBuilder;
 use App\Exports\MRS\ExportReport;
 use Illuminate\Support\Facades\Log;
 use App\Traits\CMS\FormsTraits;
+use App\Traits\PORTAL\GencodeTraits;
 
 class ReportController extends BaseController
 {
@@ -305,169 +306,44 @@ class ReportController extends BaseController
         ];
     }
 
-    // public function runningReport($idReport, Request $request)
-    // {
-    //     $cekReport = MRSReportMstr::select(
-    //         'mrs_report_mstr.*',
-    //         'mrs_db_mstr.mdm_host'
-    //     )->join('mrs_db_mstr', 'mdm_id', 'mrs_db_mstr.id')
-    //         ->where('mrs_report_mstr.id', $idReport)
-    //         ->first();
+    public function runningReportFromAPI($token)
+    {
+        $getData = $this->getDataGencode(
+            'MRS_API_GEN',
+            [
+                'pgm_value' => $token,
+            ],
+            [
+                'filter' => 'pgm_value2|array',
+                'id_report' => 'pgm_value3|int',
+            ],
+            [],
+            true
+        );
 
-    //     if (!empty($cekReport)) {
-    //         $conn = $this->masterConn($cekReport->mdm_id, $cekReport->mrm_db);
+        $data = $this->runningReport($getData['id_report'], new Request([
+            'filter' => json_decode($getData['filter'], true)
+        ]))->getOriginalContent();
 
-    //         if ($cekReport->mrm_url_gen === 'sp') {
-    //             $changeConn = $this->eloqConn($cekReport->mdm_id, $cekReport->mrm_db);
-    //             if ($changeConn) {
-    //                 $splitSPCode = explode(' ', $cekReport->mrm_query);
+        $getCols = MRSReportColsDet::where('mrm_id', $getData['id_report'])
+            ->where('mrcd_isActive', 1)
+            ->where('mrcd_isExported', 1)
+            ->where('mrcd_col_prop', 'cols')
+            ->get()
+            ->toArray();
 
-    //                 $finalCode = $splitSPCode[0] . ' ' . $splitSPCode[1];
-    //                 if ($request->has('filter') && count($request->filter) > 0) {
-    //                     foreach ($request->filter as $key => $valueFilter) {
-    //                         $valuenya = $valueFilter['cols']['type'] == 'int'
-    //                             ? $valueFilter['value'][0]
-    //                             : "'" . $valueFilter['value'][0] . "'";
+        $result = [];
+        foreach ($data['data'] as $key => $value) {
+            foreach ($getCols as $keyCols => $valueCols) {
+                if (in_array($valueCols['mrcd_field'], array_keys($value))) {
+                    $result[$key][strtolower(str_replace(' ', '_', $valueCols['mrcd_label']))] = $value[$valueCols['mrcd_field']];
+                }
+            }
+             // Assuming at least one column exists
+        }
 
-    //                         $finalCode .= ($key === 0 ? ' ' : ', ') . $valueFilter['cols']['value'] . '=' . $valuenya;
-    //                     }
-    //                 }
-    //                 // return $finalCode;
-
-    //                 $data = DB::connection('sqlsrv_conn_dyn')->select('SET NOCOUNT ON;' . $finalCode);
-
-    //                 $data = json_decode(json_encode($data), true);
-
-    //                 $parse = [
-    //                     'data' => $data,
-    //                     'page' => 1,
-    //                     'rowsNumber' => count($data),
-    //                     'query' => $finalCode
-    //                 ];
-
-    //                 if ($request->has('pagination')) {
-    //                     return $this->handleResponse($parse, 'Data report found');
-    //                 } else {
-    //                     return $data;
-    //                 }
-    //             } else {
-    //                 return $this->handleError('Connection change is failed !');
-    //             }
-    //         } else {
-    //             if ($request->has('pagination')) {
-    //                 $smBuild = $conn->createQueryBuilder()
-    //                     ->select('RowConstrainedResult.*, ROW_NUMBER() OVER ( ORDER BY ' . $request->pagination['sortBy'] . ' ' . ($request->pagination['descending'] ? 'desc' : 'asc') . ') AS RowNum')
-    //                     ->from('(' . $cekReport->mrm_query . ') AS RowConstrainedResult');
-    //             } else {
-    //                 $smBuild = $conn->createQueryBuilder()
-    //                     ->select('RowConstrainedResult.*')
-    //                     ->from('(' . $cekReport->mrm_query . ') AS RowConstrainedResult');
-    //             }
-    //             // Start filter state by users
-    //             if ($request->has('filter') && count($request->filter) > 0) {
-    //                 foreach ($request->filter as $key => $valueFilter) {
-    //                     $checkExistsValue = array_filter($valueFilter['value'], fn($f) => $f !== null && $f !== '');
-
-    //                     if (count($checkExistsValue) > 0) {
-    //                         $valuenya1 = $valueFilter['cols']['type'] == 'int'
-    //                             ? $valueFilter['value'][0]
-    //                             : "'" . $valueFilter['value'][0] . "'";
-
-    //                         $valuenya2 = isset($valueFilter['value'][1])
-    //                             ? (
-    //                                 $valueFilter['cols']['type'] == 'int'
-    //                                 ? $valueFilter['value'][1]
-    //                                 : "'" . $valueFilter['value'][1] . "'"
-    //                             )
-    //                             : null;
-
-    //                         if ($valueFilter['opr'] == 'between') {
-    //                             if ($valueFilter['conmet'] == 'and') {
-    //                                 $smBuild->andwhere($valueFilter['cols']['value'] . ' between ' . $valuenya1 . ' and ' . $valuenya2);
-    //                             } else {
-    //                                 $smBuild->orwhere($valueFilter['cols']['value'] . ' between ' . $valuenya1 . ' and ' . $valuenya2);
-    //                             }
-    //                         } elseif ($valueFilter['opr'] == 'like') {
-    //                             if ($valueFilter['conmet'] == 'and') {
-    //                                 $smBuild->andwhere($valueFilter['cols']['value'] . " like '%" . $valueFilter['value'][0] . "%'");
-    //                             } else {
-    //                                 $smBuild->orwhere($valueFilter['cols']['value'] . " like '%" . $valueFilter['value'][0] . "%'");
-    //                             }
-    //                         } elseif ($valueFilter['opr'] == '<cols>') {
-    //                             if ($valueFilter['conmet'] == 'and') {
-    //                                 $smBuild->andwhere($valueFilter['cols']['value'] . " <> " . $valueFilter['value'][0]['value']);
-    //                             } else {
-    //                                 $smBuild->orwhere($valueFilter['cols']['value'] . " <> " . $valueFilter['value'][0]['value']);
-    //                             }
-    //                         } elseif ($valueFilter['opr'] == '=cols') {
-    //                             if ($valueFilter['conmet'] == 'and') {
-    //                                 $smBuild->andwhere($valueFilter['cols']['value'] . " = " . $valueFilter['value'][0]['value']);
-    //                             } else {
-    //                                 $smBuild->orwhere($valueFilter['cols']['value'] . " = " . $valueFilter['value'][0]['value']);
-    //                             }
-    //                         } else {
-    //                             if ($valueFilter['conmet'] == 'and') {
-    //                                 $smBuild->andwhere($valueFilter['cols']['value'] . " " . $valueFilter['opr'] . " " . $valuenya1);
-    //                             } else {
-    //                                 $smBuild->orwhere($valueFilter['cols']['value'] . " " . $valueFilter['opr'] . " " . $valuenya1);
-    //                             }
-    //                         }
-    //                     }
-    //                 }
-    //             }
-    //             // End filter state by users
-
-    //             $getQuery = (clone $smBuild)->getSql();
-    //             $smAllRecords = $conn->fetchAllAssociative('SELECT COUNT(*) as total FROM (' . $getQuery . ') a');
-
-    //             $buildSelect = "";
-    //             $listCols = MRSReportColsDet::where('mrm_id', $idReport)->where('mrcd_isActive', 1)->get();
-    //             foreach ($listCols as $keyCols => $valueCols) {
-    //                 $buildSelect .= $keyCols === 0 ? 'smb.' . $valueCols->mrcd_field : ', smb.' . $valueCols->mrcd_field;
-    //             }
-
-    //             $sm = $conn->createQueryBuilder()
-    //                 ->select($buildSelect)
-    //                 ->from('(' . (clone $smBuild)->getSql() . ') smb');
-
-    //             if ($request->has('pagination')) {
-    //                 if ($request->pagination['page'] == 1) {
-    //                     $firstNum = 1;
-    //                     $lastNum = $request->pagination['page'] * $request->pagination['rowsPerPage'];
-    //                 } else {
-    //                     $firstNum = $request->pagination['page'] * $request->pagination['rowsPerPage'];
-    //                     $lastNum = $firstNum + $request->pagination['rowsPerPage'];
-
-    //                     if ($lastNum >= $smAllRecords[0]['total']) {
-    //                         $lastNum = $smAllRecords[0]['total'];
-    //                     }
-    //                 }
-    //                 $sm->andwhere('smb.RowNum >= ' . ($firstNum))
-    //                     ->andwhere('smb.RowNum <= ' . ($lastNum === 0 ? $smAllRecords[0]['total'] : $lastNum))
-    //                     ->orderBy('smb.RowNum');
-
-    //                 $hasil = [
-    //                     'data' => $sm
-    //                         ->executeQuery()
-    //                         ->fetchAllAssociative(),
-    //                     'page' => $request->pagination['page'],
-    //                     'rowsNumber' => $smAllRecords[0]['total'],
-    //                     'sortBy' => $request->pagination['sortBy'],
-    //                     'query' => (clone $sm)->getSql(),
-    //                     'rowsPerPage' => $request->pagination['rowsPerPage']
-    //                 ];
-    //             } else {
-    //                 return $sm
-    //                     ->executeQuery()
-    //                     ->fetchAllAssociative();
-    //             }
-    //         }
-
-    //         return $this->handleResponse($hasil, 'Data report found');
-    //     } else {
-    //         return $this->handleError('ID Report not found !');
-    //     }
-    // }
+        return $result;
+    }
 
     public function runningReport($idReport, Request $request)
     {
@@ -476,55 +352,85 @@ class ReportController extends BaseController
             ->where('id', $idReport)
             ->first();
 
-        // return $cekReport;
-
-        // return stripos($cekReport->mrm_url_gen, 'rpa');
-
         if (!$cekReport) {
             return $this->handleError('ID Report not found!');
         }
 
         // 2. Check if the report is generated by CMS URL
-        if ($cekReport->mrm_url_gen == 'cms' || $cekReport->mrm_url_gen == 'rpa') {
-            return $this->handleResponse($this->handleByCMSURL($cekReport, $request), 'Data report found');
+        if (stripos($cekReport->mrm_url_gen, 'cms') !== false || stripos($cekReport->mrm_url_gen, 'rpa') !== false) {
+            $dataCMS = $this->handleByCMSURL($cekReport, $request);
+            return $this->handleResponse($dataCMS, 'Data report found');
         }
 
         // 2. Handle stored procedure case
         if ($cekReport->mrm_url_gen == 'sp') {
-            return $this->handleResponse($this->handleStoredProcedureReport($cekReport, $request), 'Data report found');
+            $dataSP = $this->handleStoredProcedureReport($cekReport, $request);
+            if (!$request->has('pagination')) {
+                return $this->handleResponse($dataSP, 'Data report found');
+            }
+
+            if (is_array($dataSP) && $dataSP['status']) {
+                return $this->handleResponse($dataSP, 'Data report found');
+            }
+
+            return is_array($dataSP) ? $this->handleError($dataSP['message']) : $dataSP;
         }
 
         // 3. Handle regular query report
-        $result = $this->handleRegularReport($cekReport, $request)->getOriginalContent()['data'];
-        return $this->handleResponse($result, 'Data report found');
+        $result = $this->handleRegularReport($cekReport, $request)->getOriginalContent();
+
+        if ($result['status']) {
+            return $this->handleResponse($result['data'], 'Data report found');
+        }
+
+        return $this->handleError($result['message']);
     }
 
     protected function handleStoredProcedureReport($report, $request)
     {
         $changeConn = $this->eloqConn($report->mdm_id, $report->mrm_db);
         if (!$changeConn) {
-            return $this->handleError('Connection change failed!');
+            return ['status' => false, 'message' => 'Connection change failed!'];
         }
 
-        $spParts = explode(' ', $report->mrm_query, 2);
-        $spName = $spParts[0];
-        $spCommand = $spParts[1] ?? '';
+        // Remove 'EXEC' prefix if it already exists in the query
+        $query = trim($report->mrm_query);
+        if (stripos($query, 'EXEC') === 0) {
+            $query = substr($query, 4);
+        }
+
+        $spParts = explode(' ', trim($query), 2);
+        $spName = trim($spParts[0]);
+        $spCommand = isset($spParts[1]) ? trim($spParts[1]) : '';
 
         $parameters = [];
+        $addedParams = [];
         if ($request->has('filter') && count($request->filter) > 0) {
             foreach ($request->filter as $filter) {
-                if ($filter['value'][0] !== '') {
+                $paramName = $filter['field'];
+                if (in_array($paramName, $addedParams)) {
+                    continue;
+                }
 
-                    $value = is_numeric($filter['value'][0])
-                        ? $filter['value'][0]
-                        : "'" . str_replace("'", "''", $filter['value'][0]) . "'";
-                    $parameters[] = "{$filter['cols']['value']}={$value}";
+                $filterValues = $filter['value'] ?? [];
+                if (is_array($filterValues) && !empty($filterValues[0])) {
+                    $value = is_numeric($filterValues[0])
+                        ? $filterValues[0]
+                        : "'" . str_replace("'", "''", $filterValues[0]) . "'";
+                    $parameters[] = "{$paramName}={$value}";
+                    $addedParams[] = $paramName;
                 }
             }
         }
 
-        $execStatement = "{$spName} {$spCommand} " . implode(', ', $parameters);
+        // logger($parameters);
 
+        $paramString = !empty($parameters) ? ' ' . implode(', ', $parameters) : '';
+        $execStatement = "EXEC {$spName}" . $paramString;
+        // logger($spCommand);
+        // logger($execStatement);
+
+        // Execute the stored procedure
         try {
             $data = DB::connection('sqlsrv_conn_dyn')
                 ->select("SET NOCOUNT ON; {$execStatement}");
@@ -533,14 +439,15 @@ class ReportController extends BaseController
                 'data' => json_decode(json_encode($data), true),
                 'page' => 1,
                 'rowsNumber' => count($data),
-                'query' => $execStatement
+                'query' => $execStatement,
+                'status' => true
             ];
 
             return $request->has('pagination')
                 ? $result
                 : $data;
         } catch (\Exception $e) {
-            return $this->handleError('SP Execution failed: ' . $e->getMessage());
+            return ['status' => false, 'message' => 'SP Execution failed: ' . $e->getMessage()];
         }
     }
 
@@ -559,7 +466,10 @@ class ReportController extends BaseController
             }
         }
 
-        $getData = $this->showHistory(new Request(['filter' => $filter, 'pagination' => $request->pagination]), $report->mrm_query);
+        $getData = $this->showHistory(new Request([
+            'filter' => $filter,
+            'pagination' => $request->pagination
+        ]), $report->mrm_query);
 
         // return $getData;
         // // Decode the response content to access data
@@ -571,7 +481,7 @@ class ReportController extends BaseController
         // Assuming the response contains 'data' key with the report data
         $data = $responseData['data'] ?? [];
 
-        return $data;
+        return $request->has('pagination') ? $data : $data['data'];
 
         // return $this->handleError('CMS URL report generation not implemented yet.');
     }
@@ -672,7 +582,7 @@ class ReportController extends BaseController
                 return $this->handleResponse($result, 'Data report found');
             }
 
-            return $data;
+            return $this->handleResponse($data, 'Data report found');
 
         } catch (\Exception $e) {
             Log::error('Report generation failed', [
@@ -727,20 +637,20 @@ class ReportController extends BaseController
             $isNumeric = $filter['cols']['type'] === 'int';
 
             // Special case for column-to-column comparison
-            if ($filter['opr'] === '<cols>') {
-                $otherColumn = $this->quoteIdentifier($values[0]['value']);
-                $query->$whereMethod("{$column} <> {$otherColumn}");
-                continue;
-            }
+            // if ($filter['opr'] === '<cols>') {
+            //     $otherColumn = $this->quoteIdentifier($values[0]['value']);
+            //     $query->$whereMethod("{$column} <> {$otherColumn}");
+            //     continue;
+            // }
 
             // Handle regular value comparisons
             $paramPrefix = 'filter_' . uniqid();
 
+            $val1 = $this->valueChecker($values[0]);
+            $val2 = $this->valueChecker($values[1] ?? $values[0]);
+
             switch ($filter['opr']) {
                 case 'between':
-                    $val1 = $isNumeric ? (float) $values[0] : $values[0];
-                    $val2 = $isNumeric ? (float) ($values[1] ?? $values[0]) : ($values[1] ?? $values[0]);
-
                     $query->$whereMethod("{$column} BETWEEN :{$paramPrefix}_1 AND :{$paramPrefix}_2")
                         ->setParameter("{$paramPrefix}_1", $val1, $isNumeric ? \PDO::PARAM_INT : \PDO::PARAM_STR)
                         ->setParameter("{$paramPrefix}_2", $val2, $isNumeric ? \PDO::PARAM_INT : \PDO::PARAM_STR);
@@ -748,23 +658,91 @@ class ReportController extends BaseController
 
                 case 'like':
                     $query->$whereMethod("{$column} LIKE :{$paramPrefix}")
-                        ->setParameter($paramPrefix, '%' . $values[0] . '%', \PDO::PARAM_STR);
+                        ->setParameter($paramPrefix, '%' . $val1 . '%', \PDO::PARAM_STR);
                     break;
 
                 case '>':
+                    $query->$whereMethod("{$column} > :{$paramPrefix}")
+                        ->setParameter($paramPrefix, $val1, $isNumeric ? \PDO::PARAM_INT : \PDO::PARAM_STR);
+                    break;
                 case '<':
+                    $query->$whereMethod("{$column} < :{$paramPrefix}")
+                        ->setParameter($paramPrefix, $val1, $isNumeric ? \PDO::PARAM_INT : \PDO::PARAM_STR);
+                    break;
                 case '=':
+                    $query->$whereMethod("{$column} = :{$paramPrefix}")
+                        ->setParameter($paramPrefix, $val1, $isNumeric ? \PDO::PARAM_INT : \PDO::PARAM_STR);
+                    break;
                 case '>=':
+                    $query->$whereMethod("{$column} >= :{$paramPrefix}")
+                        ->setParameter($paramPrefix, $val1, $isNumeric ? \PDO::PARAM_INT : \PDO::PARAM_STR);
+                    break;
                 case '<=':
+                    $query->$whereMethod("{$column} <= :{$paramPrefix}")
+                        ->setParameter($paramPrefix, $val1, $isNumeric ? \PDO::PARAM_INT : \PDO::PARAM_STR);
+                    break;
                 case '<>':
-                    $value = is_array($values[0]) ? ($values[0]['value'] ?? null) : $values[0];
-                    $query->$whereMethod("{$column} {$filter['opr']} :{$paramPrefix}")
-                        ->setParameter($paramPrefix, $value, $isNumeric ? \PDO::PARAM_INT : \PDO::PARAM_STR);
+                    $query->$whereMethod("{$column} <> :{$paramPrefix}")
+                        ->setParameter($paramPrefix, $val1, $isNumeric ? \PDO::PARAM_INT : \PDO::PARAM_STR);
+                    break;
+                case '<cols>':
+                    // Handled above as a special case
+                    $otherColumn = $this->quoteIdentifier($values[0]['value']);
+                    $query->$whereMethod("{$column} <> {$otherColumn}");
+                    break;
+                case 'likecols':
+                    $otherColumn = $this->quoteIdentifier($values[0]['value']);
+                    $query->$whereMethod("{$column} LIKE {$otherColumn}");
+                    break;
+                case '=cols>':
+                    $otherColumn = $this->quoteIdentifier($values[0]['value']);
+                    $query->$whereMethod("{$column} = {$otherColumn}");
+                    break;
+                case '<cols':
+                    $otherColumn = $this->quoteIdentifier($values[0]['value']);
+                    $query->$whereMethod("{$column} < {$otherColumn}");
+                    break;
+                case '<=cols':
+                    $otherColumn = $this->quoteIdentifier($values[0]['value']);
+                    $query->$whereMethod("{$column} <= {$otherColumn}");
+                    break;
+                case '>cols':
+                    $otherColumn = $this->quoteIdentifier($values[0]['value']);
+                    $query->$whereMethod("{$column} > {$otherColumn}");
+                    break;
+                case '>=cols':
+                    $otherColumn = $this->quoteIdentifier($values[0]['value']);
+                    $query->$whereMethod("{$column} >= {$otherColumn}");
+                    break;
+                case 'isnull':
+                    $query->$whereMethod("{$column} IS NULL");
+                    break;
+                case 'isnotnull':
+                    $query->$whereMethod("{$column} IS NOT NULL");
                     break;
 
                 default:
                     Log::warning('Unsupported operator', ['operator' => $filter['opr']]);
             }
+        }
+
+        logger('Applied filter', ['column' => $column, 'operator' => $filter['opr'], 'values' => $values]);
+    }
+
+    public function valueChecker($val)
+    {
+        if ($val === 'today()') {
+            return date('Y-m-d');
+        } elseif ($val === 'now()') {
+            return date('Y-m-d H:i:s');
+        } elseif ($val === 'tomorrow()') {
+            return date('Y-m-d', strtotime('+1 day'));
+        } elseif ($val === 'yesterday()') {
+            return date('Y-m-d', strtotime('-1 day'));
+        } elseif (is_numeric($val)) {
+            return (float) $val;
+        } else {
+            return "'" . $val . "'";
         }
     }
 
@@ -776,22 +754,75 @@ class ReportController extends BaseController
             ->where('mrs_report_mstr.id', $idReport)
             ->first();
 
-        $getData = $this->runningReport($idReport, $request);
+        $response = $this->runningReport($idReport, $request);
 
-        // Convert stdClass to array if needed
-        if (is_object($getData)) {
-            $getData = json_decode(json_encode($getData), true);
+        $getData = json_decode($response->getContent(), true);
+
+        if (!$getData || !isset($getData['data'])) {
+            return $this->handleError('Failed to generate report data');
         }
 
-        // return $getData;
-
         $filename = 'export_' . $cekReport->mrm_name . '_' . date('ymd_his') . '.xlsx';
-        // return $getData;
-        Excel::store(new ExportReport($getData, $idReport), 'MRS/' . $filename, 'public');
+
+        Excel::store(new ExportReport($getData['data'], $idReport), 'MRS/' . $filename, 'public');
 
         return [
             'status' => true,
-            'path' => 'storage/MRS/' . $filename,
+            'path' => '/storage/MRS/' . $filename,
         ];
+    }
+
+    public function getListAPIColection($idReport)
+    {
+        $checkQuota = $this->getDataGencode(
+            'MRS_API_GEN',
+            [
+                'pgm_value3' => $idReport
+            ],
+            [
+                'token' => 'pgm_value|string',
+                'filter' => 'pgm_value2|array',
+                'id_report' => 'pgm_value3|int',
+                'created_at' => 'created_at|datetime',
+            ],
+            [],
+            false
+        );
+
+        return $this->handleResponse([
+            'used' => count($checkQuota),
+            'data' => $checkQuota
+        ], 'Data Found');
+    }
+
+    public function storeSearchForAPI(Request $request)
+    {
+        $checkQuota = $this->getDataGencode(
+            'MRS_API_GEN',
+            [
+                'pgm_value2' => json_encode($request->filter),
+                'pgm_value3' => $request->id_report
+            ],
+            [],
+            [],
+            false
+        );
+
+        if (count($checkQuota) > (int) $request->max_api_opt) {
+            return $this->handleError('API Search Quota exceeded. Please contact administrator.');
+        }
+
+        $store = $this->saveGencode(
+            new Request([
+                'data' => [
+                    'pgm_code' => 'MRS_API_GEN',
+                    'pgm_value' => uniqid('MRSAPI_'),
+                    'pgm_value2' => json_encode($request->filter),
+                    'pgm_value3' => $request->id_report,
+                    'created_by' => $request->user_id,
+                    'pgm_desc' => 'MRS API Report Generated',
+                ]
+            ])
+        );
     }
 }

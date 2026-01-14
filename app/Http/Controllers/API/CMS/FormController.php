@@ -12,6 +12,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
+use Excel;
 
 use App\Models\CMS\FormMaster;
 use App\Models\CMS\FormMultiDet;
@@ -29,7 +30,7 @@ use App\Http\Requests\MRS\ReportCreateRequest;
 use App\Traits\CMS\FormsTraits;
 use App\Traits\AMS\ApprovalActionTraits;
 use App\Http\Requests\AMS\ApprovalRunningApproveActionRequest;
-use function PHPUnit\Framework\returnArgument;
+use App\imports\CMS\importBulkAnswers;
 
 class FormController extends BaseController
 {
@@ -377,7 +378,7 @@ class FormController extends BaseController
     public function storeAnswers(Request $request)
     {
         $getID = FormAnswerUserDet::where('cfm_id', $request->id)
-            ->where('p_u_username', $request->header('username'))
+            ->where('p_u_username', $request->has('username') ? $request->username : $request->header('username'))
             ->orderBy('created_at', 'desc')
             ->first();
 
@@ -438,7 +439,7 @@ class FormController extends BaseController
         if ($checkSetup['isApproval'] == 1) {
             $this->sendApproval(new Request([
                 'idRef' => $request->id,
-                'username' => $request->header('username'),
+                'username' => $request->has('username') ? $request->username : $request->header('username'),
             ]));
 
         }
@@ -446,11 +447,9 @@ class FormController extends BaseController
         if (isset($checkSetup['isNotif']) && $checkSetup['isNotif'] == 1) {
             $this->sendNotifFormsSubmitted(new Request([
                 'idRef' => $request->id,
-                'username' => $request->header('username'),
+                'username' => $request->has('username') ? $request->username : $request->header('username'),
             ]));
         }
-
-        // return $checkSetup;
 
         $hasilAPICall = [];
         if ($checkSetup['isAPI'] == 1 && !empty($checkSetup['apiOpt'])) {
@@ -464,7 +463,7 @@ class FormController extends BaseController
 
                 $hasilAPICall[] = $this->sendAPIFormsSubmitted(new Request([
                     'idRef' => $request->id,
-                    'username' => $request->header('username'),
+                    'username' => $request->has('username') ? $request->username : $request->header('username'),
                     'apiUrl' => $valueApi['apiUrl'],
                     'method' => $valueApi['method'],
                     'headers' => $valueApi['headers'],
@@ -485,7 +484,7 @@ class FormController extends BaseController
                     $data = $item['original'] ?? $item;
                 }
 
-                return array_merge($data,[
+                return array_merge($data, [
                     'opt' => $checkSetup['apiOpt'][$index]
                 ]);
             }, array_keys($hasilAPICall));
@@ -503,14 +502,17 @@ class FormController extends BaseController
 
         $hasil = [];
 
+        // logger('Storing answers for batch ID: ' . $nextID);
+        // logger('Answers: ' . json_encode($spreadAnswer));
+
         foreach ($spreadAnswer as $key => $value) {
             $result = FormAnswerUserDet::updateOrCreate([
-                'p_u_username' => $request->header('username'),
+                'p_u_username' => $request->has('username') ? $request->username : $request->header('username'),
                 'cfaud_batch' => $nextID,
                 'cfm_id' => $request->id,
                 'cfmd_id' => $key,
-            ],[
-                'p_u_username' => $request->header('username'),
+            ], [
+                'p_u_username' => $request->has('username') ? $request->username : $request->header('username'),
                 'cfaud_batch' => $nextID,
                 'cfm_id' => $request->id,
                 'cfmd_id' => $key,
@@ -521,6 +523,44 @@ class FormController extends BaseController
         }
 
         return $this->handleResponse($checkSetup['isAPI'] == 1 && !empty($checkSetup['apiOpt']) ? $apiCallsList : $hasil, 'Form submited !');
+    }
+
+    public function storeBulkAnswers(Request $request)
+    {
+        $request->validate([
+            'files' => 'required|string',
+        ]);
+
+        $base64File = $request->input('files');
+        if (strpos($base64File, ',') !== false) {
+            list($type, $base64File) = explode(',', $base64File, 2);
+        }
+
+        // Decode base64 string and create temporary file
+        $fileContent = base64_decode($base64File, true);
+        if ($fileContent === false) {
+            return $this->handleError('Invalid base64 file format', []);
+        }
+
+        $tempPath = tempnam(sys_get_temp_dir(), 'excel_');
+        file_put_contents($tempPath, $fileContent);
+
+        $dataMRS = $this->getConnectedMRS($request->id);
+
+        $cekReport = MRSReportMstr::select(
+            'mrs_report_mstr.*'
+        )
+            ->where('mrs_report_mstr.id', $dataMRS->id)
+            ->first();
+            
+        $checkSetup = $this->getSetupFormsForForm($request->id);
+        $importer = new importBulkAnswers($request->header('username'), $cekReport->id, $request->id, $checkSetup);
+        Excel::import($importer, $tempPath);
+
+        // Clean up temporary file
+        unlink($tempPath);
+
+        return $this->handleResponse($importer, 'Bulk Form submited !');
     }
 
     /**
@@ -1191,13 +1231,13 @@ class FormController extends BaseController
 
             $httpMethod = strtoupper($request->input('method'));
             $apiUrl = $request->input('apiUrl');
-            
+
             // For non-download requests, use form_params instead of json for better compatibility
             if (!$request->isDownload && $httpMethod !== 'GET') {
                 unset($options['json']);
                 $options['form_params'] = $dataAnswers;
             }
-            
+
             $response = $client->request(
                 $httpMethod,
                 $apiUrl,

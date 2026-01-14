@@ -17,6 +17,9 @@ use Illuminate\Support\Facades\DB;
 use App\Traits\PORTAL\GencodeTraits;
 use Illuminate\Http\Request;
 use GuzzleHttp\Client;
+use App\Exports\MRS\ExportReport;
+
+use Excel;
 
 trait FormsTraits
 {
@@ -88,12 +91,17 @@ trait FormsTraits
                 $setupTrainingRes = $this->getSetupFormsForForm($value['id']);
             }
 
-            $getDataGencode = $this->getDataGencode('URL_PAGE_GEN',
-                    ['pgm_value' => $value['id']],
-                    [
-                        'url' => 'pgm_desc|string',
-                        'desc' => 'pgm_desc2|string'
-                    ], [], true, false);
+            $getDataGencode = $this->getDataGencode(
+                'URL_PAGE_GEN',
+                ['pgm_value' => $value['id']],
+                [
+                    'url' => 'pgm_desc|string',
+                    'desc' => 'pgm_desc2|string'
+                ],
+                [],
+                true,
+                false
+            );
 
             $hasil[] = [
                 'id' => $value['id'],
@@ -187,7 +195,7 @@ trait FormsTraits
                 'id' => $value['id'],
                 'type' => $value['cfm_type'],
                 'required' => $value['cfm_type'] === 'form' ? ($value['cfm_required'] == 1) : false,
-                'seq_name' => empty($value['cfm_seq_name']) ? $key + 1 : (int)$value['cfm_seq_name'],
+                'seq_name' => empty($value['cfm_seq_name']) ? $key + 1 : (int) $value['cfm_seq_name'],
                 'content' => $value['cfm_type'] === 'row'
                     ? $this->convertToFE($value['all_children_content'])
                     : (
@@ -261,7 +269,7 @@ trait FormsTraits
                     'p_u_username' => $uname,
                     'cfmt_id' => $idTitle,
                     'cfm_type' => $data['type'],
-                    'cfm_seq_name' => isset($data['seq_name']) ? (int)$data['seq_name'] : '',
+                    'cfm_seq_name' => isset($data['seq_name']) ? (int) $data['seq_name'] : '',
                     'cfm_content' => $content,
                     'cfm_parent_id' => $parent,
                     'cfm_required' => $data['type'] === 'form' ? $data['required'] : 0,
@@ -271,7 +279,7 @@ trait FormsTraits
                     'p_u_username' => $uname,
                     'cfmt_id' => $idTitle,
                     'cfm_type' => $data['type'],
-                    'cfm_seq_name' => isset($data['seq_name']) ? (int)$data['seq_name'] : '',
+                    'cfm_seq_name' => isset($data['seq_name']) ? (int) $data['seq_name'] : '',
                     'cfm_content' => $content,
                     'cfm_parent_id' => $parent,
                     'cfm_required' => $data['type'] === 'form' ? $data['required'] : 0,
@@ -281,14 +289,14 @@ trait FormsTraits
             if (isset($data['width']) && !empty($data['width'])) {
                 PortalGencode::where('pgm_code', 'CFM_STYLE_ATTR')
                     ->where(DB::raw('CAST(pgm_value2 AS VARCHAR)'), 'width')
-                    ->where(DB::raw('CAST(pgm_value AS VARCHAR)'), (string)$insert->id)
+                    ->where(DB::raw('CAST(pgm_value AS VARCHAR)'), (string) $insert->id)
                     ->delete();
 
                 PortalGencode::create([
                     'pgm_code' => 'CFM_STYLE_ATTR',
                     'pgm_value2' => 'width',
-                    'pgm_value' => (string)$insert->id,
-                    'pgm_value3' => (string)$data['width'],
+                    'pgm_value' => (string) $insert->id,
+                    'pgm_value3' => (string) $data['width'],
                     'pgm_desc' => 'For width custom cols'
                 ]);
             }
@@ -296,13 +304,13 @@ trait FormsTraits
             if (isset($data['style']) && !empty($data['style'])) {
                 PortalGencode::where('pgm_code', 'CFM_STYLE_ATTR')
                     ->where(DB::raw('CAST(pgm_value2 AS VARCHAR)'), 'style')
-                    ->where(DB::raw('CAST(pgm_value AS VARCHAR)'), (string)$insert->id)
+                    ->where(DB::raw('CAST(pgm_value AS VARCHAR)'), (string) $insert->id)
                     ->delete();
 
                 PortalGencode::create([
                     'pgm_code' => 'CFM_STYLE_ATTR',
                     'pgm_value2' => 'style',
-                    'pgm_value' => (string)$insert->id,
+                    'pgm_value' => (string) $insert->id,
                     'pgm_value3' => json_encode($data['style']),
                     'pgm_desc' => 'For style custom cols'
                 ]);
@@ -455,24 +463,6 @@ trait FormsTraits
                 ];
             }
 
-            // Order json_decode($columns) by 'value' based on $data array, but only when key 'forms' is not null
-            // $columnsArr = array_filter(json_decode($columns), function ($col) {
-            //     return isset($col->forms) && !empty($col->forms);
-            // });
-            // usort($columnsArr, function ($a, $b) use ($data) {
-            //     $posA = array_search($a->value, $data);
-            //     $posB = array_search($b->value, $data);
-            //     return $posA - $posB;
-            // });
-            // // return $columnsArr;
-            // $getData = array_map(function ($f) {
-            //     $data = FormMaster::where('id', (int)$f->value)->with('parentContent')->first();
-            //     if (isset($f->forms) && !empty($data)) {
-            //         return $data;
-            //     }
-            // }, json_decode($columns));
-
-            // return $data;
             $columns = collect(json_decode($columns))
                 ->sortBy('value')
                 ->values()
@@ -561,10 +551,6 @@ trait FormsTraits
                 }
             }
 
-            // return $hasilKeys;
-            // return json_decode($columns);
-            // return $getArrPos;
-
             $result = [];
             foreach ($data as $key => $value) {
                 foreach (json_decode($columns) as $column) {
@@ -618,6 +604,22 @@ trait FormsTraits
 
             if ($request->has('filter') && count($request->filter) > 0) {
                 foreach ($request->filter as $keyFilter => $valueFilter) {
+                    // Check if filter value contains function calls like today()
+                    if (isset($valueFilter['operator']) && in_array(strtolower($valueFilter['operator']), ['isnull', 'isnotnull'])) {
+                        // Handle null/not null operators without needing a value
+                        if (strtolower($valueFilter['operator']) === 'isnull') {
+                            $result = $result->filter(function ($item) use ($valueFilter) {
+                                return !isset($item[$valueFilter['column']]) || empty($item[$valueFilter['column']]);
+                            });
+                        } else {
+                            $result = $result->filter(function ($item) use ($valueFilter) {
+                                return isset($item[$valueFilter['column']]) && !empty($item[$valueFilter['column']]);
+                            });
+                        }
+                    } elseif (isset($valueFilter['value']) && !empty($valueFilter['value'])) {
+                        $valueFilter['value'] = $this->evaluateFilterValue($valueFilter['value']);
+                    }
+
                     if (isset($valueFilter['value']) && !empty($valueFilter['value'])) {
                         if (isset($valueFilter['operator']) && strtolower($valueFilter['operator']) === 'like') {
                             $result = $result->filter(function ($item) use ($valueFilter) {
@@ -634,10 +636,11 @@ trait FormsTraits
             if ($request->has('pagination') && is_array($request->pagination)) {
                 $page = isset($request->pagination['page']) ? (int) $request->pagination['page'] : 1;
                 $perPage = isset($request->pagination['perPage']) ? (int) $request->pagination['perPage'] : 10;
+                $totalCount = $result->count();
                 $result = $result->forPage($page, $perPage);
                 $result = new \Illuminate\Pagination\LengthAwarePaginator(
                     $result->values(),
-                    $result->count(),
+                    $totalCount,
                     $perPage,
                     $page,
                     ['path' => $request->url(), 'query' => $request->query()]
@@ -666,6 +669,19 @@ trait FormsTraits
         } else {
             return $this->handleError([], 'This form is not set to history !');
         }
+    }
+
+    public function evaluateFilterValue($value)
+    {
+        // Check for today() function
+        if (preg_match('/today\(\)/i', $value)) {
+            $today = date('Y-m-d');
+            $value = preg_replace('/today\(\)/i', $today, $value);
+        }
+
+        // Add more function evaluations as needed
+
+        return $value;
     }
 
     public function searchDataOnAPI($apiOpt, $value = '', $result = [])
@@ -863,46 +879,6 @@ trait FormsTraits
 
         return $result;
     }
-    // {
-    //     $result = [];
-
-    //     foreach ($apiParams as $param) {
-    //         // Support both array and object (stdClass)
-    //         if (is_array($param)) {
-    //             $paramName = $param['param_name'];
-    //             $value = isset($param['form_id']) && !empty($param['form_id']) ? 'CMS_REPORT_' . $param['form_id'] :
-    //                 ($param['default_value'] ?? null);
-    //         } elseif (is_object($param)) {
-    //             $paramName = $param->param_name;
-    //             $value = isset($param->form_id) && !empty($param->form_id) ? 'CMS_REPORT_' . $param->form_id :
-    //                 ($param->default_value ?? null);
-    //         } else {
-    //             continue;
-    //         }
-
-    //         $keys = explode('.', $paramName);
-
-    //         $current = &$result;
-
-    //         foreach ($keys as $key) {
-    //             // Handle array notation like [0]
-    //             if (preg_match('/^\[(\d+)\]$/', $key, $matches)) {
-    //                 $key = (int) $matches[1];
-    //             }
-
-    //             if (!isset($current[$key])) {
-    //                 $current[$key] = [];
-    //             }
-
-    //             $current = &$current[$key];
-    //         }
-
-    //         $current = $value;
-    //         unset($current);
-    //     }
-
-    //     return $result;
-    // }
 
     public function getConnectedMRS($id)
     {
@@ -955,5 +931,27 @@ trait FormsTraits
         }
 
         return $setupTrainingRes;
+    }
+
+    public function downloadTemplateBulk($id)
+    {
+        $dataMRS = $this->getConnectedMRS($id);
+
+        $cekReport = MRSReportMstr::select(
+            'mrs_report_mstr.*'
+        )
+            ->where('mrs_report_mstr.id', $dataMRS->id)
+            ->first();
+
+        // return $cekReport->id;
+
+        $filename = 'export_' . $cekReport->mrm_name . '_upload_template_' . date('ymd_his') . '.xlsx';
+
+        Excel::store(new ExportReport([], $dataMRS->id, true), 'MRS/' . $filename, 'public');
+
+        return [
+            'status' => true,
+            'path' => '/storage/MRS/' . $filename,
+        ];
     }
 }

@@ -196,6 +196,7 @@ Route::group(['prefix' => 'cms'], function () {
     Route::post('formsDetail', [FormController::class, 'showDetail']);
 
     Route::post('storeAnswers', [FormController::class, 'storeAnswers']);
+    Route::post('storeBulkAnswers', [FormController::class, 'storeBulkAnswers']);
     Route::delete('deleteAnswers/{id}/{batchID}', [FormController::class, 'destroyAnswers']);
     Route::get('getConnectedMRS/{id}', [FormController::class, 'getConnectedMRS']);
     Route::get('viewByLinkForm/{link}', [FormController::class, 'viewByLinkForm']);
@@ -211,6 +212,8 @@ Route::group(['prefix' => 'cms'], function () {
     Route::get('migrationHRMSUserAns', [QuizController::class, 'migrateUsersAnswers']);
     Route::get('viewHTMLOnlyQuiz/{id}', [QuizController::class, 'getHTMLList']);
     Route::post('downloadHTMLMaterial/{id}', [QuizController::class, 'downloadHTMLMaterial']);
+
+    Route::get('downloadTemplateBulk/{id}', [FormController::class, 'downloadTemplateBulk']);
 });
 
 Route::group(['prefix' => 'tos'], function () {
@@ -236,6 +239,10 @@ Route::group(['prefix' => 'mrs'], function () {
     Route::post('simRunning', [ReportController::class, 'simRunning']);
     Route::post('runningReport/{id}', [ReportController::class, 'runningReport']);
     Route::post('exportReport/{id}', [ReportController::class, 'exportToExcel']);
+
+    Route::get('runningReportFromAPI/{token}', [ReportController::class, 'runningReportFromAPI']);
+    Route::get('getListAPIColection/{idReport}', [ReportController::class, 'getListAPIColection']);
+    Route::post('storeSearchForAPI', [ReportController::class, 'storeSearchForAPI']);
 
     Route::resource('reportCols', ReportColsController::class);
 });
