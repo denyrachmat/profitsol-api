@@ -85,10 +85,10 @@ Route::get('/whoami', function () {
 
 Route::group(['prefix' => 'portal' /* , 'middleware' => ['auth:sanctum','verified']*/], function () {
     // Settings Menu
-    Route::resource('users', UsersController::class);
     Route::group(['prefix' => 'users'], function () {
         Route::get('ActiveOnly', [UsersController::class, 'userActiveOnly']);
     });
+    Route::resource('users', UsersController::class);
 
     Route::resource('profiles', ProfilesController::class);
 
