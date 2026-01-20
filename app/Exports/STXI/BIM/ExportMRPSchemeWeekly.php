@@ -34,7 +34,7 @@ class ExportMRPSchemeWeekly implements FromCollection, WithHeadings, WithEvents
         $firstDate = $this->data['first_date'];
         $weekCount = $this->data['week_count'] ?? 98;
 
-        $lastDate = (new \DateTime(date('Y-m-d', strtotime($this->data['po_rel_date']))))->modify('+' . ($weekCount * 7 - 1) . ' days')->format('Y-m-d');
+        $lastDate = (new \DateTime($firstDate))->modify('+' . ($weekCount * 7 - 1) . ' days')->format('Y-m-d');
         $lt = $this->data['lt'] ?? 21;
         $firstDayOfMonth = (new \DateTime($firstDate))->modify('first day of this month')->format('Y-m-d');
         $dataHeaders = $this->getData($firstDayOfMonth, $lastDate, $lt);
@@ -140,6 +140,7 @@ class ExportMRPSchemeWeekly implements FromCollection, WithHeadings, WithEvents
         $startKeys = 0;
         $startKeysRows = 0;
 
+        logger("DataPerList", $this->resultDate);
         foreach ($this->dataPerlist as $key => $value) {
             $hasil[$startKeysRows][$startKeys] = '';
             $startKeys = $startKeys + 1;
