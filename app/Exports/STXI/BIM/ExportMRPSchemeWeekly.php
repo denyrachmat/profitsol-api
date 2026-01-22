@@ -140,7 +140,8 @@ class ExportMRPSchemeWeekly implements FromCollection, WithHeadings, WithEvents
         $startKeys = 0;
         $startKeysRows = 0;
 
-        logger("DataPerList", $this->resultDate);
+        logger("dataPerlist", $this->dataPerlist);
+        logger("resultDate", $this->resultDate);
         foreach ($this->dataPerlist as $key => $value) {
             $hasil[$startKeysRows][$startKeys] = '';
             $startKeys = $startKeys + 1;
