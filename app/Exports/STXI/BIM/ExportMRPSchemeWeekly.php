@@ -31,7 +31,7 @@ class ExportMRPSchemeWeekly implements FromCollection, WithHeadings, WithEvents
     public function headings(): array
     {
 
-        $firstDate = $this->data['first_date'];
+        $firstDate = $this->data['po_rel_date'] ?? date('Y-m-01');
         $weekCount = $this->data['week_count'] ?? 98;
 
         $lastDate = (new \DateTime($firstDate))->modify('+' . ($weekCount * 7 - 1) . ' days')->format('Y-m-d');
