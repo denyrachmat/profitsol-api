@@ -1226,7 +1226,7 @@ class FormController extends BaseController
                 $options['sink'] = $downloadPath . '/' . $fileName;
 
                 // After successful download, construct URL using APP_URL_DOWNLOAD env variable
-                $downloadUrl = rtrim(env('APP_URL_DOWNLOAD', config('app.url')), '/') . '/downloads/' . $fileName;
+                $downloadUrl = rtrim(env('APP_URL_DOWNLOAD', config('app.url').'/storage/'), '/') . '/downloads/' . $fileName;
             }
 
             $httpMethod = strtoupper($request->input('method'));
