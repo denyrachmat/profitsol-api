@@ -58,6 +58,7 @@ class ExportMRPSchemeWeekly implements FromCollection, WithHeadings, WithEvents
             }
         }
         logger("dataPerlist1", $listDataPerLTMega);
+        logger("dataPerListOriginal", $this->dataPerListOriginal);
 
         $this->dataPerlist = $listDataPerLTMega;
 
@@ -158,8 +159,7 @@ class ExportMRPSchemeWeekly implements FromCollection, WithHeadings, WithEvents
             // For change first row data using original week list
             foreach ($this->dataPerListOriginal[$key] as $keyOri => $valueOri) {
                 if (isset($value[$keyOri])) {
-                    $weeksBG = $keyOri > 0 ? (string)ceil($keyOri / 7) : 0;
-                    $hasil[$startKeysRows][0] = isset($this->resultWeeks[$keyOri - $weeksBG ]) ? $this->resultWeeks[$keyOri - $weeksBG ] . ' W' : '';
+                    $hasil[$startKeysRows][0] = $this->resultWeeks[$keyOri] . ' W';
                 }
             }
 
