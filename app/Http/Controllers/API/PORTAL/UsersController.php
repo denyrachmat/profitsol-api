@@ -64,6 +64,8 @@ class UsersController extends BaseController
 
         $data = $q->get()->toArray();
 
+        // return $data;
+
         return $this->handleResponse(array_map(function ($item) {
             $hasil = array_merge($item, $item['det']);
             unset($hasil['det']);
