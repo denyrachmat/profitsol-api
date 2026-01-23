@@ -43,6 +43,7 @@ class ExportMRPSchemeWeekly implements FromCollection, WithHeadings, WithEvents
         $getLeadTimeList = $this->getListLT();
 
         // logger("LeadTimeList", $getLeadTimeList);
+        logger("dataHeaders", $dataHeaders);
 
         $listDataPerLTMega = [];
         foreach ($getLeadTimeList as $key => $valueLT) {
