@@ -85,13 +85,13 @@ class DLVSMTTYOEmailQueue implements ShouldQueue
 
         if (count($toList) > 0) {
             foreach ($toList as $item) {
-                array_push($to, $item->email);
+                array_push($to, $item['email']);
             }
         }
 
         if (count($ccList) > 0) {
             foreach ($ccList as $item) {
-                array_push($cc, $item->email);
+                array_push($cc, $item['email']);
             }
         }        
 
