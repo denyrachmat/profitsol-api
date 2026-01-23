@@ -49,11 +49,11 @@ class ExportMRPSchemeWeekly implements FromCollection, WithHeadings, WithEvents
             $fDateLT = $this->data['po_rel_date'];
             $lastDatePerLT = (new \DateTime($fDateLT))->modify('+' . ((int) ($valueLT['lt_(days)'] + $this->BGLT) + 1) . ' days')->format('Y-m-d');
             $lastDatePerLTOriginal = (new \DateTime($fDateLT))->modify('+' . ((int) ($valueLT['lt_(days)']) + 1) . ' days')->format('Y-m-d');
-            $getDateData = $this->getData($this->data['mrp_date'], $lastDatePerLT);
+            $getDateData = $this->getData($firstDayOfMonth, $lastDatePerLT);
 
             if (!empty($getDateData)) {
-                $listDataPerLTMega[(int) $valueLT['lt_(days)']] = $this->getData($this->data['mrp_date'], $lastDatePerLT);
-                $this->dataPerListOriginal[(int) $valueLT['lt_(days)']] = $this->getData($this->data['mrp_date'], $lastDatePerLTOriginal);
+                $listDataPerLTMega[(int) $valueLT['lt_(days)']] = $this->getData($firstDayOfMonth, $lastDatePerLT);
+                $this->dataPerListOriginal[(int) $valueLT['lt_(days)']] = $this->getData($firstDayOfMonth, $lastDatePerLTOriginal);
             }
         }
         logger("dataPerlist1", $listDataPerLTMega);
