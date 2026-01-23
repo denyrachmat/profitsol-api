@@ -43,7 +43,7 @@ class ExportMRPSchemeWeekly implements FromCollection, WithHeadings, WithEvents
         $getLeadTimeList = $this->getListLT();
 
         // logger("LeadTimeList", $getLeadTimeList);
-        logger("dataHeaders", $dataHeaders);
+        // logger("dataHeaders", $dataHeaders);
 
         $listDataPerLTMega = [];
         foreach ($getLeadTimeList as $key => $valueLT) {
@@ -158,7 +158,8 @@ class ExportMRPSchemeWeekly implements FromCollection, WithHeadings, WithEvents
             // For change first row data using original week list
             foreach ($this->dataPerListOriginal[$key] as $keyOri => $valueOri) {
                 if (isset($value[$keyOri])) {
-                    $hasil[$startKeysRows][0] = $this->resultWeeks[$keyOri] . ' W';
+                    $weeksBG = (string)ceil($key / 7);
+                    $hasil[$startKeysRows][0] = isset($this->resultWeeks[$keyOri - $weeksBG ]) ? $this->resultWeeks[$keyOri - $weeksBG ] . ' W' : '';
                 }
             }
 
