@@ -49,7 +49,7 @@ class ExportMRPSchemeWeekly implements FromCollection, WithHeadings, WithEvents
         foreach ($getLeadTimeList as $key => $valueLT) {
             $fDateLT = $this->data['po_rel_date'];
             $lastDatePerLT = (new \DateTime($fDateLT))->modify('+' . ((int) ($valueLT['lt_(days)'] + $this->BGLT) + 1) . ' days')->format('Y-m-d');
-            $lastDatePerLTOriginal = (new \DateTime($fDateLT))->modify('+' . ((int) ($valueLT['lt_(days)']) + 1) . ' days')->format('Y-m-d');
+            $lastDatePerLTOriginal = (new \DateTime($firstDayOfMonth))->modify('+' . ((int) ($valueLT['lt_(days)']) + 1) . ' days')->format('Y-m-d');
             $getDateData = $this->getData($firstDayOfMonth, $lastDatePerLT);
 
             if (!empty($getDateData)) {
