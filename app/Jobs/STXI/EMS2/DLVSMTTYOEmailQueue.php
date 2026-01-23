@@ -12,9 +12,11 @@ use Illuminate\Queue\SerializesModels;
 use App\Mail\STXI\EMS2\DLVSMTTYOEmail;
 use Illuminate\Support\Facades\Mail;
 
+use App\Traits\PORTAL\GencodeTraits;
+
 class DLVSMTTYOEmailQueue implements ShouldQueue
 {
-    use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
+    use Dispatchable, InteractsWithQueue, Queueable, SerializesModels, GencodeTraits;
 
     /**
      * Create a new job instance.
@@ -55,15 +57,43 @@ class DLVSMTTYOEmailQueue implements ShouldQueue
      */
     public function handle()
     {
-        $to = [
-            'kurniasih-annisa@sumitronics.co.jp',
-            'risna-haryaningrum@sumitronics.co.jp',
-            'mayang-trivena@sumitronics.co.jp'
-        ];
+        $to = [];
 
-        $cc = [
-            'deny-rachmat@sumitronics.co.jp',
-        ];
+        $cc = [];
+
+        $toList = $this->getDataGencode(
+            'DLV_TYO_MAIL',
+            [
+                'pgm_value' => 'to',
+            ],
+            [
+                'email' => 'pgm_value2',
+            ],
+            [],
+        );
+
+        $ccList = $this->getDataGencode(
+            'DLV_TYO_MAIL',
+            [
+                'pgm_value' => 'cc',
+            ],
+            [
+                'email' => 'pgm_value2',
+            ],
+            [],
+        );
+
+        if (count($toList) > 0) {
+            foreach ($toList as $item) {
+                array_push($to, $item->email);
+            }
+        }
+
+        if (count($ccList) > 0) {
+            foreach ($ccList as $item) {
+                array_push($cc, $item->email);
+            }
+        }        
 
         Mail::to($to)
             ->cc($cc)
