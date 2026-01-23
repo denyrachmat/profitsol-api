@@ -26,6 +26,7 @@ class ExportMRPSchemeWeekly implements FromCollection, WithHeadings, WithEvents
         $this->BGLT = $addBGLT;
         $this->dataPerlist = [];
         $this->dataPerListOriginal = [];
+        $this->listLT = [];
     }
 
     public function headings(): array
@@ -47,6 +48,7 @@ class ExportMRPSchemeWeekly implements FromCollection, WithHeadings, WithEvents
 
         $listDataPerLTMega = [];
         foreach ($getLeadTimeList as $key => $valueLT) {
+            $this->listLT[] = $valueLT['lt_(days)'];
             $fDateLT = $this->data['po_rel_date'];
             $lastDatePerLT = (new \DateTime($fDateLT))->modify('+' . ((int) ($valueLT['lt_(days)'] + $this->BGLT) + 1) . ' days')->format('Y-m-d');
             $lastDatePerLTOriginal = (new \DateTime($this->data['po_rel_date']))->modify('+' . ((int) ($valueLT['lt_(days)']) + 1) . ' days')->format('Y-m-d');
@@ -57,7 +59,7 @@ class ExportMRPSchemeWeekly implements FromCollection, WithHeadings, WithEvents
                 $this->dataPerListOriginal[(int) $valueLT['lt_(days)']] = $this->getData($this->data['po_rel_date'], $lastDatePerLTOriginal);
             }
         }
-        logger("dataPerlist1", $listDataPerLTMega);
+        logger("listLT", $this->listLT);
         logger("dataPerListOriginal", $this->dataPerListOriginal);
 
         $this->dataPerlist = $listDataPerLTMega;
