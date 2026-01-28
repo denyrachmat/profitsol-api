@@ -159,10 +159,8 @@ class ExportMRPSchemeWeekly implements FromCollection, WithHeadings, WithEvents
             }
 
             // For change first row data using original week list
-            foreach ($this->dataPerListOriginal[$key] as $keyOri => $valueOri) {
-                if (isset($value[$keyOri])) {
-                    $hasil[$startKeysRows][0] = ((int)$this->listLTByWeeks[$keyOri]) . ' W';
-                }
+            if (isset($this->listLTByWeeks[$keyOri])) {
+                $hasil[$startKeysRows][0] = ((int) $this->listLTByWeeks[$keyOri]) . ' W';
             }
 
             $startKeys = 0;
@@ -316,10 +314,11 @@ class ExportMRPSchemeWeekly implements FromCollection, WithHeadings, WithEvents
         return $r;
     }
 
-    public function getListLT() {
+    public function getListLT()
+    {
         try {
-            $response = Http::timeout(10)->get(env('APP_URL').'/api/mrs/runningReportFromAPI/MRSAPI_69662c0fd6adf');
-            
+            $response = Http::timeout(10)->get(env('APP_URL') . '/api/mrs/runningReportFromAPI/MRSAPI_69662c0fd6adf');
+
             if ($response->successful()) {
                 return $response->json();
             }
