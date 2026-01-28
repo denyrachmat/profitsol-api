@@ -161,7 +161,7 @@ class ExportMRPSchemeWeekly implements FromCollection, WithHeadings, WithEvents
             // For change first row data using original week list
             foreach ($this->dataPerListOriginal[$key] as $keyOri => $valueOri) {
                 if (isset($value[$keyOri])) {
-                    $hasil[$startKeysRows][0] = $this->resultWeeks[$keyOri] . ' W';
+                    $hasil[$startKeysRows][0] = ((int)$this->listLTByWeeks[$keyOri]) . ' W';
                 }
             }
 
