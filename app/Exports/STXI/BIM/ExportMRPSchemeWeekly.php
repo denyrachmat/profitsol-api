@@ -143,7 +143,7 @@ class ExportMRPSchemeWeekly implements FromCollection, WithHeadings, WithEvents
 
         $startKeys = 0;
         $startKeysRows = 0;
-
+        $keysForLT = 0;
         logger("resultDate", $this->resultDate);
         foreach ($this->dataPerlist as $key => $value) {
             $hasil[$startKeysRows][$startKeys] = '';
@@ -159,8 +159,8 @@ class ExportMRPSchemeWeekly implements FromCollection, WithHeadings, WithEvents
             }
 
             // For change first row data using original week list
-            if (isset($this->listLTByWeeks[$startKeysRows])) {
-                $hasil[$startKeysRows][0] = ((int) $this->listLTByWeeks[$startKeysRows]) . ' W';
+            if (isset($this->listLTByWeeks[$keysForLT])) {
+                $hasil[$startKeysRows][0] = ((int) $this->listLTByWeeks[$keysForLT]) . ' W';
             }
 
             $startKeys = 0;
@@ -175,6 +175,7 @@ class ExportMRPSchemeWeekly implements FromCollection, WithHeadings, WithEvents
 
             $startKeys = 0;
             $startKeysRows = $startKeysRows + 1;
+            $keysForLT = $keysForLT + 1;
         }
 
         logger("FinalData", $hasil);
