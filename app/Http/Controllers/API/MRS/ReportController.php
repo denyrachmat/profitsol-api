@@ -635,6 +635,7 @@ class ReportController extends BaseController
             $whereMethod = $filter['conmet'] === 'and' ? 'andWhere' : 'orWhere';
             $column = $this->quoteIdentifier($filter['cols']['value']);
             $isNumeric = $filter['cols']['type'] === 'int';
+            $isDate = in_array($filter['cols']['type'], ['date', 'datetime', 'timestamp']);
 
             // Special case for column-to-column comparison
             // if ($filter['opr'] === '<cols>') {
@@ -651,9 +652,10 @@ class ReportController extends BaseController
 
             switch ($filter['opr']) {
                 case 'between':
+                    $paramType = $isNumeric ? \PDO::PARAM_INT : ($isDate ? \PDO::PARAM_STR : \PDO::PARAM_STR);
                     $query->$whereMethod("{$column} BETWEEN :{$paramPrefix}_1 AND :{$paramPrefix}_2")
-                        ->setParameter("{$paramPrefix}_1", $val1, $isNumeric ? \PDO::PARAM_INT : \PDO::PARAM_STR)
-                        ->setParameter("{$paramPrefix}_2", $val2, $isNumeric ? \PDO::PARAM_INT : \PDO::PARAM_STR);
+                        ->setParameter("{$paramPrefix}_1", $val1, $paramType)
+                        ->setParameter("{$paramPrefix}_2", $val2, $paramType);
                     break;
 
                 case 'like':
@@ -662,28 +664,34 @@ class ReportController extends BaseController
                     break;
 
                 case '>':
+                    $paramType = $isNumeric ? \PDO::PARAM_INT : ($isDate ? \PDO::PARAM_STR : \PDO::PARAM_STR);
                     $query->$whereMethod("{$column} > :{$paramPrefix}")
-                        ->setParameter($paramPrefix, $val1, $isNumeric ? \PDO::PARAM_INT : \PDO::PARAM_STR);
+                        ->setParameter($paramPrefix, $val1, $paramType);
                     break;
                 case '<':
+                    $paramType = $isNumeric ? \PDO::PARAM_INT : ($isDate ? \PDO::PARAM_STR : \PDO::PARAM_STR);
                     $query->$whereMethod("{$column} < :{$paramPrefix}")
-                        ->setParameter($paramPrefix, $val1, $isNumeric ? \PDO::PARAM_INT : \PDO::PARAM_STR);
+                        ->setParameter($paramPrefix, $val1, $paramType);
                     break;
                 case '=':
+                    $paramType = $isNumeric ? \PDO::PARAM_INT : ($isDate ? \PDO::PARAM_STR : \PDO::PARAM_STR);
                     $query->$whereMethod("{$column} = :{$paramPrefix}")
-                        ->setParameter($paramPrefix, $val1, $isNumeric ? \PDO::PARAM_INT : \PDO::PARAM_STR);
+                        ->setParameter($paramPrefix, $val1, $paramType);
                     break;
                 case '>=':
+                    $paramType = $isNumeric ? \PDO::PARAM_INT : ($isDate ? \PDO::PARAM_STR : \PDO::PARAM_STR);
                     $query->$whereMethod("{$column} >= :{$paramPrefix}")
-                        ->setParameter($paramPrefix, $val1, $isNumeric ? \PDO::PARAM_INT : \PDO::PARAM_STR);
+                        ->setParameter($paramPrefix, $val1, $paramType);
                     break;
                 case '<=':
+                    $paramType = $isNumeric ? \PDO::PARAM_INT : ($isDate ? \PDO::PARAM_STR : \PDO::PARAM_STR);
                     $query->$whereMethod("{$column} <= :{$paramPrefix}")
-                        ->setParameter($paramPrefix, $val1, $isNumeric ? \PDO::PARAM_INT : \PDO::PARAM_STR);
+                        ->setParameter($paramPrefix, $val1, $paramType);
                     break;
                 case '<>':
+                    $paramType = $isNumeric ? \PDO::PARAM_INT : ($isDate ? \PDO::PARAM_STR : \PDO::PARAM_STR);
                     $query->$whereMethod("{$column} <> :{$paramPrefix}")
-                        ->setParameter($paramPrefix, $val1, $isNumeric ? \PDO::PARAM_INT : \PDO::PARAM_STR);
+                        ->setParameter($paramPrefix, $val1, $paramType);
                     break;
                 case '<cols>':
                     // Handled above as a special case
@@ -742,7 +750,7 @@ class ReportController extends BaseController
         } elseif (is_numeric($val)) {
             return (float) $val;
         } else {
-            return "'" . $val . "'";
+            return $val;
         }
     }
 
