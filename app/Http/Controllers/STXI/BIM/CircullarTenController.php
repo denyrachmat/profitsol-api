@@ -161,7 +161,7 @@ class CircullarTenController extends BaseController
      */
     public function show($id)
     {
-        return response(Storage::disk('ten_bim')->allFiles());
+        return response(Storage::disk('la_bim')->allFiles());
     }
 
     /**

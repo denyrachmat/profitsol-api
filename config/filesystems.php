@@ -75,6 +75,11 @@ return [
             'root'   => 'X:/ten/',
         ],
 
+        'la_bim' => [
+            'driver' => 'local',
+            'root'   => 'S:/ten/',
+        ],
+
         'root_bim' => [
             'driver' => 'local',
             'root'   => 'X:/',

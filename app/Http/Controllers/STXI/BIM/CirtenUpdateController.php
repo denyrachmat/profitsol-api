@@ -65,12 +65,12 @@ class CirtenUpdateController extends BaseController
             $file = $value['path'] . '/' . $value['tenNum'] . '.xlsx';
             $filehtm = $value['path'] . '/' . $value['tenNumEpson'] . '.htm';
 
-            if (!Storage::disk('ten_bim')->exists($filehtm)) {
+            if (!Storage::disk('la_bim')->exists($filehtm)) {
                 $filehtm = $value['path'] . '/' . $value['tenNumEpson'] . '.html';
             }
 
-            if (Storage::disk('ten_bim')->exists($file) && Storage::disk('ten_bim')->exists($filehtm)) {
-                // $files = mb_convert_encoding( Storage::disk('ten_bim')->get($file), 'UTF-8', 'UTF-8');
+            if (Storage::disk('la_bim')->exists($file) && Storage::disk('la_bim')->exists($filehtm)) {
+                // $files = mb_convert_encoding( Storage::disk('la_bim')->get($file), 'UTF-8', 'UTF-8');
 
                 // $submit = SyncActionCirten::dispatch($value['tenNum'], $value['tenNumEpson'], $filehtm, $file)->onQueue('SyncCirTentoOldDMS');
 
@@ -83,7 +83,7 @@ class CirtenUpdateController extends BaseController
                     $request->has('username') ? $request->username : 'deny-rachmat@sumitronics.co.jp'
                 );
 
-                Excel::import($importer, $file, 'ten_bim');
+                Excel::import($importer, $file, 'la_bim');
 
                 // Send To DMS
                 if (!empty($importer->data) && isset($importer->data) && isset($importer->data['send_data']) && !empty($importer->data['send_data'])) {
@@ -189,7 +189,7 @@ class CirtenUpdateController extends BaseController
                 $username
             );
 
-            Excel::import($importer, $cirtenMstr->CIRTEN_FILEPATH, 'ten_bim');
+            Excel::import($importer, $cirtenMstr->CIRTEN_FILEPATH, 'la_bim');
 
             // return $this->handleError('Re-sync TEN ' . $id . ' Failed', $importer);
             // return $importer->data;
@@ -253,7 +253,7 @@ class CirtenUpdateController extends BaseController
     {
         $getYear = date('Y', strtotime($date));
         $getMonth = date('m', strtotime($date));
-        $listData = Storage::disk('ten_bim')->directories($getYear . '/' . $getMonth);
+        $listData = Storage::disk('la_bim')->directories($getYear . '/' . $getMonth);
 
         $hasil = [];
         foreach ($listData as $key => $value) {
@@ -313,7 +313,7 @@ class CirtenUpdateController extends BaseController
                 $username
             );
 
-            Excel::import($importer, $getData->CIRTEN_FILEPATH, 'ten_bim');
+            Excel::import($importer, $getData->CIRTEN_FILEPATH, 'la_bim');
 
             $pdf = Pdf::loadView('STXI/BIM/circularTenLayout', $importer->dataForPDF);
 
@@ -334,7 +334,7 @@ class CirtenUpdateController extends BaseController
         if (!empty($getData)) {
             $importer = new ImportCircularTen($ten, $getData->CIRTEN_HTMFILEPATH, $getData->CIRTEN_TENIEI, 3, $getData->CIRTEN_FILEPATH);
 
-            Excel::import($importer, $getData->CIRTEN_FILEPATH, 'ten_bim');
+            Excel::import($importer, $getData->CIRTEN_FILEPATH, 'la_bim');
 
             return View('STXI/BIM/circularTenLayout', $importer->dataForPDF);
         } else {
