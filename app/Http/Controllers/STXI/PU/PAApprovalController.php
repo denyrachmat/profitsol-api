@@ -98,7 +98,8 @@ class PAApprovalController extends BaseController
         if (empty($data->APPROVED_DT)) {
             $hasil = PartInfoChange::where($colID, $id)->update([
                 'APPROVED_DT' => date('Y-m-d H:i:s'),
-                'APPROVED_USR' => $username
+                'APPROVED_USR' => $username,
+                'PIC_STATUS' => 'APPROVED'
             ]);
 
             if ($hasil) {

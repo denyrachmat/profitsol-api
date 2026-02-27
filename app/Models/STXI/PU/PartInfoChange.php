@@ -14,6 +14,7 @@ class PartInfoChange extends Model
 
     protected $fillable = [
         'APPROVED_DT',
-        'APPROVED_USR'
+        'APPROVED_USR',
+        'PIC_STATUS'
     ];
 }
