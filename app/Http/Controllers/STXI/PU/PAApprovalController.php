@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\STXI\PU\PAApproval;
 use App\Models\STXI\PU\PAApprovalMS;
+use App\Models\STXI\PU\PartInfoChange;
 use App\Http\Controllers\API\PORTAL\BaseController;
 use Illuminate\Support\Facades\DB;
 
@@ -89,6 +90,28 @@ class PAApprovalController extends BaseController
         }
 
         return view('STXI/PU/paApproval', collect(['return' => $return->getContent()]));
+    }
+
+    public function approvePartInfo($id, $username = '', $colID = 'PICNO')
+    {
+        $data = PartInfoChange::where($colID, $id)->first();
+        if (empty($data->APPROVED_DT)) {
+            $hasil = PartInfoChange::where($colID, $id)->update([
+                'APPROVED_DT' => date('Y-m-d H:i:s'),
+                'APPROVED_USR' => $username
+            ]);
+
+            if ($hasil) {
+                $dataResult = PartInfoChange::where($colID, $id)->get();
+                $return = $this->handleResponse($dataResult, 'Update Success !');
+            } else {
+                $return = $this->handleError('Update failed !', $hasil);
+            }
+        } else {
+            $return = $this->handleError('Part change information had already been approved !', []);
+        }
+
+        return view('STXI/PU/partinfoChangeApproval', collect(['return' => $return->getContent()]));
     }
 
     /**

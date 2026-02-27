@@ -412,6 +412,7 @@ Route::group(['prefix' => 'div'], function () {
     Route::group(['prefix' => 'pu'], function () {
         Route::resource('PAApproval', PAApprovalController::class);
         Route::get('PAApproval/{id}/{username}/{table}', [PAApprovalController::class, 'show']);
+        Route::get('approvePartInfo/{id}/{username}', [PAApprovalController::class, 'approvePartInfo']);
     });
 
     Route::group(['prefix' => 'bim'], function () {
@@ -458,6 +459,7 @@ Route::group(['prefix' => 'div'], function () {
 
     Route::group(['prefix' => 'it'], function () {
         Route::resource('scan', PartScannerController::class);
+        Route::post('generateLabel', [PartScannerController::class, 'ZPLGenerate']);
     });
 
     Route::group(['prefix' => 'ocd'], function () {
