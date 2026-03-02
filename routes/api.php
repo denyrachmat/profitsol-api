@@ -187,7 +187,7 @@ Route::group(['prefix' => 'dms'], function () {
     Route::get('checkPath/{users}/{path?}', [FolderController::class, 'checkPath']);
     Route::get('checkDeletedFolders/{users}', [FolderController::class, 'dbSyncToRealDoc']);
     Route::get('syncRootFiles/{users}', [FolderController::class, 'syncRootFiles']);
-    Route::post('uploadFiles', [DocumentController::class, 'uploadFiles']);
+    Route::post('uploadFiles', [DocumentController::class, 'uploadFilesForAPI']);
 });
 
 Route::group(['prefix' => 'cms'], function () {
