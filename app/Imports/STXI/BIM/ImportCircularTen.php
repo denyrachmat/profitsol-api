@@ -166,10 +166,12 @@ class ImportCircularTen implements ToModel
         }
 
         // For Exec Content
-        $filenya = Storage::disk('ten_bim')->get($this->htmlEpson);
+        $filenya = Storage::disk('la_bim')->get($this->htmlEpson);
         $crawler = new Crawler($filenya);
 
         $listItem = $crawler->filterXPath('//*[@style="word-wrap: break-word;"]')->extract(['_text']);
+
+        logger(json_encode($listItem));
         $this->data['exec'] = empty($listItem[5]) ? $listItem[3] : $listItem[5];
         $this->data['reason'] = empty($listItem[24]) ? (empty($listItem[25]) ? $listItem[26] : $listItem[25]) : $listItem[24];
         $this->data['cekhtml'] = $listItem;
@@ -186,12 +188,12 @@ class ImportCircularTen implements ToModel
         $pathInfo = pathinfo($this->htmlEpson);
         $directoryPath = $pathInfo['dirname'];
 
-        $filesData = Storage::disk('ten_bim')->files($directoryPath);
+        $filesData = Storage::disk('la_bim')->files($directoryPath);
 
         // return $filesData;
         $listCopiedFiles = [];
         foreach ($filesData as $file) {
-            Storage::writeStream('public/circular_ten/'.$this->tenEpsonNo.'/'.basename($file), Storage::disk('ten_bim')->readStream($file));
+            Storage::writeStream('public/circular_ten/'.$this->tenEpsonNo.'/'.basename($file), Storage::disk('la_bim')->readStream($file));
             $listCopiedFiles[] = basename($file);
         }
 
