@@ -8,7 +8,7 @@ use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Storage;
-use Excel;
+use Maatwebsite\Excel\Facades\Excel;
 use Redis;
 
 use App\Imports\STXI\BIM\ImportCircularTen;
@@ -50,7 +50,7 @@ class SyncActionCirten implements ShouldQueue
     
             $importer = new ImportCircularTen($this->secTenNo, $this->HTMLPath, $this->epsTenNo, 2, $this->excelPath);
     
-            $cek = Excel::import($importer, $this->excelPath, 'ten_bim');
+            $cek = Excel::import($importer, $this->excelPath, 'la_bim');
             // Send To DMS
             SyncCirTentoOldDMS::dispatch($importer->data['sendData'])->onQueue('SyncCirTentoOldDMS');
         } catch (\Throwable $e) {
