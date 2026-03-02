@@ -42,6 +42,10 @@ class DocumentController extends BaseController
      */
     public function store(Request $req)
     {
+        $req->validate([
+            'file_all' => 'nullable|array',
+            'file' => 'nullable|file|max:10240'
+        ]);
         // logger($req->all());
         $result = [];
         if (is_array($req->fileName)) {

@@ -284,6 +284,9 @@ trait FolderDocumentTraits
             $root = empty($checkRootAlias->dudrm_source)
                 ? 'data_folder'
                 : $checkRootAlias->dudrm_source;
+            
+            $checkID = DMSDocRootMstr::where('ddrm_name', $root)->first();
+            $this->installDisk($checkID->id);
         } else {
             $checkID = DMSDocRootMstr::where('ddrm_name', $root)->first();
             $this->installDisk($checkID->id);
@@ -355,6 +358,8 @@ trait FolderDocumentTraits
 
     public function uploadFiles($author, $path, $file, $contents, $root = '')
     {
+        // logger('disk', [$this->getAliasFolderbyAuthor($author, 'root', $root)]);
+        // logger('put', [$this->getAliasFolderbyAuthor($author) . '/' . $path . '/' . $file]);
         return storage::disk($this->getAliasFolderbyAuthor($author, 'root', $root))->put($this->getAliasFolderbyAuthor($author) . '/' . $path . '/' . $file, $contents);
     }
 
