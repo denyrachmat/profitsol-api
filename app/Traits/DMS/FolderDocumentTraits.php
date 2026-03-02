@@ -270,7 +270,7 @@ trait FolderDocumentTraits
         }
 
         $users = empty($checkRootAlias)
-            ? 'DMS/' . $author
+            ? $author
             : ($data === 'user'
                 ? $checkRootAlias->p_u_username
                 : ($checkRootAlias->dudrm_path)
