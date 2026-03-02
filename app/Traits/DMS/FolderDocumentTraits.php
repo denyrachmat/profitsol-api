@@ -66,7 +66,6 @@ trait FolderDocumentTraits
             'p_u_username',
             'ddm_id',
         )
-
             ->groupBy(
                 'dfm_id',
                 'p_u_username',
@@ -265,7 +264,6 @@ trait FolderDocumentTraits
     public function getAliasFolderbyAuthor($author, $data = 'path', $root = '')
     {
         $checkRootAliasTest = DMSFolderRootMstr::where('p_u_username', $author)->first();
-        $checkRootAlias = $checkRootAliasTest;
 
         if (!empty($checkRootAliasTest->dudrm_alias_username)) {
             $checkRootAlias = DMSFolderRootMstr::where('p_u_username', $checkRootAliasTest->dudrm_alias_username)->first();
@@ -281,12 +279,17 @@ trait FolderDocumentTraits
         // return $users;
 
         if (empty($root)) {
+            // logger($users);
             $root = empty($checkRootAlias->dudrm_source)
                 ? 'data_folder'
                 : $checkRootAlias->dudrm_source;
-            
-            $checkID = DMSDocRootMstr::where('ddrm_name', $root)->first();
-            $this->installDisk($checkID->id);
+
+            // $checkID = DMSDocRootMstr::where('ddrm_name', $root)->first();
+
+            // logger($root);
+            // if ($checkID) {
+            //     $this->installDisk($checkID->id);
+            // }
         } else {
             $checkID = DMSDocRootMstr::where('ddrm_name', $root)->first();
             $this->installDisk($checkID->id);
