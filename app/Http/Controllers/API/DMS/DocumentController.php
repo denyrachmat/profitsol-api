@@ -50,7 +50,7 @@ class DocumentController extends BaseController
                 // return $req->files[$key];
                 $fileNameFormat = 'DMS_' . Str::random(50) . '.' . explode(".", $value)[1];
                 $file = base64_decode(explode(",", $req->file_all[$key])[1]);
-                $storeRealFile = $this->uploadFiles(
+                $storeRealFile = $this->uploadFilesBase64(
                     $req->header('username'),
                     !empty($dataFolder) ? $this->pathCreator($dataFolder->toArray()) : '',
                     $this->getAliasFolderbyAuthor($req->header('username'), 'source') == 1
@@ -91,7 +91,7 @@ class DocumentController extends BaseController
             // return $req->files[$key];
             $fileNameFormat = 'DMS_' . Str::random(50) . '.' . explode(".", $req->filename)[1];
             // $file = base64_decode(explode(",", $req->file)[1]);
-            $storeRealFile = $this->uploadFiles(
+            $storeRealFile = $this->uploadFilesBase64(
                 $req->header('username'),
                 !empty($dataFolder) ? $this->pathCreator($dataFolder->toArray()) : '',
                 $this->getAliasFolderbyAuthor($req->header('username'), 'source') == 1
@@ -252,5 +252,13 @@ class DocumentController extends BaseController
             'mime' => $file->getMimeType(),
             'size' => $file->getSize(),
         ]);
+    }
+
+    public function uploadFilesBase64($username, $path, $filename, $file, $root)
+    {
+        $fullPath = $root . '/' . $path . '/' . $filename;
+        Storage::disk($this->getAliasFolderbyAuthor($username, 'user'))->put($fullPath, $file);
+
+        return $fullPath;
     }
 }
