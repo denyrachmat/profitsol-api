@@ -17,10 +17,11 @@ trait GencodeTraits
         $selectAs = [],
         $orderBy = [],
         $firstSelect = false,
-        $withParents = false,
+        $withChildrens = false,
         $forceShowAll = false,
         $groupBy = [],
-        $data = []
+        $data = [],
+        $withParents = false
     ) {
         if (count($data) > 0) {
             $hasilnya = $data;
@@ -37,7 +38,7 @@ trait GencodeTraits
                 }
             }
 
-            if ($withParents) {
+            if ($withChildrens) {
                 if ($forceShowAll) {
                     $gencode->with([
                         'children' => function ($query) {
@@ -51,6 +52,14 @@ trait GencodeTraits
                         }
                     ])->whereNull('pgm_parent');
                 }
+            }
+
+            if ($withParents) {
+                $gencode->with([
+                    'parent' => function ($query) {
+                        $query->limit(1000);
+                    }
+                ]);
             }
 
             if (count($orderBy) > 0) {
@@ -114,6 +123,8 @@ trait GencodeTraits
                                 $hasil[$keysCheck] = (int) $value[$selectStr];
                             } elseif ($splitTypeString[1] === 'bool') {
                                 $hasil[$keysCheck] = (bool) $value[$selectStr];
+                            } elseif ($splitTypeString[1] === 'array') {
+                                $hasil[$keysCheck] = json_decode($value[$selectStr], true);
                             } else {
                                 $hasil[$keysCheck] = (string) $value[$selectStr];
                             }
@@ -128,10 +139,11 @@ trait GencodeTraits
                                     $selectAs,
                                     $orderBy,
                                     $firstSelect,
-                                    $withParents,
+                                    $withChildrens,
                                     $forceShowAll,
                                     $groupBy,
-                                    $value[$selectStr]
+                                    $value[$selectStr],
+                                    $withParents
                                 );
                             }
                         } elseif (!is_array($value[$selectStr])) {
@@ -143,7 +155,7 @@ trait GencodeTraits
                                     $hasil[$key][$keysCheck] = (bool) $value[$selectStr];
                                 } elseif ($splitTypeString[1] === 'array') {
                                     // sementara set value single dulu (akan digroup di akhir bila grouped)
-                                    $hasil[$key][$keysCheck] = $value[$selectStr];
+                                    $hasil[$key][$keysCheck] = json_decode($value[$selectStr], true);
                                 } else {
                                     $hasil[$key][$keysCheck] = (string) $value[$selectStr];
                                 }
@@ -428,7 +440,7 @@ trait GencodeTraits
             $subject = $notify['title'] ?? 'Notification';
             $content = $notify['message'] ?? '';
             $fromDesc = config('app.name');
-            $linkPost = $notify['link'] ? env('FE_URL').$notify['link'] : env('FE_URL');
+            $linkPost = $notify['link'] ? env('FE_URL') . $notify['link'] : env('FE_URL');
             $toUser = $notify['to'] ?? null;
             $sentMode = $notify['methods'] ?? ['email', 'webpush'];
 
@@ -477,5 +489,223 @@ trait GencodeTraits
             'success' => true,
             'deleted_count' => $deletedCount,
         ]);
+    }
+
+    public function translateGencode($data, $isSaved = false, $isSeparator = false)
+    {
+        $resultGencode = '';
+        $datasCheck = PortalGencode::where('pgm_code', 'GENCODE_SETUP')
+            ->where('pgm_value', $data['code'])
+            ->orderBy('pgm_order');
+
+        if ($data['id']) {
+            $datasCheck->where('id', $data['id']);
+        }
+
+        $datas = $datasCheck->get();
+
+        foreach ($datas as $key => $value) {
+            $format = $value->pgm_value3;
+
+            if ($format) {
+                $parts = explode('|', $format);
+                // return $parts;
+
+                if ($parts[0] === 'DATE' && count($parts) > 1) {
+                    $dateValue = $value->pgm_value2;
+
+                    // If pgm_desc == 1, use current timestamp
+                    if ($value->pgm_desc == 1) {
+                        $dateValue = date($parts[1]);
+                    }
+
+                    $formattedValue = $dateValue;
+                    for ($i = 1; $i < count($parts); $i++) {
+                        // Support DATE|m|rom where:
+                        // - "m" picks the month
+                        // - "d" picks the day
+                        // - "y" picks the year
+                        // Support Roman numerals for year/day/month when followed by "|rom"
+                        // Implement 'd' (day) selector and generalized ROM handling
+
+                        // Handle 'd' (day) here and skip switch below
+                        if ($parts[0] === 'DATE' && (strtolower($parts[$i]) === 'd' || strtolower($parts[$i]) === 'm' || strtolower($parts[$i]) === 'y')) {
+                            $ts = is_string($dateValue) && strtolower(trim($dateValue)) === 'now'
+                                ? time()
+                                : strtotime($dateValue ?: 'now');
+                            if ($ts === false) {
+                                $ts = time();
+                            }
+                            $formattedValue = date($parts[$i], $ts);
+                            // prevent switch from re-processing this token
+                            $parts[$i] = '_skip_';
+                        }
+
+                        // Handle 'rom' generically (for y/m/d) and skip switch below
+                        if (strtolower($parts[$i]) === 'rom') {
+                            $toRoman = static function (int $num): string {
+                                if ($num <= 0)
+                                    return '0';
+                                $map = [
+                                    1000 => 'M',
+                                    900 => 'CM',
+                                    500 => 'D',
+                                    400 => 'CD',
+                                    100 => 'C',
+                                    90 => 'XC',
+                                    50 => 'L',
+                                    40 => 'XL',
+                                    10 => 'X',
+                                    9 => 'IX',
+                                    5 => 'V',
+                                    4 => 'IV',
+                                    1 => 'I',
+                                ];
+                                $res = '';
+                                foreach ($map as $val => $sym) {
+                                    while ($num >= $val) {
+                                        $res .= $sym;
+                                        $num -= $val;
+                                    }
+                                }
+                                return $res;
+                            };
+
+                            if (isset($formattedValue) && is_scalar($formattedValue) && ctype_digit((string) $formattedValue)) {
+                                // Convert already-selected numeric (y/m/d) to Roman
+                                $formattedValue = $toRoman((int) $formattedValue);
+                            } else {
+                                // Fallback: use month number from timestamp
+                                $ts = is_string($dateValue) && strtolower(trim($dateValue)) === 'now'
+                                    ? time()
+                                    : strtotime($dateValue ?: 'now');
+                                if ($ts === false) {
+                                    $ts = time();
+                                }
+                                $num = (int) date('n', $ts);
+                                $formattedValue = $toRoman($num);
+                            }
+
+                            // prevent switch from re-processing this token
+                            $parts[$i] = '_skip_';
+                        }
+
+                        // - "rom" converts the month to Roman numerals
+                        // Also support "now" as date value fallback
+                        $timestamp = null;
+                        if (is_string($dateValue) && strtolower(trim($dateValue)) === 'now') {
+                            $timestamp = time();
+                        } else {
+                            $timestamp = strtotime($dateValue ?: 'now');
+                            if ($timestamp === false) {
+                                $timestamp = time();
+                            }
+                        }
+                    }
+
+                    if ($isSeparator) {
+                        $resultGencode .= $formattedValue . $value->pgm_desc2;
+                    } else {
+                        $resultGencode .= $formattedValue;
+                    }
+
+                    if ($value->pgm_desc == 1 && $isSaved === true) {
+                        $value->pgm_value2 = $formattedValue;
+                        $value->save();
+                    }
+                } elseif ($parts[0] === 'INT' && count($parts) > 1) {
+                    // Check if parts contain 'RET' for reset tracking
+                    if ($value->pgm_desc == 1 && isset($parts[2]) && strpos($parts[2], 'RET') !== false) {
+                        $retFormat = str_replace('RET,', '', $parts[2]);
+                        $currentDateKey = date($retFormat);
+
+                        $lastRecord = PortalGencode::where('id', $value->id)
+                            ->orderBy('pgm_value2', 'desc')
+                            ->first();
+
+                        if ($lastRecord) {
+                            $lastDateKey = $value->pgm_desc3;
+                            logger($lastDateKey . ' vs ' . $currentDateKey);
+                            if ($lastDateKey === $currentDateKey) {
+                                $intValue = intval($lastRecord->pgm_value2) + 1;
+                            } else {
+                                $intValue = 1;
+                                $value->pgm_desc3 = $currentDateKey; // Update last used timestamp
+                            }
+                        } else {
+                            $intValue = 1;
+                            $value->pgm_desc3 = $currentDateKey; // Update last used timestamp
+                        }
+                    }
+
+                    // if (str_contains($parts[1], 'STRPAD')) {
+                    //     $splitsByComma = explode(',', $parts[1]);
+                    //     $padChar = $splitsByComma[1] ?? '0';
+                    //     $padLength = intval($splitsByComma[2] ?? 4);
+                    //     $formattedValue = str_pad($intValue, $padLength, $padChar, STR_PAD_LEFT);
+                    // } else {
+                    //     $formattedValue = $intValue;
+                    // }
+                    // $intValue = intval($value->pgm_value2);
+
+                    // If pgm_desc == 1, increment based on last data
+                    if (str_contains($parts[1], 'STRPAD')) {
+                        $splitsByComma = explode(',', $parts[1]);
+                        $padChar = $splitsByComma[1] ?? '0';
+                        $padLength = intval($splitsByComma[2] ?? 4);
+                        $formattedValue = str_pad($intValue, $padLength, $padChar, STR_PAD_LEFT);
+                    } else {
+                        $formattedValue = $intValue;
+                    }
+
+                    if ($value->pgm_desc == 1 && $isSaved === true) {
+                        $value->pgm_value2 = $formattedValue;
+                        $value->save();
+                    }
+
+                    if ($isSeparator) {
+                        $resultGencode .= $formattedValue . $value->pgm_desc2;
+                    } else {
+                        $resultGencode .= $formattedValue;
+                    }
+                } elseif ($parts[0] === 'KEY' && count($parts) > 1) {
+                    switch (strtolower($parts[1])) {
+                        case 'string':
+                            $valuenya = (string) ($data['list'][$value->pgm_value2] ?? '');
+                            break;
+                        case 'int':
+                            $valuenya = (int) ($data['list'][$value->pgm_value2] ?? 0);
+                            break;
+                        case 'bool':
+                            $valuenya = (bool) ($data['list'][$value->pgm_value2] ?? false);
+                            break;
+                        case 'array':
+                            $valuenya = $data['list'][$value->pgm_value2] ?? [];
+                            break;
+                        default:
+                            $valuenya = $data['list'][$value->pgm_value2] ?? '';
+                    }
+
+                    if ($isSeparator) {
+                        $resultGencode .= $valuenya . $value->pgm_desc2;
+                    } else {
+                        $resultGencode .= $valuenya;
+                    }
+                } else {
+                    if ($isSeparator) {
+                        $resultGencode .= $value->pgm_value2 . $value->pgm_desc2;
+                    } else {
+                        $resultGencode .= $value->pgm_value2;
+                    }
+                }
+            } else {
+                if ($isSeparator) {
+                    $resultGencode .= $value->pgm_value2 . $value->pgm_desc2;
+                } else {
+                    $resultGencode .= $value->pgm_value2;
+                }
+            }
+        }
+        return $resultGencode;
     }
 }

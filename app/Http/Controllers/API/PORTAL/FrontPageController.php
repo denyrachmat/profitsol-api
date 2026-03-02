@@ -49,7 +49,7 @@ class FrontPageController extends BaseController
             $dataMapFP = $this->getDataGencode(
                 'FP_CONF_MENU_VIEW',
                 [
-                    'pgm_value' => !empty($request) ? $request->header('username', '') : '' ,
+                    'pgm_value' => !empty($request) ? $request->header('username', '') : '',
                     'pgm_value2' => $value['idx']
                 ],
                 [
@@ -703,8 +703,9 @@ class FrontPageController extends BaseController
         ], [
             'pgm_order' => 'asc',
             'id' => 'asc'
-        ], false, true, true);
+        ], false, true, true, withParents: true);
 
+        // return $data;
         $hasil = [];
         foreach ($data as $key => $value) {
             $getCMSForms = FormMaster::where('cfmt_id', $value['page'])->where('cfm_type', 'files')->get()->toArray();
@@ -719,13 +720,36 @@ class FrontPageController extends BaseController
                 );
             }
 
-            $hasil[] = [
+            $dataTemp = [
                 'id' => $value['idx'],
                 'label' => $value['label'],
                 'icon' => $value['icon'],
                 'idPage' => $value['page'],
                 'forms' => $dataCMS,
+                'parent' => !empty($value['parent'])
+                    ? $this->getDataGencode(
+                        'FP_NAV',
+                        [
+                            // 'pgm_desc3' => '1',
+                            'id' => (int)$value['parent']
+                        ],
+                        [
+                            'value' => 'id',
+                            'label' => 'pgm_value',
+                            'icon' => 'pgm_value2',
+                        ],
+                        firstSelect: true
+                    )
+                    : null
             ];
+
+            if (isset($value['children'])) {
+                $dataTemp = array_merge($dataTemp, [
+                    'children' => $value['children']
+                ]);
+            }
+
+            $hasil[] = $dataTemp;
         }
 
         if (empty($data)) {

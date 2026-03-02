@@ -35,7 +35,7 @@ class PortalGencode extends Model
 
     public function parent()
     {
-        return $this->belongsTo(PortalGencode::class, 'pgm_parent', 'pgm_code');
+        return $this->belongsTo(PortalGencode::class, 'pgm_code', 'pgm_parent');
     }
 
     // public function setPgmValue2Attribute($value)
