@@ -250,7 +250,7 @@ class DocumentController extends BaseController
     public function uploadFilesForAPI(Request $request)
     {
         $request->validate([
-            'file' => 'required|file|max:10240'
+            'file' => 'required|file|max:2097152'
         ]);
         $file = $request->file('file');
         
