@@ -38,14 +38,19 @@ class DocumentController extends BaseController
      * Store a newly created resource in storage.
      *
      * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\Response
+     * @return \Illuminate\Http\JsonResponse
      */
     public function store(Request $req)
     {
-        $req->validate([
+        $validated = $req->validate([
             'file_all' => 'nullable|array',
             'file' => 'nullable|file|max:2097152'
         ]);
+
+        if (!$validated) {
+            return $this->handleError('Validation failed');
+        }
+        
         // logger($req->all());
         $result = [];
         if (is_array($req->fileName)) {

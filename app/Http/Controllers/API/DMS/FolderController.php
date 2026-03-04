@@ -123,18 +123,22 @@ class FolderController extends BaseController
     /**
      * Remove the specified resource from storage.
      *
+     * @param  \Illuminate\Http\Request  $request
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function destroy($id)
+    public function destroy(Request $request, $id)
     {
         $splitID = explode(",", base64_decode($id));
         $data = DMSFolderMstr::whereIn('id', $splitID)->with('parentFolders')->get()->toArray();
 
-        // return $data;
         $deleteRealFolder = [];
         foreach ($data as $key => $value) {
-            $delete = $this->deleteFolder($this->getAliasFolderbyAuthor($value['p_u_username'], 'user'), $this->pathCreator($value), $value['dfm_root_mstr']);
+            $delete = $this->deleteFolder(
+                $request->header('username'), 
+                $this->pathCreator($value), 
+                $value['dfm_root_mstr']
+            );
 
             if ($delete) {
                 DMSFolderMstr::where('id', $value['id'])->delete();
