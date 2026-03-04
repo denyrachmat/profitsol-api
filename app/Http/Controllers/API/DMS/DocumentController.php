@@ -68,7 +68,7 @@ class DocumentController extends BaseController
                 );
 
                 // return $storeRealFile;
-                // logger($storeRealFile);
+                logger('store 1', ['result' => $storeRealFile]);
 
                 if ($storeRealFile) {
                     logger($this->getAliasFolderbyAuthor($req->header('username'), 'source'));
@@ -80,9 +80,7 @@ class DocumentController extends BaseController
                         'ddm_doc_size' => $this->getSizeFiles(
                             $req->header('username'),
                             !empty($dataFolder) ? $this->pathCreator($dataFolder->toArray()) : '',
-                            $this->getAliasFolderbyAuthor($req->header('username'), 'source') == 1
-                            ? $value
-                            : $fileNameFormat,
+                            $value,
                             $req->dfm_root_mstr
                         ),
                         'ddm_doc_flag' => $req->ddm_doc_flag,
@@ -109,7 +107,7 @@ class DocumentController extends BaseController
             );
 
             // return $storeRealFile;
-            // logger($storeRealFile);
+            logger('store 2', ['result' => $storeRealFile]);
             if ($storeRealFile) {
                 $stored = DMSDocMstr::updateOrCreate([
                     'dfm_id' => $req->dfm_id,
