@@ -44,7 +44,7 @@ class DocumentController extends BaseController
     {
         $req->validate([
             'file_all' => 'nullable|array',
-            'file' => 'nullable|file|max:10240'
+            'file' => 'nullable|file|max:2097152'
         ]);
         // logger($req->all());
         $result = [];
