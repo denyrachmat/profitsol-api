@@ -100,7 +100,7 @@ class GencodeController extends BaseController
             $request->firstSelect ?? false,
             $request->withParents ?? false,
             $request->forceShowAll ?? false,
-            $request->groupBy ?? []
+            $request->groupBy ?? [],
         );
 
         return $this->handleResponse(

@@ -57,9 +57,7 @@ class DocumentController extends BaseController
                 $storeRealFile = $this->uploadFiles(
                     $req->header('username'),
                     !empty($dataFolder) ? $this->pathCreator($dataFolder->toArray()) : '',
-                    $this->getAliasFolderbyAuthor($req->header('username'), 'source') == 1
-                    ? $value
-                    : $fileNameFormat,
+                    $value,
                     $file,
                     $req->dfm_root_mstr
                 );
@@ -72,7 +70,7 @@ class DocumentController extends BaseController
                     $stored = DMSDocMstr::create([
                         'p_u_username' => $req->header('username'),
                         'dfm_id' => $req->dfm_id,
-                        'ddm_doc_name' => $fileNameFormat,
+                        'ddm_doc_name' => $value,
                         'ddm_doc_real_name' => $value,
                         'ddm_doc_size' => $this->getSizeFiles(
                             $req->header('username'),
@@ -149,13 +147,22 @@ class DocumentController extends BaseController
     {
         $getData = DMSDocMstr::where('id', $id)->with('folder.parentFolders')->with('shared')->first()->toArray();
 
+        // return empty($getData['folder']) ? $getData['dfm_root_mstr'] : $getData['folder']['dfm_root_mstr'];
         // return $this->getAliasFolderbyAuthor($getData['p_u_username'], 'source', $getData['dfm_root_mstr']);
+        // $files = $this->openFiles(
+        //     $getData['p_u_username'],
+        //     !empty($getData['folder']) ? $this->pathCreator($getData['folder']) : '',
+        //     $this->getAliasFolderbyAuthor($getData['p_u_username'], 'source', $getData['dfm_root_mstr']) == 1
+        //     ? $getData['ddm_doc_real_name']
+        //     : $getData['ddm_doc_name'],
+        //     empty($getData['folder']) ? $getData['dfm_root_mstr'] : $getData['folder']['dfm_root_mstr'],
+        //     $getData['id']
+        // );
+
         $files = $this->openFiles(
             $getData['p_u_username'],
             !empty($getData['folder']) ? $this->pathCreator($getData['folder']) : '',
-            $this->getAliasFolderbyAuthor($getData['p_u_username'], 'source', $getData['dfm_root_mstr']) == 1
-            ? $getData['ddm_doc_real_name']
-            : $getData['ddm_doc_name'],
+            $getData['ddm_doc_name'],
             empty($getData['folder']) ? $getData['dfm_root_mstr'] : $getData['folder']['dfm_root_mstr'],
             $getData['id']
         );

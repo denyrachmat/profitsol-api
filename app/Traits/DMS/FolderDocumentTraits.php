@@ -13,6 +13,7 @@ use Config;
 use Illuminate\Http\Request;
 use App\Models\CMS\FormMaster;
 use App\Traits\PORTAL\GencodeTraits;
+use Illuminate\Filesystem\FilesystemAdapter;
 
 trait FolderDocumentTraits
 {
@@ -261,10 +262,30 @@ trait FolderDocumentTraits
         return Storage::disk($this->getAliasFolderbyAuthor($author, 'root', $root))->allFiles();
     }
 
+    public function getDiskAlias($author, $source)
+    {
+        $getMapping = DMSFolderRootMstr::where('p_u_username', $author)->where('dudrm_source', $source)->first();
+
+        // return $getMapping->dudrm_source;
+        return $this->installDisk($getMapping->dudrm_source);
+    }
+
+    public function getPathRoot($author, $source)
+    {
+        $getMapping = DMSFolderRootMstr::where('p_u_username', $author)->where('dudrm_source', $source)->first();
+
+        $this->installDisk($getMapping->dudrm_source);
+
+        $getRoot = DMSDocRootMstr::where('ddrm_name', $getMapping->dudrm_source)->first();
+
+        return $getRoot ? $getRoot->ddrm_root : null;
+    }
+
     public function getAliasFolderbyAuthor($author, $data = 'path', $root = '')
     {
         $checkRootAliasTest = DMSFolderRootMstr::where('p_u_username', $author)->first();
 
+        $checkRootAlias = null;
         if (!empty($checkRootAliasTest->dudrm_alias_username)) {
             $checkRootAlias = DMSFolderRootMstr::where('p_u_username', $checkRootAliasTest->dudrm_alias_username)->first();
         }
@@ -292,7 +313,7 @@ trait FolderDocumentTraits
             // }
         } else {
             $checkID = DMSDocRootMstr::where('ddrm_name', $root)->first();
-            $this->installDisk($checkID->id);
+            $this->installDisk($checkID->dudrm_source);
         }
 
         $isUseRealNameFile = empty($checkRootAlias)
@@ -320,26 +341,39 @@ trait FolderDocumentTraits
     public function createNewFolder($author, $path, $root = '')
     {
         // return Config::get('filesystems.disks');
-        return Storage::disk($this->getAliasFolderbyAuthor($author, 'root', $root))->makeDirectory($this->getAliasFolderbyAuthor($author) . '/' . $path);
+        return $this->getDiskAlias($author, $root)->makeDirectory($this->getAliasFolderbyAuthor($author) . '/' . $path);
     }
 
     public function deleteFolder($author, $path, $root = '')
     {
-        return Storage::disk($this->getAliasFolderbyAuthor($author, 'root', $root))->deleteDirectory($this->getAliasFolderbyAuthor($author) . '/' . $path);
+        return $this->getDiskAlias($author, $root)->deleteDirectory($this->getAliasFolderbyAuthor($author) . '/' . $path);
     }
 
     public function deleteFiles($author, $path, $file, $root = '')
     {
-        return Storage::disk($this->getAliasFolderbyAuthor($author, 'root', $root))->delete($this->getAliasFolderbyAuthor($author) . '/' . $path . '/' . $file);
+        return $this->getDiskAlias($author, $root)->delete($this->getAliasFolderbyAuthor($author) . '/' . $path . '/' . $file);
     }
 
     public function openFiles($author, $path, $file, $root = '', $id = '')
     {
-        // logger($this->getAliasFolderbyAuthor($author) . '/' . $path . '/' . $file);
-        // return $this->getAliasFolderbyAuthor($author, 'path') . '/' . $path . '/' . $file;
-        $files = Storage::disk($this->getAliasFolderbyAuthor($author, 'root', $root))->get($this->getAliasFolderbyAuthor($author) . '/' . $path . '/' . $file);
-        $mime = Storage::disk($this->getAliasFolderbyAuthor($author, 'root', $root))->mimeType($this->getAliasFolderbyAuthor($author) . '/' . $path . '/' . $file);
-        $ext = explode('.', $file)[1];
+        /** @var \Illuminate\Filesystem\FilesystemAdapter $disk */
+        $disk = $this->getDiskAlias($author, $root);
+
+        $fullPath = $path === ''
+            ? $file
+            : trim($path, '/') . '/' . $file;
+
+        $files = $disk->get($fullPath);
+        $mime = $disk->mimeType($fullPath);
+        $ext = pathinfo($file, PATHINFO_EXTENSION);
+
+        if (!$disk->exists($fullPath)) {
+            logger('File not found', [
+                'disk_root' => $disk->path(''),
+                'fullPath' => $fullPath,
+            ]);
+            abort(404, 'File not found');
+        }
 
         $sharePointData = $this->getDataGencode('DMS_SHAREPOINT_SHARED', [
             'pgm_value' => $id,
@@ -363,14 +397,14 @@ trait FolderDocumentTraits
     {
         // logger('disk', [$this->getAliasFolderbyAuthor($author, 'root', $root)]);
         // logger('put', [$this->getAliasFolderbyAuthor($author) . '/' . $path . '/' . $file]);
-        return storage::disk($this->getAliasFolderbyAuthor($author, 'root', $root))->put($this->getAliasFolderbyAuthor($author) . '/' . $path . '/' . $file, $contents);
+        return $this->getDiskAlias($author, $root)->put($this->getAliasFolderbyAuthor($author) . '/' . $path . '/' . $file, $contents);
     }
 
     public function getSizeFiles($author, $path, $file, $root = '')
     {
-        logger(Storage::disk($this->getAliasFolderbyAuthor($author, 'root', $root))->path($this->getAliasFolderbyAuthor($author) . '/' . $path . '/' . $file));
+        logger($this->getDiskAlias($author, $root)->path($this->getAliasFolderbyAuthor($author) . '/' . $path . '/' . $file));
         try {
-            return storage::disk($this->getAliasFolderbyAuthor($author, 'root', $root))->size($this->getAliasFolderbyAuthor($author) . '/' . $path . '/' . $file);
+            return $this->getDiskAlias($author, $root)->size($this->getAliasFolderbyAuthor($author) . '/' . $path . '/' . $file);
         } catch (\Throwable $th) {
             return 0;
         }
@@ -379,7 +413,7 @@ trait FolderDocumentTraits
     public function convertFolderPathToArray($author, $path = '', $parentKey = 0, $hasil = [], $root = '')
     {
         // return [$this->getAliasFolderbyAuthor($author, 'root'), $path === '' ? $this->getAliasFolderbyAuthor($author) : $path];
-        $data = Storage::disk($this->getAliasFolderbyAuthor($author, 'root', $root))->directories($path === '' ? $this->getAliasFolderbyAuthor($author) : $path);
+        $data = $this->getDiskAlias($author, $root)->directories($path === '' ? $this->getAliasFolderbyAuthor($author) : $path);
         // return $this->getAliasFolderbyAuthor($author, 'root', $root);
 
         // return $data;
@@ -390,7 +424,7 @@ trait FolderDocumentTraits
             $hasil[] = [
                 'key' => $parentKey + $kunci,
                 'folders_name' => $value,
-                'list_files' => Storage::disk($this->getAliasFolderbyAuthor($author, 'root', $root))->files($value),
+                'list_files' => $this->getDiskAlias($author, $root)->files($value),
                 'children' => $this->convertFolderPathToArray($author, $value, $kunci, [], $root)
             ];
 
@@ -401,7 +435,7 @@ trait FolderDocumentTraits
             return [
                 'key' => 0,
                 'folders_name' => $path,
-                'list_files' => Storage::disk($this->getAliasFolderbyAuthor($author, 'root', $root))->files($path),
+                'list_files' => $this->getDiskAlias($author, $root)->files($path),
                 'children' => $hasil
             ];
         }
@@ -697,27 +731,57 @@ trait FolderDocumentTraits
 
     public function installDisk($id)
     {
-        $getListRoot = DMSDocRootMstr::where('id', $id)->first();
+        $r = DMSDocRootMstr::where('ddrm_name', $id)->firstOrFail();
 
-        if ($getListRoot->ddrm_driver == 'local') {
-            $result = config([
-                'filesystems.disks.' . $getListRoot->ddrm_name => [
-                    'driver' => 'local',
-                    'root' => $getListRoot->ddrm_root
-                ]
-            ]);
-        } else {
-            $result = config([
-                'filesystems.disks.' . $getListRoot->ddrm_name => [
-                    'driver' => $getListRoot->ddrm_driver,
-                    'host' => $getListRoot->ddrm_host,
-                    'username' => $getListRoot->ddrm_username,
-                    'password' => $getListRoot->ddrm_password
-                ]
+        $driver = strtolower($r->ddrm_driver);
+
+        if ($driver === 'local') {
+            $root = rtrim(str_replace('\\', '/', $r->ddrm_root), '/');
+
+            return Storage::build([
+                'driver' => 'local',
+                'root' => $root,
             ]);
         }
 
-        return $this->handleResponse($result, 'Disk installed');
+        if ($driver === 's3') {
+            // sesuaikan nama kolom DB kamu (ini contoh umum)
+            return Storage::build([
+                'driver' => 's3',
+                'key' => $r->ddrm_key,       // AWS_ACCESS_KEY_ID
+                'secret' => $r->ddrm_secret,    // AWS_SECRET_ACCESS_KEY
+                'region' => $r->ddrm_region,    // AWS_DEFAULT_REGION
+                'bucket' => $r->ddrm_bucket,    // AWS_BUCKET
+                // optional:
+                'url' => $r->ddrm_url ?: null,       // AWS_URL (kalau ada)
+                'endpoint' => $r->ddrm_endpoint ?: null,  // penting untuk MinIO / custom S3
+                'use_path_style_endpoint' => (bool) ($r->ddrm_path_style ?? false),
+                'throw' => false, // kalau versi Laravel kamu support
+            ]);
+        }
+
+        if ($driver === 'ftp' || $driver === 'sftp') {
+            return Storage::build([
+                'driver' => $driver,
+                'host' => $r->ddrm_host,
+                'username' => $r->ddrm_username,
+                'password' => $r->ddrm_password,
+
+                // optional tapi sering dibutuhkan:
+                'root' => $r->ddrm_root ?: '/',  // remote root
+                'port' => $r->ddrm_port ? (int) $r->ddrm_port : null,
+                'timeout' => $r->ddrm_timeout ? (int) $r->ddrm_timeout : 30,
+
+                // FTP-only optional:
+                'passive' => $r->ddrm_passive !== null ? (bool) $r->ddrm_passive : true,
+
+                // SFTP-only optional:
+                // 'privateKey' => $r->ddrm_private_key_path,
+                // 'passphrase' => $r->ddrm_passphrase,
+            ]);
+        }
+
+        abort(400, "Unsupported filesystem driver: {$r->ddrm_driver}");
     }
 
     public function getDataFilter(Request $request)
@@ -744,7 +808,7 @@ trait FolderDocumentTraits
             $hasil = [];
             foreach ($datanya as $key => $value) {
                 try {
-                    $this->installDisk($value['id']);
+                    $this->installDisk($value['ddrm_name']);
 
                     $check = Storage::disk($value['ddrm_name'])->exists('');
                     $status = true;
