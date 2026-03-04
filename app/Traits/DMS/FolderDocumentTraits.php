@@ -359,9 +359,11 @@ trait FolderDocumentTraits
         /** @var \Illuminate\Filesystem\FilesystemAdapter $disk */
         $disk = $this->getDiskAlias($author, $root);
 
+        $base = trim($this->getAliasFolderbyAuthor($author), '/');
+
         $fullPath = $path === ''
-            ? $file
-            : trim($path, '/') . '/' . $file;
+            ? "$base/$file"
+            : "$base/" . trim($path, '/') . "/$file";
 
         $files = $disk->get($fullPath);
         $mime = $disk->mimeType($fullPath);
