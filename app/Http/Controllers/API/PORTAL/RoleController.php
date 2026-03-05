@@ -22,10 +22,11 @@ class RoleController extends BaseController
     {
         return $this->handleResponse(PortalRole::with(['users_map' => function($query) {
             // Add any additional query constraints here if needed
-            $query
-                ->select('u_username', 'pud_is_active')
-                ->join('portal_users_det', 'portal_users_det.u_username', '=', 'portal_users_det.u_username')
-                ->where('pud_is_active', 1);
+            $query->whereHas('users.det', function($queryUser) {
+                // Add any additional query constraints for users here if needed
+                $queryUser->select('u_username', 'pud_first_name', 'pud_last_name', 'pud_is_active')
+                    ->where('pud_is_active', 1); // Select only necessary fields from users
+            });
         }])->with('role_app_map.apps.childApps')->get(), 'Data found !');
     }
 
