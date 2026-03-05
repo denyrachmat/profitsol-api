@@ -20,11 +20,12 @@ class RoleController extends BaseController
      */
     public function index()
     {
-        return $this->handleResponse(PortalRole::with('users_map', function($query) {
+        return $this->handleResponse(PortalRole::with(['users_map' => function($query) {
             // Add any additional query constraints here if needed
-            $query->join('portal_users_det', 'username', '=', 'u_username')
+            $query
+                ->join('portal_users_det', 'portal_users_det.u_username', '=', 'portal_users_det.u_username')
                 ->where('pud_is_active', 1);
-        })->with('role_app_map.apps.childApps')->get(), 'Data found !');
+        }])->with('role_app_map.apps.childApps')->get(), 'Data found !');
     }
 
     /**
