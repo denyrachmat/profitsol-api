@@ -80,6 +80,11 @@ return [
             'root'   => 'S:/ten/',
         ],
 
+        'la_bim_ten_list' => [
+            'driver' => 'local',
+            'root'   => 'S:/Technical Notice List/',
+        ],
+
         'root_bim' => [
             'driver' => 'local',
             'root'   => 'X:/',
