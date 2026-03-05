@@ -17,7 +17,7 @@ class PortalRoleUserMap extends Model
 
     public function users()
     {
-        return $this->hasOne('App\Models\user', 'u_username', 'username');
+        return $this->hasOne('App\Models\user', 'username', 'u_username');
     }
 
     public function role()
