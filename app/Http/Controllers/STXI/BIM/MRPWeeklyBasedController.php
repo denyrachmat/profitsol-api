@@ -67,6 +67,7 @@ class MRPWeeklyBasedController extends Controller
                 'mrp_date' => $request->input('mrp_date'),
                 'first_date' => $request->input('first_date'),
                 'po_rel_date' => $request->input('po_rel_date'),
+                'po_iss_date' => $request->input('po_iss_date'),
                 'mrp_cutoff_date' => $request->input('mrp_cutoff_date'),
             ],
             $request->input('type_mrp', 'New MRP scheme (weekly base)'),
@@ -91,6 +92,7 @@ class MRPWeeklyBasedController extends Controller
                 'mrp_date' => null,
                 'first_date' => $firstDate,
                 'po_rel_date' => null,
+                'po_iss_date' => null,
                 'mrp_cutoff_date' => null,
             ]
         ), 'mrp_scheme_weekly.xlsx');
