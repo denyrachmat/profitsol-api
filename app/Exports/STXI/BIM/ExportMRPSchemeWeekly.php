@@ -318,7 +318,7 @@ class ExportMRPSchemeWeekly implements FromCollection, WithHeadings, WithEvents
     public function getListLT()
     {
         try {
-            $response = Http::timeout(10)->get(env('APP_URL') . '/api/mrs/runningReportFromAPI/MRSAPI_69662c0fd6adf');
+            $response = Http::timeout(30)->get(env('APP_URL') . '/api/mrs/runningReportFromAPI/MRSAPI_69662c0fd6adf');
 
             if ($response->successful()) {
                 return $response->json();

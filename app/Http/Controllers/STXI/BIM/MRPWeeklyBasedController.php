@@ -60,7 +60,7 @@ class MRPWeeklyBasedController extends Controller
         }
 
         set_time_limit(300);
-        // logger($dataHeaders);
+        logger('check request MRP', $request->all());
 
         return Excel::download(new ExportMRPSchemeWeekly(
             [
@@ -75,9 +75,8 @@ class MRPWeeklyBasedController extends Controller
         ), 'mrp_scheme_weekly.xlsx');
     }
 
-    public function getReportTest($startDate, $weekCount = 98, $lt = 21)
+    public function getReportTest($mrpDate, $firstDate, $poRelDate = null, $poIssDate = null, $mrpCutoffDate = null, $weekCount = 98, $lt = 21)
     {
-        $firstDate = $startDate;
         $lastDate = (new \DateTime($firstDate))->modify('+' . ($weekCount * 7 - 1) . ' days')->format('Y-m-d');
 
         // return [$firstDate, $lastDate, $lt];
@@ -86,15 +85,14 @@ class MRPWeeklyBasedController extends Controller
 
         return Excel::download(new ExportMRPSchemeWeekly(
             [
-                'headers' => $dataHeaders
-            ],
-            [
-                'mrp_date' => null,
+                'mrp_date' => $mrpDate,
                 'first_date' => $firstDate,
-                'po_rel_date' => null,
-                'po_iss_date' => null,
-                'mrp_cutoff_date' => null,
-            ]
+                'po_rel_date' => $poRelDate,
+                'po_iss_date' => $poIssDate,
+                'mrp_cutoff_date' => $mrpCutoffDate,
+            ],
+            'New MRP scheme (weekly base)',
+            49,
         ), 'mrp_scheme_weekly.xlsx');
     }
 }
