@@ -43,7 +43,7 @@ class ExportMRPSchemeWeekly implements FromCollection, WithHeadings, WithEvents
         // $getLeadTimeList = DB::connection('sqlsrv_mega_sme')->table('MITM_TBL')->select('MITM_ETALT')->distinct()->where('MITM_ETALT', '>', 0)->get()->toArray();
         $getLeadTimeList = $this->getListLT();
 
-        // logger("LeadTimeList", $getLeadTimeList);
+        logger("LeadTimeList", $getLeadTimeList);
         // logger("dataHeaders", $dataHeaders);
 
         $listDataPerLTMega = [];
