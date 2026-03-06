@@ -322,7 +322,7 @@ class ReportController extends BaseController
         );
 
         $data = $this->runningReport($getData['id_report'], new Request([
-            'filter' => json_decode($getData['filter'], true)
+            'filter' => is_string($getData['filter']) ? json_decode($getData['filter'], true) : $getData['filter']
         ]))->getOriginalContent();
 
         $getCols = MRSReportColsDet::where('mrm_id', $getData['id_report'])
