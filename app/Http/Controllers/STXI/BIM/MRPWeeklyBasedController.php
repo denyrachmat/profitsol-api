@@ -60,14 +60,13 @@ class MRPWeeklyBasedController extends Controller
         }
 
         set_time_limit(300);
-        logger('check request MRP', $request->all());
+        // logger('check request MRP', $request->all());
 
         return Excel::download(new ExportMRPSchemeWeekly(
             [
                 'mrp_date' => $request->input('mrp_date'),
-                'first_date' => $request->input('first_date'),
+                'first_date' => $request->input('first_date'), //this is po issue date
                 'po_rel_date' => $request->input('po_rel_date'),
-                'po_iss_date' => $request->input('po_iss_date'),
                 'mrp_cutoff_date' => $request->input('mrp_cutoff_date'),
             ],
             $request->input('type_mrp', 'New MRP scheme (weekly base)'),
