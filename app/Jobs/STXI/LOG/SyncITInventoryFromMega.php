@@ -43,17 +43,17 @@ class SyncITInventoryFromMega implements ShouldQueue
             if ($this->isIfaceMega || $this->isIfaceMega != 0) {
                 Redis::publish('portalv2', json_encode([
                     'app' => 'it_inv_checker',
-                    'message' => $this->date. ' start mega sync to it inventory now...',
+                    'message' => $this->date . ' start mega sync to it inventory now...',
                     'type' => 'info',
                     'status' => 'start_mega_resync',
                     'data' => $this->date
                 ]));
 
-                DB::connection('sqlsrv_itinv')->update("SET NOCOUNT ON;EXEC IF_CR_ALL_BYDAY @IFDT_Str='".$this->date."', @SUMFLG=1");
+                DB::connection('sqlsrv_itinv')->update("SET NOCOUNT ON;EXEC IF_CR_ALL_BYDAY @IFDT_Str='" . $this->date . "', @SUMFLG=1");
 
                 Redis::publish('portalv2', json_encode([
                     'app' => 'it_inv_checker',
-                    'message' => $this->date. ' data sync !! please check on IT Inventory',
+                    'message' => $this->date . ' data sync !! please check on IT Inventory',
                     'type' => 'green',
                     'status' => 'success_mega_resync',
                     'data' => $this->date
@@ -61,7 +61,7 @@ class SyncITInventoryFromMega implements ShouldQueue
             } else {
                 Redis::publish('portalv2', json_encode([
                     'app' => 'it_inv_checker',
-                    'message' => 'Mega sync skipping date : '.$this->date,
+                    'message' => 'Mega sync skipping date : ' . $this->date,
                     'type' => 'orange',
                     'data' => $this->date
                 ]));
@@ -70,14 +70,14 @@ class SyncITInventoryFromMega implements ShouldQueue
             if ($this->isIfaceCeisa || $this->isIfaceCeisa != 0) {
                 Redis::publish('portalv2', json_encode([
                     'app' => 'it_inv_checker',
-                    'message' => 'date : '.$this->date . ' sync data from ceisa 4.0',
+                    'message' => 'date : ' . $this->date . ' sync data from ceisa 4.0',
                     'type' => 'info',
                     'data' => $this->date
                 ]));
 
                 $dataUnsync = viewCeisaRespon::where('TGL_DAFTAR', $this->date)
-                ->orderBy('TGL_DAFTAR', 'DESC')
-                ->get();
+                    ->orderBy('TGL_DAFTAR', 'DESC')
+                    ->get();
 
                 foreach ($dataUnsync as $key => $valueData) {
                     SyncITInventoryByBCNo::dispatch($valueData->NOMOR_DAFTAR, $valueData->TGL_DAFTAR)->onQueue('SyncITInventoryFromMega'); //->onQueue('SyncITInventoryByBCNo');
@@ -85,18 +85,28 @@ class SyncITInventoryFromMega implements ShouldQueue
             } else {
                 Redis::publish('portalv2', json_encode([
                     'app' => 'it_inv_checker',
-                    'message' => 'date : '.$this->date . ' sync data from ceisa 4.0 is skipped',
+                    'message' => 'date : ' . $this->date . ' sync data from ceisa 4.0 is skipped',
                     'type' => 'orange',
                     'data' => $this->date
                 ]));
             }
         } catch (\Throwable $th) {
-            Redis::publish('portalv2', json_encode([
-                'app' => 'it_inv_checker',
-                'message' => 'date '.$this->date.' sync failed server : '.$th->getMessage(),
-                'type' => 'red',
-                'status' => 'failed',
-            ]));
+            if (str_contains($th->getMessage(), 'Warning: ')) {
+                Redis::publish('portalv2', json_encode([
+                    'app' => 'it_inv_checker',
+                    'message' => 'date ' . $this->date . ' sync finished with warning: ' . $th->getMessage(),
+                    'type' => 'info',
+                    'status' => 'success_mega_resync',
+                    'data' => $this->date
+                ]));
+            } else {
+                Redis::publish('portalv2', json_encode([
+                    'app' => 'it_inv_checker',
+                    'message' => 'date ' . $this->date . ' sync failed server : ' . $th->getMessage(),
+                    'type' => 'red',
+                    'status' => 'failed',
+                ]));
+            }
         }
     }
 }
