@@ -172,8 +172,9 @@ class YMIQuotantionController extends BaseController
     public function exportPriceList(Request $req){
         $data = $this->getData($req);
 
-        Excel::store(new ExportPriceListYMICDCU($data), 'export_pricelist.xlsx', 'public');
+        $filename = 'export_pricelist_'.date('Ymd_His').'.xlsx';
+        Excel::store(new ExportPriceListYMICDCU($data), $filename, 'public');
 
-        return 'storage/export_pricelist.xlsx';
+        return 'storage/' . $filename;
     }
 }
