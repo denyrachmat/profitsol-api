@@ -130,7 +130,7 @@ class YMIQuotantionController extends BaseController
         if ($req->has('filter')) {
             foreach ($req->filter as $key => $value) {
                 if (!empty($value['value'])) {
-                    if ($value['param'] === 'range') {
+                    if ($value['param'] == 'range') {
                         $data->whereBetween($value['cols'], $value['value']);
                     } else {
                         $data->where($value['cols'], $value['param'], $value['param'] == 'like' ? "%{$value['value']}%": $value['value']);
