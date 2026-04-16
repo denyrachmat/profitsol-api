@@ -43,7 +43,7 @@ class ExportMRPSchemeWeekly implements FromCollection, WithHeadings, WithEvents
         // $getLeadTimeList = DB::connection('sqlsrv_mega_sme')->table('MITM_TBL')->select('MITM_ETALT')->distinct()->where('MITM_ETALT', '>', 0)->get()->toArray();
         $getLeadTimeList = $this->getListLT();
 
-        // logger("LeadTimeList", $getLeadTimeList);
+        logger("LeadTimeList", $getLeadTimeList);
         // logger("dataHeaders", $dataHeaders);
 
         $listDataPerLTMega = [];
@@ -51,16 +51,16 @@ class ExportMRPSchemeWeekly implements FromCollection, WithHeadings, WithEvents
             $this->listLTByWeeks[] = ceil($valueLT['lt_(days)'] / 7);
             $fDateLT = $this->data['po_rel_date'];
             $lastDatePerLT = (new \DateTime($fDateLT))->modify('+' . ((int) ($valueLT['lt_(days)'] + $this->BGLT) + 1) . ' days')->format('Y-m-d');
-            $lastDatePerLTOriginal = (new \DateTime($this->data['first_date']))->modify('+' . ((int) ($valueLT['lt_(days)']) + 2) . ' days')->format('Y-m-d');
+            $lastDatePerLTOriginal = (new \DateTime($this->data['first_date']))->modify('+' . ((int) ($valueLT['lt_(days)']) + 1) . ' days')->format('Y-m-d');
             $getDateData = $this->getData($firstDayOfMonth, $lastDatePerLT);
 
             if (!empty($getDateData)) {
                 $listDataPerLTMega[(int) $valueLT['lt_(days)']] = $this->getData($firstDayOfMonth, $lastDatePerLT);
-                $this->dataPerListOriginal[(int) $valueLT['lt_(days)']] = $this->getData($firstDate, $lastDatePerLTOriginal);
+                $this->dataPerListOriginal[(int) $valueLT['lt_(days)']] = $this->getData($this->data['first_date'], $lastDatePerLTOriginal);
             }
         }
-        // logger("listDataPerLTMega", $this->listLTByWeeks);
-        // logger("dataPerListOriginal", $this->dataPerListOriginal);
+        logger("listDataPerLTMega", $this->listLTByWeeks);
+        logger("dataPerListOriginal", $this->dataPerListOriginal);
 
         $this->dataPerlist = $listDataPerLTMega;
 
