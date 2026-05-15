@@ -6,6 +6,7 @@ use App\Http\Controllers\API\PORTAL\BaseController;
 use Illuminate\Http\Request;
 use App\Imports\STXI\LOG\ImportHSCodeForm;
 use Excel;
+use Illuminate\Support\Facades\Storage;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 use Illuminate\Http\File;
 use Illuminate\Support\Facades\Http;
@@ -51,7 +52,7 @@ class HSCodeUploadController extends BaseController
         $extNya = $request->file('file')->getClientOriginalExtension();
 
         $fileHash = str_replace('.' . $file->extension(), '', $file->hashName());
-        $nama_file = $fileHash . '.' . $extNya;
+        $nama_file = "{$fileHash}.{$extNya}";
 
         // return $nama_file;
         $request->file->storeAs('/public/upload_hs_code_form/', $nama_file);
@@ -68,6 +69,38 @@ class HSCodeUploadController extends BaseController
         Excel::import($importer, public_path('/storage/upload_hs_code_form/' . $nama_file));
 
         return $this->handleResponse([], 'Upload Sukses ' . $nama_file);
+    }
+
+    public function uploadAttachment(Request $request)
+    {
+        $uploadedFiles = [];
+        
+        // Handle single file
+        if ($request->hasFile('file') && !is_array($request->file('file'))) {
+            $file = new File($request->file);
+            $extNya = $request->file('file')->getClientOriginalExtension();
+            $fileName = $request->file('file')->getClientOriginalName();
+            $fileHash = str_replace('.' . $file->extension(), '', $fileName);
+            $nama_file = $fileHash . '.' . $extNya;
+            
+            $request->file->storeAs('/public/upload_hs_code_form/att/' . $request->docName.'/', $nama_file);
+            $uploadedFiles[] = $nama_file;
+        }
+        // Handle multiple files
+        elseif ($request->hasFile('file') && is_array($request->file('file'))) {
+            foreach ($request->file('file') as $uploadedFile) {
+                $file = new File($uploadedFile);
+                $extNya = $uploadedFile->getClientOriginalExtension();
+                $fileName = $uploadedFile->getClientOriginalName();
+                $fileHash = str_replace('.' . $file->extension(), '', $fileName);
+                $nama_file = $fileHash . '.' . $extNya;
+                
+                $uploadedFile->storeAs('/public/upload_hs_code_form/att/' . $request->docName.'/', $nama_file);
+                $uploadedFiles[] = $nama_file;
+            }
+        }
+
+        return $this->handleResponse(['filenames' => $uploadedFiles], 'Upload Sukses - ' . count($uploadedFiles) . ' file(s) uploaded');
     }
 
     /**
@@ -275,7 +308,32 @@ class HSCodeUploadController extends BaseController
             $data->groupBy($request->select);
         }
 
-        return $data->get()->toArray();
+        return $data->get()->map(function ($item) {
+            $storagePath = storage_path('app/public/upload_hs_code_form/att/' . $item->HSCD_DOCNO);
+            if (is_dir($storagePath)) {
+                $files = Storage::allFiles('public/upload_hs_code_form/att/' . $item->HSCD_DOCNO);
+                $item->listAttachment = $files ? array_map(function ($file) {
+                    $size = Storage::size($file);
+                    if ($size >= 1073741824) {
+                        $formatted_size = round($size / 1073741824, 2) . ' GB';
+                    } elseif ($size >= 1048576) {
+                        $formatted_size = round($size / 1048576, 2) . ' MB';
+                    } else {
+                        $formatted_size = round($size / 1024, 2) . ' KB';
+                    }
+                    
+                    return [
+                        'url' => url('storage/' . str_replace('public/', '', $file)),
+                        'filename' => basename($file),
+                        'filesize' => $formatted_size
+                    ];
+                }, $files) : [];
+            } else {
+                $item->listAttachment = [];
+            }
+
+            return $item;
+        })->toArray();
     }
 
     public function sendApproval(Request $request): array

@@ -393,6 +393,7 @@ Route::group(['prefix' => 'div'], function () {
 
         // Upload Data HS Code
         Route::resource('HSCode', HSCodeUploadController::class);
+        Route::post('uploadAttachment', [HSCodeUploadController::class, 'uploadAttachment']);
         Route::post('HSCodeFilter', [HSCodeUploadController::class, 'HSCodeFilter']);
         Route::get('testRecurs', [HSCodeUploadController::class, 'testHeaderData']);
         Route::post('exportData/{hist?}/{lastDonwload?}', [HSCodeUploadController::class, 'exportData']);
@@ -441,7 +442,7 @@ Route::group(['prefix' => 'div'], function () {
         Route::get('getDataMRPWeekDatas/{fdate}/{ldate}', [MRPWeeklyBasedController::class, 'getData']);
         // Route::post('getDataMRPWeek', [MRPWeeklyBasedController::class, 'getReport']);
         Route::match(['post', 'head'], 'getDataMRPWeek', [MRPWeeklyBasedController::class, 'getReport']);
-        Route::get('getReportTest/{fdate}', [MRPWeeklyBasedController::class, 'getReportTest']);
+        Route::get('getReportTest/{mrpDate}/{firstDate}/{poRelDate?}/{poIssDate?}/{mrpCutoffDate?}/{weekCount?}/{lt?}', [MRPWeeklyBasedController::class, 'getReportTest']);
 
 
         // CirtenUpdateController
