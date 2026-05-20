@@ -76,53 +76,14 @@ class ImportBarang implements ToModel, WithHeadingRow, SkipsEmptyRows
                             'UOM' => $UOM,
                             'TTLQTY' => $row['jumlah_satuan'],
                             'CURCD' => $cekTempData['CURR'],
-                            'PRICE' => round((int) $row['cif'] / (int) $row['jumlah_satuan'], 4),
-                            'TTLAMOUNT' => round((int) $row['cif'], 4),
+                            'PRICE' => round((int) (empty($row['cif']) ? $row['harga_penyerahan'] : $row['cif']) / (int) $row['jumlah_satuan'], 4),
+                            'TTLAMOUNT' => round((int) (empty($row['cif']) ? $row['harga_penyerahan'] : $row['cif']), 4),
                             'TAXINV' => '',
                             'SUPNM' => $cekTempData['SUPPL'],
                             'PENGIRIM' => $cekTempData['PENGIRIM'],
                             'WMSLOC' => '',
                             'HSCODE' => $row['hs']
                         ]);
-
-                        // $insert = ITINVIncoming::updateOrCreate([
-                        //     'BCTYPE' => $cekTempData['TYPE_BC'],
-                        //     'BCDOCNO' => $noDaftar,
-                        //     'BCDOCDT' => $cekTempData['TGL_DAFTAR'],
-                        //     'ITMCD' => trim($row['kode_barang']),
-                        //     // 'TTLQTY' => $row['jumlah_satuan'],
-                        // ], [
-                        //     'LOCCD' => empty($cekHeaderMega) ? 'STX-I' : (
-                        //         !empty($cekHeaderMega->FIFO_LOCCD)
-                        //         ? $cekHeaderMega->FIFO_LOCCD
-                        //         : $cekHeaderMega->CBCDOC_WHSCD
-                        //     ),
-                        //     'BCTYPE' => $cekTempData['TYPE_BC'],
-                        //     'BCDOCNO' => $noDaftar,
-                        //     'BCDOCDT' => $cekTempData['TGL_DAFTAR'],
-                        //     'BSGRP' => empty($cekHeaderMega) ? 'LAIN NYA' : (
-                        //         !empty($cekHeaderMega->FIFO_BSGRP)
-                        //         ? $cekHeaderMega->FIFO_BSGRP
-                        //         : $cekHeaderMega->CBCDOC_BSGRP
-                        //     ),
-                        //     'DOCCD' => $cekHeaderMega->CBCDOC_DOCCD,
-                        //     'DOCNO' => '',
-                        //     'HHEINVNO' => '',
-                        //     'ISUDT' => $cekTempData['TGL_DAFTAR'],
-                        //     'ITMCD' => trim($row['kode_barang']),
-                        //     'ITMD1' => $row['uraian'],
-                        //     'SPTNO' => $row['tipe'],
-                        //     'UOM' => $UOM,
-                        //     'TTLQTY' => $row['jumlah_satuan'],
-                        //     'CURCD' => $cekTempData['CURR'],
-                        //     'PRICE' => round((int) $row['cif'] / (int) $row['jumlah_satuan'], 4),
-                        //     'TTLAMOUNT' => round((int) $row['cif'], 4),
-                        //     'TAXINV' => '',
-                        //     'SUPNM' => $cekTempData['SUPPL'],
-                        //     'PENGIRIM' => $cekTempData['PENGIRIM'],
-                        //     'WMSLOC' => '',
-                        //     'HSCODE' => $row['hs']
-                        // ]);
 
                         Redis::publish('portalv2', json_encode([
                             'app' => 'it_inv_checker',
