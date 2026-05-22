@@ -40,4 +40,9 @@ class PortalRPAMaster extends Model
         return $this->hasMany(PortalRPAParamDet::class, 'prpd_prmid', 'id');
     }
 
+    public function prmCommand()
+    {
+        return $this->hasMany(PortalRPACmdDet::class, 'prcd_prpdid', 'id');
+    }
+
 }

@@ -59,6 +59,8 @@ class TrainingListController extends BaseController
      */
     public function show($id, $isExport = false)
     {
+        set_time_limit(300);
+        
         $hasil = User::select(
             'email',
             DB::raw("CONCAT(pud_first_name, ' ',ISNULL(pud_last_name, '')) as fullname"),

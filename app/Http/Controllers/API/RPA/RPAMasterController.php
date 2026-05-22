@@ -43,6 +43,12 @@ class RPAMasterController extends Controller
             }
         }
 
+        if ($request->has('prm_command') && is_array($request->prm_command)) {
+            foreach ($request->prm_command as $cmd) {
+                $data->prmCommand()->create($cmd);
+            }
+        }
+
         return response()->json($data, 200);
     }
 
