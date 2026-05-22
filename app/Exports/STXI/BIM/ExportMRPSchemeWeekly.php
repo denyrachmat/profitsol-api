@@ -319,12 +319,20 @@ class ExportMRPSchemeWeekly implements FromCollection, WithHeadings, WithEvents
     {
         try {
             $url = rtrim(env('APP_URL'), '/') . '/api/mrs/runningReportFromAPI/MRSAPI_69662c0fd6adf';
-            $response = Http::timeout(30)->get($url);
+            
+            $client = new \GuzzleHttp\Client();
+            $response = $client->request('GET', $url, [
+                'headers' => [
+                    'Accept' => 'application/json',
+                    'Authorization' => 'Bearer ' . env('API_TOKEN'),
+                ],
+            ]);
 
             logger('URL Get LT List', [$url]);
 
-            if ($response->successful()) {
-                return $response->json();
+            if ($response->getStatusCode() === 200) {
+                return json_decode($response->getBody(), true);
+
             }
         } catch (\Exception $e) {
             // Log the error if needed
