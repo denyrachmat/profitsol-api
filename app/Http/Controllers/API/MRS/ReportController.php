@@ -571,6 +571,9 @@ class ReportController extends BaseController
             // 5. Execute and return
             $data = $baseQuery->executeQuery()->fetchAllAssociative();
 
+            // Sanitize UTF-8 characters
+            $data = $this->sanitizeUTF8Data($data);
+
             if ($request->has('pagination')) {
                 $result = [
                     'data' => $data,
@@ -762,22 +765,69 @@ class ReportController extends BaseController
             ->where('mrs_report_mstr.id', $idReport)
             ->first();
 
-        $response = $this->runningReport($idReport, $request);
+        $response = $this->runningReport($idReport, new Request($request->all()));
 
-        $getData = json_decode($response->getContent(), true);
+        return $response;
 
-        if (!$getData || !isset($getData['data'])) {
-            return $this->handleError('Failed to generate report data');
+        try {
+            $content = $response->getContent();
+            
+            // Sanitize content for UTF-8 issues
+            if (!mb_check_encoding($content, 'UTF-8')) {
+                $content = mb_convert_encoding($content, 'UTF-8', 'UTF-8');
+            }
+            
+            $getData = json_decode($content, true, 512, JSON_THROW_ON_ERROR);
+            
+            if (!$getData || !isset($getData['data'])) {
+                return $this->handleError('Failed to generate report data');
+            }
+
+            // Sanitize data for UTF-8 encoding issues
+            $sanitizedData = $this->sanitizeUTF8Data($getData['data']);
+
+            $filename = 'export_' . $cekReport->mrm_name . '_' . date('ymd_his') . '.xlsx';
+
+            Excel::store(new ExportReport($sanitizedData, $idReport), 'MRS/' . $filename, 'public');
+
+            return [
+                'status' => true,
+                'path' => '/storage/MRS/' . $filename,
+            ];
+        } catch (\JsonException $e) {
+            Log::error('JSON decode error in exportToExcel', ['error' => $e->getMessage()]);
+            return $this->handleError('Report generation failed: ' . $e->getMessage());
+        } catch (\Exception $e) {
+            Log::error('Export error', ['error' => $e->getMessage()]);
+            return $this->handleError('Report generation failed: ' . $e->getMessage());
         }
+    }
 
-        $filename = 'export_' . $cekReport->mrm_name . '_' . date('ymd_his') . '.xlsx';
+    protected function sanitizeUTF8Data($data)
+    {
+        if (is_array($data)) {
+            $sanitized = [];
+            foreach ($data as $key => $value) {
+                $sanitized[$this->sanitizeUTF8String($key)] = $this->sanitizeUTF8Data($value);
+            }
+            return $sanitized;
+        } elseif (is_string($data)) {
+            return $this->sanitizeUTF8String($data);
+        }
+        return $data;
+    }
 
-        Excel::store(new ExportReport($getData['data'], $idReport), 'MRS/' . $filename, 'public');
-
-        return [
-            'status' => true,
-            'path' => '/storage/MRS/' . $filename,
-        ];
+    protected function sanitizeUTF8String($str)
+    {
+        if (!is_string($str)) {
+            return $str;
+        }
+        
+        // Remove invalid UTF-8 characters
+        $str = mb_convert_encoding($str, 'UTF-8', 'UTF-8');
+        $str = preg_replace('/([\x00-\x08\x0B-\x0C\x0E-\x1F\x7F])/', '', $str);
+        
+        return $str;
     }
 
     public function getListAPIColection($idReport)
