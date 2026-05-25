@@ -767,7 +767,7 @@ class ReportController extends BaseController
 
         $response = $this->runningReport($idReport, new Request($request->all()));
 
-        return $response;
+        // return $response;
 
         try {
             $content = $response->getContent();
