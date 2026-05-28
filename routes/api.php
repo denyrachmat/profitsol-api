@@ -81,7 +81,7 @@ Route::get('/whoami', function () {
         'ip' => request()->ip(),
         'host' => request()->getHost(),
     ];
-})->middleware('auth:sanctum');
+});
 
 Route::group(['prefix' => 'portal' /* , 'middleware' => ['auth:sanctum','verified']*/], function () {
     // Settings Menu
