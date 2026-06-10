@@ -373,6 +373,7 @@ trait FolderDocumentTraits
             logger('File not found', [
                 'disk_root' => $disk->path(''),
                 'fullPath' => $fullPath,
+                'path' => $path,
             ]);
             abort(404, 'File not found');
         }
