@@ -365,18 +365,33 @@ trait FolderDocumentTraits
             ? "$base/$file"
             : "$base/" . trim($path, '/') . "/$file";
 
-        $files = $disk->get($fullPath);
-        $mime = $disk->mimeType($fullPath);
-        $ext = pathinfo($file, PATHINFO_EXTENSION);
-
         if (!$disk->exists($fullPath)) {
             logger('File not found', [
                 'disk_root' => $disk->path(''),
                 'fullPath' => $fullPath,
                 'path' => $path,
+                'base' => $base,
             ]);
+
+            $fullPath = $path === ''
+                ? "$file"
+                : trim($path, '/') . "/$file";
+        }
+
+        if (!$disk->exists($fullPath)) {
+            logger('File still not found with alternative path', [
+                'disk_root' => $disk->path(''),
+                'fullPath' => $fullPath,
+                'path' => $path,
+                'base' => $base,
+            ]);
+            
             abort(404, 'File not found');
         }
+
+        $files = $disk->get($fullPath);
+        $mime = $disk->mimeType($fullPath);
+        $ext = pathinfo($file, PATHINFO_EXTENSION);
 
         $sharePointData = $this->getDataGencode('DMS_SHAREPOINT_SHARED', [
             'pgm_value' => $id,
