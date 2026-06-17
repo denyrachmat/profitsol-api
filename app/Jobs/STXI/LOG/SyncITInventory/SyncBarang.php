@@ -58,8 +58,8 @@ class SyncBarang implements ShouldQueue
                 $getDataItem = json_decode(json_encode($cekItemMega), true);
 
                 $wmsLoc = DB::connection('sqlsrv_mega_db')
-                    ->table('VWMLOC_TBL')
-                    ->where('MLOC_ITMCD', trim($barang['CBCDOCPRC_ITMCD']))
+                    ->table('Z_STXI_TBL_WMSLOC')
+                    ->where('ITMCD', trim($barang['CBCDOCPRC_ITMCD']))
                     ->first();
 
                 if ($this->typeBC['type'] === 'INC') {
@@ -154,8 +154,8 @@ class SyncBarang implements ShouldQueue
                 }, $processedBarang);
 
                 $wmsLoc = DB::connection('sqlsrv_mega_db')
-                    ->table('VWMLOC_TBL')
-                    ->where('MLOC_ITMCD', trim($barangNotOnMega['KODE BARANG']))
+                    ->table('Z_STXI_TBL_WMSLOC')
+                    ->where('ITMCD', trim($barangNotOnMega['KODE BARANG']))
                     ->first();
 
                 if ($this->typeBC['type'] === 'INC') {
@@ -231,8 +231,8 @@ class SyncBarang implements ShouldQueue
             $processedBarang = [];
             foreach ($getBarang as $key => $barang) {
                 $wmsLoc = DB::connection('sqlsrv_mega_db')
-                    ->table('VWMLOC_TBL')
-                    ->where('MLOC_ITMCD', trim($barang['KODE BARANG']))
+                    ->table('Z_STXI_TBL_WMSLOC')
+                    ->where('ITMCD', trim($barang['KODE BARANG']))
                     ->first();
                 $this->sendNotification($getBarang, $barang, 'Cannot found data on mega, use Ceisa Export processing, processing data.', false, $key + 1);
                 if ($this->typeBC['type'] === 'INC') {
@@ -321,7 +321,7 @@ class SyncBarang implements ShouldQueue
 
             // Pecah array besar menjadi array-array kecil
             $dataChunks = array_chunk($processedBarang, $chunkSize);
-            
+
             $dataChunks = array_chunk($processedBarang, $chunkSize);
             foreach ($dataChunks as $chunk) {
                 ITINVOutgoing::insert($chunk);
