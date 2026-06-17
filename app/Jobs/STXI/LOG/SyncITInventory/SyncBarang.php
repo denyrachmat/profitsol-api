@@ -88,7 +88,7 @@ class SyncBarang implements ShouldQueue
                         'TAXINV' => $barang['PGITSHP_SHPREFNO'] ?? '',
                         'SUPNM' => $this->dataTemp['SUPPL'],
                         'PENGIRIM' => $this->dataTemp['PENGIRIM'],
-                        'WMSLOC' => $wmsLoc ? $wmsLoc->MLOC_LOCCD : '',
+                        'WMSLOC' => $wmsLoc ? $wmsLoc->WMSLOC : '',
                         'HSCODE' => $getDataItem ? $getDataItem['MITM_HSCD'] : '',
                         'LUPDT' => now(),
                     ];
@@ -117,7 +117,7 @@ class SyncBarang implements ShouldQueue
                         'TTLAMOUNT' => round((int) $barang['CBCDOCPRC_QTY'] * (float) $barang['CBCDOCPRC_CPRICE'], 4),
                         'TAXINV' => '',
                         'CUSNM' => $this->header['PENERIMA'],
-                        'WMSLOC' => $wmsLoc ? $wmsLoc->MLOC_LOCCD : '',
+                        'WMSLOC' => $wmsLoc ? $wmsLoc->WMSLOC : '',
                         'HSCODE' => $getDataItem ? $getDataItem['MITM_HSCD'] : '',
                         'LUPDT' => now(),
                         'BC33DOCNO' => '',
@@ -184,7 +184,7 @@ class SyncBarang implements ShouldQueue
                         'TAXINV' => '',
                         'SUPNM' => $this->dataTemp['SUPPL'] ?? null,
                         'PENGIRIM' => $this->dataTemp['PENGIRIM'] ?? null,
-                        'WMSLOC' => $wmsLoc ? $wmsLoc->MLOC_LOCCD : '',
+                        'WMSLOC' => $wmsLoc ? $wmsLoc->WMSLOC : '',
                         'HSCODE' => $barangNotOnMega['HS']
                     ];
                 } else {
@@ -263,7 +263,7 @@ class SyncBarang implements ShouldQueue
                         'TAXINV' => '',
                         'SUPNM' => $this->dataTemp['SUPPL'] ?? null,
                         'PENGIRIM' => $this->dataTemp['PENGIRIM'] ?? null,
-                        'WMSLOC' => $wmsLoc ? $wmsLoc->MLOC_LOCCD : '',
+                        'WMSLOC' => $wmsLoc ? $wmsLoc->WMSLOC : '',
                         'HSCODE' => $barang['HS']
                     ];
                 } else {
@@ -291,7 +291,7 @@ class SyncBarang implements ShouldQueue
                             : round((float) $barang['HARGA PENYERAHAN'], 4),
                         'TAXINV' => '',
                         'CUSNM' => $this->header['PENERIMA'],
-                        'WMSLOC' => $wmsLoc ? $wmsLoc->MLOC_LOCCD : '',
+                        'WMSLOC' => $wmsLoc ? $wmsLoc->WMSLOC : '',
                         'HSCODE' => $barang['HS'],
                         'LUPDT' => now(),
                         'BC33DOCNO' => '',
