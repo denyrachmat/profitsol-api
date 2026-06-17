@@ -301,7 +301,7 @@ class SyncBarang implements ShouldQueue
         $this->sendNotification($processedBarang, $processedBarang[0], 'Cannot found data on mega, use Ceisa Export processing, processing data.', true, count($processedBarang));
 
         // Sync data ke table document
-        SyncDocument::dispatch($this->header, $this->typeBC, $this->dataTemp)->onQueue('sync-itinventory');
+        SyncDocument::dispatch($this->header, $this->typeBC, $this->dataTemp, $processedBarang)->onQueue('sync-itinventory');
     }
 
     public function sendNotification($listDataBarang, $barang, $status, $statusFlag = false, $processed = 0)

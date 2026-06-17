@@ -14,20 +14,24 @@ use App\Models\STXI\LOG\ITINVOutgoing;
 
 use Illuminate\Support\Facades\DB;
 
+use Illuminate\Support\Facades\Redis;
+
 class SyncDocument implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
     public $header;
     public $typeBC;
     public $dataTemp;
+    public $dataBarang;
     /**
      * Create a new job instance.
      */
-    public function __construct($header = [], $typeBC = 'INC', $dataTemp = [])
+    public function __construct($header = [], $typeBC = 'INC', $dataTemp = [], $dataBarang = [])
     {
         $this->header = $header;
         $this->typeBC = $typeBC;
         $this->dataTemp = $dataTemp;
+        $this->dataBarang = $dataBarang;
     }
 
     /**
@@ -117,5 +121,37 @@ class SyncDocument implements ShouldQueue
                     'BC23DOCDT' => $dataBC23DOCDT,
                 ]);
         }
+
+        Redis::publish('portalv2', json_encode(
+            [
+                'app' => 'it_inv_ceisa_upload',
+                'status' => 'start',
+                'message' => 'List bc no will be synchronized !',
+                'type' => 'info',
+                'key' => $this->header['NOMOR AJU'],
+                'data' => [
+                    'header' => [
+                        'status' => true,
+                        'data' => $this->header,
+                    ],
+                    'entitas' => [
+                        'status' => true,
+                        'data' => [
+                            'PENGIRIM' => !empty($this->dataTemp['PENGIRIM']) ? $this->dataTemp['PENGIRIM'] : '',
+                            'SUPPL' => !empty($this->dataTemp['SUPPL']) ? $this->dataTemp['SUPPL'] : '',
+                            'PENERIMA' => !empty($this->dataTemp['PENERIMA']) ? $this->dataTemp['PENERIMA'] : '',
+                        ],
+                    ],
+                    'barang' => [
+                        'status' => true,
+                        'data' => $this->dataBarang,
+                    ],
+                    'document' => [
+                        'status' => true,
+                        'data' => $getDataDocument,
+                    ],
+                ]
+            ],
+        ));
     }
 }

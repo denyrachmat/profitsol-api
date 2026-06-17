@@ -48,6 +48,7 @@ class SyncHeader implements ShouldQueue
                     'status' => 'start',
                     'message' => 'List bc no will be synchronized !',
                     'type' => 'info',
+                    'key' => $header['NOMOR AJU'],
                     'data' => [
                         'header' => [
                             'status' => false,
