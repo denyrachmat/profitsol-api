@@ -307,9 +307,25 @@ class SyncBarang implements ShouldQueue
 
         // logger('processedBarang : ' . json_encode($processedBarang));
         if ($this->typeBC['type'] === 'INC') {
-            ITINVIncoming::insert($processedBarang);
+            $chunkSize = 50;
+
+            // Pecah array besar menjadi array-array kecil
+            $dataChunks = array_chunk($processedBarang, $chunkSize);
+
+            // Insert ke database per potongan di dalam loop
+            foreach ($dataChunks as $chunk) {
+                ITINVIncoming::insert($chunk);
+            }
         } else {
-            ITINVOutgoing::insert($processedBarang);
+            $chunkSize = 50;
+
+            // Pecah array besar menjadi array-array kecil
+            $dataChunks = array_chunk($processedBarang, $chunkSize);
+            
+            $dataChunks = array_chunk($processedBarang, $chunkSize);
+            foreach ($dataChunks as $chunk) {
+                ITINVOutgoing::insert($chunk);
+            }
         }
 
         $this->sendNotification($processedBarang, $processedBarang[0], 'Cannot found data on mega, use Ceisa Export processing, processing data.', true, count($processedBarang));
