@@ -196,8 +196,9 @@ class Ceisa40UploaderController extends BaseController
                     case '<=':
                         $getHeader = $getHeader->where($valueFilter['cols'], '<=', $valueFilter['value']);
                         break;
-                    case 'in':
-                        $getHeader = $getHeader->whereIn($valueFilter['cols'], $valueFilter['value']);
+                    case 'multiple':
+                        $listValue = explode(',', $valueFilter['value']);
+                        $getHeader = $getHeader->whereIn($valueFilter['cols'], $listValue);
                         break;
                     case 'range':
                         $getHeader = $getHeader->whereBetween($valueFilter['cols'], $valueFilter['value']);
