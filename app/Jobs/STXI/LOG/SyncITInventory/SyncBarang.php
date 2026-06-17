@@ -297,11 +297,16 @@ class SyncBarang implements ShouldQueue
         } else {
             ITINVOutgoing::insert($processedBarang);
         }
-                
+
         $this->sendNotification($processedBarang, $processedBarang[0], 'Cannot found data on mega, use Ceisa Export processing, processing data.', true, count($processedBarang));
 
         // Sync data ke table document
-        SyncDocument::dispatch($this->header, $this->typeBC, $this->dataTemp, $processedBarang)->onQueue('sync-itinventory');
+        SyncDocument::dispatch($this->header, $this->typeBC, $this->dataTemp, [
+            'status' => true,
+            'total' => count($processedBarang),
+            'processed' => count($processedBarang),
+            'current' => null,
+        ])->onQueue('sync-itinventory');
     }
 
     public function sendNotification($listDataBarang, $barang, $status, $statusFlag = false, $processed = 0)
