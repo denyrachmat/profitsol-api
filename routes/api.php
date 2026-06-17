@@ -375,6 +375,8 @@ Route::group(['prefix' => 'div'], function () {
         Route::post('uploadData', [Ceisa40UploaderController::class, 'uploadData']);
         Route::post('getNopen', [Ceisa40UploaderController::class, 'getNopen']);
         Route::post('getDetPerusahaan', [Ceisa40UploaderController::class, 'getDetPerusahaan']);
+        Route::post('syncCeisatoITInventory', [Ceisa40UploaderController::class, 'syncCeisatoITInventory']);
+        Route::post('getHeaderCeisa', [Ceisa40UploaderController::class, 'getHeader']);
 
         Route::get('downloadExcelCeisa40/{noAju}/{bc}/{id}', [Ceisa40UploaderController::class, 'downloadExcel']);
         Route::get('syncCeisa/{noAju}/{bc}/{id}', [Ceisa40UploaderController::class, 'syncCeisaToWebBased']);
