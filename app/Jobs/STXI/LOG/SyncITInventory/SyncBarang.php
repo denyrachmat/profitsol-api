@@ -86,7 +86,7 @@ class SyncBarang implements ShouldQueue
                             'CURCD' => $barang['CBCDOC_CURCD'],
                             'PRICE' => round((float) $barang['CBCDOCPRC_CPRICE'], 4),
                             'TTLAMOUNT' => round((int) $barang['CBCDOCPRC_QTY'] * (float) $barang['CBCDOCPRC_CPRICE'], 4),
-                            'TAXINV' => $barang['PGITSHP_SHPREFNO'] ?? '',
+                            'TAXINV' => $this->typeBC['code'] == 'BC4.0' ? $barang['PGITSHP_SHPREFNO'] ?? '' : '',
                             'SUPNM' => $this->dataTemp['SUPPL'],
                             'PENGIRIM' => $this->dataTemp['PENGIRIM'],
                             'WMSLOC' => $wmsLoc ? $wmsLoc->WMSLOC : '',
