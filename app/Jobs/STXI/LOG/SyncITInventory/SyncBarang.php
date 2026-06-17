@@ -312,6 +312,7 @@ class SyncBarang implements ShouldQueue
                 'status' => 'start',
                 'message' => 'List bc no will be synchronized !',
                 'type' => 'info',
+                'key' => $this->header['NOMOR AJU'],
                 'data' => [
                     'header' => [
                         'status' => true,

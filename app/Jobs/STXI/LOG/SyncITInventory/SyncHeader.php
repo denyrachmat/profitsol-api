@@ -41,33 +41,34 @@ class SyncHeader implements ShouldQueue
      */
     public function handle(): void
     {
-        Redis::publish('portalv2', json_encode(
-            [
-                'app' => 'it_inv_ceisa_upload',
-                'status' => 'start',
-                'message' => 'List bc no will be synchronized !',
-                'type' => 'info',
-                'data' => [
-                    'header' => [
-                        'status' => false,
-                        'data' => [],
-                    ],
-                    'entitas' => [
-                        'status' => false,
-                        'data' => [],
-                    ],
-                    'barang' => [
-                        'status' => false,
-                        'data' => [],
-                    ],
-                    'document' => [
-                        'status' => false,
-                        'data' => [],
-                    ],
-                ]
-            ],
-        ));
         foreach ($this->selectedData as $header) {
+            Redis::publish('portalv2', json_encode(
+                [
+                    'app' => 'it_inv_ceisa_upload',
+                    'status' => 'start',
+                    'message' => 'List bc no will be synchronized !',
+                    'type' => 'info',
+                    'data' => [
+                        'header' => [
+                            'status' => false,
+                            'data' => $header,
+                        ],
+                        'entitas' => [
+                            'status' => false,
+                            'data' => [],
+                        ],
+                        'barang' => [
+                            'status' => false,
+                            'data' => [],
+                        ],
+                        'document' => [
+                            'status' => false,
+                            'data' => [],
+                        ],
+                    ]
+                ],
+            ));
+
             $kodeDokumen = $this->mapDocumentCode($header['KODE DOKUMEN']);
 
             if ($kodeDokumen['type'] === 'INC') {
@@ -106,6 +107,7 @@ class SyncHeader implements ShouldQueue
                     'status' => 'start',
                     'message' => 'List bc no will be synchronized !',
                     'type' => 'info',
+                    'key' => $header['NOMOR AJU'],
                     'data' => [
                         'header' => [
                             'status' => true,
