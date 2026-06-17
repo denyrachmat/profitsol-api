@@ -57,6 +57,11 @@ class SyncBarang implements ShouldQueue
                 $cekItemMega = DB::connection('sqlsrv_itinv')->table('VIEW_MITM_TBL')->where('MITM_ITMCD', $barang['CBCDOCPRC_ITMCD'])->first();
                 $getDataItem = json_decode(json_encode($cekItemMega), true);
 
+                $wmsLoc = DB::connection('sqlsrv_mega_db')
+                    ->table('VWMLOC_TBL')
+                    ->where('MLOC_ITMCD', trim($barang['CBCDOCPRC_ITMCD']))
+                    ->first();
+
                 if ($this->typeBC['type'] === 'INC') {
                     $processedBarang[] = [
                         'LOCCD' => !empty($barang['FIFO_LOCCD'])
@@ -83,7 +88,7 @@ class SyncBarang implements ShouldQueue
                         'TAXINV' => $barang['PGITSHP_SHPREFNO'] ?? '',
                         'SUPNM' => $this->dataTemp['SUPPL'],
                         'PENGIRIM' => $this->dataTemp['PENGIRIM'],
-                        'WMSLOC' => '',
+                        'WMSLOC' => $wmsLoc ? $wmsLoc->MLOC_LOCCD : '',
                         'HSCODE' => $getDataItem ? $getDataItem['MITM_HSCD'] : '',
                         'LUPDT' => now(),
                     ];
@@ -112,7 +117,7 @@ class SyncBarang implements ShouldQueue
                         'TTLAMOUNT' => round((int) $barang['CBCDOCPRC_QTY'] * (float) $barang['CBCDOCPRC_CPRICE'], 4),
                         'TAXINV' => '',
                         'CUSNM' => $this->header['PENERIMA'],
-                        'WMSLOC' => '',
+                        'WMSLOC' => $wmsLoc ? $wmsLoc->MLOC_LOCCD : '',
                         'HSCODE' => $getDataItem ? $getDataItem['MITM_HSCD'] : '',
                         'LUPDT' => now(),
                         'BC33DOCNO' => '',
@@ -148,6 +153,11 @@ class SyncBarang implements ShouldQueue
                     return trim($item['HHEINVNO']);
                 }, $processedBarang);
 
+                $wmsLoc = DB::connection('sqlsrv_mega_db')
+                    ->table('VWMLOC_TBL')
+                    ->where('MLOC_ITMCD', trim($barangNotOnMega['KODE BARANG']))
+                    ->first();
+
                 if ($this->typeBC['type'] === 'INC') {
                     $processedBarang[] = [
                         'LOCCD' => $processedBarang[0]['LOCCD'] ?? 'STX-I',
@@ -174,7 +184,7 @@ class SyncBarang implements ShouldQueue
                         'TAXINV' => '',
                         'SUPNM' => $this->dataTemp['SUPPL'] ?? null,
                         'PENGIRIM' => $this->dataTemp['PENGIRIM'] ?? null,
-                        'WMSLOC' => '',
+                        'WMSLOC' => $wmsLoc ? $wmsLoc->MLOC_LOCCD : '',
                         'HSCODE' => $barangNotOnMega['HS']
                     ];
                 } else {
@@ -220,6 +230,10 @@ class SyncBarang implements ShouldQueue
                 ->toArray();
             $processedBarang = [];
             foreach ($getBarang as $key => $barang) {
+                $wmsLoc = DB::connection('sqlsrv_mega_db')
+                    ->table('VWMLOC_TBL')
+                    ->where('MLOC_ITMCD', trim($barang['KODE BARANG']))
+                    ->first();
                 $this->sendNotification($getBarang, $barang, 'Cannot found data on mega, use Ceisa Export processing, processing data.', false, $key + 1);
                 if ($this->typeBC['type'] === 'INC') {
                     $barang['KODE SATUAN'] = $barang['KODE SATUAN'] !== 'PCE' ? $barang['KODE SATUAN'] : 'PIECE';
@@ -249,7 +263,7 @@ class SyncBarang implements ShouldQueue
                         'TAXINV' => '',
                         'SUPNM' => $this->dataTemp['SUPPL'] ?? null,
                         'PENGIRIM' => $this->dataTemp['PENGIRIM'] ?? null,
-                        'WMSLOC' => '',
+                        'WMSLOC' => $wmsLoc ? $wmsLoc->MLOC_LOCCD : '',
                         'HSCODE' => $barang['HS']
                     ];
                 } else {
@@ -277,7 +291,7 @@ class SyncBarang implements ShouldQueue
                             : round((float) $barang['HARGA PENYERAHAN'], 4),
                         'TAXINV' => '',
                         'CUSNM' => $this->header['PENERIMA'],
-                        'WMSLOC' => '',
+                        'WMSLOC' => $wmsLoc ? $wmsLoc->MLOC_LOCCD : '',
                         'HSCODE' => $barang['HS'],
                         'LUPDT' => now(),
                         'BC33DOCNO' => '',
