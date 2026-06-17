@@ -39,119 +39,161 @@ class SyncDocument implements ShouldQueue
      */
     public function handle(): void
     {
-        // Sync data ke table document
-        $getDataDocument = DOCUMENTCEISA::where('NOMOR AJU', $this->header['NOMOR AJU'])
-            ->get()
-            ->toArray();
+        try {
+            // Sync data ke table document
+            $getDataDocument = DOCUMENTCEISA::where('NOMOR AJU', $this->header['NOMOR AJU'])
+                ->get()
+                ->toArray();
 
-        $dataBC23BCTYPE = '';
-        $dataBC23DOCNO = '';
-        $dataBC23DOCDT = '';
-        $dataHHEInvNo = '';
-        $dataTAXINV = '';
-        $dataDocNo = '';
-        foreach ($getDataDocument as $key => $document) {
-            if ($this->typeBC['type'] === 'INC') {
-                if ($document['KODE DOKUMEN'] == '380') {
-                    $dataHHEInvNo = $key > 0 ? $dataHHEInvNo . ';' . $document['NOMOR DOKUMEN'] : $document['NOMOR DOKUMEN'];
-                } elseif ($document['KODE DOKUMEN'] == '388') {
-                    $dataTAXINV = $key > 0 ? $dataTAXINV . ';' . $document['NOMOR DOKUMEN'] : $document['NOMOR DOKUMEN'];
-                } elseif ($document['KODE DOKUMEN'] == '640') {
-                    $dataDocNo = $key > 0 ? $dataDocNo . ';' . $document['NOMOR DOKUMEN'] : $document['NOMOR DOKUMEN'];
-                }
-            } else {
-                if ($document['KODE DOKUMEN'] == '380') {
-                    $dataHHEInvNo = $key > 0 ? $dataHHEInvNo . ';' . $document['NOMOR DOKUMEN'] : $document['NOMOR DOKUMEN'];
-                } elseif ($document['KODE DOKUMEN'] == '640') {
-                    $dataDocNo = $key > 0 ? $dataDocNo . ';' . $document['NOMOR DOKUMEN'] : $document['NOMOR DOKUMEN'];
-                }
+            $dataBC23BCTYPE = '';
+            $dataBC23DOCNO = '';
+            $dataBC23DOCDT = '';
+            $dataHHEInvNo = '';
+            $dataTAXINV = '';
+            $dataDocNo = '';
+            foreach ($getDataDocument as $key => $document) {
+                if ($this->typeBC['type'] === 'INC') {
+                    if ($document['KODE DOKUMEN'] == '380') {
+                        $dataHHEInvNo = $key > 0 ? $dataHHEInvNo . ';' . $document['NOMOR DOKUMEN'] : $document['NOMOR DOKUMEN'];
+                    } elseif ($document['KODE DOKUMEN'] == '388') {
+                        $dataTAXINV = $key > 0 ? $dataTAXINV . ';' . $document['NOMOR DOKUMEN'] : $document['NOMOR DOKUMEN'];
+                    } elseif ($document['KODE DOKUMEN'] == '640') {
+                        $dataDocNo = $key > 0 ? $dataDocNo . ';' . $document['NOMOR DOKUMEN'] : $document['NOMOR DOKUMEN'];
+                    }
+                } else {
+                    if ($document['KODE DOKUMEN'] == '380') {
+                        $dataHHEInvNo = $key > 0 ? $dataHHEInvNo . ';' . $document['NOMOR DOKUMEN'] : $document['NOMOR DOKUMEN'];
+                    } elseif ($document['KODE DOKUMEN'] == '640') {
+                        $dataDocNo = $key > 0 ? $dataDocNo . ';' . $document['NOMOR DOKUMEN'] : $document['NOMOR DOKUMEN'];
+                    }
 
-                // Get Ex-bc
-                if ($document['KODE DOKUMEN'] == '16') {
-                    $dataBC23BCTYPE = 'BC1.6';
-                    $dataBC23DOCNO = $document['NOMOR DOKUMEN'];
-                    $dataBC23DOCDT = $document['TANGGAL DOKUMEN'];
-                } elseif ($document['KODE DOKUMEN'] == '33') {
-                    $dataBC23BCTYPE = 'BC3.3';
-                    $dataBC23DOCNO = $document['NOMOR DOKUMEN'];
-                    $dataBC23DOCDT = $document['TANGGAL DOKUMEN'];
+                    // Get Ex-bc
+                    if ($document['KODE DOKUMEN'] == '16') {
+                        $dataBC23BCTYPE = 'BC1.6';
+                        $dataBC23DOCNO = $document['NOMOR DOKUMEN'];
+                        $dataBC23DOCDT = $document['TANGGAL DOKUMEN'];
+                    } elseif ($document['KODE DOKUMEN'] == '33') {
+                        $dataBC23BCTYPE = 'BC3.3';
+                        $dataBC23DOCNO = $document['NOMOR DOKUMEN'];
+                        $dataBC23DOCDT = $document['TANGGAL DOKUMEN'];
+                    }
                 }
             }
-        }
 
-        if ($this->typeBC['type'] === 'INC') {
-            $dataInc = ITINVIncoming::where(DB::raw('LEFT(BCDOCNO, 6)'), substr($this->header['NOMOR DAFTAR'], 0, 6))
-                ->where('BCTYPE', $this->typeBC['code'])
-                ->where('BCDOCDT', $this->header['TANGGAL DAFTAR']);
+            if ($this->typeBC['type'] === 'INC') {
+                $dataInc = ITINVIncoming::where(DB::raw('LEFT(BCDOCNO, 6)'), substr($this->header['NOMOR DAFTAR'], 0, 6))
+                    ->where('BCTYPE', $this->typeBC['code'])
+                    ->where('BCDOCDT', $this->header['TANGGAL DAFTAR']);
 
 
-            $dataInc->whereNull(DB::raw("NULLIF(HHEINVNO, '')"))
-                ->update([
-                    'HHEINVNO' => $dataHHEInvNo,
-                ]);
+                $dataInc->whereNull(DB::raw("NULLIF(HHEINVNO, '')"))
+                    ->update([
+                        'HHEINVNO' => $dataHHEInvNo,
+                    ]);
 
-            $dataInc->whereNull(DB::raw("NULLIF(TAXINV, '')"))
-                ->update([
-                    'TAXINV' => $dataTAXINV,
-                ]);
+                $dataInc->whereNull(DB::raw("NULLIF(TAXINV, '')"))
+                    ->update([
+                        'TAXINV' => $dataTAXINV,
+                    ]);
 
-            $dataInc->whereNull(DB::raw("NULLIF(BCDOCNO, '')"))
-                ->update([
-                    'BCDOCNO' => $dataDocNo,
-                ]);
-        } else {
-            $dataOut = ITINVOutgoing::where(DB::raw('LEFT(BCDOCNO, 6)'), substr($this->header['NOMOR DAFTAR'], 0, 6))
-                ->where('BCTYPE', $this->typeBC['code'])
-                ->where('BCDOCDT', $this->header['TANGGAL DAFTAR']);
+                $dataInc->whereNull(DB::raw("NULLIF(BCDOCNO, '')"))
+                    ->update([
+                        'BCDOCNO' => $dataDocNo,
+                    ]);
+            } else {
+                $dataOut = ITINVOutgoing::where(DB::raw('LEFT(BCDOCNO, 6)'), substr($this->header['NOMOR DAFTAR'], 0, 6))
+                    ->where('BCTYPE', $this->typeBC['code'])
+                    ->where('BCDOCDT', $this->header['TANGGAL DAFTAR']);
 
-            $dataOut->whereNull(DB::raw("NULLIF(HHEINVNO, '')"))
-                ->update([
-                    'HHEINVNO' => $dataHHEInvNo,
-                ]);
+                $dataOut->whereNull(DB::raw("NULLIF(HHEINVNO, '')"))
+                    ->update([
+                        'HHEINVNO' => $dataHHEInvNo,
+                    ]);
 
-            $dataOut->whereNull(DB::raw("NULLIF(BCDOCNO, '')"))
-                ->update([
-                    'BCDOCNO' => $dataDocNo,
-                ]);
+                $dataOut->whereNull(DB::raw("NULLIF(BCDOCNO, '')"))
+                    ->update([
+                        'BCDOCNO' => $dataDocNo,
+                    ]);
 
-            $dataOut->whereNull(DB::raw("NULLIF(BC23BCTYPE, '')"))
-                ->update([
-                    'BC23BCTYPE' => $dataBC23BCTYPE,
-                    'BC23DOCNO' => $dataBC23DOCNO,
-                    'BC23DOCDT' => $dataBC23DOCDT,
-                ]);
-        }
+                $dataOut->whereNull(DB::raw("NULLIF(BC23BCTYPE, '')"))
+                    ->update([
+                        'BC23BCTYPE' => $dataBC23BCTYPE,
+                        'BC23DOCNO' => $dataBC23DOCNO,
+                        'BC23DOCDT' => $dataBC23DOCDT,
+                    ]);
+            }
 
-        Redis::publish('portalv2', json_encode(
-            [
-                'app' => 'it_inv_ceisa_upload',
-                'status' => 'start',
-                'message' => 'List bc no will be synchronized !',
-                'type' => 'info',
-                'key' => $this->header['NOMOR AJU'],
-                'data' => [
-                    'header' => [
-                        'status' => true,
-                        'data' => $this->header,
-                    ],
-                    'entitas' => [
-                        'status' => true,
-                        'data' => [
-                            'PENGIRIM' => !empty($this->dataTemp['PENGIRIM']) ? $this->dataTemp['PENGIRIM'] : '',
-                            'SUPPL' => !empty($this->dataTemp['SUPPL']) ? $this->dataTemp['SUPPL'] : '',
-                            'PENERIMA' => !empty($this->dataTemp['PENERIMA']) ? $this->dataTemp['PENERIMA'] : '',
+            Redis::publish('portalv2', json_encode(
+                [
+                    'app' => 'it_inv_ceisa_upload',
+                    'status' => 'start',
+                    'message' => 'List bc no will be synchronized !',
+                    'type' => 'info',
+                    'key' => $this->header['NOMOR AJU'],
+                    'data' => [
+                        'header' => [
+                            'status' => true,
+                            'data' => $this->header,
+                            'is_failed' => false,
                         ],
-                    ],
-                    'barang' => [
-                        'status' => true,
-                        'data' => $this->dataBarang,
-                    ],
-                    'document' => [
-                        'status' => true,
-                        'data' => $getDataDocument,
-                    ],
-                ]
-            ],
-        ));
+                        'entitas' => [
+                            'status' => true,
+                            'data' => [
+                                'PENGIRIM' => !empty($this->dataTemp['PENGIRIM']) ? $this->dataTemp['PENGIRIM'] : '',
+                                'SUPPL' => !empty($this->dataTemp['SUPPL']) ? $this->dataTemp['SUPPL'] : '',
+                                'PENERIMA' => !empty($this->dataTemp['PENERIMA']) ? $this->dataTemp['PENERIMA'] : '',
+                            ],
+                            'is_failed' => false,
+                        ],
+                        'barang' => [
+                            'status' => true,
+                            'data' => $this->dataBarang,
+                            'is_failed' => false,
+                        ],
+                        'document' => [
+                            'status' => true,
+                            'data' => $getDataDocument,
+                            'is_failed' => false,
+                        ],
+                    ]
+                ],
+            ));
+        } catch (\Exception $e) {
+            Redis::publish('portalv2', json_encode(
+                [
+                    'app' => 'it_inv_ceisa_upload',
+                    'status' => 'start',
+                    'message' => 'List bc no will be synchronized !',
+                    'type' => 'info',
+                    'key' => $this->header['NOMOR AJU'],
+                    'data' => [
+                        'header' => [
+                            'status' => true,
+                            'data' => $this->header,
+                            'is_failed' => false,
+                        ],
+                        'entitas' => [
+                            'status' => true,
+                            'data' => [
+                                'PENGIRIM' => !empty($this->dataTemp['PENGIRIM']) ? $this->dataTemp['PENGIRIM'] : '',
+                                'SUPPL' => !empty($this->dataTemp['SUPPL']) ? $this->dataTemp['SUPPL'] : '',
+                                'PENERIMA' => !empty($this->dataTemp['PENERIMA']) ? $this->dataTemp['PENERIMA'] : '',
+                            ],
+                            'is_failed' => false,
+                        ],
+                        'barang' => [
+                            'status' => true,
+                            'data' => $this->dataBarang,
+                            'is_failed' => false,
+                        ],
+                        'document' => [
+                            'status' => true,
+                            'data' => $getDataDocument,
+                            'is_failed' => true,
+                        ],
+                    ]
+                ],
+            ));
+        }
     }
 }

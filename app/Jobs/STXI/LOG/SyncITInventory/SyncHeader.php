@@ -41,67 +41,103 @@ class SyncHeader implements ShouldQueue
      */
     public function handle(): void
     {
-        foreach ($this->selectedData as $header) {
-            Redis::publish('portalv2', json_encode(
-                [
-                    'app' => 'it_inv_ceisa_upload',
-                    'status' => 'start',
-                    'message' => 'List bc no will be synchronized !',
-                    'type' => 'info',
-                    'key' => $header['NOMOR AJU'],
-                    'data' => [
-                        'header' => [
-                            'status' => false,
-                            'data' => $header,
-                        ],
-                        'entitas' => [
-                            'status' => false,
-                            'data' => [],
-                        ],
-                        'barang' => [
-                            'status' => false,
-                            'data' => [],
-                        ],
-                        'document' => [
-                            'status' => false,
-                            'data' => [],
-                        ],
-                    ]
-                ],
-            ));
+        try {
+            foreach ($this->selectedData as $header) {
+                Redis::publish('portalv2', json_encode(
+                    [
+                        'app' => 'it_inv_ceisa_upload',
+                        'status' => 'start',
+                        'message' => 'List bc no will be synchronized !',
+                        'type' => 'info',
+                        'key' => $header['NOMOR AJU'],
+                        'data' => [
+                            'header' => [
+                                'status' => false,
+                                'data' => $header,
+                            ],
+                            'entitas' => [
+                                'status' => false,
+                                'data' => [],
+                            ],
+                            'barang' => [
+                                'status' => false,
+                                'data' => [],
+                            ],
+                            'document' => [
+                                'status' => false,
+                                'data' => [],
+                            ],
+                        ]
+                    ],
+                ));
 
-            $kodeDokumen = $this->mapDocumentCode($header['KODE DOKUMEN']);
+                $kodeDokumen = $this->mapDocumentCode($header['KODE DOKUMEN']);
 
-            if ($kodeDokumen['type'] === 'INC') {
-                ITINVIncoming::where("BCDOCNO", 'LIKE', $header['NOMOR DAFTAR'] . '%')
-                    ->where('BCTYPE', $kodeDokumen['code'])
-                    ->where('BCDOCDT', $header["TANGGAL DAFTAR"])
-                    ->delete();
-            } else {
-                ITINVOutgoing::where("BCDOCNO", 'LIKE', $header['NOMOR DAFTAR'] . '%')
-                    ->where('BCTYPE', $kodeDokumen['code'])
-                    ->where('BCDOCDT', $header["TANGGAL DAFTAR"])
-                    ->delete();
+                if ($kodeDokumen['type'] === 'INC') {
+                    ITINVIncoming::where("BCDOCNO", 'LIKE', $header['NOMOR DAFTAR'] . '%')
+                        ->where('BCTYPE', $kodeDokumen['code'])
+                        ->where('BCDOCDT', $header["TANGGAL DAFTAR"])
+                        ->delete();
+                } else {
+                    ITINVOutgoing::where("BCDOCNO", 'LIKE', $header['NOMOR DAFTAR'] . '%')
+                        ->where('BCTYPE', $kodeDokumen['code'])
+                        ->where('BCDOCDT', $header["TANGGAL DAFTAR"])
+                        ->delete();
+                }
+
+                $dataTemp = ITINVUploadTemp::updateOrCreate([
+                    'NO_AJU' => $header['NOMOR AJU'],
+                    'NO_DAFTAR' => $header['NOMOR DAFTAR'],
+                    'TYPE_BC' => $kodeDokumen['code'],
+                    'STATE_FLG' => $kodeDokumen['type']
+                ], [
+                    'NO_AJU' => $header['NOMOR AJU'],
+                    'NO_DAFTAR' => $header['NOMOR DAFTAR'],
+                    'TGL_DAFTAR' => $header['TANGGAL DAFTAR'],
+                    'TYPE_BC' => $kodeDokumen['code'],
+                    'CURR' => !empty($header['KODE VALUTA']) ? $header['KODE VALUTA'] : (
+                        $header['KODE DOKUMEN'] == 40
+                        ? 'IDR'
+                        : 'USD'
+                    ),
+                    'STATE_FLG' => $kodeDokumen['type']
+                ]);
+
+                Redis::publish('portalv2', json_encode(
+                    [
+                        'app' => 'it_inv_ceisa_upload',
+                        'status' => 'start',
+                        'message' => 'List bc no will be synchronized !',
+                        'type' => 'info',
+                        'key' => $header['NOMOR AJU'],
+                        'data' => [
+                            'header' => [
+                                'status' => true,
+                                'data' => $header,
+                                'is_failed' => false,
+                            ],
+                            'entitas' => [
+                                'status' => false,
+                                'data' => [],
+                                'is_failed' => false,
+                            ],
+                            'barang' => [
+                                'status' => false,
+                                'data' => [],
+                                'is_failed' => false,
+                            ],
+                            'document' => [
+                                'status' => false,
+                                'data' => [],
+                                'is_failed' => false,
+                            ],
+                        ]
+                    ],
+                ));
+
+                SyncEntitas::dispatch($header, $kodeDokumen, $dataTemp)->onQueue('sync-itinventory');
             }
-
-            $dataTemp = ITINVUploadTemp::updateOrCreate([
-                'NO_AJU' => $header['NOMOR AJU'],
-                'NO_DAFTAR' => $header['NOMOR DAFTAR'],
-                'TYPE_BC' => $kodeDokumen['code'],
-                'STATE_FLG' => $kodeDokumen['type']
-            ], [
-                'NO_AJU' => $header['NOMOR AJU'],
-                'NO_DAFTAR' => $header['NOMOR DAFTAR'],
-                'TGL_DAFTAR' => $header['TANGGAL DAFTAR'],
-                'TYPE_BC' => $kodeDokumen['code'],
-                'CURR' => !empty($header['KODE VALUTA']) ? $header['KODE VALUTA'] : (
-                    $header['KODE DOKUMEN'] == 40
-                    ? 'IDR'
-                    : 'USD'
-                ),
-                'STATE_FLG' => $kodeDokumen['type']
-            ]);
-
+        } catch (\Exception $e) {
             Redis::publish('portalv2', json_encode(
                 [
                     'app' => 'it_inv_ceisa_upload',
@@ -112,25 +148,27 @@ class SyncHeader implements ShouldQueue
                     'data' => [
                         'header' => [
                             'status' => true,
-                            'data' => $header,
+                            'data' => [],
+                            'is_failed' => true,
                         ],
                         'entitas' => [
                             'status' => false,
                             'data' => [],
+                            'is_failed' => false,
                         ],
                         'barang' => [
                             'status' => false,
                             'data' => [],
+                            'is_failed' => false,
                         ],
                         'document' => [
                             'status' => false,
                             'data' => [],
+                            'is_failed' => false,
                         ],
                     ]
                 ],
             ));
-
-            SyncEntitas::dispatch($header, $kodeDokumen, $dataTemp)->onQueue('sync-itinventory');
         }
     }
 

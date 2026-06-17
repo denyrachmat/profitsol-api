@@ -34,73 +34,107 @@ class SyncEntitas implements ShouldQueue
      */
     public function handle(): void
     {
-        $getEntitas = ENTITASCEISA::where('NOMOR AJU', $this->header['NOMOR AJU'])
-            ->get()
-            ->toArray();
-        $pengirim = '';
-        $supplier = '';
-        $penerima = '';
-        foreach ($getEntitas as $key => $entitas) {
-            if ($this->typeBC['type'] === 'INC') {
-                if (in_array($entitas['KODE ENTITAS'], ['9'])) {
-                    $pengirim = $entitas['NAMA ENTITAS'];
-                } elseif (in_array($entitas['KODE ENTITAS'], ['10'])) {
-                    $supplier = $entitas['NAMA ENTITAS'];
-                } elseif (in_array($entitas['KODE ENTITAS'], ['8'])) {
-                    $penerima = $entitas['NAMA ENTITAS'];
-                }
-            } else {
-                if (in_array($entitas['KODE ENTITAS'], ['7'])) {
-                    $pengirim = $entitas['NAMA ENTITAS'];
-                } elseif (in_array($entitas['KODE ENTITAS'], ['8'])) {
-                    $penerima = $entitas['NAMA ENTITAS'];
+        try {
+            $getEntitas = ENTITASCEISA::where('NOMOR AJU', $this->header['NOMOR AJU'])
+                ->get()
+                ->toArray();
+            $pengirim = '';
+            $supplier = '';
+            $penerima = '';
+            foreach ($getEntitas as $key => $entitas) {
+                if ($this->typeBC['type'] === 'INC') {
+                    if (in_array($entitas['KODE ENTITAS'], ['9'])) {
+                        $pengirim = $entitas['NAMA ENTITAS'];
+                    } elseif (in_array($entitas['KODE ENTITAS'], ['10'])) {
+                        $supplier = $entitas['NAMA ENTITAS'];
+                    } elseif (in_array($entitas['KODE ENTITAS'], ['8'])) {
+                        $penerima = $entitas['NAMA ENTITAS'];
+                    }
+                } else {
+                    if (in_array($entitas['KODE ENTITAS'], ['7'])) {
+                        $pengirim = $entitas['NAMA ENTITAS'];
+                    } elseif (in_array($entitas['KODE ENTITAS'], ['8'])) {
+                        $penerima = $entitas['NAMA ENTITAS'];
+                    }
                 }
             }
-        }
 
-        ITINVUploadTemp::updateOrCreate([
-            'NO_AJU' => $this->header['NOMOR AJU'],
-            'NO_DAFTAR' => $this->header['NOMOR DAFTAR']
-        ], [
-            'NO_AJU' => $this->header['NOMOR AJU'],
-            'NO_DAFTAR' => $this->header['NOMOR DAFTAR'],
-            'PENGIRIM' => $pengirim,
-            'SUPPL' => $supplier,
-            'PENERIMA' => $penerima,
-        ]);
+            ITINVUploadTemp::updateOrCreate([
+                'NO_AJU' => $this->header['NOMOR AJU'],
+                'NO_DAFTAR' => $this->header['NOMOR DAFTAR']
+            ], [
+                'NO_AJU' => $this->header['NOMOR AJU'],
+                'NO_DAFTAR' => $this->header['NOMOR DAFTAR'],
+                'PENGIRIM' => $pengirim,
+                'SUPPL' => $supplier,
+                'PENERIMA' => $penerima,
+            ]);
 
-        Redis::publish('portalv2', json_encode(
-            [
-                'app' => 'it_inv_ceisa_upload',
-                'status' => 'start',
-                'message' => 'List bc no will be synchronized !',
-                'type' => 'info',
-                'key' => $this->header['NOMOR AJU'],
-                'data' => [
-                    'header' => [
-                        'status' => true,
-                        'data' => $this->header,
-                    ],
-                    'entitas' => [
-                        'status' => true,
-                        'data' => [
-                            'PENGIRIM' => $pengirim,
-                            'SUPPL' => $supplier,
-                            'PENERIMA' => $penerima,
+            Redis::publish('portalv2', json_encode(
+                [
+                    'app' => 'it_inv_ceisa_upload',
+                    'status' => 'start',
+                    'message' => 'List bc no will be synchronized !',
+                    'type' => 'info',
+                    'key' => $this->header['NOMOR AJU'],
+                    'data' => [
+                        'header' => [
+                            'status' => true,
+                            'data' => $this->header,
                         ],
-                    ],
-                    'barang' => [
-                        'status' => false,
-                        'data' => [],
-                    ],
-                    'document' => [
-                        'status' => false,
-                        'data' => [],
-                    ],
-                ]
-            ],
-        ));
+                        'entitas' => [
+                            'status' => true,
+                            'data' => [
+                                'PENGIRIM' => $pengirim,
+                                'SUPPL' => $supplier,
+                                'PENERIMA' => $penerima,
+                            ],
+                        ],
+                        'barang' => [
+                            'status' => false,
+                            'data' => [],
+                        ],
+                        'document' => [
+                            'status' => false,
+                            'data' => [],
+                        ],
+                    ]
+                ],
+            ));
 
-        SyncBarang::dispatch($this->header, $this->typeBC, $this->dataTemp)->onQueue('sync-itinventory');
+            SyncBarang::dispatch($this->header, $this->typeBC, $this->dataTemp)->onQueue('sync-itinventory');
+        } catch (\Exception $e) {
+            Redis::publish('portalv2', json_encode(
+                [
+                    'app' => 'it_inv_ceisa_upload',
+                    'status' => 'start',
+                    'message' => 'List bc no will be synchronized !',
+                    'type' => 'info',
+                    'key' => $this->header['NOMOR AJU'],
+                    'data' => [
+                        'header' => [
+                            'status' => true,
+                            'data' => [],
+                            'is_failed' => false,
+                        ],
+                        'entitas' => [
+                            'status' => false,
+                            'data' => [],
+                            'is_failed' => true,
+                        ],
+                        'barang' => [
+                            'status' => false,
+                            'data' => [],
+                            'is_failed' => false,
+                        ],
+                        'document' => [
+                            'status' => false,
+                            'data' => [],
+                            'is_failed' => false,
+                        ],
+                    ]
+                ],
+            ));
+        }
     }
 }
