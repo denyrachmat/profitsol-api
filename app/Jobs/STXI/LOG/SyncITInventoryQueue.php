@@ -15,7 +15,7 @@ use App\Traits\STXI\LOG\Ceisa40Traits;
 use App\Models\STXI\CEISA40\viewCeisaRespon;
 use App\Imports\STXI\LOG\ImportCeisa40;
 use Maatwebsite\Excel\Concerns\ToArray;
-use Redis;
+use Illuminate\Support\Facades\Redis;
 
 use App\Jobs\STXI\LOG\SyncITInventoryByBCNo;
 use App\Jobs\STXI\LOG\SyncITInventoryFromMega;

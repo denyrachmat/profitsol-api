@@ -12,10 +12,13 @@ use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 
 use App\Models\STXI\CEISA40\CEISARESPON;
 use App\Models\STXI\CEISA40\CR_STATUS_DET;
+use App\Models\STXI\CEISA40\HEADERCIESA;
 
 use App\Imports\STXI\LOG\ImportCeisa40;
 use App\Jobs\STXI\LOG\SyncITInventoryQueue;
 use App\Jobs\STXI\LOG\SyncITInventoryByBCNo;
+
+use App\Jobs\STXI\LOG\SyncITInventory\SyncHeader;
 
 use App\Traits\STXI\LOG\Ceisa40Traits;
 use App\Jobs\STXI\LOG\SyncStatusBCFromCeisa;
@@ -115,7 +118,7 @@ class Ceisa40UploaderController extends BaseController
         return $this->handleResponse([$bcNo, $tglNo], 'Sync data queued !!');
     }
 
-    public function syncStatusCeisaAll(): Array
+    public function syncStatusCeisaAll(): array
     {
         $getlistIDHeader = CEISARESPON::select('00_CEISARESPON.ID_HEADER')
             ->leftJoin(DB::raw("(
@@ -158,7 +161,7 @@ class Ceisa40UploaderController extends BaseController
                     'ID_HEADER' => $id,
                     'CRSD_NOMOR_AJU' => $getAJU->NOMOR_AJU,
                     'CRSD_RESNM' => $value['namaProses'],
-                ],[
+                ], [
                     'ID_HEADER' => $id,
                     'CRSD_NOMOR_AJU' => $getAJU->NOMOR_AJU,
                     'CRSD_RESNM' => $value['namaProses'],
@@ -170,5 +173,48 @@ class Ceisa40UploaderController extends BaseController
             return $getStatus;
         }
         // CR_STATUS_DET
+    }
+
+    public function getHeader(Request $req)
+    {
+        $getHeader = new HEADERCIESA;
+
+        if ($req->has('filter') && count($req->filter) > 0) {
+            $filter = $req->filter;
+
+            foreach ($filter as $key => $valueFilter) {
+                switch ($valueFilter['param']) {
+                    case '>':
+                        $getHeader = $getHeader->where($valueFilter['cols'], '>', $valueFilter['value']);
+                        break;
+                    case '>=':
+                        $getHeader = $getHeader->where($valueFilter['cols'], '>=', $valueFilter['value']);
+                        break;
+                    case '<':
+                        $getHeader = $getHeader->where($valueFilter['cols'], '<', $valueFilter['value']);
+                        break;
+                    case '<=':
+                        $getHeader = $getHeader->where($valueFilter['cols'], '<=', $valueFilter['value']);
+                        break;
+                    case 'in':
+                        $getHeader = $getHeader->whereIn($valueFilter['cols'], $valueFilter['value']);
+                        break;
+                    case 'range':
+                        $getHeader = $getHeader->whereBetween($valueFilter['cols'], $valueFilter['value']);
+                        break;
+                    default:
+                        $getHeader = $getHeader->where($valueFilter['cols'], '=', $valueFilter['value']);
+                }
+            }
+        }
+
+        $getHeader = $getHeader->get();
+        return $this->handleResponse($getHeader, 'Get header sukses !!');
+    }
+
+    public function syncCeisatoITInventory(Request $req)
+    {
+        SyncHeader::dispatch($req->data)->onQueue('sync-itinventory');
+        return $this->handleResponse([], 'Sync data queued !!');
     }
 }

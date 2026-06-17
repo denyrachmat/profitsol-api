@@ -34,6 +34,7 @@ class ImportBarang implements ToModel, WithHeadingRow, SkipsEmptyRows
             if (!empty($cekTempData)) {
                 $noDaftar = substr($cekTempData['NO_DAFTAR'], 0, 6);
                 $getHSCode = DB::connection('sqlsrv_itinv')->table('VIEW_MITM_TBL')->where('MITM_ITMCD', $row['kode_barang'])->first();
+                
                 if ($this->incout == 'INC') {
                     $UOM = 'PIECE';
                     if ($row['kode_satuan'] !== 'PCE') {
