@@ -12,7 +12,7 @@ use App\Models\STXI\CEISA40\BARANGCEISA;
 use App\Models\STXI\LOG\ITINVIncoming;
 use App\Models\STXI\LOG\ITINVOutgoing;
 use Illuminate\Support\Facades\DB;
-
+use Illuminate\Support\Facades\Log;
 use App\Jobs\STXI\LOG\SyncITInventory\SyncDocument;
 use Illuminate\Support\Facades\Redis;
 class SyncBarang implements ShouldQueue
@@ -38,88 +38,132 @@ class SyncBarang implements ShouldQueue
     public function handle(): void
     {
         try {
-            $checkBCDocOnMega = DB::connection('sqlsrv_mega_db')
-                ->table('Z_STXI_VW_CBCDOC')
-                ->where('CBCDOC_BCDOCNO', 'like', $this->header['NOMOR DAFTAR'] . '%')
-                ->where('CBCDOC_BCDOCDT', $this->header['TANGGAL DAFTAR'])
-                ->get();
+            $sp = $this->typeBC['type'] === 'INC' ? 'CUSTOMREPORT7_WEB' : 'CUSTOMREPORT8_WEB';
 
-            $checkBCDocOnMega = json_decode(json_encode($checkBCDocOnMega), true);
+            // 1. Definisikan daftar database
+            $databases = ['VMI_SME', 'VMI_EXIM', 'VMI_SKA', 'VMI_TYO'];
+
+            // 2. Susun parameter (cukup 1 set isi 9 parameter)
+            $singleParams = [
+                'PSGL,PSGL-EX,PSGL-ASP,DMISL,SECSCN',
+                '',
+                '',
+                $this->header['NOMOR DAFTAR'],
+                date('Y-m-d', strtotime($this->header['TANGGAL DAFTAR'] . ' -3 day')),
+                date('Y-m-d', strtotime($this->header['TANGGAL DAFTAR'] . ' +3 day')),
+                '',
+                '',
+                $this->header['TANGGAL DAFTAR']
+            ];
+
+            // 3. Aktifkan Query Listener untuk mencatat log ke laravel.log
+            DB::connection('sqlsrv_mega_db')->listen(function ($query) {
+                $sql = $query->sql;
+                foreach ($query->bindings as $binding) {
+                    $value = is_numeric($binding) ? $binding : "'" . $binding . "'";
+                    $sql = preg_replace('/\?/', $value, $sql, 1);
+                }
+
+                Log::info("--- RUNNING SP ---");
+                Log::info(trim($sql));
+                Log::info("------------------");
+            });
+
+            // 4. Siapkan wadah untuk menampung semua hasil
+            $allResults = [];
+
+            // Log::info("=== STARTING MULTI-DB SP EXECUTION ===");
+
+            // 5. Loop dan eksekusi satu per satu
+            foreach ($databases as $dbName) {
+                Log::info("Executing SP for database: {$dbName}");
+
+                $queryResult = DB::connection('sqlsrv_mega_db')->select("
+        EXEC {$dbName}.dbo.{$sp} ?, ?, ?, ?, ?, ?, ?, ?, ?;
+    ", $singleParams);
+
+                // Hitung jumlah baris data yang didapat dari DB ini
+                $rowCount = count($queryResult);
+                Log::info("Database {$dbName} returned {$rowCount} row(s).");
+
+                if (!empty($queryResult)) {
+                    $allResults = array_merge($allResults, $queryResult);
+                }
+            }
+
+            // Log::info("=== END OF MULTI-DB SP EXECUTION. Total rows combined: " . count($allResults) . " ===");
+
+            // 6. Hasil akhir gabungan dari semua DB
+            $checkBCDocOnMega = $allResults;
 
             // Jika data di Mega tersedia, maka gunakan data tersebut, jika tidak maka ambil dari database 
             if (count($checkBCDocOnMega) > 0) {
                 $getfirstDataDoc = $checkBCDocOnMega[0] ?? null;
+                $processedBarang = [];
 
                 // Insert data barang dari Mega ke database ITINVIncoming atau ITINVOutgoing
                 foreach ($checkBCDocOnMega as $key => $barang) {
                     $this->sendNotification($checkBCDocOnMega, $barang, 'Found data on Mega, processing data.', false, $key + 1);
                     $barang = (array) $barang;
 
-                    $cekItemMega = DB::connection('sqlsrv_itinv')->table('VIEW_MITM_TBL')->where('MITM_ITMCD', $barang['CBCDOCPRC_ITMCD'])->first();
+                    $cekItemMega = DB::connection('sqlsrv_itinv')->table('VIEW_MITM_TBL')->where('MITM_ITMCD', $barang['ITMCD'])->first();
                     $getDataItem = json_decode(json_encode($cekItemMega), true);
 
                     $wmsLoc = DB::connection('sqlsrv_mega_db')
                         ->table('Z_STXI_TBL_WMSLOC')
-                        ->where('ITMCD', trim($barang['CBCDOCPRC_ITMCD']))
+                        ->where('ITMCD', trim($barang['ITMCD']))
                         ->first();
 
                     if ($this->typeBC['type'] === 'INC') {
                         $processedBarang[] = [
-                            'LOCCD' => !empty($barang['FIFO_LOCCD'])
-                                ? $barang['FIFO_LOCCD']
-                                : $barang['CBCDOC_WHSCD'],
-                            'BCTYPE' => $this->typeBC['code'],
+                            'LOCCD' => $barang['LOCCD'],
+                            'BCTYPE' => $barang['BCTYPE'],
                             'BCDOCNO' => $this->header['NOMOR DAFTAR'],
                             'BCDOCDT' => $this->header['TANGGAL DAFTAR'],
-                            'BSGRP' => !empty($barang['FIFO_BSGRP'])
-                                ? $barang['FIFO_BSGRP']
-                                : $barang['CBCDOC_BSGRP'],
-                            'DOCCD' => $barang['CBCDOC_DOCCD'],
-                            'DOCNO' => $barang['CBCDOC_DOCNO'],
-                            'HHEINVNO' => $barang['PGITSHP_SHPREFNO'] ?? '',
-                            'ISUDT' => $barang['CBCDOC_ISUDT'],
-                            'ITMCD' => trim($barang['CBCDOCPRC_ITMCD']),
-                            'ITMD1' => $getDataItem ? $getDataItem['MITM_ITMD1'] : '',
-                            'SPTNO' => $getDataItem ? $getDataItem['MITM_SPTNO'] : '',
+                            'BSGRP' => $barang['BSGRP'],
+                            'DOCCD' => $barang['DOCCD'],
+                            'DOCNO' => $barang['DOCNO'],
+                            'HHEINVNO' => $barang['HHEINVNO'] ?? '',
+                            'ISUDT' => $barang['ISUDT'],
+                            'ITMCD' => trim($barang['ITMCD']),
+                            'ITMD1' => trim($barang['ITMD1']),
+                            'SPTNO' => trim($barang['SPTNO']),
                             'UOM' => $getDataItem ? $getDataItem['MITM_STKUOM'] : '',
-                            'TTLQTY' => round(abs((int) $barang['CBCDOCPRC_QTY']), 4),
-                            'CURCD' => $barang['CBCDOC_CURCD'],
-                            'PRICE' => round((float) $barang['CBCDOCPRC_CPRICE'], 4),
-                            'TTLAMOUNT' => round(abs((int) $barang['CBCDOCPRC_QTY']) * (float) $barang['CBCDOCPRC_CPRICE'], 4),
-                            'TAXINV' => $this->typeBC['code'] == 'BC4.0' ? $barang['PGITSHP_SHPREFNO'] ?? '' : '',
+                            'TTLQTY' => round(abs((int) $barang['TTLQTY']), 4),
+                            'CURCD' => $barang['CURCD'],
+                            'PRICE' => round((float) $barang['PRICE'], 6),
+                            'TTLAMOUNT' => round(abs((int) $barang['TTLAMOUNT']), 6),
+                            'TAXINV' => $this->typeBC['code'] == 'BC4.0' ? $barang['TAXINV'] ?? '' : '',
                             'SUPNM' => $this->dataTemp['SUPPL'],
                             'PENGIRIM' => $this->dataTemp['PENGIRIM'],
                             'WMSLOC' => $wmsLoc ? $wmsLoc->WMSLOC : '',
-                            'HSCODE' => $getDataItem ? $getDataItem['MITM_HSCD'] : '',
+                            'HSCODE' => $barang['HSCODE'] ?? $getDataItem['MITM_HSCD'],
                             'LUPDT' => now(),
                         ];
                     } else {
                         $processedBarang[] = [
-                            'LOCCD' => !empty($barang['FIFO_LOCCD'])
-                                ? $barang['FIFO_LOCCD']
-                                : $barang['CBCDOC_WHSCD'],
+                            'LOCCD' => $barang['LOCCD'],
                             'BCTYPE' => $this->typeBC['code'],
                             'BCDOCNO' => $this->header['NOMOR DAFTAR'],
                             'BCDOCDT' => $this->header['TGL_DAFTAR'],
-                            'BSGRP' => !empty($barang['FIFO_BSGRP'])
-                                ? $barang['FIFO_BSGRP']
-                                : $barang['CBCDOC_BSGRP'],
-                            'DOCCD' => $barang['CBCDOC_DOCCD'],
-                            'DOCNO' => $barang['CBCDOC_DOCNO'],
+                            'BSGRP' => $barang['BSGRP'],
+                            'DOCCD' => $barang['DOCCD'],
+                            'DOCNO' => $barang['DOCNO'],
                             'HHEINVNO' => '',
-                            'ISUDT' => $barang['CBCDOC_ISUDT'],
-                            'ITMCD' => trim($barang['CBCDOCPRC_ITMCD']),
-                            'ITMD1' => $getDataItem ? $getDataItem['MITM_ITMD1'] : '',
-                            'SPTNO' => $getDataItem ? $getDataItem['MITM_SPTNO'] : '',
-                            'UOM' => $getDataItem ? $getDataItem['MITM_STKUOM'] : '',
-                            'TTLQTY' => round((int) $barang['CBCDOCPRC_QTY'], 4),
-                            'CURCD' => $barang['CBCDOC_CURCD'],
-                            'PRICE' => round((float) $barang['CBCDOCPRC_CPRICE'], 4),
-                            'TTLAMOUNT' => round((int) $barang['CBCDOCPRC_QTY'] * (float) $barang['CBCDOCPRC_CPRICE'], 4),
+                            'ISUDT' => $barang['ISUDT'],
+                            'ITMCD' => trim($barang['ITMCD']),
+                            'ITMD1' => trim($barang['ITMD1']),
+                            'SPTNO' => $barang['SPTNO'] ?? '',
+                            'UOM' => $barang['UOM'] ?? '',
+                            'TTLQTY' => round((int) $barang['TTLQTY'], 4),
+                            'CURCD' => $barang['CURCD'],
+                            'PRICE' => round((float) $barang['PRICE'], 4),
+                            'TTLAMOUNT' => round((int) $barang['TTLAMOUNT'], 4),
                             'TAXINV' => '',
                             'CUSNM' => $this->header['PENERIMA'],
                             'WMSLOC' => $wmsLoc ? $wmsLoc->WMSLOC : '',
-                            'HSCODE' => $getDataItem ? $getDataItem['MITM_HSCD'] : '',
+                            'HSCODE' => $barang['HSCODE'] ?? $getDataItem['MITM_HSCD'],
+                            'INVNO' => $barang['INVNO'] ?? '',
                             'LUPDT' => now(),
                             'BC33DOCNO' => '',
                             'BC33DOCDT' => '',
@@ -127,6 +171,8 @@ class SyncBarang implements ShouldQueue
                             'BC33EXBCDOCNO' => '',
                             'BC33EXBCDOCDT' => '',
                             'BC23BCTYPE' => '',
+                            'BC23DOCNO' => $barang['BC23DOCNO'] ?? '',
+                            'BC23DOCDT' => $barang['BC23DOCDT'] ?? '',
                         ];
                     }
                 }
@@ -339,6 +385,8 @@ class SyncBarang implements ShouldQueue
                 'current' => null,
             ])->onQueue('sync-itinventory');
         } catch (\Exception $e) {
+
+            logger('checkBCDocOnMega failed : ' . $e->getMessage());
             $this->sendNotification([], null, 'Failed to synchronize data Barang', true, [], true);
         }
 
