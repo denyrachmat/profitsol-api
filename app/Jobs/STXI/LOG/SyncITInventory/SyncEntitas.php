@@ -43,13 +43,15 @@ class SyncEntitas implements ShouldQueue
             $penerima = '';
             foreach ($getEntitas as $key => $entitas) {
                 if ($this->typeBC['type'] === 'INC') {
-                    if (in_array($entitas['KODE ENTITAS'], ['9'])) {
+                    if (in_array($entitas['KODE ENTITAS'], ['7'])) {
+                        $pengirim = $entitas['NAMA ENTITAS'];
+                    } elseif (in_array($entitas['KODE ENTITAS'], ['9'])) {
                         $pengirim = $entitas['NAMA ENTITAS'];
                     } elseif (in_array($entitas['KODE ENTITAS'], ['10'])) {
                         $supplier = $entitas['NAMA ENTITAS'];
                     } elseif (in_array($entitas['KODE ENTITAS'], ['8'])) {
                         $penerima = $entitas['NAMA ENTITAS'];
-                    }
+                    }                    
                 } else {
                     if (in_array($entitas['KODE ENTITAS'], ['7'])) {
                         $pengirim = $entitas['NAMA ENTITAS'];

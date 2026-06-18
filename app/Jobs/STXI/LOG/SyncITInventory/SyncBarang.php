@@ -114,6 +114,8 @@ class SyncBarang implements ShouldQueue
                         ->where('ITMCD', trim($barang['ITMCD']))
                         ->first();
 
+                        logger(strpos($barang['DOCNO'], 'SCN/'));
+
                     if ($this->typeBC['type'] === 'INC') {
                         $processedBarang[] = [
                             'LOCCD' => $barang['LOCCD'],
@@ -123,7 +125,7 @@ class SyncBarang implements ShouldQueue
                             'BSGRP' => $barang['BSGRP'],
                             'DOCCD' => $barang['DOCCD'],
                             'DOCNO' => $barang['DOCNO'],
-                            'HHEINVNO' => $barang['HHEINVNO'] ?? '',
+                            'HHEINVNO' => !empty(trim($barang['HHEINVNO'])) ? $barang['HHEINVNO'] : (strpos($barang['DOCNO'], 'SCN/') === 0 ? $barang['DOCNO'] : ''),
                             'ISUDT' => $barang['ISUDT'],
                             'ITMCD' => trim($barang['ITMCD']),
                             'ITMD1' => trim($barang['ITMD1']),
@@ -132,9 +134,9 @@ class SyncBarang implements ShouldQueue
                             'TTLQTY' => round(abs((int) $barang['TTLQTY']), 4),
                             'CURCD' => $barang['CURCD'],
                             'PRICE' => round((float) $barang['PRICE'], 6),
-                            'TTLAMOUNT' => round(abs((int) $barang['TTLAMOUNT']), 6),
+                            'TTLAMOUNT' => round((float) $barang['TTLAMOUNT'], 6),
                             'TAXINV' => $this->typeBC['code'] == 'BC4.0' ? $barang['TAXINV'] ?? '' : '',
-                            'SUPNM' => $this->dataTemp['SUPPL'],
+                            'SUPNM' => $barang['SUPNM'] ?? $this->dataTemp['SUPPL'],
                             'PENGIRIM' => $this->dataTemp['PENGIRIM'],
                             'WMSLOC' => $wmsLoc ? $wmsLoc->WMSLOC : '',
                             'HSCODE' => $barang['HSCODE'] ?? $getDataItem['MITM_HSCD'],
@@ -158,7 +160,7 @@ class SyncBarang implements ShouldQueue
                             'TTLQTY' => round((int) $barang['TTLQTY'], 4),
                             'CURCD' => $barang['CURCD'],
                             'PRICE' => round((float) $barang['PRICE'], 4),
-                            'TTLAMOUNT' => round((int) $barang['TTLAMOUNT'], 4),
+                            'TTLAMOUNT' => round((float) $barang['TTLAMOUNT'], 4),
                             'TAXINV' => '',
                             'CUSNM' => $this->header['PENERIMA'],
                             'WMSLOC' => $wmsLoc ? $wmsLoc->WMSLOC : '',
