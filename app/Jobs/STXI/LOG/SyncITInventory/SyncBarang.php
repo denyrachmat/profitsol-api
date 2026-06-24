@@ -291,6 +291,8 @@ class SyncBarang implements ShouldQueue
 
                         $loccd = $this->mode === 'export_only' ? (count($checkBCDocOnMega) > 0 ? $checkBCDocOnMega[0]->LOCCD : 'STX-I') : 'STX-I';
                         $bsgrp = $this->mode === 'export_only' ? (count($checkBCDocOnMega) > 0 ? $checkBCDocOnMega[0]->BSGRP : 'LAIN NYA') : 'LAIN NYA';
+                        $doccd = $this->mode === 'export_only' ? (count($checkBCDocOnMega) > 0 ? $checkBCDocOnMega[0]->DOCCD : '') : '';
+                        $docno = $this->mode === 'export_only' ? (count($checkBCDocOnMega) > 0 ? $checkBCDocOnMega[0]->DOCNO : '') : '';
 
                         $processedBarang[] = [
                             'LOCCD' => $loccd,
@@ -298,8 +300,8 @@ class SyncBarang implements ShouldQueue
                             'BCDOCNO' => $this->header['NOMOR DAFTAR'],
                             'BCDOCDT' => $this->header['TANGGAL DAFTAR'],
                             'BSGRP' => $bsgrp,
-                            'DOCCD' => '',
-                            'DOCNO' => '',
+                            'DOCCD' => $doccd,
+                            'DOCNO' => $docno,
                             'HHEINVNO' => '',
                             'ISUDT' => $this->header['TANGGAL DAFTAR'],
                             'ITMCD' => trim($barang['KODE BARANG']),
@@ -327,8 +329,8 @@ class SyncBarang implements ShouldQueue
                             'BCDOCNO' => $this->header['NOMOR DAFTAR'],
                             'BCDOCDT' => $this->header['TGL_DAFTAR'],
                             'BSGRP' => $bsgrp,
-                            'DOCCD' => '',
-                            'DOCNO' => '',
+                            'DOCCD' => $doccd,
+                            'DOCNO' => $docno,
                             'HHEINVNO' => '',
                             'ISUDT' => $this->header['TANGGAL DAFTAR'],
                             'ITMCD' => trim($barang['KODE BARANG']),
