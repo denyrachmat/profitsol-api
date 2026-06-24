@@ -289,8 +289,8 @@ class SyncBarang implements ShouldQueue
                     if ($this->typeBC['type'] === 'INC') {
                         $barang['KODE SATUAN'] = $barang['KODE SATUAN'] !== 'PCE' ? $barang['KODE SATUAN'] : 'PIECE';
 
-                        $loccd = $this->mode === 'export_only' ? (count($checkBCDocOnMega) > 0 ? $checkBCDocOnMega[0]['LOCCD'] : 'STX-I') : 'STX-I';
-                        $bsgrp = $this->mode === 'export_only' ? (count($checkBCDocOnMega) > 0 ? $checkBCDocOnMega[0]['BSGRP'] : 'LAIN NYA') : 'LAIN NYA';
+                        $loccd = $this->mode === 'export_only' ? (count($checkBCDocOnMega) > 0 ? $checkBCDocOnMega[0]->LOCCD : 'STX-I') : 'STX-I';
+                        $bsgrp = $this->mode === 'export_only' ? (count($checkBCDocOnMega) > 0 ? $checkBCDocOnMega[0]->BSGRP : 'LAIN NYA') : 'LAIN NYA';
 
                         $processedBarang[] = [
                             'LOCCD' => $loccd,
