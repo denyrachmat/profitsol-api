@@ -40,70 +40,66 @@ class SyncBarang implements ShouldQueue
     public function handle(): void
     {
         try {
-            if ($this->mode === 'auto') {
-                $sp = $this->typeBC['type'] === 'INC' ? 'CUSTOMREPORT7_WEB' : 'CUSTOMREPORT8_WEB';
+            $sp = $this->typeBC['type'] === 'INC' ? 'CUSTOMREPORT7_WEB' : 'CUSTOMREPORT8_WEB';
 
-                // 1. Definisikan daftar database
-                $databases = ['VMI_SME', 'VMI_EXIM', 'VMI_SKA', 'VMI_TYO'];
+            // 1. Definisikan daftar database
+            $databases = ['VMI_SME', 'VMI_EXIM', 'VMI_SKA', 'VMI_TYO'];
 
-                // 2. Susun parameter (cukup 1 set isi 9 parameter)
-                $singleParams = [
-                    'PSGL,PSGL-EX,PSGL-ASP,DMISL,SECSCN',
-                    '',
-                    '',
-                    $this->header['NOMOR DAFTAR'],
-                    date('Y-m-d', strtotime($this->header['TANGGAL DAFTAR'] . ' -3 day')),
-                    date('Y-m-d', strtotime($this->header['TANGGAL DAFTAR'] . ' +3 day')),
-                    '',
-                    '',
-                    $this->header['TANGGAL DAFTAR']
-                ];
+            // 2. Susun parameter (cukup 1 set isi 9 parameter)
+            $singleParams = [
+                'PSGL,PSGL-EX,PSGL-ASP,DMISL,SECSCN',
+                '',
+                '',
+                $this->header['NOMOR DAFTAR'],
+                date('Y-m-d', strtotime($this->header['TANGGAL DAFTAR'] . ' -3 day')),
+                date('Y-m-d', strtotime($this->header['TANGGAL DAFTAR'] . ' +3 day')),
+                '',
+                '',
+                $this->header['TANGGAL DAFTAR']
+            ];
 
-                // 3. Aktifkan Query Listener untuk mencatat log ke laravel.log
-                DB::connection('sqlsrv_mega_db')->listen(function ($query) {
-                    $sql = $query->sql;
-                    foreach ($query->bindings as $binding) {
-                        $value = is_numeric($binding) ? $binding : "'" . $binding . "'";
-                        $sql = preg_replace('/\?/', $value, $sql, 1);
-                    }
+            // 3. Aktifkan Query Listener untuk mencatat log ke laravel.log
+            DB::connection('sqlsrv_mega_db')->listen(function ($query) {
+                $sql = $query->sql;
+                foreach ($query->bindings as $binding) {
+                    $value = is_numeric($binding) ? $binding : "'" . $binding . "'";
+                    $sql = preg_replace('/\?/', $value, $sql, 1);
+                }
 
-                    Log::info("--- RUNNING SP ---");
-                    Log::info(trim($sql));
-                    Log::info("------------------");
-                });
+                Log::info("--- RUNNING SP ---");
+                Log::info(trim($sql));
+                Log::info("------------------");
+            });
 
-                // 4. Siapkan wadah untuk menampung semua hasil
-                $allResults = [];
+            // 4. Siapkan wadah untuk menampung semua hasil
+            $allResults = [];
 
-                // Log::info("=== STARTING MULTI-DB SP EXECUTION ===");
+            // Log::info("=== STARTING MULTI-DB SP EXECUTION ===");
 
-                // 5. Loop dan eksekusi satu per satu
-                foreach ($databases as $dbName) {
-                    // Log::info("Executing SP for database: {$dbName}");
+            // 5. Loop dan eksekusi satu per satu
+            foreach ($databases as $dbName) {
+                // Log::info("Executing SP for database: {$dbName}");
 
-                    $queryResult = DB::connection('sqlsrv_mega_db')->select("
+                $queryResult = DB::connection('sqlsrv_mega_db')->select("
         EXEC {$dbName}.dbo.{$sp} ?, ?, ?, ?, ?, ?, ?, ?, ?;
     ", $singleParams);
 
-                    // Hitung jumlah baris data yang didapat dari DB ini
-                    $rowCount = count($queryResult);
-                    // Log::info("Database {$dbName} returned {$rowCount} row(s).");
+                // Hitung jumlah baris data yang didapat dari DB ini
+                $rowCount = count($queryResult);
+                // Log::info("Database {$dbName} returned {$rowCount} row(s).");
 
-                    if (!empty($queryResult)) {
-                        $allResults = array_merge($allResults, $queryResult);
-                    }
+                if (!empty($queryResult)) {
+                    $allResults = array_merge($allResults, $queryResult);
                 }
-
-                // Log::info("=== END OF MULTI-DB SP EXECUTION. Total rows combined: " . count($allResults) . " ===");
-
-                // 6. Hasil akhir gabungan dari semua DB
-                $checkBCDocOnMega = $allResults;
-            } else {
-                $checkBCDocOnMega = [];
             }
 
+            // Log::info("=== END OF MULTI-DB SP EXECUTION. Total rows combined: " . count($allResults) . " ===");
+
+            // 6. Hasil akhir gabungan dari semua DB
+            $checkBCDocOnMega = $allResults;
+
             // Jika data di Mega tersedia, maka gunakan data tersebut, jika tidak maka ambil dari database 
-            if (count($checkBCDocOnMega) > 0) {
+            if (count($checkBCDocOnMega) > 0 && $this->mode === 'auto') {
                 $getfirstDataDoc = $checkBCDocOnMega[0] ?? null;
                 $processedBarang = [];
 
@@ -293,12 +289,15 @@ class SyncBarang implements ShouldQueue
                     if ($this->typeBC['type'] === 'INC') {
                         $barang['KODE SATUAN'] = $barang['KODE SATUAN'] !== 'PCE' ? $barang['KODE SATUAN'] : 'PIECE';
 
+                        $loccd = $this->mode === 'export_only' ? (count($checkBCDocOnMega) > 0 ? $checkBCDocOnMega[0]['LOCCD'] : 'STX-I') : 'STX-I';
+                        $bsgrp = $this->mode === 'export_only' ? (count($checkBCDocOnMega) > 0 ? $checkBCDocOnMega[0]['BSGRP'] : 'LAIN NYA') : 'LAIN NYA';
+
                         $processedBarang[] = [
-                            'LOCCD' => 'STX-I',
+                            'LOCCD' => $loccd,
                             'BCTYPE' => $this->typeBC['code'],
                             'BCDOCNO' => $this->header['NOMOR DAFTAR'],
                             'BCDOCDT' => $this->header['TANGGAL DAFTAR'],
-                            'BSGRP' => 'LAIN NYA',
+                            'BSGRP' => $bsgrp,
                             'DOCCD' => '',
                             'DOCNO' => '',
                             'HHEINVNO' => '',
@@ -323,11 +322,11 @@ class SyncBarang implements ShouldQueue
                         ];
                     } else {
                         $processedBarang[] = [
-                            'LOCCD' => 'STX-I',
+                            'LOCCD' => $loccd,
                             'BCTYPE' => $this->typeBC['code'],
                             'BCDOCNO' => $this->header['NOMOR DAFTAR'],
                             'BCDOCDT' => $this->header['TGL_DAFTAR'],
-                            'BSGRP' => 'LAIN NYA',
+                            'BSGRP' => $bsgrp,
                             'DOCCD' => '',
                             'DOCNO' => '',
                             'HHEINVNO' => '',
