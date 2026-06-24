@@ -26,14 +26,15 @@ class SyncHeader implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
-    public $selectedData;
+    public $selectedData, $mode;
 
     /**
      * Create a new job instance.
      */
-    public function __construct($selectedData = [])
+    public function __construct($selectedData = [], $mode = 'auto')
     {
         $this->selectedData = $selectedData;
+        $this->mode = $mode;
     }
 
     /**
@@ -135,7 +136,7 @@ class SyncHeader implements ShouldQueue
                     ],
                 ));
 
-                SyncEntitas::dispatch($header, $kodeDokumen, $dataTemp)->onQueue('sync-itinventory');
+                SyncEntitas::dispatch($header, $kodeDokumen, $dataTemp, $this->mode)->onQueue('sync-itinventory');
             }
         } catch (\Exception $e) {
             Redis::publish('portalv2', json_encode(

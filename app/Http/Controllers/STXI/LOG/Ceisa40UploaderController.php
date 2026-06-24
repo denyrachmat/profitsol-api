@@ -215,7 +215,7 @@ class Ceisa40UploaderController extends BaseController
 
     public function syncCeisatoITInventory(Request $req)
     {
-        SyncHeader::dispatch($req->data)->onQueue('sync-itinventory');
+        SyncHeader::dispatch($req->data, $req->has('mode') ? $req->mode : 'auto')->onQueue('sync-itinventory');
         return $this->handleResponse([], 'Sync data queued !!');
     }
 }

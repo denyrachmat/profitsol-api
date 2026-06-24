@@ -18,15 +18,16 @@ class SyncEntitas implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
-    public $header, $typeBC, $dataTemp;
+    public $header, $typeBC, $dataTemp, $mode;
     /**
      * Create a new job instance.
      */
-    public function __construct($header = [], $typeBC = [], $dataTemp = [])
+    public function __construct($header = [], $typeBC = [], $dataTemp = [], $mode = 'auto')
     {
         $this->header = $header;
         $this->typeBC = $typeBC;
         $this->dataTemp = $dataTemp;
+        $this->mode = $mode;
     }
 
     /**
@@ -104,7 +105,7 @@ class SyncEntitas implements ShouldQueue
                 ],
             ));
 
-            SyncBarang::dispatch($this->header, $this->typeBC, $this->dataTemp)->onQueue('sync-itinventory');
+            SyncBarang::dispatch($this->header, $this->typeBC, $this->dataTemp, $this->mode)->onQueue('sync-itinventory');
         } catch (\Exception $e) {
             Redis::publish('portalv2', json_encode(
                 [
