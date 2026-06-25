@@ -288,11 +288,14 @@ class SyncBarang implements ShouldQueue
                     $this->sendNotification($getBarang, $barang, 'Cannot found data on mega, use Ceisa Export processing, processing data.', false, $key + 1);
                     if ($this->typeBC['type'] === 'INC') {
                         $barang['KODE SATUAN'] = $barang['KODE SATUAN'] !== 'PCE' ? $barang['KODE SATUAN'] : 'PIECE';
+                        $getBarangDataOnMega = array_filter($checkBCDocOnMega, function ($item) use ($barang) {
+                            return trim($item->ITMCD) === trim($barang['KODE BARANG']);
+                        });
 
-                        $loccd = $this->mode === 'export_only' ? (count($checkBCDocOnMega) > 0 ? $checkBCDocOnMega[0]->LOCCD : 'STX-I') : 'STX-I';
-                        $bsgrp = $this->mode === 'export_only' ? (count($checkBCDocOnMega) > 0 ? $checkBCDocOnMega[0]->BSGRP : 'LAIN NYA') : 'LAIN NYA';
-                        $doccd = $this->mode === 'export_only' ? (count($checkBCDocOnMega) > 0 ? $checkBCDocOnMega[0]->DOCCD : '') : '';
-                        $docno = $this->mode === 'export_only' ? (count($checkBCDocOnMega) > 0 ? $checkBCDocOnMega[0]->DOCNO : '') : '';
+                        $loccd = $this->mode === 'export_only' ? (count($getBarangDataOnMega) > 0 ? $getBarangDataOnMega[0]->LOCCD : 'STX-I') : 'STX-I';
+                        $bsgrp = $this->mode === 'export_only' ? (count($getBarangDataOnMega) > 0 ? $getBarangDataOnMega[0]->BSGRP : 'LAIN NYA') : 'LAIN NYA';
+                        $doccd = $this->mode === 'export_only' ? (count($getBarangDataOnMega) > 0 ? $getBarangDataOnMega[0]->DOCCD : '') : '';
+                        $docno = $this->mode === 'export_only' ? (count($getBarangDataOnMega) > 0 ? $getBarangDataOnMega[0]->DOCNO : '') : '';
 
                         $processedBarang[] = [
                             'LOCCD' => $loccd,
