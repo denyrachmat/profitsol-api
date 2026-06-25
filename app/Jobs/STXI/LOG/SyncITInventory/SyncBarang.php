@@ -292,10 +292,10 @@ class SyncBarang implements ShouldQueue
                             return trim($item->ITMCD) === trim($barang['KODE BARANG']);
                         });
 
-                        $loccd = $this->mode === 'export_only' ? (count($getBarangDataOnMega) > 0 ? $getBarangDataOnMega[0]->LOCCD : 'STX-I') : 'STX-I';
-                        $bsgrp = $this->mode === 'export_only' ? (count($getBarangDataOnMega) > 0 ? $getBarangDataOnMega[0]->BSGRP : 'LAIN NYA') : 'LAIN NYA';
-                        $doccd = $this->mode === 'export_only' ? (count($getBarangDataOnMega) > 0 ? $getBarangDataOnMega[0]->DOCCD : '') : '';
-                        $docno = $this->mode === 'export_only' ? (count($getBarangDataOnMega) > 0 ? $getBarangDataOnMega[0]->DOCNO : '') : '';
+                        $loccd = $this->mode === 'export_only' ? ((($firstItem = reset($getBarangDataOnMega)) !== false) ? $firstItem->LOCCD : 'STX-I') : 'STX-I';
+                        $bsgrp = $this->mode === 'export_only' ? ((($firstItem = reset($getBarangDataOnMega)) !== false) ? $firstItem->BSGRP : 'LAIN NYA') : 'LAIN NYA';
+                        $doccd = $this->mode === 'export_only' ? ((($firstItem = reset($getBarangDataOnMega)) !== false) ? $firstItem->DOCCD : '') : '';
+                        $docno = $this->mode === 'export_only' ? ((($firstItem = reset($getBarangDataOnMega)) !== false) ? $firstItem->DOCNO : '') : '';
 
                         $processedBarang[] = [
                             'LOCCD' => $loccd,
