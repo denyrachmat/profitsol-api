@@ -385,7 +385,7 @@ trait FolderDocumentTraits
                 'path' => $path,
                 'base' => $base,
             ]);
-            
+
             abort(404, 'File not found');
         }
 
@@ -806,7 +806,8 @@ trait FolderDocumentTraits
     {
         $hist = new DMSDocRootMstr;
 
-        if ($request->has('filter') && count($request->filter) > 0) {
+        if ($request->has('filter') && count(array_filter($request->filter, function ($f) {
+            return !empty($f['cols']); })) > 0) {
             foreach ($request->filter as $key => $value) {
                 if (isset($value['step']) && $value['step'] === 'or') {
                     $hist = (clone $hist)->orwhere($value['cols'], $value['param'], $value['param'] === 'like' ? "%{$value['value']}%" : $value['value']);
@@ -824,20 +825,23 @@ trait FolderDocumentTraits
                 ->toArray();
 
             $hasil = [];
-            foreach ($datanya as $key => $value) {
-                try {
-                    $this->installDisk($value['ddrm_name']);
+            foreach ($datanya as $value) {
+                $status = true;
+                $checkList = null; // Initialize
+                $configDisks = Config::get('filesystems.disks'); // This won't throw, get it once.
 
-                    $check = Storage::disk($value['ddrm_name'])->exists('');
-                    $status = true;
-                } catch (\Throwable $th) {
+                try {
+                    $this->installDisk($value['ddrm_name']); // Primarily to trigger the configuration. Disk object isn't directly used here.
+                    $checkList = $this->checkPerm('deny-rachmat@sumitronics.co.jp', $value['ddrm_name']);
+                } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
                     $status = false;
+                    logger()->warning('DMSDocRootMstr not found for ddrm_name: ' . $value['ddrm_name'], ['exception' => $e]);
                 }
 
                 $hasil[] = array_merge($value, [
                     'config_status' => $status,
-                    'check_config' => Config::get('filesystems.disks'),
-                    'check_list' => $this->checkPerm('deny-rachmat@sumitronics.co.jp', $value['ddrm_name'])
+                    'check_config' => $configDisks,
+                    'check_list' => $checkList
                 ]);
             }
 
