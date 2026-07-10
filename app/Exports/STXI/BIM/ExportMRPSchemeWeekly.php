@@ -19,6 +19,8 @@ class ExportMRPSchemeWeekly implements FromCollection, WithHeadings, WithEvents
 
     public function __construct($data, $typeMRP, $addBGLT = 49)
     {
+        set_time_limit(300);
+
         $this->data = $data;
         $this->typeMRP = $typeMRP;
         $this->resultDate = [];
