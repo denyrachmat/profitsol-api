@@ -1,4 +1,17 @@
-public static function importFromStorage()
+<?php
+
+namespace App\Imports\TOS;
+
+use Illuminate\Support\Collection;
+use Maatwebsite\Excel\Concerns\ToCollection;
+
+class ImportQuizTemplate implements ToCollection
 {
-    Excel::import(new static, 'Quiz template.xlsx', 'local');
+    /**
+    * @param Collection $collection
+    */
+    public function collection(Collection $collection)
+    {
+        //
+    }
 }
