@@ -207,8 +207,8 @@ class QuizController extends Controller
             return $f['status'];
         });
 
-        if ($cekSetup && $cekSetup->cfsd_quest_limit !== null && $cekSetup->cfsd_quest_limit > 0) {
-            $totalGrade = round((count($getGrade) / $cekSetup->cfsd_quest_limit) * 100, 2);
+        if ($cekSetup && $cekSetup->cfsd_quest_limit !== null && intval($cekSetup->cfsd_quest_limit) > 0) {
+            $totalGrade = round((count($getGrade) / intval($cekSetup->cfsd_quest_limit)) * 100, 2);
         } else {
             $totalGrade = round((count($getGrade) / count($dataAnswers)) * 100, 2);
         }
@@ -221,7 +221,8 @@ class QuizController extends Controller
             'grade' => $totalGrade,
             'is_pass' => $totalGrade >= ($cekStatGrade->cfsd_min_pass ?? 0),
             'data_ori' => $hasilOri,
-            'data_ans' => $dataAnswers
+            'data_ans' => $dataAnswers,
+            'setup' => $cekSetup
         ]);
     }
 
