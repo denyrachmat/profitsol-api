@@ -107,6 +107,7 @@ Route::group(['prefix' => 'portal' /* , 'middleware' => ['auth:sanctum','verifie
     Route::group(['prefix' => 'gencode'], function () {
         Route::post('showDetail/{id}', [GencodeController::class, 'showDetail']);
         Route::post('deleteDetail/{id}', [GencodeController::class, 'deleteDetail']);
+        Route::post('deleteDetailGroup/{id}', [GencodeController::class, 'deleteDetailGroup']);
         Route::post('saveGencode', [GencodeController::class, 'saveGencode']);
     });
 });
@@ -212,6 +213,10 @@ Route::group(['prefix' => 'cms'], function () {
     Route::get('migrationHRMSUserAns', [QuizController::class, 'migrateUsersAnswers']);
     Route::get('viewHTMLOnlyQuiz/{id}', [QuizController::class, 'getHTMLList']);
     Route::post('downloadHTMLMaterial/{id}', [QuizController::class, 'downloadHTMLMaterial']);
+    Route::get('downloadQuizTemplate', [QuizController::class, 'downloadQuizTemplate']);
+    Route::post('uploadQuizTemplate', [QuizController::class, 'uploadQuizTemplate']);
+
+    Route::post('uploadQuizTemplateAi', [QuizController::class, 'parseDocumentForAI']);
 
     Route::get('downloadTemplateBulk/{id}', [FormController::class, 'downloadTemplateBulk']);
 });

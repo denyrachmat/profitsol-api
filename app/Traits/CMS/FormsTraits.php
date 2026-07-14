@@ -43,7 +43,9 @@ trait FormsTraits
             foreach ($value['form_master'] as $key => $valueAns) {
                 $cekAnswer = FormAnswerDet::where('cfmd_id', $valueAns['id'])->first();
                 if (!empty($cekAnswer)) {
-                    $answer[] = is_array(json_decode($cekAnswer['cfm_val'])) ? json_decode($cekAnswer['cfm_val']) : (int) $cekAnswer['cfm_val'];
+                    $answer[] = is_array(json_decode($cekAnswer['cfm_val'])) 
+                        ? json_decode($cekAnswer['cfm_val']) 
+                        : (is_numeric($cekAnswer['cfm_val']) ? (int) $cekAnswer['cfm_val'] : $cekAnswer['cfm_val']); // skipped: JSON array parsing, add when specific handling of JSON arrays in `cfm_val` is required.
                     $exp[] = $cekAnswer['cfm_exp'];
                 } else {
                     $answer[] = '';
@@ -152,6 +154,7 @@ trait FormsTraits
 
             $dataLogics = FormLogicsDet::where('cfm_id', $value['id'])
                 ->orderBy('cfld_seq_name', 'asc')
+                ->orderBy('cfld_order', 'asc')
                 ->get();
 
             $dataLogs = [];
@@ -378,22 +381,18 @@ trait FormsTraits
 
                 if (isset($data['logics'])) {
                     foreach ($data['logics'] as $keyLogics => $valueLogics) { //Split by id sequences
-                        $getLastLogics = FormLogicsDet::where('cfm_id', $insert->id)->orderBy('created_at', 'desc')->first();
+                        $getLastLogics = FormLogicsDet::where('cfm_id', $insert->id)->orderBy('cfld_order', 'desc')->first();
 
                         if (isset($valueLogics['seq_name']) && !empty($valueLogics['seq_name'])) {
                             $createNewSeqName = $valueLogics['seq_name'];
+
+                            $getLastLogics::where('cfld_seq_name', $valueLogics['seq_name'])->delete();
                         } else {
                             $createNewSeqName = empty($getLastLogics) ? 'L' . $insert->id . '-0001' : 'L' . $insert->id . '-' . str_pad((int) substr($getLastLogics->cfld_seq_name, 5) + 1, 4, '0', STR_PAD_LEFT);
                         }
 
                         foreach ($valueLogics['data'] as $key => $valueLogicsDet) {
-                            FormLogicsDet::updateOrCreate([
-                                'cfld_seq_name' => $createNewSeqName,
-                                'cfm_id' => $insert->id,
-                                'cfld_actions' => $valueLogicsDet['cfld_actions'],
-                                'cfld_opr' => $valueLogicsDet['cfld_opr'],
-                                'cfld_val' => $valueLogicsDet['cfld_val'],
-                            ], [
+                            FormLogicsDet::create([
                                 'cfm_id' => $insert->id,
                                 'cfld_seq_name' => $createNewSeqName,
                                 'cfld_seq_desc' => $valueLogics['seq_desc'],
@@ -402,6 +401,7 @@ trait FormsTraits
                                 'cfld_opr_ctrl' => $valueLogicsDet['cfld_opr_ctrl'],
                                 'cfld_res' => $valueLogicsDet['cfld_res'],
                                 'cfld_actions' => $valueLogicsDet['cfld_actions'],
+                                'cfld_order' => $key + 1,
                             ]);
                         }
                     }
@@ -635,8 +635,9 @@ trait FormsTraits
 
             if ($request->has('pagination') && is_array($request->pagination)) {
                 $page = isset($request->pagination['page']) ? (int) $request->pagination['page'] : 1;
-                $perPage = isset($request->pagination['perPage']) ? (int) $request->pagination['perPage'] : 10;
+                $perPage = isset($request->pagination['rowsPerPage']) ? (int) $request->pagination['rowsPerPage'] : 10;
                 $totalCount = $result->count();
+                $perPage = $perPage === 0 ? $totalCount : $perPage;
                 $result = $result->forPage($page, $perPage);
                 $result = new \Illuminate\Pagination\LengthAwarePaginator(
                     $result->values(),

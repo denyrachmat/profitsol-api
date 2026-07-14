@@ -84,6 +84,35 @@ class RPAMasterController extends Controller
                 $data->prmParameter()->create($param);
             }
         }
+
+        if ($request->has('prm_command') && is_array($request->prm_command)) {
+            $data->prmCommand()->delete();
+            foreach ($request->prm_command as $cmd) {
+                function insertCMD($dataCMD, $id = '', $data = null) {
+                    $createData = $data->prmCommand()->create(
+                        array_merge(
+                            $dataCMD, 
+                            [
+                                'prcd_parentsid' => $id,
+                                'prcd_action' => isset($dataCMD['prcd_action']) ? json_encode($dataCMD['prcd_action']) : null,
+                            ]
+                        )
+                    );
+
+                    if (isset($dataCMD['prcd_children']) && is_array($dataCMD['prcd_children'])) {
+                        $children = $dataCMD['prcd_children'];
+                        insertCMD($children, $createData->id, $data);
+                        unset($dataCMD['prcd_children']);
+                    } else {
+                        $children = [];
+                    }
+
+                    return $dataCMD;
+                }
+
+                insertCMD($cmd, '', $data);
+            }
+        }
         return response()->json($data, 200);
     }
 

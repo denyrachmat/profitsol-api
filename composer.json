@@ -23,8 +23,10 @@
         "maatwebsite/excel": "^3.1",
         "mike42/escpos-php": "^4.0",
         "mongodb/laravel-mongodb": "^5.1",
+        "phpoffice/phpword": "^1.4",
         "pragmarx/google2fa-laravel": "^2.3",
         "predis/predis": "^2.2",
+        "spatie/pdf-to-text": "^1.54",
         "symfony/dom-crawler": "^6.0"
     },
     "require-dev": {

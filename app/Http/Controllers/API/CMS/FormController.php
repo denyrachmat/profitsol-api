@@ -552,7 +552,7 @@ class FormController extends BaseController
         )
             ->where('mrs_report_mstr.id', $dataMRS->id)
             ->first();
-            
+
         $checkSetup = $this->getSetupFormsForForm($request->id);
         $importer = new importBulkAnswers($request->header('username'), $cekReport->id, $request->id, $checkSetup);
         Excel::import($importer, $tempPath);
@@ -569,10 +569,33 @@ class FormController extends BaseController
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function show($id, $tags = '', $showMax = 0, $orderBy = [], $isPublisedOnly = false, $isPaginated = false, $page = 1, $users = '')
+    public function show($id, $tags = '', $showMax = 0, $orderBy = [], $isPublisedOnly = false, $isPaginated = false, $page = 1, $users = '', $filter = [])
     {
         // return [$id, $tags, $showMax, $orderBy, $isPublisedOnly, $isPaginated, $page];
         $dataBuild = formMasterTitle::with(['quizSetup', 'shared']);
+        $normalizeFilterValue = function ($filterValue) {
+            if (!is_string($filterValue)) {
+                return $filterValue;
+            }
+
+            $trimmed = trim($filterValue);
+            if ($trimmed === '') {
+                return $filterValue;
+            }
+
+            // Keep SQL wildcard searches intact (e.g. 2026-07-09%)
+            $tryDate = str_replace('%', '', $trimmed);
+            if ($tryDate === '') {
+                return $filterValue;
+            }
+
+            $timestamp = strtotime($tryDate);
+            if ($timestamp === false) {
+                return $filterValue;
+            }
+
+            return date('Y-m-d', $timestamp);
+        };
 
         if (!empty($users)) {
             $dataBuild->where('cms_form_mstr_title.p_u_username', $users);
@@ -619,6 +642,27 @@ class FormController extends BaseController
             if (!empty($tags)) {
                 $decodedTags = base64_decode($tags);
                 $dataBuild->whereIn('pgTags.pgm_value2', json_decode($decodedTags, true));
+            }
+
+            if (count($filter) > 0) {
+                foreach ($filter as $value) {
+                    $column = $value['cols'] ?? $value['field'] ?? null;
+                    $operator = $value['param'] ?? $value['params'] ?? '=';
+                    $filterValue = $value['value'] ?? null;
+
+                    if (!$column || $filterValue === null) {
+                        continue;
+                    }
+
+                    if ($column === 'created_at' || $column === 'updated_at') {
+                        $column = 'cms_form_mstr_title.' . $column;
+                        $filterValue = $normalizeFilterValue($filterValue);
+                        $dataBuild->whereBetween($column, [$filterValue . ' 00:00:00', $filterValue . ' 23:59:59']);
+                    } else {
+                        $filterValue = $normalizeFilterValue($filterValue);
+                        $dataBuild->where($column, $operator, $filterValue);
+                    }
+                }
             }
 
             if ($isPaginated && $showMax > 0) {
@@ -735,6 +779,21 @@ class FormController extends BaseController
 
             return array_values($hasil->toArray());
         } else {
+            if (count($filter) > 0) {
+                foreach ($filter as $value) {
+                    $column = $value['cols'] ?? $value['field'] ?? null;
+                    $operator = $value['param'] ?? $value['params'] ?? '=';
+                    $filterValue = $value['value'] ?? null;
+
+                    if (!$column || $filterValue === null) {
+                        continue;
+                    }
+
+                    $filterValue = $normalizeFilterValue($filterValue);
+                    $dataBuild->where($column, $operator, $filterValue);
+                }
+            }
+
             $data = (clone $dataBuild)->with([
                 'formMaster' => function ($f) {
                     $f->where('cfm_parent_id', 0);
@@ -744,8 +803,6 @@ class FormController extends BaseController
                 }
             ])->where('cfmt_quiz_flag', 0)->get();
         }
-
-        // return $data;
 
         $hasilHeader = $this->getHeaderAllForms($data->toArray());
 
@@ -774,7 +831,8 @@ class FormController extends BaseController
             $request->isPublisedOnly ?? false,
             $request->isPaginated ?? false,
             $request->page ?? 1,
-            $request->users ?? ''
+            $request->users ?? '',
+            $request->filter ?? []
         );
     }
 
@@ -1226,7 +1284,7 @@ class FormController extends BaseController
                 $options['sink'] = $downloadPath . '/' . $fileName;
 
                 // After successful download, construct URL using APP_URL_DOWNLOAD env variable
-                $downloadUrl = rtrim(env('APP_URL_DOWNLOAD', config('app.url').'/storage/'), '/') . '/downloads/' . $fileName;
+                $downloadUrl = rtrim(env('APP_URL_DOWNLOAD', config('app.url') . '/storage/'), '/') . '/downloads/' . $fileName;
             }
 
             $httpMethod = strtoupper($request->input('method'));

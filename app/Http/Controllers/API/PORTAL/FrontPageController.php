@@ -11,6 +11,7 @@ use Illuminate\Http\Request;
 use App\Traits\PORTAL\GencodeTraits;
 use App\Models\PORTAL\PortalGencode;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Cache;
 use App\Jobs\PORTAl\notifSentQueue;
 use App\Models\User;
 use Illuminate\Support\Facades\Auth;
@@ -79,7 +80,11 @@ class FrontPageController extends BaseController
 
     public function getNavMenuFromAPI($showAll = false)
     {
-        return $this->getNavMenu([], (bool) $showAll);
+        $cacheKey = 'portal.nav_menu.' . ($showAll ? 'all' : 'default');
+
+        return Cache::remember($cacheKey, now()->addMinutes(5), function () use ($showAll) {
+            return $this->getNavMenu([], (bool) $showAll);
+        });
     }
 
     public function getNavMenu($data = [], $showAll = false, $id = '')
@@ -112,61 +117,88 @@ class FrontPageController extends BaseController
             'desc' => 'pgm_desc2',
         ]);
 
-        $hasil = [];
-        $keyOrderForms = 1;
-        foreach ($data as &$navItem) {
-            $filterData = array_filter($pages, function ($page) use ($navItem) {
-                return $page['value'] == $navItem['linkto'];
-            });
-            $formController = new FormController();
-
-            $navItem['is_main'] = isset($filterData) && count($filterData) > 0 ? array_values($filterData)[0]['is_main'] : 0;
-            $navItem['pages'] = count($filterData) > 0 ? array_values($filterData)[0] : [];
-            $navItem['url'] = count($filterData) > 0 ? (string) array_values($filterData)[0]['url'] : '';
-            // $navItem['forms'] = $formController->viewByID((int) $navItem['linkto'])->getOriginalContent()['data']['value'] ?? [];
-            if (isset($navItem['children']) && count($navItem['children']) > 0 && is_array($navItem['children'])) {
-                $navItem['children'] = $this->getNavMenu($navItem['children'])->getOriginalContent()['data'] ?? [];
-            }
-
-            $navItem['forms'] = [];
-
-            if (!empty($navItem['tags'])) {
-                $formController = app(FormController::class);
-                $formShowDataResponse = $formController->show(
-                    'post',
-                    base64_encode(json_encode(json_decode($navItem['tags'], true))),
-                    5,
-                    [],
-                    true
-                );
-
-                // return $formShowData;
-                $navItem['test'] = $formShowDataResponse;
-
-                $resultForm = [];
-                foreach ($formShowDataResponse as $keyDataForms => $valueDataForms) {
-                    // Push the requested object structure as an associative array
-                    $value = $valueDataForms;
-                    $resultForm[] = [
-                        'idx' => (string) ($value['id'] ?? $navItem['idx'] ?? ''),
-                        'value' => (string) ($value['id'] ?? $navItem['idx'] ?? ''),
-                        'label' => $value['cfmt_title'] ?? '',
-                        'icon' => 'label',
-                        'type' => 'page',
-                        'linkto' => (string) ($value['id'] ?? '#'),
-                        'page' => (string) ($value['id'] ?? '#'),
-                        'url' => (string) ($value['id'] ?? '#'),
-                        'forms' => $formController->viewByID((int) ($value['id']))->getOriginalContent()['data']['value'] ?? [],
-                    ];
-                }
-
-                // $navItem['children'] = $resultForm ?? [];
-                $navItem['children'] = $resultForm;
-                // $navItem['children'] = $this->getNavMenu($navItem['children'])->getOriginalContent()['data'] ?? [];
-
-                // $navItem['tagsList'] = $formShowDataResponse;
+        $pagesByValue = [];
+        foreach ($pages as $page) {
+            if (isset($page['value'])) {
+                $pagesByValue[(string) $page['value']] = $page;
             }
         }
+
+        $postsByTagsCache = [];
+
+        $processTree = function ($items) use (&$processTree, $pagesByValue, &$postsByTagsCache) {
+            foreach ($items as &$navItem) {
+                $pageData = $pagesByValue[(string) ($navItem['linkto'] ?? '')] ?? [];
+
+                $navItem['is_main'] = $pageData['is_main'] ?? 0;
+                $navItem['pages'] = $pageData;
+                $navItem['url'] = isset($pageData['url']) ? (string) $pageData['url'] : '';
+                $navItem['forms'] = [];
+
+                if (isset($navItem['children']) && is_array($navItem['children']) && count($navItem['children']) > 0) {
+                    $navItem['children'] = $processTree($navItem['children']);
+                }
+
+                if (!empty($navItem['tags'])) {
+                    $decodedTags = is_array($navItem['tags'])
+                        ? $navItem['tags']
+                        : json_decode((string) $navItem['tags'], true);
+
+                    if (is_array($decodedTags) && count($decodedTags) > 0) {
+                        $tagsKey = md5(json_encode(array_values($decodedTags)));
+
+                        if (!isset($postsByTagsCache[$tagsKey])) {
+                            $postsByTagsCache[$tagsKey] = FormMasterTitle::query()
+                                ->select('cms_form_mstr_title.id', 'cms_form_mstr_title.cfmt_title')
+                                ->leftJoin(DB::raw('STX_PORTAL.dbo.portal_gencode_mstr as pgTags'), function ($join) {
+                                    $join->on(DB::raw('STX_CMS.dbo.cms_form_mstr_title.id'), '=', 'pgTags.pgm_value')
+                                        ->where('pgTags.pgm_code', 'FP_TAGS_LIST')
+                                        ->whereNotNull('pgTags.pgm_value2');
+                                })
+                                ->join(DB::raw('STX_PORTAL.dbo.portal_gencode_mstr as pg'), function ($join) {
+                                    $join->on(DB::raw('STX_CMS.dbo.cms_form_mstr_title.id'), '=', 'pg.pgm_value')
+                                        ->where('pg.pgm_code', 'FP_PUBLISH_POSTS')
+                                        ->whereNotNull('pg.pgm_value2');
+                                })
+                                ->where('cms_form_mstr_title.cfmt_quiz_flag', 3)
+                                ->whereIn('pgTags.pgm_value2', array_values($decodedTags))
+                                ->orderBy('cms_form_mstr_title.created_at', 'desc')
+                                ->limit(5)
+                                ->get()
+                                ->toArray();
+                        }
+
+                        $resultForm = [];
+                        foreach ($postsByTagsCache[$tagsKey] as $value) {
+                            $postId = (int) ($value['id'] ?? 0);
+                            if ($postId <= 0) {
+                                continue;
+                            }
+
+                            $resultForm[] = [
+                                'idx' => (string) ($value['id'] ?? $navItem['idx'] ?? ''),
+                                'value' => (string) ($value['id'] ?? $navItem['idx'] ?? ''),
+                                'label' => $value['cfmt_title'] ?? '',
+                                'icon' => 'label',
+                                'type' => 'page',
+                                'linkto' => (string) ($value['id'] ?? '#'),
+                                'page' => (string) ($value['id'] ?? '#'),
+                                'url' => (string) ($value['id'] ?? '#'),
+                                // Keep payload lightweight to avoid OOM on big nav trees
+                                'forms' => [],
+                            ];
+                        }
+
+                        $navItem['children'] = $resultForm;
+                    }
+                }
+            }
+
+            unset($navItem);
+            return $items;
+        };
+
+        $data = $processTree($data);
 
         if (empty($data)) {
             return $this->handleError('No navigation menu found', 404);

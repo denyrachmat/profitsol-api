@@ -18,16 +18,26 @@ use Barryvdh\Snappy\Facades\SnappyPdf as PDF;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
 
+use Maatwebsite\Excel\Facades\Excel;
+use App\Imports\TOS\ImportQuizTemplate;
+use App\Services\DocumentParserService;
+use Illuminate\Support\Facades\Http;
+
 class QuizController extends Controller
 {
+
+    protected $docParser;
+
     use FormsTraits;
 
-    public function __construct()
+    public function __construct(DocumentParserService $docParser)
     {
         // Increase script execution time for heavy queries
         set_time_limit(1800); // 30 minutes, adjust as needed
         ini_set('max_execution_time', 1800);
+        $this->docParser = $docParser;
     }
+
     /**
      * Display a listing of the resource.
      *
@@ -123,12 +133,12 @@ class QuizController extends Controller
         // return $dataAnswersHead->get()->toArray();
 
         $cekSetup = FormSetupDet::where('cfmt_id', $id)->first();
-        if ($cekSetup->cfsd_quest_limit > 0) {
+        if ($cekSetup && $cekSetup->cfsd_quest_limit !== null && $cekSetup->cfsd_quest_limit > 0) {
             $dataAnswers = (clone $dataAnswersHead)
-            ->join('cms_form_ans_user_det', function ($f) {
-                $f->on('cms_form_ans_det.cfm_id', 'cms_form_ans_user_det.cfm_id');
-                $f->on('cms_form_ans_det.cfmd_id', 'cms_form_ans_user_det.cfmd_id');
-            })
+                ->join('cms_form_ans_user_det', function ($f) {
+                    $f->on('cms_form_ans_det.cfm_id', 'cms_form_ans_user_det.cfm_id');
+                    $f->on('cms_form_ans_det.cfmd_id', 'cms_form_ans_user_det.cfmd_id');
+                })
                 ->where('cms_form_ans_user_det.deleted_at', null)
                 ->where('cms_form_ans_user_det.p_u_username', $request->header('username'))
                 ->get();
@@ -197,7 +207,7 @@ class QuizController extends Controller
             return $f['status'];
         });
 
-        if ($cekSetup->cfsd_quest_limit > 0) {
+        if ($cekSetup && $cekSetup->cfsd_quest_limit !== null && $cekSetup->cfsd_quest_limit > 0) {
             $totalGrade = round((count($getGrade) / $cekSetup->cfsd_quest_limit) * 100, 2);
         } else {
             $totalGrade = round((count($getGrade) / count($dataAnswers)) * 100, 2);
@@ -209,7 +219,7 @@ class QuizController extends Controller
             'status' => true,
             'data' => $hasil,
             'grade' => $totalGrade,
-            'is_pass' => $totalGrade >= $cekStatGrade['cfsd_min_pass'],
+            'is_pass' => $totalGrade >= ($cekStatGrade->cfsd_min_pass ?? 0),
             'data_ori' => $hasilOri,
             'data_ans' => $dataAnswers
         ]);
@@ -567,5 +577,231 @@ class QuizController extends Controller
         $pdf = PDF::loadView("CMS.HTMLMaterial", ['data' => $this->getHTMLList($id)]);
 
         return base64_encode($pdf->inline('download.pdf'));
+    }
+
+    public function uploadQuizTemplate(Request $request)
+    {
+        $request->validate([
+            'file' => 'required|mimes:xlsx,xls,csv|max:2048'
+        ]);
+
+        try {
+            $import = new ImportQuizTemplate();
+            Excel::import($import, $request->file('file'));
+
+            // Mengembalikan struktur JSON nested yang siap di-render dinamis oleh Quasar
+            return response()->json($import->parsedData, 200);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Gagal memproses skema form: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function downloadQuizTemplate()
+    {
+        $filePath = storage_path('app/Quiz template.xlsx');
+
+        if (!file_exists($filePath)) {
+            return response()->json([
+                'status' => false,
+                'message' => 'File not found'
+            ], 404);
+        }
+
+        $filename = 'Quiz template.xlsx';
+        return response()->download($filePath, $filename);
+    }
+
+    public function parseDocumentForAI(Request $request)
+    {
+        $request->validate([
+            'file' => 'required|mimes:pdf,docx|max:5120' // Max 5MB
+        ]);
+
+        try {
+            $file = $request->file('file');
+            $text = $this->docParser->extractText($file->getPathname(), $file->getClientOriginalExtension());
+
+            // Panggil fungsi untuk menembak 9router
+            $aiResponse = $this->askAIToParse($text);
+
+            return response()->json($aiResponse, 200);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Gagal memproses AI Parser: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    private function askAIToParse(string $documentText)
+    {
+        $apiKey = env('NINEROUTER_API_KEY');
+        $apiUrl = env('NINEROUTER_URL');
+
+        if (empty($apiKey) || empty($apiUrl)) {
+            throw new \Exception("Konfigurasi NINEROUTER_API_KEY atau NINEROUTER_URL belum diset.");
+        }
+
+        // STRATEGI DIET PAYLOAD: Minta format minimalis ke AI untuk menghemat token hingga 70%
+        $prompt = "Berikut adalah teks mentah dari dokumen kuis yang harus kamu analisis:\n"
+            . "=========================================\n"
+            . $documentText . "\n"
+            . "=========================================\n\n"
+            . "Tugasmu: Transformasikan isi dokumen di atas menjadi objek JSON minimalis dengan skema kaku berikut:\n\n"
+            . "{\n"
+            . "  \"title\": \"[Judul Kuis]\",\n"
+            . "  \"quizzes\": [\n"
+            . "    {\n"
+            . "      \"q\": \"[Teks Pertanyaan]\",\n"
+            . "      \"options\": {\n"
+            . "        \"A\": \"[Isi Opsi A]\",\n"
+            . "        \"B\": \"[Isi Opsi B]\",\n"
+            . "        \"C\": \"[Isi Opsi C]\",\n"
+            . "        \"D\": \"[Isi Opsi D]\"\n"
+            . "      },\n"
+            . "      \"exp\": \"[Penjelasan singkat jawaban, atau kosongkan jika tidak ada]\",\n"
+            . "      \"ans\": \"[Huruf Kunci Jawaban tunggal (A/B/C/D) atau array jika jawaban banyak contoh [\\\"A\\\",\\\"B\\\"]]\"\n"
+            . "    }\n"
+            . "  ]\n"
+            . "}\n\n"
+            . "PERINGATAN: Sediakan output murni JSON mentah yang valid tanpa teks pembuka, penutup, atau markdown ```json!";
+
+        $response = Http::withHeaders([
+            'Authorization' => "Bearer {$apiKey}",
+            'Content-Type' => 'application/json',
+        ])
+            ->timeout(120)
+            ->connectTimeout(15)
+            ->post($apiUrl, [
+                "model" => "auto-coding-helper-free",
+                "messages" => [
+                    [
+                        "role" => "user",
+                        "content" => $prompt
+                    ]
+                ],
+                "response_format" => [
+                    "type" => "json_object"
+                ],
+                "max_tokens" => 4000, 
+                "temperature" => 0.1
+            ]);
+
+        if ($response->failed()) {
+            throw new \Exception("9router API Error (HTTP " . $response->status() . "): " . $response->body());
+        }
+
+        $rawBody =$response->body();
+        $rawBody = trim($rawBody);
+        
+        if (str_contains($rawBody, 'data: [DONE]')) {
+            $rawBody = str_replace('data: [DONE]', '',$rawBody);
+            $rawBody = trim($rawBody);
+        }
+
+        $result = json_decode($rawBody, true, 512, JSON_INVALID_UTF8_SUBSTITUTE);
+
+        if (is_null($result) or !is_array($result)) {
+            throw new \Exception("Response dari 9router bukan format JSON yang valid.");
+        }
+
+        $jsonString = null;
+        if (isset($result['choices'][0]['message']['content'])) {
+            $jsonString =$result['choices'][0]['message']['content'];
+        } elseif (isset($result['candidates'][0]['content']['parts'][0]['text'])) {
+            $jsonString =$result['candidates'][0]['content']['parts'][0]['text'];
+        }
+
+        if (empty($jsonString)) {
+            throw new \Exception("AI memproses, tapi kata kunci content tidak ditemukan.");
+        }
+
+        $jsonString = trim($jsonString);
+        if (str_starts_with($jsonString, '```')) {
+            $jsonString = preg_replace('/^```json\s*/i', '', $jsonString);$jsonString = preg_replace('/```$/', '', $jsonString);
+            $jsonString = trim($jsonString);
+        }
+
+        $jsonString = preg_replace('/^[\x{FEFF}\x{200B}-\x{200D}]/u', '', $jsonString);
+        $jsonString = str_replace(["\t", '\t'], " ", $jsonString);
+        $jsonString = preg_replace('/\xc2\xa0/', ' ', $jsonString);
+        $jsonString = str_replace(chr(194) . chr(160), ' ', $jsonString);
+
+        // Decode JSON Ringkas dari AI
+        $aiData = json_decode($jsonString, true, 512, JSON_INVALID_UTF8_SUBSTITUTE);
+
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            \Log::error("Gagal Decode JSON Utama Kuis dari AI. Detail Error: " . json_last_error_msg());
+            \Log::error("Payload yang bermasalah: " . $jsonString);
+            throw new \Exception("Format JSON kuis rusak (" . json_last_error_msg() . ").");
+        }
+
+        // ==========================================
+        // PERAKITAN STRUKTUR AKHIR (LAKUKAN DI LARAVEL)
+        // ==========================================
+        // Di sini Laravel yang menyusun skema kaku Quasar, menghemat beban token AI secara ekstrem!
+        $finalData = [
+            "id" => null,
+            "title" => $aiData['title'] ?? 'AI Generated Quiz',
+            "desc" => "",
+            "isQuiz" => "1",
+            "forms" => [],
+            "exp" => [],
+            "ans" => []
+        ];
+
+        $formIdCounter = 2602;
+        $quizzes = $aiData['quizzes'] ?? [];
+
+        foreach ($quizzes as $index => $quiz) {
+            $seq = $index + 1;
+            
+            // 1. Rakit Form Kuis Kaku
+            $detailData = [];
+            if (isset($quiz['options']) && is_array($quiz['options'])) {
+                foreach ($quiz['options'] as $flag => $desc) {
+                    $detailData[] = [
+                        "col_det_id" => "opt-" . rand(8000, 8999),
+                        "col_det_label" => "",
+                        "value" => trim($flag),
+                        "label" => trim($flag) . ".\t" . trim($desc)
+                    ];
+                }
+            }
+
+            $finalData['forms'][] = [
+                "id" => null,
+                "type" => "form",
+                "required" => false,
+                // "seq_name" => $seq,
+                "seq_name" => 1,
+                "content" => [
+                    "label" => $seq . ".\t" . ($quiz['q'] ?? ''),
+                    "component" => [
+                        "label" => "Multiple Choice",
+                        "category" => "multiple",
+                        "value" => [
+                            "type" => "multiple-radio",
+                            "comp" => "q-radio"
+                        ]
+                    ],
+                    "detail_data" => $detailData
+                ],
+                "logics" => []
+            ];
+
+            // 2. Petakan Explanation
+            $finalData['exp'][] = !empty($quiz['exp']) ? trim($quiz['exp']) : "-";
+
+            // 3. Petakan Jawaban (ans)
+            $finalData['ans'][] = $quiz['ans'] ?? "";
+        }
+
+        return $finalData;
     }
 }

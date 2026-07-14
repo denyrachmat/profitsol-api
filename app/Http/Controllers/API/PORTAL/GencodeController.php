@@ -130,4 +130,19 @@ class GencodeController extends BaseController
 
         return $this->handleResponse([], 'Data deleted successfully');
     }
+
+    public function deleteDetailGroup(Request $request, $id)
+    {
+        $data = PortalGencode::where('pgm_code', $id)->whereIn('id', $request->ids);
+
+        $checkData = (clone $data)->get();
+
+        if ($checkData->isEmpty()) {
+            return $this->handleError('Data not found', 404);
+        }
+
+        $data->delete();
+
+        return $this->handleResponse([], 'Data deleted successfully');
+    }
 }
