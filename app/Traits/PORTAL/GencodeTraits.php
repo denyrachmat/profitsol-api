@@ -155,11 +155,23 @@ trait GencodeTraits
                                     $hasil[$key][$keysCheck] = (bool) $value[$selectStr];
                                 } elseif ($splitTypeString[1] === 'array') {
                                     // sementara set value single dulu (akan digroup di akhir bila grouped)
-                                    $hasil[$key][$keysCheck] = json_decode($value[$selectStr], true);
+                                    if (is_array(json_decode($value[$selectStr], true))) {
+                                        $hasil[$key][$keysCheck] = $value[$selectStr];
+                                    } else {
+                                        $decoded = json_decode($value[$selectStr], true);
+                                        $hasil[$key][$keysCheck] = (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) ? $decoded : $value[$selectStr];
+                                    }
                                 } else {
                                     $hasil[$key][$keysCheck] = (string) $value[$selectStr];
                                 }
                             }
+
+                            // logger()->info('SelectAs for Gencode grouping: ' . json_encode([
+                            //     'keySel' => $key,
+                            //     'selectStr' => $selectStr,
+                            //     'value' => $value[$selectStr] ?? null,
+                            //     'hasil' => $hasil[$key][$keysCheck] ?? null
+                            // ]));
                         }
                     }
 
@@ -193,7 +205,7 @@ trait GencodeTraits
                 }
             }
 
-            if (!empty($groupedFields)) {
+            if (count($hasil) > 0 && !empty($groupedFields)) {
                 $tmp = [];
 
                 foreach ($hasil as $row) {
@@ -343,52 +355,77 @@ trait GencodeTraits
             }
         }
 
-        /**
-         * 5) Kalau ada separateFields -> bikin kombinasi cartesian
-         */
+        logger()->info('Base data for Gencode save: ' . json_encode($separateFields));
+
         if (!empty($separateFields)) {
+            // =================================================================
+            // 5) ULTRA-DYNAMIC: Deteksi otomatis tumpuan array terpanjang
+            // =================================================================
+            $combinations = [];
 
-            // Pivot selalu pgm_value
-            $pivotValues = $separateFields['pgm_value'] ?? [];
-
-            // Other separate fields (boleh kosong / beda panjang)
-            $v2 = $separateFields['pgm_value2'] ?? [];
-            $v3 = $separateFields['pgm_value3'] ?? [];
-
-            // Field order FIX sesuai kolom tabel
+            // Field order FIX sesuai kolom tabel (Definisikan di sini agar Langkah 6 selalu bisa membaca)
             $fieldNames = array_values(array_filter(
                 ['pgm_value', 'pgm_value2', 'pgm_value3'],
                 fn($f) => array_key_exists($f, $separateFields)
             ));
 
-            // Build combinations: pivot x v2 x v3 (cartesian)
-            $combinations = [];
+            // Hitung panjang array untuk masing-masing field separate
+            $countV1 = is_array($separateFields['pgm_value'] ?? null) ? count($separateFields['pgm_value']) : 0;
+            $countV2 = is_array($separateFields['pgm_value2'] ?? null) ? count($separateFields['pgm_value2']) : 0;
+            $countV3 = is_array($separateFields['pgm_value3'] ?? null) ? count($separateFields['pgm_value3']) : 0;
 
-            if (!empty($pivotValues)) {
-                foreach ($pivotValues as $pv) {
+            // Cari tahu berapa jumlah baris maksimal yang harus dibuat
+            $maxRows = max($countV1, $countV2, $countV3);
 
-                    // kalau kosong, biar tetep 1 variasi null
-                    $v2List = !empty($v2) ? $v2 : [null];
-                    $v3List = !empty($v3) ? $v3 : [null];
+            // Cek apakah ini pemetaan sejajar (Parallel) atau silang (Cartesian)
+            // Jika semua field yang berbentuk array memiliki panjang yang sama, kita pakai Parallel Mapping
+            $arraysLengths = array_filter([$countV1, $countV2, $countV3], fn($len) => $len > 0);
+            $isParallelMapping = count(array_unique($arraysLengths)) <= 1;
 
+            if ($isParallelMapping && $maxRows > 0) {
+                // --- SCENARIO A: DYNAMIC PARALLEL INDEX MAPPING ---
+                for ($idx = 0; $idx < $maxRows; $idx++) {
+                    $val1 = is_array($separateFields['pgm_value'] ?? null)
+                        ? ($separateFields['pgm_value'][$idx] ?? null)
+                        : ($separateFields['pgm_value'] ?? null);
+
+                    $val2 = is_array($separateFields['pgm_value2'] ?? null)
+                        ? ($separateFields['pgm_value2'][$idx] ?? null)
+                        : ($separateFields['pgm_value2'] ?? null);
+
+                    $val3 = is_array($separateFields['pgm_value3'] ?? null)
+                        ? ($separateFields['pgm_value3'][$idx] ?? null)
+                        : ($separateFields['pgm_value3'] ?? null);
+
+                    $combinations[] = [$val1, $val2, $val3];
+                }
+                logger()->info("Gencode Save: Parallel Mapping executed. Total rows: {$maxRows}");
+            } else {
+                // --- SCENARIO B: DYNAMIC CARTESIAN PRODUCT ---
+                $v1List = !empty($separateFields['pgm_value']) ? (is_array($separateFields['pgm_value']) ? $separateFields['pgm_value'] : [$separateFields['pgm_value']]) : [null];
+                $v2List = !empty($separateFields['pgm_value2']) ? (is_array($separateFields['pgm_value2']) ? $separateFields['pgm_value2'] : [$separateFields['pgm_value2']]) : [null];
+                $v3List = !empty($separateFields['pgm_value3']) ? (is_array($separateFields['pgm_value3']) ? $separateFields['pgm_value3'] : [$separateFields['pgm_value3']]) : [null];
+
+                foreach ($v1List as $val1) {
                     foreach ($v2List as $val2) {
                         foreach ($v3List as $val3) {
-                            // urutan harus match fieldNames
-                            $combinations[] = [$pv, $val2, $val3];
+                            $combinations[] = [$val1, $val2, $val3];
                         }
                     }
                 }
+                logger()->info("Gencode Save: Cartesian Product executed. Total combinations: " . count($combinations));
             }
 
-            logger()->info('Creating Gencode combinations (cartesian pivot pgm_value): ' . json_encode($combinations));
+            logger()->info('Final Gencode combinations to process: ' . json_encode($combinations));
 
-            /**
-             * 6) Insert / update record per kombinasi
-             */
+
+            // =================================================================
+            // 6) Insert / update record per kombinasi
+            // =================================================================
             foreach ($combinations as $combination) {
                 $recordData = $baseData;
 
-                // isi field separate sesuai urutan fixed fieldNames
+                // Isi field separate sesuai urutan fixed fieldNames (Aman karena $fieldNames sudah dijamin ada)
                 foreach ($fieldNames as $idx => $fieldName) {
                     $recordData[$fieldName] = $combination[$idx] ?? null;
                 }
@@ -397,11 +434,12 @@ trait GencodeTraits
                 if (!empty($keys)) {
                     $conditions = [];
                     foreach ($keys as $keyField => $keyValue) {
-                        if (($keyValue['store_separately'] ?? false) === true) {
+                        if (is_array($keyValue) && ($keyValue['store_separately'] ?? false) === true) {
                             if (isset($recordData[$keyField])) {
                                 $conditions[$keyField] = $recordData[$keyField];
                             }
                         } elseif (isset($recordData[$keyField])) {
+                            // Amankan jika di keys bernilai primitif/string biasa dari frontend
                             $conditions[$keyField] = $recordData[$keyField];
                         }
                     }
@@ -467,6 +505,7 @@ trait GencodeTraits
             }
         }
 
+        logger()->info('No separate fields, performing single updateOrCreate with data: ' . json_encode($baseData));
         return PortalGencode::create($baseData);
     }
 
