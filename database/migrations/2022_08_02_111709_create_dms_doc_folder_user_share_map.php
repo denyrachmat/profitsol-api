@@ -21,6 +21,7 @@ class CreateDmsDocFolderUserShareMap extends Migration
             $table->string('ddfus_p_u_username');
             $table->boolean('ddfus_read')->default(0);
             $table->boolean('ddfus_write')->default(0);
+            $table->string('ddfus_token')->nullable(); // Added this line
             $table->timestamps();
         });
     }
