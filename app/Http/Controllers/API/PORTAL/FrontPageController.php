@@ -15,6 +15,7 @@ use Illuminate\Support\Facades\Cache;
 use App\Jobs\PORTAl\notifSentQueue;
 use App\Models\User;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Str;
 
 class FrontPageController extends BaseController
 {
@@ -579,7 +580,7 @@ class FrontPageController extends BaseController
 
             // Get list notification by all hashtags
             $dataSubscriberByHashtags = $this->getSubscribedData(
-                'hashtags',
+                'tags',
                 '',
                 $dataForm['hashtags'] ?? []
             );
@@ -592,14 +593,50 @@ class FrontPageController extends BaseController
 
             // return $listNotifData;
             foreach ($listNotifData as $keyNotif => $valueNotif) {
-                $getListActiveUsers = app(UsersController::class)->userActiveOnly($valueNotif['subscriber'] === '_ALL' ? '' : $valueNotif['subscriber'])->getOriginalContent()['data'] ?? [];
+                $subscriber = $valueNotif['subscriber'] ?? '';
+
+                if ($subscriber === '_ALL') {
+                    $getListActiveUsers = app(UsersController::class)->userActiveOnly()->getOriginalContent()['data'] ?? [];
+                } else {
+                    $getListActiveUsers = User::query()
+                        ->with(['det' => function ($query) {
+                            $query->where('pud_is_active', 1);
+                        }])
+                        ->whereHas('det', function ($query) {
+                            $query->where('pud_is_active', 1);
+                        })
+                        ->where(function ($query) use ($subscriber) {
+                            $query->where('username', $subscriber)
+                                ->orWhere('email', $subscriber);
+                        })
+                        ->orderBy('email')
+                        ->get()
+                        ->map(function ($item) {
+                            return [
+                                'username' => $item->username,
+                                'email' => $item->email,
+                                'pud_first_name' => $item->det ? $item->det->pud_first_name : null,
+                                'pud_last_name' => $item->det ? $item->det->pud_last_name : null,
+                            ];
+                        })
+                        ->values()
+                        ->toArray();
+
+                    if (empty($getListActiveUsers) && Str::contains($subscriber, '@')) {
+                        $getListActiveUsers = [[
+                            'username' => $subscriber,
+                            'email' => $subscriber,
+                        ]];
+                    }
+                }
 
                 foreach ($getListActiveUsers as $keyUser => $valueUser) {
                     notifSentQueue::dispatch(
                         $dataForm['p_u_username'],
                         $valueUser['username'],
                         'New Post Published : ' . ($dataForm['title'] ?? 'Untitled'),
-                        'A new post has been published by ' . ($getUsersDetail ? $getUsersDetail['pud_first_name'] . ' ' . $getUsersDetail['pud_last_name'] : 'Unknown') . '. Check it out!<br><br>Title: ' . ($dataForm['title'] ?? 'Untitled') . '<br>Category: ' . implode(', ', $dataForm['tags'] ?? []) . '<br><br>' . $this->extractHtmlPreview($dataForm['forms'] ?? []),
+                        //'A new post has been published in by ' . ($getUsersDetail ? $getUsersDetail['pud_first_name'] . ' ' . $getUsersDetail['pud_last_name'] : 'Unknown') . '. Check it out!<br><br>Title: ' . ($dataForm['title'] ?? 'Untitled') . '<br>Category: ' . implode(', ', $dataForm['tags'] ?? []) . '<br><br>' . $this->extractHtmlPreview($dataForm['forms'] ?? []),
+                        'A new post has been published on our Intranet.',
                         date('Y-m-d H:i:s'),
                         null,
                         'post',
