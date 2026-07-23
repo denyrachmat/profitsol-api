@@ -641,7 +641,13 @@ class FormController extends BaseController
 
             if (!empty($tags)) {
                 $decodedTags = base64_decode($tags);
-                $dataBuild->whereIn('pgTags.pgm_value2', json_decode($decodedTags, true));
+
+                $decodedTagsArray = json_decode($decodedTags, true);
+                if ($decodedTagsArray !== ['all']) {
+                    $dataBuild->whereIn('pgTags.pgm_value2', $decodedTagsArray);
+                } else {
+                    $dataBuild->whereNotNull('pgTags.pgm_value2');
+                }
             }
 
             if (count($filter) > 0) {

@@ -120,13 +120,15 @@ class GencodeController extends BaseController
             }
         }
 
-        $checkData = (clone $data)->first();
+        $checkData = $data->delete();
+
+        // return $checkData;
 
         if (!$checkData) {
             return $this->handleError('Data not found', 404);
         }
 
-        $data->delete();
+        // $data->delete();
 
         return $this->handleResponse([], 'Data deleted successfully');
     }

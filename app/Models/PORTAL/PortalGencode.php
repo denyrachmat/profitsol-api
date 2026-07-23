@@ -4,10 +4,11 @@ namespace App\Models\PORTAL;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class PortalGencode extends Model
 {
-    use HasFactory;
+    use HasFactory, SoftDeletes;
     protected $connection = 'sqlsrv';
     protected $table = 'portal_gencode_mstr';
     protected $fillable = [

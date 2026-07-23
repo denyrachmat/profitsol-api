@@ -665,10 +665,18 @@ trait ApprovalActionTraits
             if (!empty($cekLast)) {
                 $getDataSent = is_string($cekLast->amshd_paramstore) ? json_decode($cekLast->amshd_paramstore, true) : $cekLast->amshd_paramstore;
 
+                $dataKeyValue = null;
+                if (isset($getDataSent['msgkey'])) {
+                    $dataKeyValue = $getDataSent['data'][$getDataSent['msgkey']] ?? null;
+                } else {
+                    $values = array_values($getDataSent);
+                    $dataKeyValue = ($values[0]['data'][0] ?? null) ?? ($values[0] ?? null);
+                }
+
                 $hasil[] = array_merge($value, [
                     'data' => $cekLast,
                     'percent' => $hasilDet / count($cekDet) * 100,
-                    'dataKey' => isset($getDataSent['msgkey']) ? $getDataSent['data'][$getDataSent['msgkey']] : array_values($getDataSent)['data'][0]
+                    'dataKey' => $dataKeyValue
                 ]);
             }
         }

@@ -285,6 +285,7 @@ trait GencodeTraits
     {
         $data = $request->input('data', []);
         $keys = $request->input('keys', []);
+        $originalKeys = $keys;
         $notify = $request->input('notify', []);
 
         /**
@@ -460,9 +461,9 @@ trait GencodeTraits
         /**
          * 7) Kalau gak ada separateFields -> normal insert/update
          */
-        if (!empty($keys)) {
+        if (!empty($originalKeys)) {
             $conditions = [];
-            foreach ($keys as $key => $value) {
+            foreach ($originalKeys as $key => $value) {
                 if (isset($baseData[$key])) {
                     $conditions[$key] = $baseData[$key];
                 }

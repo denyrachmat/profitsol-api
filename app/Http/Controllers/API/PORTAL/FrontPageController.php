@@ -21,6 +21,12 @@ class FrontPageController extends BaseController
 {
     use GencodeTraits;
 
+    private function clearNavMenuCache(): void
+    {
+        Cache::forget('portal.nav_menu.default');
+        Cache::forget('portal.nav_menu.all');
+    }
+
     function __construct()
     {
         $this->headerImage = null;
@@ -212,15 +218,49 @@ class FrontPageController extends BaseController
     {
         $data = $request->validate([
             'type' => 'required|string',
-            'label' => 'required|string',
+            'label' => 'nullable|string',
             'icon' => 'nullable|string',
             'dmsShared' => 'nullable|boolean',
         ]);
 
+        $resolvedParent = !empty(trim((string) $request->parent))
+            ? trim((string) $request->parent)
+            : null;
+
+        $existingNav = null;
+        if (!empty($request->id)) {
+            $existingNav = PortalGencode::where('pgm_code', 'FP_NAV')
+                ->where('id', $request->id)
+                ->first();
+
+            if (!$existingNav) {
+                return $this->handleError('Navigation menu not found', 404);
+            }
+        }
+
         $getLastOrder = PortalGencode::where('pgm_code', 'FP_NAV')
-            ->where('pgm_parent', $request->parent ?? null)
+            ->where('pgm_parent', $resolvedParent)
+            ->when($existingNav, function ($query) use ($existingNav) {
+                $query->where('id', '<>', $existingNav->id);
+            })
             ->orderBy('pgm_order', 'desc')
             ->first();
+
+        $resolvedOrder = $existingNav
+            ? (
+                (string) ($existingNav->pgm_parent ?? '') === (string) ($resolvedParent ?? '')
+                ? $existingNav->pgm_order
+                : (($getLastOrder->pgm_order ?? 0) + 1)
+            )
+            : (($getLastOrder->pgm_order ?? 0) + 1);
+
+        $linkValue = $data['type'] === 'page'
+            ? ($request->page !== null ? (string) $request->page : null)
+            : ($request->url ?? null);
+
+        $resolvedLabel = $data['label'] ?? ($existingNav->pgm_value ?? null);
+        $resolvedIcon = $data['icon'] ?? ($existingNav->pgm_value2 ?? null);
+        $resolvedValue = $linkValue ?? ($existingNav->pgm_value3 ?? null);
 
         $gencode = PortalGencode::updateOrCreate(
             [
@@ -229,16 +269,18 @@ class FrontPageController extends BaseController
             ],
             [
                 'pgm_code' => 'FP_NAV',
-                'pgm_value' => $data['label'],
-                'pgm_value2' => $data['icon'],
+                'pgm_value' => $resolvedLabel,
+                'pgm_value2' => $resolvedIcon,
                 'pgm_desc' => $data['type'],
-                'pgm_value3' => $data['type'] === 'page' ? (string) $request->page : $request->url ?? null,
+                'pgm_value3' => $resolvedValue,
                 'pgm_desc2' => $request->has('tags') && !empty($request->tags) ? json_encode($request->tags) : null,
                 'pgm_desc3' => isset($data['dmsShared']) && $data['dmsShared'] == true ? '1' : '0',
-                'pgm_parent' => !empty(trim($request->parent)) ? trim($request->parent) : null,
-                'pgm_order' => $getLastOrder ? $getLastOrder->pgm_order + 1 : 1,
+                'pgm_parent' => $resolvedParent,
+                'pgm_order' => $resolvedOrder,
             ]
         );
+
+        $this->clearNavMenuCache();
 
         return $this->handleResponse($gencode, 'Navigation menu saved successfully');
     }
@@ -252,6 +294,8 @@ class FrontPageController extends BaseController
         // Also delete all children with pgm_parent = $id
         PortalGencode::where('pgm_parent', $id)->delete();
         $gencode->delete();
+
+        $this->clearNavMenuCache();
 
         return $this->handleResponse([], 'Navigation menu deleted successfully');
     }
@@ -314,6 +358,8 @@ class FrontPageController extends BaseController
                 $item->save();
             });
 
+        $this->clearNavMenuCache();
+
 
         return $this->handleResponse([], 'Navigation order updated successfully');
     }
@@ -328,8 +374,13 @@ class FrontPageController extends BaseController
             ['pgm_value2' => $state]
         );
 
+        // return $gencode;
+
+        // Update Home Page nav menu to point to this page if state is 1 (active)
         $this->saveNavMenu(new Request([
-            'id' => $id
+            'id' => '116',
+            'type' => 'page',
+            'page' => $id,
         ]));
 
         PortalGencode::where('pgm_code', 'URL_PAGE_GEN')
