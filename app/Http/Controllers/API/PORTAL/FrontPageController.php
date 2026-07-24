@@ -21,6 +21,36 @@ class FrontPageController extends BaseController
 {
     use GencodeTraits;
 
+    protected $headerImage = null;
+
+    private function normalizeIntId($value): ?int
+    {
+        if ($value === null) {
+            return null;
+        }
+
+        if (is_string($value)) {
+            $trimmed = trim($value);
+            if ($trimmed === '' || $trimmed === '#') {
+                return null;
+            }
+
+            if (!is_numeric($trimmed)) {
+                return null;
+            }
+
+            $value = $trimmed;
+        }
+
+        if (!is_numeric($value)) {
+            return null;
+        }
+
+        $intValue = (int) $value;
+
+        return $intValue > 0 ? $intValue : null;
+    }
+
     private function clearNavMenuCache(): void
     {
         Cache::forget('portal.nav_menu.default');
@@ -828,7 +858,11 @@ class FrontPageController extends BaseController
         // return $data;
         $hasil = [];
         foreach ($data as $key => $value) {
-            $getCMSForms = FormMaster::where('cfmt_id', $value['page'])->where('cfm_type', 'files')->get()->toArray();
+            $pageId = $this->normalizeIntId($value['page'] ?? null);
+
+            $getCMSForms = $pageId
+                ? FormMaster::where('cfmt_id', $pageId)->where('cfm_type', 'files')->get()->toArray()
+                : [];
 
             $dataCMS = [];
             foreach ($getCMSForms as $keyData => $valueData) {
@@ -911,7 +945,7 @@ class FrontPageController extends BaseController
                     'parent' => 'pgm_parent',
                 ], [], true) ?? null;
 
-                $getNavDetailID = $getNavDetail['idForm'] ?? null;
+                $getNavDetailID = $this->normalizeIntId($getNavDetail['idForm'] ?? null);
 
                 // Combine existing files with new sharedData
                 if (!empty($getEditedShared)) {
@@ -921,9 +955,11 @@ class FrontPageController extends BaseController
                     // $listSelectedNav[] = $editedSharedItem;
                 }
 
-                $formMaster = FormMaster::where('cfmt_id', $getNavDetailID)
-                    ->where('cfm_type', 'files')
-                    ->first();
+                $formMaster = $getNavDetailID
+                    ? FormMaster::where('cfmt_id', $getNavDetailID)
+                        ->where('cfm_type', 'files')
+                        ->first()
+                    : null;
 
                 if ($formMaster) {
                     $formMaster->update([
@@ -940,6 +976,14 @@ class FrontPageController extends BaseController
 
                     $idForm = FormMasterTitle::where('id', $formMaster->cfmt_id)->first()->id ?? null;
                 } else {
+                    if (!$getNavDetailID) {
+                        if (!empty($data['options']['createPage'])) {
+                            continue;
+                        }
+
+                        return $this->handleError('Invalid navigation form id', 422);
+                    }
+
                     $storeHeaderForm = FormMasterTitle::create([
                         'cfmt_title' => 'DMS Shared - ' . ($getNavDetail['name'] ?? 'No Name'),
                         'cfmt_quiz_flag' => 2,
