@@ -110,6 +110,8 @@ trait FormsTraits
                 'title' => $value['cfmt_title'],
                 'desc' => $getDataGencode['desc'] ?? null,
                 'isQuiz' => $value['cfmt_quiz_flag'],
+                'status' => $value['cfmt_status'] ?? 'draft',
+                'year' => $value['cfmt_year'] ?? null,
                 'forms' => $this->convertToFE($value['form_master']),
                 'checkFormMaster' => $value['form_master'],
                 'ans' => $answer,
@@ -322,6 +324,8 @@ trait FormsTraits
             if ($insert) {
                 $detail_data = [];
                 if ($data['type'] === 'form' && isset($data['content']['detail_data']) && count($data['content']['detail_data']) > 0) {
+                    FormMultiDet::where('cfm_id', $insert->id)->delete();
+
                     foreach ($data['content']['detail_data'] as $key => $valueDet) {
                         $detail_data[] = FormMultiDet::updateOrCreate([
                             'cfm_id' => $insert->id,
@@ -380,13 +384,13 @@ trait FormsTraits
                 }
 
                 if (isset($data['logics'])) {
+                    FormLogicsDet::where('cfm_id', $insert->id)->delete();
+
                     foreach ($data['logics'] as $keyLogics => $valueLogics) { //Split by id sequences
                         $getLastLogics = FormLogicsDet::where('cfm_id', $insert->id)->orderBy('cfld_order', 'desc')->first();
 
                         if (isset($valueLogics['seq_name']) && !empty($valueLogics['seq_name'])) {
                             $createNewSeqName = $valueLogics['seq_name'];
-
-                            $getLastLogics::where('cfld_seq_name', $valueLogics['seq_name'])->delete();
                         } else {
                             $createNewSeqName = empty($getLastLogics) ? 'L' . $insert->id . '-0001' : 'L' . $insert->id . '-' . str_pad((int) substr($getLastLogics->cfld_seq_name, 5) + 1, 4, '0', STR_PAD_LEFT);
                         }

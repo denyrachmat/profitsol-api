@@ -77,6 +77,8 @@ class FormController extends BaseController
             'p_u_username' => $request->header('username'),
             'cfmt_title' => $request->title,
             'cfmt_quiz_flag' => (int) $request->isQuiz,
+            'cfmt_status' => $request->input('status', 'draft'),
+            'cfmt_year' => $request->input('year', null),
         ]);
 
         // This is for Frontpage posts and pages
@@ -290,8 +292,8 @@ class FormController extends BaseController
         if (!empty($request->idRef)) {
             function extractIds($array, &$ids = [])
             {
-                if (isset($array['id']) && is_int($array['id'])) {
-                    $ids[] = $array['id'];
+                if (isset($array['id']) && is_numeric($array['id'])) {
+                    $ids[] = (int) $array['id'];
                 }
 
                 foreach ($array as $value) {
@@ -377,6 +379,25 @@ class FormController extends BaseController
 
     public function storeAnswers(Request $request)
     {
+        $formTitle = FormMasterTitle::find($request->id);
+        if ($formTitle && $formTitle->cfmt_status === 'closed') {
+            return $this->handleError('This form is no longer accepting responses.', []);
+        }
+
+        if ($formTitle && $formTitle->cfmt_quiz_flag !== 1) {
+            $checkSetup = $this->getSetupFormsForForm($request->id);
+            $now = now()->format('Y-m-d H:i');
+            $start = $checkSetup['startQuiz'] ?? null;
+            $end = $checkSetup['endQuiz'] ?? null;
+
+            if (!empty($start) && $now < $start) {
+                return $this->handleError('This form is not yet available.', []);
+            }
+            if (!empty($end) && $now > $end) {
+                return $this->handleError('This form is no longer available. The deadline has passed.', []);
+            }
+        }
+
         $getID = FormAnswerUserDet::where('cfm_id', $request->id)
             ->where('p_u_username', $request->has('username') ? $request->username : $request->header('username'))
             ->orderBy('created_at', 'desc')
@@ -935,16 +956,171 @@ class FormController extends BaseController
 
         $hasilHeader = $this->getHeaderAllForms($data->toArray());
 
-        // return $hasilHeader;
+        if (empty($hasilHeader)) {
+            return response([
+                'status' => false,
+                'message' => 'Form not found'
+            ], 404);
+        }
+
+        $formData = $hasilHeader[0];
+
+        if (($formData['status'] ?? 'draft') === 'closed') {
+            return response([
+                'status' => false,
+                'message' => 'This form is no longer accepting responses.'
+            ], 403);
+        }
+
+        $setup = $formData['setupTraining'] ?? [];
+        $now = now()->format('Y-m-d H:i');
+        $start = $setup['startQuiz'] ?? null;
+        $end = $setup['endQuiz'] ?? null;
+
+        if (!empty($start) && $now < $start) {
+            return response([
+                'status' => false,
+                'message' => 'This form is not yet available. It will open on ' . $start . '.'
+            ], 403);
+        }
+
+        if (!empty($end) && $now > $end) {
+            return response([
+                'status' => false,
+                'message' => 'This form is no longer available. The deadline was ' . $end . '.'
+            ], 403);
+        }
+
         $hasil = [
-            'label' => $hasilHeader[0]['title'] . ' (' . count($hasilHeader[0]['forms']) . ' Rows Content)',
-            'value' => $hasilHeader[0]
+            'label' => $formData['title'] . ' (' . count($formData['forms']) . ' Rows Content)',
+            'value' => $formData
         ];
 
         return response([
             'status' => count($hasil) > 0,
             'data' => $hasil
         ]);
+    }
+
+    public function cloneForm(Request $request)
+    {
+        $sourceId = $request->input('id');
+        $newYear = $request->input('year', null);
+        $newTitle = $request->input('title', null);
+
+        $source = FormMasterTitle::with([
+            'formMaster' => function ($f) {
+                $f->where('cfm_parent_id', 0);
+                $f->with('formDetail');
+                $f->with('allChildrenContent');
+            }
+        ])->find($sourceId);
+
+        if (!$source) {
+            return $this->handleError('Source form not found.', []);
+        }
+
+        $newTitle = $newTitle ?? $source->cfmt_title . ' (Copy)';
+
+        $newMaster = FormMasterTitle::create([
+            'p_u_username' => $request->header('username'),
+            'cfmt_title' => $newTitle,
+            'cfmt_quiz_flag' => $source->cfmt_quiz_flag,
+            'cfmt_status' => 'draft',
+            'cfmt_year' => $newYear,
+        ]);
+
+        $idMap = [];
+
+        foreach ($source->formMaster as $block) {
+            $newBlock = FormMaster::create([
+                'p_u_username' => $request->header('username'),
+                'cfmt_id' => $newMaster->id,
+                'cfm_type' => $block->cfm_type,
+                'cfm_seq_name' => $block->cfm_seq_name,
+                'cfm_content' => $block->cfm_content,
+                'cfm_parent_id' => 0,
+                'cfm_required' => $block->cfm_required,
+            ]);
+
+            $idMap[$block->id] = $newBlock->id;
+
+            foreach ($block->formDetail as $detail) {
+                FormMultiDet::create([
+                    'cfm_id' => $newBlock->id,
+                    'cfmd_value' => $detail->cfmd_value,
+                    'cfmd_name' => $detail->cfmd_name,
+                ]);
+            }
+
+            foreach ($block->allChildrenContent as $child) {
+                $newChild = FormMaster::create([
+                    'p_u_username' => $request->header('username'),
+                    'cfmt_id' => $newMaster->id,
+                    'cfm_type' => $child->cfm_type,
+                    'cfm_seq_name' => $child->cfm_seq_name,
+                    'cfm_content' => $child->cfm_content,
+                    'cfm_parent_id' => $newBlock->id,
+                    'cfm_required' => $child->cfm_required,
+                ]);
+
+                $idMap[$child->id] = $newChild->id;
+
+                foreach ($child->formDetail as $childDetail) {
+                    FormMultiDet::create([
+                        'cfm_id' => $newChild->id,
+                        'cfmd_value' => $childDetail->cfmd_value,
+                        'cfmd_name' => $childDetail->cfmd_name,
+                    ]);
+                }
+            }
+        }
+
+        if ($source->cfmt_quiz_flag === 1 && $source->quizSetup) {
+            FormSetupDet::create([
+                'cfmt_id' => $newMaster->id,
+                'cfsd_res_show' => $source->quizSetup->cfsd_res_show,
+                'cfsd_ans_show' => $source->quizSetup->cfsd_ans_show,
+                'cfsd_rand_quest' => $source->quizSetup->cfsd_rand_quest,
+                'cfsd_ans_loc' => $source->quizSetup->cfsd_ans_loc,
+                'cfsd_timer' => $source->quizSetup->cfsd_timer,
+                'cfsd_timer_quest' => $source->quizSetup->cfsd_timer_quest,
+                'cfsd_hours' => $source->quizSetup->cfsd_hours,
+                'cfsd_min' => $source->quizSetup->cfsd_min,
+                'cfsd_sec' => $source->quizSetup->cfsd_sec,
+                'cfsd_min_pass' => $source->quizSetup->cfsd_min_pass,
+                'cfsd_start_quiz' => '',
+                'cfsd_end_quiz' => '',
+                'cfsd_real_start_quiz' => '',
+                'cfsd_real_end_quiz' => '',
+                'cfsd_quest_limit' => $source->quizSetup->cfsd_quest_limit,
+            ]);
+        } else {
+            $sourceSetup = $this->getSetupFormsForForm($sourceId);
+            if (!empty($sourceSetup)) {
+                foreach ($sourceSetup as $key => $value) {
+                    if (in_array($key, ['isRPA', 'rpaId', 'rpaParams', 'isApproval', 'isAPI', 'apiOpt', 'isNotif', 'connectedMRS'])) {
+                        continue;
+                    }
+                    PortalGencode::updateOrCreate([
+                        'pgm_code' => 'FORMS_SETUP',
+                        'pgm_value' => $newMaster->id,
+                        'pgm_desc' => $key,
+                    ], [
+                        'pgm_code' => 'FORMS_SETUP',
+                        'pgm_value' => $newMaster->id,
+                        'pgm_value2' => is_array($value) ? json_encode($value) : $value,
+                        'pgm_desc' => $key,
+                        'pgm_created_by' => $request->header('username'),
+                    ]);
+                }
+            }
+        }
+
+        return $this->handleResponse([
+            'id' => $newMaster->id,
+            'title' => $newMaster->cfmt_title,
+        ], 'Form cloned successfully!');
     }
 
     public function viewByID($id, $username = '')

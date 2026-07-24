@@ -945,7 +945,9 @@ class FrontPageController extends BaseController
                     'parent' => 'pgm_parent',
                 ], [], true) ?? null;
 
+
                 $getNavDetailID = $this->normalizeIntId($getNavDetail['idForm'] ?? null);
+                // return $data['options']['createPage'];
 
                 // Combine existing files with new sharedData
                 if (!empty($getEditedShared)) {
@@ -976,14 +978,6 @@ class FrontPageController extends BaseController
 
                     $idForm = FormMasterTitle::where('id', $formMaster->cfmt_id)->first()->id ?? null;
                 } else {
-                    if (!$getNavDetailID) {
-                        if (!empty($data['options']['createPage'])) {
-                            continue;
-                        }
-
-                        return $this->handleError('Invalid navigation form id', 422);
-                    }
-
                     $storeHeaderForm = FormMasterTitle::create([
                         'cfmt_title' => 'DMS Shared - ' . ($getNavDetail['name'] ?? 'No Name'),
                         'cfmt_quiz_flag' => 2,

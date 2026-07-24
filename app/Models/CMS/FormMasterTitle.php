@@ -16,6 +16,8 @@ class FormMasterTitle extends Model
         'p_u_username',
         'cfmt_title',
         'cfmt_quiz_flag',
+        'cfmt_status',
+        'cfmt_year',
     ];
     public static function boot() {
         parent::boot();
@@ -38,5 +40,10 @@ class FormMasterTitle extends Model
     public function shared()
     {
         return $this->hasMany(FormShareDet::class, 'cfmt_id', 'id');
+    }
+
+    public function answers()
+    {
+        return $this->hasMany(FormAnswerUserDet::class, 'cfm_id', 'id');
     }
 }
