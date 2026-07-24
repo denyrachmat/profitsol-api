@@ -5,6 +5,9 @@ namespace App\Providers;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Auth\Notifications\ResetPassword;
+use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Http\Request;
 use URL;
 
 class AppServiceProvider extends ServiceProvider
@@ -39,7 +42,16 @@ class AppServiceProvider extends ServiceProvider
         // Password reset link in email template...
         ResetPassword::createUrlUsing(static function ($notifiable, $token) {
             // Url of the fronted app for resetting password...
-            return 'http://192.168.100.32:8081/portal_v2/#/reset-password/'.$token;
+            return 'http://192.168.100.32:8081/portal_v2/#/reset-password/' . $token;
+        });
+    }
+
+    protected function configureRateLimiting(): void
+    {
+        RateLimiter::for('api', function (Request $request) {
+            // Default biasanya Limit::perMinute(60)
+            // Kamu bisa menaikkan limitnya, misal jadi 120 atau 300 per menit
+            return Limit::perMinute(180)->by($request->user()?->id ?: $request->ip());
         });
     }
 }
