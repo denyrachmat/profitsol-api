@@ -67,7 +67,7 @@ class NotifController extends BaseController
      */
     public function create()
     {
-        //
+        //test
     }
 
     /**
