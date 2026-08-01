@@ -62,7 +62,7 @@ class AuthController extends BaseController
             $cekUser = User::where('username', $request->username)->first();
             Auth::loginUsingId($cekUser->id, $request->has('remember') && $request->remember);
 
-            if ($cekUser->is_ms_checking == 1 && $request->isMSLogin !== true) {
+            if ($cekUser->is_ms_checking == 1 && $request->isMSLogin !== true && $request->is_mobile !== 1) {
                 return $this->handleError([
                     'password' => ["This user set as MS Login only, please login using Microsoft Authentication !"]
                 ]);
