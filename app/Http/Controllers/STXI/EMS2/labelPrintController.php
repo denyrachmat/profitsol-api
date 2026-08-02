@@ -66,6 +66,7 @@ class labelPrintController extends BaseController
 
         $hist = DB::connection('sqlsrv_mega_exim')->table('PGRN_TBL')
             ->select(
+                'PGRN_BSGRP',
                 DB::raw('PGRN_SUPNO as PGIT_SUPNO'),
                 DB::raw('PGRN_ITMCD as PGIT_ITMCD'),
                 DB::raw("CASE WHEN PGITSHP_SHPREFNO IS NULL THEN PGRN_SUPNO ELSE PGITSHP_SHPREFNO END AS PGITSHP_SHPREFNO"),
@@ -87,6 +88,7 @@ class labelPrintController extends BaseController
             ->join('MSUP_TBL', 'PGRN_SUPCD', 'MSUP_SUPCD')
             // ->join('PGIT_TBL', 'PGIT_SUPNO', 'PGRN_SUPNO')
             ->groupBy(
+                'PGRN_BSGRP',
                 'PGRN_SUPNO',
                 'PGRN_ITMCD',
                 'PGITSHP_SHPREFNO',
@@ -170,7 +172,7 @@ class labelPrintController extends BaseController
             )
             ->join('MITM_TBL', 'MITM_ITMCD', 'PGRN_ITMCD')
             ->leftjoin('PGITSHP_TBL', 'PGITSHP_DOCNO', 'PGRN_SUPNO')
-            ->whereIn('PGRN_BSGRP', ['SME3IIZMRI', 'SME3XIZSVN', 'SME3XIZYBR', 'SME3XIZYIN'])
+            // ->whereIn('PGRN_BSGRP', ['SME3IIZMRI', 'SME3XIZSVN', 'SME3XIZYBR', 'SME3XIZYIN'])
             ->groupBy(
                 'PGRN_SUPNO',
                 'PGRN_BSGRP',
@@ -189,7 +191,7 @@ class labelPrintController extends BaseController
                     $hist->where(DB::raw("(CASE WHEN PGITSHP_SHPREFNO IS NULL
                         THEN RTRIM(PGRN_SUPNO)
                         ELSE RTRIM(PGITSHP_SHPREFNO)
-                    end)"), 'like', "{$request->filter['val']}%");
+                    end)"), 'like', "%{$request->filter['val']}%");
                 } else {
                     $hist->where($request->filter['cols']['name'], 'like', "{$request->filter['val']}%");
                 }

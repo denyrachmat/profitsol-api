@@ -208,6 +208,10 @@ Route::group(['prefix' => 'cms'], function () {
     Route::post('showHistory/{id}', [FormController::class, 'showHistory']);
     Route::post('updateApprovalStatus', [FormController::class, 'updateAMSMapping']);
     Route::post('sendApproval', [FormController::class, 'sendApproval']);
+    Route::post('updateStatus', [FormController::class, 'updateStatus']);
+    Route::post('saveSetupTraining', [FormController::class, 'saveSetupTraining']);
+    Route::post('restore/{id}', [FormController::class, 'restore']);
+    Route::get('trashed', [FormController::class, 'trashed']);
 
     Route::resource('quiz', QuizController::class);
 
@@ -470,6 +474,8 @@ Route::group(['prefix' => 'div'], function () {
     Route::group(['prefix' => 'it'], function () {
         Route::resource('scan', PartScannerController::class);
         Route::post('generateLabel', [PartScannerController::class, 'ZPLGenerate']);
+        Route::post('renderLabel', [PartScannerController::class, 'renderLabel']);
+        Route::get('listLabels', [PartScannerController::class, 'listLabels']);
     });
 
     Route::group(['prefix' => 'ocd'], function () {
