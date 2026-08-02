@@ -43,6 +43,7 @@ use App\Http\Controllers\STXI\EMS2\poSummaryController;
 use App\Http\Controllers\STXI\PU\PAApprovalController;
 use App\Http\Controllers\STXI\LOG\INSWDataController;
 use App\Http\Controllers\STXI\LOG\Ceisa40UploaderController;
+use App\Http\Controllers\STXI\LOG\WISController;
 use App\Http\Controllers\API\PORTAL\AuthController;
 use App\Http\Controllers\API\PORTAL\ProfileController;
 use App\Http\Controllers\API\PORTAL\ProfilesController;
@@ -421,6 +422,7 @@ Route::group(['prefix' => 'div'], function () {
 
         Route::get('autoExportData/{withHist}', [HSCodeUploadController::class, 'autoExportData']);
 
+        Route::post('filterQRIncData', [WISController::class, 'filterQRIncData']);
     });
 
     Route::group(['prefix' => 'pu'], function () {

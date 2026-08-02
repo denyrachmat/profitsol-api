@@ -198,6 +198,8 @@ class PartScannerController extends BaseController
 
     // List available label templates from gencode. By default returns records
     // whose pgm_code start with "SBPL_TEMPLATE"; override with ?prefix=...
+    // Each record includes: code, name (pgm_desc), template (pgm_value) and
+    // config (pgm_value2, a JSON config for the dynamic data screen).
     public function listLabels(Request $request)
     {
         $prefix = $request->prefix ?? 'SBPL_TEMPLATE';
@@ -206,10 +208,17 @@ class PartScannerController extends BaseController
             ->orderBy('pgm_code')
             ->get()
             ->map(function ($row) {
+                $rawConfig = $row->pgm_value2;
+                $config = null;
+                if ($rawConfig) {
+                    $decoded = json_decode($rawConfig, true);
+                    $config = (json_last_error() === JSON_ERROR_NONE) ? $decoded : $rawConfig;
+                }
                 return [
                     'code' => $row->pgm_code,
                     'name' => $row->pgm_desc ?: $row->pgm_code,
                     'template' => $row->pgm_value,
+                    'config' => $config,
                 ];
             });
 

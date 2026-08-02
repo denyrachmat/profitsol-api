@@ -260,6 +260,19 @@ return [
             'prefix_indexes' => true,
         ],
 
+        'sqlsrv_wis' => [
+            'driver' => 'sqlsrv',
+            'url' => env('DATABASE_URL'),
+            'host' => env('DB_WIS_HOST', 'localhost'),
+            'port' => env('DB_WIS_PORT', '1433'),
+            'database' => env('DB_WIS_DATABASE', 'forge'),
+            'username' => env('DB_WIS_USERNAME', 'forge'),
+            'password' => env('DB_WIS_PASSWORD', ''),
+            'charset' => 'utf8',
+            'prefix' => '',
+            'prefix_indexes' => true,
+        ],
+
         'sqlsrv_mega_ska' => [
             'driver' => 'sqlsrv',
             'url' => env('DATABASE_URL'),
