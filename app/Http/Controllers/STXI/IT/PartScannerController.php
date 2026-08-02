@@ -7,8 +7,11 @@ use Illuminate\Http\Request;
 use App\Models\STXI\IT\PartScanner;
 use Illuminate\Support\Facades\DB;
 
+use App\Traits\PORTAL\GencodeTraits;
+
 class PartScannerController extends BaseController
 {
+    use GencodeTraits;
     /**
      * Display a listing of the resource.
      */
@@ -166,5 +169,81 @@ class PartScannerController extends BaseController
         }
 
         return $this->handleResponse($data, 'Data retrieved successfully.');
+    }
+
+    // Render a stored label template (SBPL/ZPL) from gencode, filling {field}
+    // placeholders with the values sent from the mobile app.
+    public function renderLabel(Request $request)
+    {
+        $templateId = $request->template_id;
+        $list = $request->list ?? [];
+
+        $getTemplate = $this->getDataGencode(
+            $templateId,
+            [],
+            ['template' => 'pgm_value|string'],
+            [],
+            true
+        );
+
+        $template = $getTemplate['template'] ?? '';
+
+        // Replace {field} placeholders with the supplied values.
+        $template = preg_replace_callback('/\{([a-zA-Z0-9_]+)\}/', function ($matches) use ($list) {
+            return $list[$matches[1]] ?? '';
+        }, $template);
+
+        return $this->handleResponse($template, 'Label rendered!');
+    }
+
+    // List available label templates from gencode. By default returns records
+    // whose pgm_code start with "SBPL_TEMPLATE"; override with ?prefix=...
+    public function listLabels(Request $request)
+    {
+        $prefix = $request->prefix ?? 'SBPL_TEMPLATE';
+
+        $records = \App\Models\PORTAL\PortalGencode::where('pgm_code', 'like', $prefix . '%')
+            ->orderBy('pgm_code')
+            ->get()
+            ->map(function ($row) {
+                return [
+                    'code' => $row->pgm_code,
+                    'name' => $row->pgm_desc ?: $row->pgm_code,
+                    'template' => $row->pgm_value,
+                ];
+            });
+
+        return $this->handleResponse($records, 'Labels found!');
+    }
+
+    public function ZPLGenerate(Request $request)
+    {
+        $getTemplate = $this->getDataGencode(
+            'BC_TEMPLATE',
+            [
+                'pgm_value' => $request->template_id,
+            ],
+            [
+                'type' => 'pgm_value|string',
+                'template' => 'pgm_value2|string',
+                'desc' => 'pgm_desc|string',
+            ],
+            [],
+            true
+        );
+
+        $template = $getTemplate['template'];
+
+        $pattern = '/\{(\d+)\}/';
+        $template = preg_replace_callback($pattern, function ($matches) use ($request) {
+            $id = $matches[1];
+            return $this->translateGencode([
+                'id' => $id,
+                'code' => 'EXIM_BARCODE',
+                'list' => $request->list,
+            ], true);
+        }, $template);
+
+        return $template;
     }
 }
