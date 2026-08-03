@@ -218,6 +218,7 @@ class PartScannerController extends BaseController
                     'code' => $row->pgm_code,
                     'name' => $row->pgm_desc ?: $row->pgm_code,
                     'template' => $row->pgm_value,
+                    'desc' => $row->pgm_desc,
                     'config' => $config,
                 ];
             });
