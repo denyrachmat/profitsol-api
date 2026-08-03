@@ -43,6 +43,37 @@ class WISController extends Controller
             }
         }
 
-        return response()->json($data->get());
+        return response()->json($data->get()->map(function ($item) {
+            return [
+                'ID' => $item->ID,
+                'PROG' => $item->PROG,
+                'SHPREFNO' => $item->SHPREFNO,
+                'ITMCD' => $item->ITMCD,
+                'SPTNO' => $item->SPTNO,
+                'ITMD1' => $item->ITMD1,
+                'RCVQT' => date('Y M d', strtotime($item->RCVQT)),
+                'ACTSPQ' => $item->ACTSPQ,
+                'LBLCOUNT' => $item->LBLCOUNT,
+                'RCVDT' => $item->RCVDT,
+                'SHPINVNO' => $item->SHPINVNO,
+                'SUPTAXINV' => $item->SUPTAXINV,
+                'MAKERNM' => $item->MAKERNM,
+                'PONO' => $item->PONO,
+                'CASENO' => $item->CASENO,
+                'BARCODE_VALUE' => json_encode([
+                    'ITEMCODE'  => $item->ITMCD,
+                    'MAKERPN'   => $item->SPTNO,
+                    'ITEMDESC'  => $item->ITMD1,
+                    'RCVQTY'    => $item->RCVQT,
+                    'SPQ'       => $item->ACTSPQ,
+                    'RCVDT'     => $item->RCVDT,
+                    'SHPINVNO'  => $item->SHPINVNO,
+                    'SUPTAXINV' => $item->SUPTAXINV,
+                    'MAKERNM'   => $item->MAKERNM,
+                    'PONO'      => $item->PONO,
+                    'PRNTDT'    => $item->PRNTDT ?? date('Y-m-d H:i:s'),
+                ]),
+            ];
+        }));
     }
 }
