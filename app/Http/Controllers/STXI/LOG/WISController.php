@@ -43,37 +43,60 @@ class WISController extends Controller
             }
         }
 
-        return response()->json($data->get()->map(function ($item) {
-            return [
-                'ID' => $item->ID,
-                'PROG' => $item->PROG,
-                'SHPREFNO' => $item->SHPREFNO,
-                'ITMCD' => $item->ITMCD,
-                'SPTNO' => $item->SPTNO,
-                'ITMD1' => $item->ITMD1,
-                'RCVQT' => $item->RCVQT,
-                'ACTSPQ' => $item->ACTSPQ,
-                'LBLCOUNT' => $item->LBLCOUNT,
-                'RCVDT' => date('d M Y', strtotime($item->RCVDT)),
-                'SHPINVNO' => $item->SHPINVNO,
-                'SUPTAXINV' => $item->SUPTAXINV,
-                'MAKERNM' => $item->MAKERNM,
-                'PONO' => $item->PONO,
-                'CASENO' => $item->CASENO,
-                'BARCODE_VALUE' => json_encode([
-                    'ITEMCODE'  => $item->ITMCD,
-                    'MAKERPN'   => $item->SPTNO,
-                    'ITEMDESC'  => $item->ITMD1,
-                    'RCVQTY'    => $item->RCVQT,
-                    'SPQ'       => $item->ACTSPQ,
-                    'RCVDT'     => $item->RCVDT,
-                    'SHPINVNO'  => $item->SHPINVNO,
+        // Expand each item into per-copy rows so the mobile app simply prints
+        // each row as one label. Copies = RCVQT / ACTSPQ (ceil for remainders).
+        // Each row carries PRINTQTY (qty on this label), COPYNO, COPIES.
+        $rows = [];
+        foreach ($data->get() as $item) {
+            $qty = (int) ($item->RCVQT ?? 0);
+            $spq = (int) DB::connection('sqlsrv_wiswms')->table('MITM_ACTSPEC')
+                ->where('ITMCD', $item->ITMCD)
+                ->first()
+                ->ACTSPQ ?? $item->RCVQT;
+                
+            $copies = $spq > 0 ? (int) ceil($qty / $spq) : 1;
+            if ($copies < 1) $copies = 1;
+
+            for ($i = 1; $i <= $copies; $i++) {
+                // Last pack may hold the remainder.
+                $printQty = ($i === $copies) ? ($qty - (($copies - 1) * $spq)) : $spq;
+
+                $rows[] = [
+                    'ID' => $item->ID,
+                    'PROG' => $item->PROG,
+                    'SHPREFNO' => $item->SHPREFNO,
+                    'ITMCD' => $item->ITMCD,
+                    'SPTNO' => $item->SPTNO,
+                    'ITMD1' => $item->ITMD1,
+                    'RCVQT' => (int) $item->RCVQT,
+                    'ACTSPQ' => $spq,
+                    'LBLCOUNT' => $item->LBLCOUNT,
+                    'RCVDT' => date('Y-m-d', strtotime($item->RCVDT)),
+                    'SHPINVNO' => $item->SHPINVNO,
                     'SUPTAXINV' => $item->SUPTAXINV,
-                    'MAKERNM'   => $item->MAKERNM,
-                    'PONO'      => $item->PONO,
-                    'PRNTDT'    => $item->PRNTDT ?? date('Y-m-d H:i:s'),
-                ]),
-            ];
-        }));
+                    'MAKERNM' => $item->MAKERNM,
+                    'PONO' => $item->PONO,
+                    'CASENO' => $item->CASENO,
+                    'PRINTQTY' => (int) $printQty,
+                    'COPYNO' => $i,
+                    'COPIES' => $copies,
+                    'BARCODE_VALUE' => json_encode([
+                        'ITEMCODE'  => $item->ITMCD,
+                        'MAKERPN'   => $item->SPTNO,
+                        'ITEMDESC'  => $item->ITMD1,
+                        'RCVQTY'    => (int) $item->RCVQT,
+                        'SPQ'       => $spq,
+                        'RCVDT'     => $item->RCVDT,
+                        'SHPINVNO'  => $item->SHPINVNO,
+                        'SUPTAXINV' => $item->SUPTAXINV,
+                        'MAKERNM'   => $item->MAKERNM,
+                        'PONO'      => $item->PONO,
+                        'PRNTDT'    => $item->PRNTDT ?? date('Y-m-d H:i:s'),
+                    ]),
+                ];
+            }
+        }
+
+        return response()->json($rows);
     }
 }
