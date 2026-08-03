@@ -29,8 +29,10 @@ class WISController extends Controller
             'CASENO',
         );
 
-        if($request->has('filter')){
-            foreach ($request->filter as $key => $value) {
+        $filters = $request->input('filter', []);
+
+        if (!empty($filters)) {
+            foreach ($filters as $key => $value) {
                 if($value['op'] == 'between'){
                     $data->whereBetween($value['field'], json_decode($value['value'], true));
                 } elseif($value['op'] == 'in'){
@@ -41,6 +43,8 @@ class WISController extends Controller
                     $data->where($value['field'], $value['op'], $value['value']);
                 }
             }
+        } else {
+            $data->orderByDesc('ID')->limit(10);
         }
 
         // Expand each item into per-copy rows so the mobile app simply prints
