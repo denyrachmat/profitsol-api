@@ -273,6 +273,19 @@ return [
             'prefix_indexes' => true,
         ],
 
+        'sqlsrv_wiswms' => [
+            'driver' => 'sqlsrv',
+            'url' => env('DATABASE_URL'),
+            'host' => env('DB_WISWMS_HOST', 'localhost'),
+            'port' => env('DB_WISWMS_PORT', '1433'),
+            'database' => env('DB_WISWMS_DATABASE', 'forge'),
+            'username' => env('DB_WISWMS_USERNAME', 'forge'),
+            'password' => env('DB_WISWMS_PASSWORD', ''),
+            'charset' => 'utf8',
+            'prefix' => '',
+            'prefix_indexes' => true,
+        ],
+
         'sqlsrv_mega_ska' => [
             'driver' => 'sqlsrv',
             'url' => env('DATABASE_URL'),
