@@ -94,7 +94,39 @@ class AuthController extends BaseController
             $success['edu'] = $edu;
             $success['fam'] = $dataUsers->fam;
             $success['rolesGroup'] = $getRolesGroup;
-            $success['menus'] = PortalApp::where('am_app_parent', null)->with('childApps')->get();
+
+            // Only expose menus the user's roles grant access to.
+            // role_app_map.am_app_id holds the app codes the user may see.
+            $granted = \App\Models\PORTAL\PortalRoleAppMap::where('u_username', $username)
+                ->pluck('am_app_id')
+                ->filter()
+                ->unique()
+                ->values()
+                ->toArray();
+
+            // Mobile logins only expose the MBL_APP* apps; non-mobile (web)
+            // shows all role-granted apps. Both are filtered by role access.
+            $isMobile = $request->is_mobile == 1;
+
+            $success['menus'] = PortalApp::where('am_app_parent', null)
+                ->when($isMobile, function ($q) {
+                    $q->where('am_app_code', 'like', 'MBL_APP%');
+                })
+                ->when(!empty($granted), function ($q) use ($granted) {
+                    $q->whereIn('am_app_code', $granted);
+                }, function ($q) {
+                    // No granted apps -> show nothing.
+                    $q->whereRaw('1 = 0');
+                })
+                ->with(['childApps' => function ($q) use ($granted) {
+                    // Filter children by role access too (only granted apps).
+                    if (!empty($granted)) {
+                        $q->whereIn('am_app_code', $granted);
+                    } else {
+                        $q->whereRaw('1 = 0');
+                    }
+                }])
+                ->get();
             $success['is_ms_checking'] = $cekUser->is_ms_checking;
             
             // For checking gencode user update FP
