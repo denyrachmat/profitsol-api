@@ -97,12 +97,17 @@ class AuthController extends BaseController
 
             // Only expose menus the user's roles grant access to.
             // role_app_map.am_app_id holds the app codes the user may see.
-            $granted = \App\Models\PORTAL\PortalRoleAppMap::where('u_username', $username)
-                ->pluck('am_app_id')
-                ->filter()
-                ->unique()
-                ->values()
-                ->toArray();
+            // Derive from the already-loaded rolesGroup (guaranteed populated),
+            // instead of a separate query which may mismatch environments.
+            $grantedCodes = [];
+            foreach ($getRolesGroup['roles'] ?? [] as $roleMap) {
+                foreach ($roleMap['role']['role_app_map'] ?? [] as $ra) {
+                    if (!empty($ra['am_app_id'])) {
+                        $grantedCodes[] = $ra['am_app_id'];
+                    }
+                }
+            }
+            $granted = array_values(array_unique(array_filter($grantedCodes)));
 
             // Mobile logins only expose the MBL_APP* apps; non-mobile (web)
             // shows all role-granted apps. Both are filtered by role access.
