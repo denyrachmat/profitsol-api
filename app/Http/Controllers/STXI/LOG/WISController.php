@@ -47,9 +47,9 @@ class WISController extends Controller
             $data->orderByDesc('ID')->limit(10);
         }
 
-        // Expand each item into per-copy rows so the mobile app simply prints
-        // each row as one label. Copies = RCVQT / ACTSPQ (ceil for remainders).
-        // Each row carries PRINTQTY (qty on this label), COPYNO, COPIES.
+        // Group results by ID and keep per-copy payloads in COPIES_DATA.
+        // Each ID appears once, with the copies array carrying PRINTQTY,
+        // COPYNO, COPIES, and BARCODE_VALUE for each label.
         $rows = [];
         foreach ($data->get() as $item) {
             $qty = (int) ($item->RCVQT ?? 0);
@@ -61,11 +61,9 @@ class WISController extends Controller
             $copies = $spq > 0 ? (int) ceil($qty / $spq) : 1;
             if ($copies < 1) $copies = 1;
 
-            for ($i = 1; $i <= $copies; $i++) {
-                // Last pack may hold the remainder.
-                $printQty = ($i === $copies) ? ($qty - (($copies - 1) * $spq)) : $spq;
-
-                $rows[] = [
+            $groupId = $item->ID;
+            if (!isset($rows[$groupId])) {
+                $rows[$groupId] = [
                     'ID' => $item->ID,
                     'PROG' => $item->PROG,
                     'SHPREFNO' => $item->SHPREFNO,
@@ -81,6 +79,15 @@ class WISController extends Controller
                     'MAKERNM' => $item->MAKERNM,
                     'PONO' => $item->PONO,
                     'CASENO' => $item->CASENO,
+                    'COPIES_DATA' => [],
+                ];
+            }
+
+            for ($i = 1; $i <= $copies; $i++) {
+                // Last pack may hold the remainder.
+                $printQty = ($i === $copies) ? ($qty - (($copies - 1) * $spq)) : $spq;
+
+                $rows[$groupId]['COPIES_DATA'][] = [
                     'PRINTQTY' => (int) $printQty,
                     'COPYNO' => $i,
                     'COPIES' => $copies,
@@ -101,6 +108,6 @@ class WISController extends Controller
             }
         }
 
-        return response()->json($rows);
+        return response()->json(array_values($rows));
     }
 }
