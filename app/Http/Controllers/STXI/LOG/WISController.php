@@ -80,13 +80,14 @@ class WISController extends Controller
                     'PONO' => $item->PONO,
                     'CASENO' => $item->CASENO,
                     'COPIES_DATA' => [],
+                    'PRINTQTY' => (int) $spq,
+                    'COPIES' => $copies,
                 ];
             }
 
             for ($i = 1; $i <= $copies; $i++) {
                 // Last pack may hold the remainder.
                 $printQty = ($i === $copies) ? ($qty - (($copies - 1) * $spq)) : $spq;
-
                 $rows[$groupId]['COPIES_DATA'][] = [
                     'PRINTQTY' => (int) $printQty,
                     'COPYNO' => $i,
