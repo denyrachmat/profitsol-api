@@ -10,12 +10,14 @@ use App\Models\CMS\FormMultiDet;
 use App\Models\CMS\FormSetupDet;
 use App\Models\PORTAL\PortalNotif;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Database\Eloquent\SoftDeletingScope;
 
 trait TrainingTraits
 {
     public function getTrainingList($username, $id = '')
     {
-        $data = FormMasterTitle::from('cms_form_mstr_title as cfmt')
+        $data = FormMasterTitle::withoutGlobalScope(SoftDeletingScope::class)
+            ->from('cms_form_mstr_title as cfmt')
             ->select(
                 'cfmt.id',
                 'cfmt.cfmt_title',
@@ -45,7 +47,8 @@ trait TrainingTraits
             )
             ->join(DB::raw('cms_form_share_det cfsd2'), 'cfsd2.cfmt_id','cfmt.id')
             ->where('cfmt_quiz_flag', 1)
-            ->where('cfsd2.cfsd_to', $username);
+            ->where('cfsd2.cfsd_to', $username)
+            ->whereNull('cfmt.deleted_at');
             //->where('cfmt.p_u_username', $username);
 
         if (!empty($id)) {
