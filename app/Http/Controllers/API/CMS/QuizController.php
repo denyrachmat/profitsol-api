@@ -673,6 +673,7 @@ class QuizController extends Controller
         //     . "PERINGATAN: Sediakan output murni JSON mentah yang valid tanpa teks pembuka, penutup, atau markdown ```json!";
 
         // STRATEGI DIET PAYLOAD: Minta format minimalis ke AI untuk menghemat token hingga 70%
+        // STRATEGI DIET PAYLOAD: Minta format minimalis ke AI untuk menghemat token hingga 70%
         $prompt = "Berikut adalah teks mentah dari dokumen kuis yang harus kamu analisis:\n"
             . "=========================================\n"
             . $documentText . "\n"
@@ -682,18 +683,21 @@ class QuizController extends Controller
             . "  \"title\": \"[Judul Kuis]\",\n"
             . "  \"quizzes\": [\n"
             . "    {\n"
-            . "      \"q\": \"[Teks Pertanyaan. Jika bilingual, gabungkan ID & EN dengan baris baru (\\n)]\",\n"
+            . "      \"q\": \"[Teks Pertanyaan. Jika bilingual, gabungkan ID & EN dengan spasi atau garis miring, atau escape enter sebagai \\\\n]\",\n"
             . "      \"options\": {\n"
-            . "        \"[Key_Huruf]\": \"[Teks Opsi. Jika bilingual, gabungkan ID & EN dengan baris baru (\\n)]\"\n"
+            . "        \"[Key_Huruf]\": \"[Teks Opsi]\"\n"
             . "      },\n"
             . "      \"exp\": \"[Penjelasan singkat jawaban, atau kosongkan jika tidak ada]\",\n"
             . "      \"ans\": \"[Huruf Kunci Jawaban tunggal (misal: \\\"C\\\") atau array jika jawaban banyak contoh [\\\"A\\\",\\\"C\\\"]]\"\n"
             . "    }\n"
             . "  ]\n"
             . "}\n\n"
-            . "ATURAN DINAMIS & BILINGUAL:\n"
-            . "1. Jumlah opsi pada 'options' DILARANG kaku. Buat kunci objek ('A', 'B', 'C', 'D', 'E', dst.) SENDIRI secara dinamis sesuai jumlah pilihan yang ada di dokumen (bisa 2, 3, 4, 5, atau lebih).\n"
-            . "2. Jika pertanyaan/opsi menggunakan 2 bahasa (bilingual), sertakan kedua bahasa dalam satu string dipisahkan baris baru (\\n).\n\n"
+            . "ATURAN KETAT FORMAT & TEKNIS:\n"
+            . "1. JUMLAH OPSI DINAMIS: Buat kunci objek ('A', 'B', 'C', 'D', 'E', dst.) sesuai jumlah pilihan di dokumen asli.\n"
+            . "2. ATURAN BILINGUAL & STRINGS:\n"
+            . "   - Jika teks memiliki 2 bahasa (Indonesia & Inggris), gabungkan keduanya dalam satu baris menggunakan pemisah ' / ' atau ' - ' untuk menghindari error control character, DILARANG menggunakan enter mentah (line break fisik) di dalam string JSON.\n"
+            . "   - Semua teks harus berada dalam satu baris atau menggunakan escape karakter string JSON yang valid (\\\\n jika benar-benar butuh baris baru).\n"
+            . "3. SANITASI KARAKTER: Bersihkan semua control character, tab tersembunyi, atau karakter aneh dari dokumen asli agar JSON murni valid.\n\n"
             . "PERINGATAN: Sediakan output murni JSON mentah yang valid tanpa teks pembuka, penutup, atau markdown ```json!";
 
         $response = Http::withHeaders([
