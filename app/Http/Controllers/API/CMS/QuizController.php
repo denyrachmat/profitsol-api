@@ -641,8 +641,8 @@ class QuizController extends Controller
 
     private function askAIToParse(string $documentText)
     {
-        $apiKey = env('NINEROUTER_API_KEY');
-        $apiUrl = env('NINEROUTER_URL');
+        $apiKey = config('ninerouter.api_key');
+        $apiUrl = config('ninerouter.url');
 
         if (empty($apiKey) || empty($apiUrl)) {
             throw new \Exception("Konfigurasi NINEROUTER_API_KEY atau NINEROUTER_URL belum diset.");
@@ -763,18 +763,21 @@ class QuizController extends Controller
         // /u) agar tidak pernah return null ketika string mengandung UTF-8 tidak valid
         // (sering muncul dari campuran teks bilingual/emoji yang disalin dokumen).
         // json_decode gagal dengan JSON_ERROR_CTRL_CHAR kalau ada karakter ini.
+        // CR/LF/tab dinormalisasi jadi spasi dulu (teks jadi tidak dempet), lalu yang
+        // tersisa (C0 \x00-\x1F, DEL \x7F, C1 via 0xC2 0x80-0x9F) dihapus total.
         $jsonString = str_replace(["\r\n", "\r", "\n", "\t"], " ", $jsonString);
-        $jsonString = preg_replace('/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/', '', $jsonString);
-
-        // Normalisasi non-breaking space (UTF-8 0xC2 0xA0), tetap guard null.
+        $jsonString = preg_replace('/[\x00-\x1F\x7F]/', '', $jsonString);
+        $jsonString = preg_replace('/[\xC2][\x80-\x9F]/', '', $jsonString);
         $jsonString = preg_replace('/\xc2\xa0/u', ' ', $jsonString) ?? $jsonString;
 
-        // Decode JSON Ringkas dari AI
-        $aiData = json_decode($jsonString, true, 512, JSON_INVALID_UTF8_SUBSTITUTE);
+        // Decode JSON Ringkas dari AI. Jaring pengaman: kalau masih ada control char
+        // yang lolos, bersihkan agresif (hapus SEMUA byte non-printable) lalu coba lagi.
+        $aiData = $this->decodeAiJson($jsonString);
 
         if (json_last_error() !== JSON_ERROR_NONE) {
+            $badBytes = preg_replace('/[^\\x20-\\x7E]/', '?', $jsonString);
             \Log::error("Gagal Decode JSON Utama Kuis dari AI. Detail Error: " . json_last_error_msg());
-            \Log::error("Payload yang bermasalah: " . $jsonString);
+            \Log::error("Payload yang bermasalah: " . $badBytes);
             throw new \Exception("Format JSON kuis rusak (" . json_last_error_msg() . ").");
         }
 
@@ -840,5 +843,26 @@ class QuizController extends Controller
         }
 
         return $finalData;
+    }
+
+    /**
+     * Decode JSON hasil AI dengan jaring pengaman: jika ada control character yang
+     * belum tertangkap sehingga decode gagal dengan JSON_ERROR_CTRL_CHAR, bersihkan
+     * semua byte non-printable (\x00-\x1F, \x7F-\x9F) lalu retry. Retry juga terapkan
+     * pembersihan BOM & nbsp untuk kasus input yang lolos.
+     */
+    private function decodeAiJson(string $jsonString)
+    {
+        $decoded = json_decode($jsonString, true, 512, JSON_INVALID_UTF8_SUBSTITUTE);
+        if (json_last_error() !== JSON_ERROR_CTRL_CHAR) {
+            return $decoded;
+        }
+
+        $aggressive = $jsonString;
+        $aggressive = str_replace(["\r\n", "\r", "\n", "\t"], " ", $aggressive);
+        $aggressive = preg_replace('/[\x00-\x1F\x7F-\x9F]/', '', $aggressive);
+        \Log::warning("JSON AI mengandung control character, dilakukan aggressive cleanup.");
+
+        return json_decode($aggressive, true, 512, JSON_INVALID_UTF8_SUBSTITUTE);
     }
 }
