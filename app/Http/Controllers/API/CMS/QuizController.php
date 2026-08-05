@@ -871,18 +871,22 @@ class QuizController extends Controller
             return $retry;
         }
 
-        // Bintang terakhir: hapus byte yang berada DI LUAR printable-ASCII
-        // (0x20-0x7E) ATAU bukan bagian sekuens UTF-8, lalu coba lagi.
+        // Bintang terakhir: buang SETIAP byte di luar printable-ASCII (0x20-0x7E).
+        // Byte control/UTF-8 multibyte yang tersisa dihapus; strukturnya ({}:,")
+        // adalah printable-ASCII sehingga JSON tetap bisa didecode.
         $final = str_replace(["\r\n", "\r", "\n", "\t"], " ", $jsonString);
-        $final = preg_replace_callback('/./s', function ($m) {
-            $char = $m[0];
-            if (ord($char) >= 0x20 && ord($char) <= 0x7E) {
-                return $char;
-            }
-            return mb_check_encoding($char, 'UTF-8') && strlen($char) > 1 ? $char : '';
-        }, $final);
-        \Log::warning("JSON AI masih berisi byte bermasalah, dilakukan byte-level cleanup.");
+        $final = preg_replace('/[\x00-\x1F\x7F-\xFF]/', '', $final);
+        \Log::warning("JSON AI masih berisi byte bermasalah, dilakukan byte-level cleanup (ASCII-only).");
 
-        return json_decode($final, true, 512, JSON_INVALID_UTF8_SUBSTITUTE);
+        $retry2 = json_decode($final, true, 512, JSON_INVALID_UTF8_SUBSTITUTE);
+        if (json_last_error() === JSON_ERROR_NONE) {
+            return $retry2;
+        }
+
+        // Diagnostik definitif: tampilkan HEX byte tersisa yang masih salah, agar
+        // root cause terlihat persis, bukan menebak.
+        $hex = bin2hex($final);
+        \Log::error("PayLoad_hex: " . $hex);
+        return $retry2;
     }
 }
