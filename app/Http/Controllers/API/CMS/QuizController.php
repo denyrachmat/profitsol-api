@@ -649,27 +649,51 @@ class QuizController extends Controller
         }
 
         // STRATEGI DIET PAYLOAD: Minta format minimalis ke AI untuk menghemat token hingga 70%
+        // $prompt = "Berikut adalah teks mentah dari dokumen kuis yang harus kamu analisis:\n"
+        //     . "=========================================\n"
+        //     . $documentText . "\n"
+        //     . "=========================================\n\n"
+        //     . "Tugasmu: Transformasikan dan isi dokumen di atas menjadi objek JSON minimalis dengan skema kaku berikut:\n\n"
+        //     . "{\n"
+        //     . "  \"title\": \"[Judul Kuis]\",\n"
+        //     . "  \"quizzes\": [\n"
+        //     . "    {\n"
+        //     . "      \"q\": \"[Teks Pertanyaan]\",\n"
+        //     . "      \"options\": {\n"
+        //     . "        \"A\": \"[Isi Opsi A]\",\n"
+        //     . "        \"B\": \"[Isi Opsi B]\",\n"
+        //     . "        \"C\": \"[Isi Opsi C]\",\n"
+        //     . "        \"D\": \"[Isi Opsi D]\"\n"
+        //     . "      },\n"
+        //     . "      \"exp\": \"[Penjelasan singkat jawaban, atau kosongkan jika tidak ada]\",\n"
+        //     . "      \"ans\": \"[Huruf Kunci Jawaban tunggal (A/B/C/D) atau array jika jawaban banyak contoh [\\\"A\\\",\\\"B\\\"]]\"\n"
+        //     . "    }\n"
+        //     . "  ]\n"
+        //     . "}\n\n"
+        //     . "PERINGATAN: Sediakan output murni JSON mentah yang valid tanpa teks pembuka, penutup, atau markdown ```json!";
+
+        // STRATEGI DIET PAYLOAD: Minta format minimalis ke AI untuk menghemat token hingga 70%
         $prompt = "Berikut adalah teks mentah dari dokumen kuis yang harus kamu analisis:\n"
             . "=========================================\n"
             . $documentText . "\n"
             . "=========================================\n\n"
-            . "Tugasmu: Transformasikan isi dokumen di atas menjadi objek JSON minimalis dengan skema kaku berikut:\n\n"
+            . "Tugasmu: Transformasikan dan isi dokumen di atas menjadi objek JSON minimalis dengan skema kaku berikut:\n\n"
             . "{\n"
             . "  \"title\": \"[Judul Kuis]\",\n"
             . "  \"quizzes\": [\n"
             . "    {\n"
-            . "      \"q\": \"[Teks Pertanyaan]\",\n"
+            . "      \"q\": \"[Teks Pertanyaan. Jika bilingual, gabungkan ID & EN dengan baris baru (\\n)]\",\n"
             . "      \"options\": {\n"
-            . "        \"A\": \"[Isi Opsi A]\",\n"
-            . "        \"B\": \"[Isi Opsi B]\",\n"
-            . "        \"C\": \"[Isi Opsi C]\",\n"
-            . "        \"D\": \"[Isi Opsi D]\"\n"
+            . "        \"[Key_Huruf]\": \"[Teks Opsi. Jika bilingual, gabungkan ID & EN dengan baris baru (\\n)]\"\n"
             . "      },\n"
             . "      \"exp\": \"[Penjelasan singkat jawaban, atau kosongkan jika tidak ada]\",\n"
-            . "      \"ans\": \"[Huruf Kunci Jawaban tunggal (A/B/C/D) atau array jika jawaban banyak contoh [\\\"A\\\",\\\"B\\\"]]\"\n"
+            . "      \"ans\": \"[Huruf Kunci Jawaban tunggal (misal: \\\"C\\\") atau array jika jawaban banyak contoh [\\\"A\\\",\\\"C\\\"]]\"\n"
             . "    }\n"
             . "  ]\n"
             . "}\n\n"
+            . "ATURAN DINAMIS & BILINGUAL:\n"
+            . "1. Jumlah opsi pada 'options' DILARANG kaku. Buat kunci objek ('A', 'B', 'C', 'D', 'E', dst.) SENDIRI secara dinamis sesuai jumlah pilihan yang ada di dokumen (bisa 2, 3, 4, 5, atau lebih).\n"
+            . "2. Jika pertanyaan/opsi menggunakan 2 bahasa (bilingual), sertakan kedua bahasa dalam satu string dipisahkan baris baru (\\n).\n\n"
             . "PERINGATAN: Sediakan output murni JSON mentah yang valid tanpa teks pembuka, penutup, atau markdown ```json!";
 
         $response = Http::withHeaders([
@@ -689,7 +713,7 @@ class QuizController extends Controller
                 "response_format" => [
                     "type" => "json_object"
                 ],
-                "max_tokens" => 4000, 
+                "max_tokens" => 4000,
                 "temperature" => 0.1
             ]);
 
@@ -697,11 +721,11 @@ class QuizController extends Controller
             throw new \Exception("9router API Error (HTTP " . $response->status() . "): " . $response->body());
         }
 
-        $rawBody =$response->body();
+        $rawBody = $response->body();
         $rawBody = trim($rawBody);
-        
+
         if (str_contains($rawBody, 'data: [DONE]')) {
-            $rawBody = str_replace('data: [DONE]', '',$rawBody);
+            $rawBody = str_replace('data: [DONE]', '', $rawBody);
             $rawBody = trim($rawBody);
         }
 
@@ -713,9 +737,9 @@ class QuizController extends Controller
 
         $jsonString = null;
         if (isset($result['choices'][0]['message']['content'])) {
-            $jsonString =$result['choices'][0]['message']['content'];
+            $jsonString = $result['choices'][0]['message']['content'];
         } elseif (isset($result['candidates'][0]['content']['parts'][0]['text'])) {
-            $jsonString =$result['candidates'][0]['content']['parts'][0]['text'];
+            $jsonString = $result['candidates'][0]['content']['parts'][0]['text'];
         }
 
         if (empty($jsonString)) {
@@ -724,7 +748,8 @@ class QuizController extends Controller
 
         $jsonString = trim($jsonString);
         if (str_starts_with($jsonString, '```')) {
-            $jsonString = preg_replace('/^```json\s*/i', '', $jsonString);$jsonString = preg_replace('/```$/', '', $jsonString);
+            $jsonString = preg_replace('/^```json\s*/i', '', $jsonString);
+            $jsonString = preg_replace('/```$/', '', $jsonString);
             $jsonString = trim($jsonString);
         }
 
@@ -761,7 +786,7 @@ class QuizController extends Controller
 
         foreach ($quizzes as $index => $quiz) {
             $seq = $index + 1;
-            
+
             // 1. Rakit Form Kuis Kaku
             $detailData = [];
             if (isset($quiz['options']) && is_array($quiz['options'])) {
