@@ -858,11 +858,31 @@ class QuizController extends Controller
             return $decoded;
         }
 
+        // Self-sufficient cleanup: decodeAiJson membersihkan sendiri (tidak bergantung
+        // kode pemanggil) agar kalau jalan pada versi/servis lama pun tetap aman.
         $aggressive = $jsonString;
         $aggressive = str_replace(["\r\n", "\r", "\n", "\t"], " ", $aggressive);
-        $aggressive = preg_replace('/[\x00-\x1F\x7F-\x9F]/', '', $aggressive);
+        $aggressive = preg_replace('/[\x00-\x1F\x7F]/', '', $aggressive);
+        $aggressive = preg_replace('/[\xC2][\x80-\x9F]/', '', $aggressive);
         \Log::warning("JSON AI mengandung control character, dilakukan aggressive cleanup.");
 
-        return json_decode($aggressive, true, 512, JSON_INVALID_UTF8_SUBSTITUTE);
+        $retry = json_decode($aggressive, true, 512, JSON_INVALID_UTF8_SUBSTITUTE);
+        if (json_last_error() === JSON_ERROR_NONE) {
+            return $retry;
+        }
+
+        // Bintang terakhir: hapus byte yang berada DI LUAR printable-ASCII
+        // (0x20-0x7E) ATAU bukan bagian sekuens UTF-8, lalu coba lagi.
+        $final = str_replace(["\r\n", "\r", "\n", "\t"], " ", $jsonString);
+        $final = preg_replace_callback('/./s', function ($m) {
+            $char = $m[0];
+            if (ord($char) >= 0x20 && ord($char) <= 0x7E) {
+                return $char;
+            }
+            return mb_check_encoding($char, 'UTF-8') && strlen($char) > 1 ? $char : '';
+        }, $final);
+        \Log::warning("JSON AI masih berisi byte bermasalah, dilakukan byte-level cleanup.");
+
+        return json_decode($final, true, 512, JSON_INVALID_UTF8_SUBSTITUTE);
     }
 }
