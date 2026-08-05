@@ -762,6 +762,13 @@ class QuizController extends Controller
         $jsonString = preg_replace('/\xc2\xa0/', ' ', $jsonString);
         $jsonString = str_replace(chr(194) . chr(160), ' ', $jsonString);
 
+        // Bersihkan control character mentah yang tidak boleh muncul apa adanya di dalam
+        // JSON string (json_decode gagal dengan JSON_ERROR_CTRL_CHAR). AI sering menyalin
+        // enter/tab mentah dari dokumen. Enter/CR diganti spasi agar teks tidak dempet,
+        // control char lain dihapus total.
+        $jsonString = str_replace(["\r\n", "\r", "\n"], " ", $jsonString);
+        $jsonString = preg_replace('/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/u', '', $jsonString);
+
         // Decode JSON Ringkas dari AI
         $aiData = json_decode($jsonString, true, 512, JSON_INVALID_UTF8_SUBSTITUTE);
 
