@@ -757,17 +757,17 @@ class QuizController extends Controller
             $jsonString = trim($jsonString);
         }
 
-        $jsonString = preg_replace('/^[\x{FEFF}\x{200B}-\x{200D}]/u', '', $jsonString);
-        $jsonString = str_replace(["\t", '\t'], " ", $jsonString);
-        $jsonString = preg_replace('/\xc2\xa0/', ' ', $jsonString);
-        $jsonString = str_replace(chr(194) . chr(160), ' ', $jsonString);
+        $jsonString = preg_replace('/^[\x{FEFF}\x{200B}-\x{200D}]/u', '', $jsonString) ?? $jsonString;
 
-        // Bersihkan control character mentah yang tidak boleh muncul apa adanya di dalam
-        // JSON string (json_decode gagal dengan JSON_ERROR_CTRL_CHAR). AI sering menyalin
-        // enter/tab mentah dari dokumen. Enter/CR diganti spasi agar teks tidak dempet,
-        // control char lain dihapus total.
-        $jsonString = str_replace(["\r\n", "\r", "\n"], " ", $jsonString);
-        $jsonString = preg_replace('/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/u', '', $jsonString);
+        // Bersihkan control character mentah. PENTING: regex byte-safe (tanpa modifier
+        // /u) agar tidak pernah return null ketika string mengandung UTF-8 tidak valid
+        // (sering muncul dari campuran teks bilingual/emoji yang disalin dokumen).
+        // json_decode gagal dengan JSON_ERROR_CTRL_CHAR kalau ada karakter ini.
+        $jsonString = str_replace(["\r\n", "\r", "\n", "\t"], " ", $jsonString);
+        $jsonString = preg_replace('/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/', '', $jsonString);
+
+        // Normalisasi non-breaking space (UTF-8 0xC2 0xA0), tetap guard null.
+        $jsonString = preg_replace('/\xc2\xa0/u', ' ', $jsonString) ?? $jsonString;
 
         // Decode JSON Ringkas dari AI
         $aiData = json_decode($jsonString, true, 512, JSON_INVALID_UTF8_SUBSTITUTE);
