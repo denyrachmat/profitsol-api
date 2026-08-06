@@ -57,6 +57,8 @@ class WISController extends Controller
                 ->where('ITMCD', $item->ITMCD)
                 ->first()
                 ->ACTSPQ ?? $item->RCVQT;
+
+            $itemDesc = mb_strlen((string) ($item->ITMD1 ?? '')) > 20 ? mb_substr((string) ($item->ITMD1 ?? ''), 0, 20) . '...' : (string) ($item->ITMD1 ?? '');
                 
             $copies = $spq > 0 ? (int) ceil($qty / $spq) : 1;
             if ($copies < 1) $copies = 1;
@@ -69,7 +71,7 @@ class WISController extends Controller
                     'SHPREFNO' => $item->SHPREFNO,
                     'ITMCD' => $item->ITMCD,
                     'SPTNO' => $item->SPTNO,
-                    'ITMD1' => $item->ITMD1,
+                    'ITMD1' => $itemDesc,
                     'RCVQT' => (int) $item->RCVQT,
                     'ACTSPQ' => $spq,
                     'LBLCOUNT' => $item->LBLCOUNT,
