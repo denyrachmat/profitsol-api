@@ -196,17 +196,22 @@ class PartScannerController extends BaseController
         return $this->handleResponse($template, 'Label rendered!');
     }
 
-    // List available label templates from gencode. By default returns records
-    // whose pgm_code start with "SBPL_TEMPLATE"; override with ?prefix=...
-    // Each record includes: code, name (pgm_desc), template (pgm_value) and
-    // config (pgm_value2, a JSON config for the dynamic data screen).
+    // List available label templates from gencode. Each record includes:
+    // code (pgm_code), name (pgm_desc), template (pgm_value), desc (pgm_desc2),
+    // format (pgm_value3: SBPL/ZPL/ESC-POS), and config (pgm_value2, a JSON
+    // config for the dynamic data screen).
+    // By default returns MBL_PRINT_TEMPLATE* records; pass ?prefix= to override.
     public function listLabels(Request $request)
     {
-        $prefix = $request->prefix ?? 'SBPL_TEMPLATE';
+        $query = \App\Models\PORTAL\PortalGencode::orderBy('pgm_code');
 
-        $records = \App\Models\PORTAL\PortalGencode::where('pgm_code', 'like', $prefix . '%')
-            ->orderBy('pgm_code')
-            ->get()
+        if ($request->has('prefix')) {
+            $query->where('pgm_code', 'like', $request->prefix . '%');
+        } else {
+            $query->where('pgm_code', 'like', 'MBL_PRINT_TEMPLATE%');
+        }
+
+        $records = $query->get()
             ->map(function ($row) {
                 $rawConfig = $row->pgm_value2;
                 $config = null;
@@ -219,6 +224,7 @@ class PartScannerController extends BaseController
                     'name' => $row->pgm_desc ?: $row->pgm_code,
                     'template' => $row->pgm_value,
                     'desc' => $row->pgm_desc2,
+                    'format' => strtolower((string) $row->pgm_value3),
                     'config' => $config,
                 ];
             });

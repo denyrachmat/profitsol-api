@@ -695,7 +695,10 @@ class QuizController extends Controller
             . "ATURAN KETAT FORMAT & TEKNIS:\n"
             . "1. JUMLAH OPSI DINAMIS: Buat kunci objek ('A', 'B', 'C', 'D', 'E', dst.) sesuai jumlah pilihan di dokumen asli.\n"
             . "2. ATURAN BILINGUAL & STRINGS:\n"
-            . "   - Jika teks memiliki 2 bahasa (Indonesia & Inggris), gabungkan keduanya dalam satu baris menggunakan pemisah ' / ' atau ' - ' untuk menghindari error control character, DILARANG menggunakan enter mentah (line break fisik) di dalam string JSON.\n"
+            . "   - Jika teks memiliki 2 bahasa (Indonesia & Inggris), tulis dalam SATU field q/options/exp dengan PEMISAH BARIS BARU memakai escape JSON yang valid: \\n (backslash-n), contoh: \"Apakah itu benar?\\nIs that correct?\". Baris pertama = Bahasa Indonesia, baris kedua = Bahasa Inggris. DILARANG menggunakan enter mentah (line break fisik) di dalam string JSON; hanya boleh memakai escape \\n.\n"
+            . "   - JANGAN pakai pemisah ' / ' atau ' - ' lagi; pemisah baris adalah \\n.\n"
+            . "   - FORMAT ITALIC BAHASA INGGRIS (HANYA JIKA BILINGUAL, HANYA DI FIELD q DAN exp): Tag HTML <i>...</i> hanya untuk field 'q' dan 'exp'. Bagian Bahasa Inggris (setelah \\n) di q dan exp dibungkus <i>...</i> agar miring, contoh: \"Apakah itu benar?\\n<i>Is that correct?</i>\". Bahasa Indonesia tetap polos (tanpa tag). DI LARANG KERAS memasang <i> atau </i> di field 'options'; options cukup 'ID\\nEN' polos tanpa tag apa pun.\n"
+            . "   - JIKA TEKS HANYA SATU BAHASA, JANGAN pakai \\n atau tag <i> sama sekali.\n"
             . "   - Semua teks harus berada dalam satu baris atau menggunakan escape karakter string JSON yang valid (\\\\n jika benar-benar butuh baris baru).\n"
             . "3. SANITASI KARAKTER: Bersihkan semua control character, tab tersembunyi, atau karakter aneh dari dokumen asli agar JSON murni valid.\n\n"
             . "PERINGATAN: Sediakan output murni JSON mentah yang valid tanpa teks pembuka, penutup, atau markdown ```json!";
@@ -717,7 +720,7 @@ class QuizController extends Controller
                 "response_format" => [
                     "type" => "json_object"
                 ],
-                "max_tokens" => 4000,
+                "max_tokens" => 8192,
                 "temperature" => 0.1
             ]);
 
@@ -775,10 +778,15 @@ class QuizController extends Controller
         $aiData = $this->decodeAiJson($jsonString);
 
         if (json_last_error() !== JSON_ERROR_NONE) {
+            // "Control character error" di PHP = string JSON tidak ditutup
+            // (respons AI terpotong oleh max_tokens), bukan benar-benar ada control char.
+            $hint = json_last_error() === JSON_ERROR_CTRL_CHAR
+                ? " (kemungkinan respons AI terpotong: max_tokens terlalu kecil/JSON tidak lengkap)"
+                : "";
             $badBytes = preg_replace('/[^\\x20-\\x7E]/', '?', $jsonString);
-            \Log::error("Gagal Decode JSON Utama Kuis dari AI. Detail Error: " . json_last_error_msg());
+            \Log::error("Gagal Decode JSON Utama Kuis dari AI. Detail Error: " . json_last_error_msg() . $hint);
             \Log::error("Payload yang bermasalah: " . $badBytes);
-            throw new \Exception("Format JSON kuis rusak (" . json_last_error_msg() . ").");
+            throw new \Exception("Format JSON kuis rusak (" . json_last_error_msg() . ")" . $hint);
         }
 
         // ==========================================
@@ -809,7 +817,7 @@ class QuizController extends Controller
                         "col_det_id" => "opt-" . rand(8000, 8999),
                         "col_det_label" => "",
                         "value" => trim($flag),
-                        "label" => trim($flag) . ".\t" . trim($desc)
+                        "label" => trim($flag) . ".\t" . $this->cleanOptionLabel($desc)
                     ];
                 }
             }
@@ -821,7 +829,7 @@ class QuizController extends Controller
                 // "seq_name" => $seq,
                 "seq_name" => 1,
                 "content" => [
-                    "label" => $seq . ".\t" . ($quiz['q'] ?? ''),
+                    "label" => $seq . ".\t" . $this->italicizeSecondLang($quiz['q'] ?? ''),
                     "component" => [
                         "label" => "Multiple Choice",
                         "category" => "multiple",
@@ -835,8 +843,8 @@ class QuizController extends Controller
                 "logics" => []
             ];
 
-            // 2. Petakan Explanation
-            $finalData['exp'][] = !empty($quiz['exp']) ? trim($quiz['exp']) : "-";
+            // 2. Petakan Explanation (bahasa kedua di-italic jika bilingual)
+            $finalData['exp'][] = $this->italicizeSecondLang(!empty($quiz['exp']) ? trim($quiz['exp']) : "-");
 
             // 3. Petakan Jawaban (ans)
             $finalData['ans'][] = $quiz['ans'] ?? "";
@@ -888,5 +896,36 @@ class QuizController extends Controller
         $hex = bin2hex($final);
         \Log::error("PayLoad_hex: " . $hex);
         return $retry2;
+    }
+
+    /**
+     * Bersihkan label opsi untuk dirender sebagai teks polos (q-option-group TIDAK
+     * render HTML). Buang tag <i>/</i><br> (jika model kadung memakainya), dan ubah
+     * newline rill hasil decode \n menjadi pemisah teks ' / ' agar tampil rapi.
+     */
+    private function cleanOptionLabel($text): string
+    {
+        $s = trim((string) $text);
+        $s = preg_replace('/<\/?(i|em|b|strong|br|span)[^>]*>/i', '', $s);
+        $s = preg_replace('/\s*\n+\s*/', ' / ', $s);
+        return $s;
+    }
+
+    /**
+     * Pisahkan teks bilingual ID \\n EN (baris kedua = EN setelah escape \\n yang sudah
+     * jadi newline rill hasil json_decode). Baris kedua dibungkus <i>...</i> dan dipisah
+     * <br>. Hanya untuk field yang dirender via v-html (pertanyaan & penjelasan).
+     * Tidak menyentuh teks satu bahasa dan tidak mengubah yang sudah punya <i>.
+     */
+    private function italicizeSecondLang(string $text): string
+    {
+        if ($text === '' || str_contains($text, '<i>')) {
+            return $text;
+        }
+        // Baris kedua ditandai newline rill (0x0A) hasil decode escape \n.
+        if (preg_match('/^([^\n]*)\n+(.*)$/us', $text, $m)) {
+            return $m[1] . '<br><i>' . $m[2] . '</i>';
+        }
+        return $text;
     }
 }
