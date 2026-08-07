@@ -320,8 +320,16 @@ class ExportMRPSchemeWeekly implements FromCollection, WithHeadings, WithEvents
     public function getListLT()
     {
         try {
-            $url = rtrim(env('APP_URL'), '/') . '/api/mrs/runningReportFromAPI/MRSAPI_69662c0fd6adf';
-            
+            $baseUrl = env('APP_URL') ?: config('app.url');
+
+            if (empty($baseUrl)) {
+                $baseUrl = 'http://localhost';
+            } elseif (!preg_match('#^https?://#i', $baseUrl)) {
+                $baseUrl = 'http://' . ltrim($baseUrl, '/');
+            }
+
+            $url = rtrim($baseUrl, '/') . '/api/mrs/runningReportFromAPI/MRSAPI_69662c0fd6adf';
+
             $client = new \GuzzleHttp\Client();
             $response = $client->request('GET', $url, [
                 'headers' => [
@@ -333,11 +341,9 @@ class ExportMRPSchemeWeekly implements FromCollection, WithHeadings, WithEvents
             logger('URL Get LT List', [$url]);
 
             if ($response->getStatusCode() === 200) {
-                return json_decode($response->getBody(), true);
-
+                return json_decode((string) $response->getBody(), true) ?: [];
             }
         } catch (\Exception $e) {
-            // Log the error if needed
             logger('Error fetching LT list: ' . $e->getMessage());
         }
 
