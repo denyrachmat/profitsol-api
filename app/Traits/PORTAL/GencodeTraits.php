@@ -479,7 +479,7 @@ trait GencodeTraits
             $subject = $notify['title'] ?? 'Notification';
             $content = $notify['message'] ?? '';
             $fromDesc = config('app.name');
-            $linkPost = $notify['link'] ? env('FE_URL') . $notify['link'] : env('FE_URL');
+            $linkPost = $notify['link'] ? config('app.fe_url') . $notify['link'] : config('app.fe_url');
             $toUser = $notify['to'] ?? null;
             $sentMode = $notify['methods'] ?? ['email', 'webpush'];
 

@@ -57,7 +57,7 @@ class EmailNotificationQueue implements ShouldQueue
             $convertContent = str_replace(search: "{{fullname}}", replace: "{$getUsers->pud_first_name} {$getUsers->pud_last_name}", subject: $this->content);
         }
 
-        $convertContent = str_replace(search: "{{linkapproval}}", replace: env('FE_URL', "http://192.168.100.32:8081/portal_v2/#")."/ams/approvalAction/{$this->token}", subject: $convertContent);
+        $convertContent = str_replace(search: "{{linkapproval}}", replace: config('app.fe_url', "http://192.168.100.32:8081/portal_v2/#")."/ams/approvalAction/{$this->token}", subject: $convertContent);
 
         foreach ($this->dataVar as $keyVar => $valueVar) {
             $convertContent = str_replace(search: "{{".$keyVar."}}", replace: $valueVar, subject: $convertContent);

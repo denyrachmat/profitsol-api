@@ -711,6 +711,7 @@ class FrontPageController extends BaseController
                     }
                 }
 
+                $url = config('app.fe_url') ? config('app.fe_url'): config('app.url');
                 foreach ($getListActiveUsers as $keyUser => $valueUser) {
                     notifSentQueue::dispatch(
                         $dataForm['p_u_username'],
@@ -722,7 +723,7 @@ class FrontPageController extends BaseController
                         null,
                         'post',
                         'email',
-                        env('FE_URL') . '/pages/' . ($dataForm['tags'][0] ?? 'uncategorized') . '/' . $dataForm['url'],
+                        $url . '/pages/' . ($dataForm['tags'][0] ?? 'uncategorized') . '/' . $dataForm['url'],
                         '',
                         '',
                         $request->graph ?? null
