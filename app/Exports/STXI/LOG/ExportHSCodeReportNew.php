@@ -111,8 +111,8 @@ class ExportHSCodeReportNew implements FromCollection, WithHeadings, WithEvents
             ]
         );
 
-        $listGenImport = ['20'];
         $listPLB = ['16', '28'];
+        $listGenImport = ['20'];
         $listTPB = ['25', '23'];
         $listFTZ = ['511', '513'];
 
