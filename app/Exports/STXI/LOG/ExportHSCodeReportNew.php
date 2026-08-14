@@ -236,7 +236,7 @@ class ExportHSCodeReportNew implements FromCollection, WithHeadings, WithEvents
                             if (isset($listReg['TPB-' . $valueHeader]) && !empty($listReg['TPB-' . $valueHeader]) && $listReg['TPB-' . $valueHeader] !== '-') {
                                 $listReg['TPB-' . $valueHeader] .= "\n -" . $valueReg->ZIRD_NMIJIN;
                             } else {
-                                $listReg['TPB-' . $valueHeader] = '- '. $valueReg->ZIRD_NMIJIN;
+                                $listReg['TPB-' . $valueHeader] = '- ' . $valueReg->ZIRD_NMIJIN;
                             }
                         } else {
                             if (!isset($listReg['TPB-' . $valueHeader]) && empty($listReg['TPB-' . $valueHeader])) {
@@ -386,17 +386,19 @@ class ExportHSCodeReportNew implements FromCollection, WithHeadings, WithEvents
                 ]);
 
                 // Main columns A-V (index 0-21), merge 1:3
-
+    
                 // HS Code
-                $event->sheet->getDelegate()->mergeCells("N1:P1");
-                
+                $event->sheet->getDelegate()->mergeCells("N1:P2");
+
                 // HS Code / MEGA / QC (index 13,14,15) merged 1:2 to surface row3 WEB/MEGA/QC
                 $oneTwo = [13, 14, 15];
                 for ($i = 0; $i < 22; $i++) {
-                    $merge = in_array($i, $oneTwo)
-                        ? "{$this->toAlpha($i)}1:{$this->toAlpha($i)}2"
-                        : "{$this->toAlpha($i)}1:{$this->toAlpha($i)}3";
-                    $event->sheet->getDelegate()->mergeCells($merge);
+                    if (!in_array($i, $oneTwo)) {
+                        $merge = in_array($i, $oneTwo)
+                            ? "{$this->toAlpha($i)}1:{$this->toAlpha($i)}2"
+                            : "{$this->toAlpha($i)}1:{$this->toAlpha($i)}3";
+                        $event->sheet->getDelegate()->mergeCells($merge);
+                    }
                 }
 
                 // Tataniaga Border
