@@ -8,10 +8,11 @@ use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Redis;
 
 use Excel;
-use Redis;
 use App\Exports\STXI\LOG\ExportHSCodeReport;
+use App\Exports\STXI\LOG\ExportHSCodeReportNew;
 use App\Models\STXI\LOG\HSCodeUplMaster;
 use PDF;
 use Illuminate\Http\Request;
@@ -66,7 +67,7 @@ class ExportHSCodeQueue implements ShouldQueue
             $download = '';
             if ($this->type === 'excel') {
                 $datetime = date('y-m-d his');
-                Excel::store(new ExportHSCodeReport($this->filter, $this->withHist), 'export_hscode_' . $datetime . '.xlsx', 'public');
+                Excel::store(new ExportHSCodeReportNew($this->filter, $this->withHist), 'export_hscode_' . $datetime . '.xlsx', 'public');
 
                 $download = 'storage/export_hscode_' . $datetime . '.xlsx';
             } else {
