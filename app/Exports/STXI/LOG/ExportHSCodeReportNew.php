@@ -414,7 +414,7 @@ class ExportHSCodeReportNew implements FromCollection, WithHeadings, WithEvents
                 $event->sheet->getDelegate()->mergeCells("AI2:AJ2");
 
                 // HS Code
-                $event->sheet->getDelegate()->mergeCells("N1:P2");
+                $event->sheet->getDelegate()->mergeCells("N1:P1");
 
                 // Detail columns AK-BF (index 36-57), merge 1:3
                 for ($i = 36; $i < 58; $i++) {
