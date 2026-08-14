@@ -294,7 +294,7 @@ class ExportHSCodeReportNew implements FromCollection, WithHeadings, WithEvents
                 'HSCD_BG' => $value['HSCD_BG'],
                 'HSCD_BIZ' => $value['HSCD_BIZ'],
                 'HSCD_ITMD' => $value['HSCD_ITMD'],
-                'DESC_2' => '',
+                'DESC_2' => $value['HSCD_ITMQCD'],
                 'DESC_3' => '',
                 'HSCD_ITMQCD' => $value['HSCD_ITMQCD'],
                 'HSCD_MKCD' => $value['HSCD_MKCD'],
@@ -332,10 +332,10 @@ class ExportHSCodeReportNew implements FromCollection, WithHeadings, WithEvents
                 'HSCD_LASTAPPRV' => $value['HSCD_LASTAPPRV'],
                 'HSCD_APPRVDT' => $value['HSCD_APPRVDT'],
                 'QC_APRVDT' => $value['QC_APRVDT'],
-                'GROSS_WG' => '',
-                'NET_WG' => '',
-                'SUP_CD' => '',
-                'SUP_NM' => ''
+                'GROSS_WG' => $value['HSCD_ITMGW'],
+                'NET_WG' => $value['HSCD_ITMNW'],
+                'SUP_CD' => $value['HSCD_SUPCD'],
+                'SUP_NM' => $value['HSCD_SUPNM']
             ]);
         }
 
@@ -412,6 +412,9 @@ class ExportHSCodeReportNew implements FromCollection, WithHeadings, WithEvents
                 $event->sheet->getDelegate()->mergeCells("AG2:AH2");
                 // FTZ
                 $event->sheet->getDelegate()->mergeCells("AI2:AJ2");
+
+                // HS Code
+                $event->sheet->getDelegate()->mergeCells("N1:P2");
 
                 // Detail columns AK-BF (index 36-57), merge 1:3
                 for ($i = 36; $i < 58; $i++) {
