@@ -116,7 +116,7 @@ class ExportHSCodeReportNew implements FromCollection, WithHeadings, WithEvents
         $listTPB = ['25', '23'];
         $listFTZ = ['511', '513'];
 
-        $this->headerDet = array_merge($listGenImport, $listPLB, $listTPB, $listFTZ);
+        $this->headerDet = array_merge($listPLB, $listGenImport, $listTPB, $listFTZ);
 
         $colsDet1 = [];
         for ($i = 0; $i < count($listPLB); $i++) {
