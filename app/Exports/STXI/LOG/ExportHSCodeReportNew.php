@@ -386,6 +386,10 @@ class ExportHSCodeReportNew implements FromCollection, WithHeadings, WithEvents
                 ]);
 
                 // Main columns A-V (index 0-21), merge 1:3
+
+                // HS Code
+                $event->sheet->getDelegate()->mergeCells("N1:P1");
+                
                 // HS Code / MEGA / QC (index 13,14,15) merged 1:2 to surface row3 WEB/MEGA/QC
                 $oneTwo = [13, 14, 15];
                 for ($i = 0; $i < 22; $i++) {
@@ -412,9 +416,6 @@ class ExportHSCodeReportNew implements FromCollection, WithHeadings, WithEvents
                 $event->sheet->getDelegate()->mergeCells("AG2:AH2");
                 // FTZ
                 $event->sheet->getDelegate()->mergeCells("AI2:AJ2");
-
-                // HS Code
-                $event->sheet->getDelegate()->mergeCells("N1:P1");
 
                 // Detail columns AK-BF (index 36-57), merge 1:3
                 for ($i = 36; $i < 58; $i++) {
