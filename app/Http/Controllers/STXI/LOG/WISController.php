@@ -105,7 +105,7 @@ class WISController extends Controller
                         'SUPTAXINV' => $item->SUPTAXINV,
                         'MAKERNM'   => $item->MAKERNM,
                         'PONO'      => $item->PONO,
-                        'PRNTDT'    => $item->PRNTDT ?? date('Y-m-d H:i:s'),
+                        'PRNTDT'    => ($item->PRNTDT ?? date('Y-m-d H:i:s')).'.'.sprintf("%06d", (int) $i), // Append milliseconds to PRNTDT
                     ]),
                 ];
             }
