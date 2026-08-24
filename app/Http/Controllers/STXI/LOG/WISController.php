@@ -49,15 +49,26 @@ class WISController extends Controller
                     $data->where($value['field'], $value['op'], $value['value']);
                 }
             }
-        } else {
-            $data->orderByDesc('ID')->limit(10);
         }
+
+        // Pagination: returns paginator envelope when { paginate: true, page, rowsPerPage } sent.
+        $pages = $request->has('paginate') && $request->paginate != false;
 
         // Group results by ID and keep per-copy payloads in COPIES_DATA.
         // Each ID appears once, with the copies array carrying PRINTQTY,
         // COPYNO, COPIES, and BARCODE_VALUE for each label.
         $rows = [];
-        foreach ($data->get() as $item) {
+
+        if ($pages) {
+            $paginator = $data->orderByDesc('ID')
+                ->paginate((int) ($request->paginate['rowsPerPage'] ?? 10), ['*'], 'page', (int) ($request->paginate['page'] ?? 1));
+            $items = $paginator;
+        } else {
+            $paginator = null;
+            $items = $data->orderByDesc('ID')->limit(10)->get();
+        }
+
+        foreach ($items as $item) {
             $qty = (int) ($item->RCVQT ?? 0);
             $spq = (int) DB::connection('sqlsrv_wiswms')->table('MITM_ACTSPEC')
                 ->where('ITMCD', $item->ITMCD)
@@ -115,6 +126,16 @@ class WISController extends Controller
                     ]),
                 ];
             }
+        }
+
+        if ($paginator) {
+            return response()->json([
+                'data' => array_values($rows),
+                'current_page' => $paginator->currentPage(),
+                'per_page' => $paginator->perPage(),
+                'total' => $paginator->total(),
+                'last_page' => $paginator->lastPage(),
+            ]);
         }
 
         return response()->json(array_values($rows));
