@@ -203,7 +203,7 @@ class PartScannerController extends BaseController
     // By default returns MBL_PRINT_TEMPLATE* records; pass ?prefix= to override.
     public function listLabels(Request $request)
     {
-        $query = \App\Models\PORTAL\PortalGencode::orderBy('pgm_code');
+        $query = \App\Models\PORTAL\PortalGencode::with('children')->orderBy('pgm_code');
 
         if ($request->has('prefix')) {
             $query->where('pgm_code', 'like', $request->prefix . '%');
@@ -226,6 +226,14 @@ class PartScannerController extends BaseController
                     'desc' => $row->pgm_desc2,
                     'format' => strtolower((string) $row->pgm_value3),
                     'config' => $config,
+                    'defaultFilter' => $row->children->map(function ($child) {
+                        return [
+                            'column' => $child->pgm_value,
+                            'op' => $child->pgm_value2,
+                            'value' => $child->pgm_desc,
+                            'value2' => $child->pgm_desc2,
+                        ];
+                    })->toArray(),
                 ];
             });
 
