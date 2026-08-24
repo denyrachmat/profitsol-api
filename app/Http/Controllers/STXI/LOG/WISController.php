@@ -7,8 +7,11 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use App\Models\STXI\LOG\QRInc;
 
+use App\Traits\PORTAL\GencodeTraits;
+
 class WISController extends Controller
 {
+    use GencodeTraits;
     public function filterQRIncData(Request $request)
     {
         $data = QRInc::select(
@@ -112,5 +115,31 @@ class WISController extends Controller
         }
 
         return response()->json(array_values($rows));
+    }
+
+    public function autocompleteQRIncData(Request $request)
+    {
+        $field = $request->input('field');
+        $q = $request->input('q', '');
+
+        $valid = ['SPTNO','PONO','RCVDT','ITMCD','CASENO','SHPINVNO','SHPREFNO'];
+        if (!in_array($field, $valid)) {
+            return response()->json([]);
+        }
+
+        $data = QRInc::select($field)
+            ->whereNotNull($field)
+            ->where($field, '!=', '')
+            ->orderBy($field);
+
+        if ($q !== '') {
+            $data->where($field, 'like', '%' . $q . '%');
+        }
+
+        $results = $data->distinct()->limit(20)->pluck($field)->filter(function ($v) {
+            return $v !== null && $v !== '';
+        })->values();
+
+        return response()->json($results);
     }
 }

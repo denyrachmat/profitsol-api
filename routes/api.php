@@ -1,11 +1,14 @@
 <?php
 use App\Http\Controllers\API\AMS\ApprovalController;
+use App\Http\Controllers\API\AMS\ApprovalDocSignController;
+use App\Http\Controllers\API\AMS\ApprovalExternalController;
 use App\Http\Controllers\API\AMS\ApprovalRunningController;
 use App\Http\Controllers\API\AMS\ApprovalSettingsController;
 use App\Http\Controllers\API\DMS\DocumenRootController;
 use App\Http\Controllers\API\PORTAL\DomainController;
 use App\Http\Controllers\API\PORTAL\GencodeController;
 use App\Http\Controllers\API\PORTAL\MobileGencodeController;
+use App\Http\Controllers\API\MOBILE\LabelManagerController;
 use App\Http\Controllers\STXI\EMS2\labelPrintController;
 use App\Http\Controllers\API\PORTAL\FrontPageController;
 use App\Http\Controllers\STXI\EMS2\TYOAutoBarcodeController;
@@ -159,6 +162,17 @@ Route::group(['prefix' => 'ams'], function () {
     Route::get('getMasterApprovalByToken/{token}/{tokenHist}/{isView?}', [ApprovalRunningController::class, 'getMasterApprovalByToken']);
     Route::get('readAllNotif', [ApprovalRunningController::class, 'readAllNotif']);
     Route::post('viewListSentApproval', [ApprovalRunningController::class, 'viewListSentApproval']);
+
+    // Doc sign boxes
+    Route::get('docsign/{amsm_id}', [ApprovalDocSignController::class, 'getSignBoxes']);
+    Route::post('docsign/save', [ApprovalDocSignController::class, 'saveSignBoxes']);
+    Route::post('docsign/upload', [ApprovalDocSignController::class, 'uploadDocumentForSigning']);
+    Route::delete('docsign/{amsm_id}', [ApprovalDocSignController::class, 'deleteSignBoxes']);
+
+    // External API (requires API key)
+    Route::post('external/initialize', [ApprovalExternalController::class, 'initialize']);
+    Route::get('external/approvals', [ApprovalExternalController::class, 'listApprovals']);
+    Route::post('external/key/register', [ApprovalExternalController::class, 'registerKey']);
 });
 
 Route::group(['prefix' => 'dms'], function () {
@@ -423,6 +437,7 @@ Route::group(['prefix' => 'div'], function () {
         Route::get('autoExportData/{withHist}', [HSCodeUploadController::class, 'autoExportData']);
 
         Route::post('filterQRIncData', [WISController::class, 'filterQRIncData']);
+        Route::post('autocompleteQRIncData', [WISController::class, 'autocompleteQRIncData']);
     });
 
     Route::group(['prefix' => 'pu'], function () {
@@ -503,6 +518,7 @@ Route::post('login', [AuthController::class, 'login']);
 Route::post('register', [AuthController::class, 'register']);
 Route::get('countryList', [ProfileController::class, 'getCountryList']);
 Route::resource('mobileGencode', MobileGencodeController::class);
+Route::resource('labelManager', LabelManagerController::class);
 
 Route::post('forgot-password', [AuthController::class, 'forgot_password']);
 Route::post('reset-password/{token}', [AuthController::class, 'submitResetPasswordForm']);
