@@ -36,6 +36,9 @@ class WISController extends Controller
 
         if (!empty($filters)) {
             foreach ($filters as $key => $value) {
+                if (empty($value['value']))
+                    continue;
+
                 if($value['op'] == 'between'){
                     $data->whereBetween($value['field'], json_decode($value['value'], true));
                 } elseif($value['op'] == 'in'){
