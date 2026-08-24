@@ -133,7 +133,7 @@ class WISController extends Controller
             ->orderBy($field);
 
         if ($q !== '') {
-            $data->where($field, 'like', '%' . $q . '%');
+            $data->where($field, 'like', $q . '%');
         }
 
         $results = $data->distinct()->limit(20)->pluck($field)->filter(function ($v) {
