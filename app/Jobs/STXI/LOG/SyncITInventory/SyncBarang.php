@@ -127,7 +127,7 @@ class SyncBarang implements ShouldQueue
                             'BSGRP' => $barang['BSGRP'],
                             'DOCCD' => $barang['DOCCD'],
                             'DOCNO' => $barang['DOCNO'],
-                            'HHEINVNO' => !empty(trim($barang['HHEINVNO'])) ? $barang['HHEINVNO'] : (strpos($barang['DOCNO'], 'SCN/') === 0 ? $barang['DOCNO'] : ''),
+                            'HHEINVNO' => !empty(trim($barang['HHEINVNO'])) && isset($barang['HHEINVNO']) ? $barang['HHEINVNO'] : (strpos($barang['DOCNO'], 'SCN/') === 0 ? $barang['DOCNO'] : ''),
                             'ISUDT' => $barang['ISUDT'],
                             'ITMCD' => trim($barang['ITMCD']),
                             'ITMD1' => trim($barang['ITMD1']),
@@ -200,6 +200,7 @@ class SyncBarang implements ShouldQueue
                     $listDocNo = array_map(function ($item) {
                         return trim($item['DOCNO']);
                     }, $processedBarang);
+
                     $listHHEInvNo = array_map(function ($item) {
                         return trim($item['HHEINVNO']);
                     }, $processedBarang);
