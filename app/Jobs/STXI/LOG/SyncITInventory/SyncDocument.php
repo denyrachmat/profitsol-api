@@ -140,7 +140,7 @@ class SyncDocument implements ShouldQueue
 
                 $dataOut->whereNull(DB::raw("NULLIF(HHEINVNO, '')"))
                     ->update([
-                        'HHEINVNO' => $dataHHEInvNo,
+                        'TAXINV' => $dataHHEInvNo,
                     ]);
 
                 $dataOut->whereNull(DB::raw("NULLIF(BCDOCNO, '')"))
