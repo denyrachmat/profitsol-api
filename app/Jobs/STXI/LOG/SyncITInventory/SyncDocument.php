@@ -57,7 +57,7 @@ class SyncDocument implements ShouldQueue
                 'BC33DOCNO' => '',
                 'BC33DOCDT' => '',
                 'BC33EXBCTYPE' => '',
-                'BC33EXDOCNO' => '',
+                'BC33EXBCDOCNO' => '',
                 'BC33EXDOCDT' => '',
             ];
 
@@ -105,7 +105,7 @@ class SyncDocument implements ShouldQueue
                         foreach ($dataBC33 as $key => $documentEx33) {
                             if ($documentEx33['KODE DOKUMEN'] == '16' || $documentEx33['KODE DOKUMEN'] == '40') {
                                 $dataBC33Arr['BC33EXBCTYPE'] = $documentEx33['KODE DOKUMEN'] == '16' ? 'BC1.6' : 'BC4.0';
-                                $dataBC33Arr['BC33EXDOCNO'] = $documentEx33['NOMOR DOKUMEN'];
+                                $dataBC33Arr['BC33EXBCDOCNO'] = $documentEx33['NOMOR DOKUMEN'];
                                 $dataBC33Arr['BC33EXDOCDT'] = $documentEx33['TANGGAL DOKUMEN'];
                             }
                         }
@@ -160,7 +160,7 @@ class SyncDocument implements ShouldQueue
                         'BC33DOCNO' => $dataBC33Arr['BC33DOCNO'],
                         'BC33DOCDT' => $dataBC33Arr['BC33DOCDT'],
                         'BC33EXBCTYPE' => $dataBC33Arr['BC33EXBCTYPE'],
-                        'BC33EXDOCNO' => $dataBC33Arr['BC33EXDOCNO'],
+                        'BC33EXBCDOCNO' => $dataBC33Arr['BC33EXBCDOCNO'],
                         'BC33EXDOCDT' => $dataBC33Arr['BC33EXDOCDT'],
                     ]);
             }
