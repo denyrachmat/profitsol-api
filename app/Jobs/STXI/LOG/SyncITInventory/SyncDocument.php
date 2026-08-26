@@ -138,9 +138,9 @@ class SyncDocument implements ShouldQueue
                     ->where('BCTYPE', $this->typeBC['code'])
                     ->where('BCDOCDT', $this->header['TANGGAL DAFTAR']);
 
-                (clone $dataOut)->whereNull(DB::raw("NULLIF(HHEINVNO, '')"))
+                (clone $dataOut)->whereNull(DB::raw("NULLIF(TAXINV, '')"))
                     ->update([
-                        'HHEINVNO' => $dataHHEInvNo,
+                        'TAXINV' => $dataHHEInvNo,
                     ]);
 
                 (clone $dataOut)->whereNull(DB::raw("NULLIF(BCDOCNO, '')"))
