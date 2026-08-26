@@ -90,11 +90,12 @@ class SyncDocument implements ShouldQueue
                         $dataBC33Arr['BC33DOCNO'] = $document['NOMOR DOKUMEN'];
                         $dataBC33Arr['BC33DOCDT'] = $document['TANGGAL DOKUMEN'];
 
-                        $dataBC33 = HEADERCIESA::where('NOMOR AJU', $this->header['NOMOR AJU'])
-                            ->where('KODE DOKUMEN', '33')
-                            ->where('NOMOR DOKUMEN', $document['NOMOR DOKUMEN'])
-                            ->join('03_DOKUMEN', DB::raw('01_HEADER.[NOMOR AJU]'), '=', DB::raw('03_DOKUMEN.[NOMOR AJU]'))
-                            ->get();
+                        $dataBC33 = HEADERCIESA::where('01_HEADER.NOMOR AJU', $this->header['NOMOR AJU'])
+                            ->where('01_HEADER.KODE DOKUMEN', '33')
+                            ->where('01_HEADER.NOMOR DOKUMEN', $document['NOMOR DOKUMEN'])
+                            ->join('03_DOKUMEN', '01_HEADER.NOMOR AJU', '=', '03_DOKUMEN.NOMOR AJU')
+                            ->get()
+                            ->toArray();
 
                         foreach ($dataBC33 as $key => $documentEx33) {
                             if ($documentEx33['KODE DOKUMEN'] == '16' || $documentEx33['KODE DOKUMEN'] == '40') {
