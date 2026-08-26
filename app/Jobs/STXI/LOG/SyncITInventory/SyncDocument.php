@@ -97,8 +97,8 @@ class SyncDocument implements ShouldQueue
                         )
                             ->where('01_HEADER.NOMOR AJU', $this->header['NOMOR AJU'])
                             ->where('01_HEADER.KODE DOKUMEN', '33')
-                            ->where('01_HEADER.NOMOR DOKUMEN', $document['NOMOR DOKUMEN'])
                             ->join('03_DOKUMEN', '01_HEADER.NOMOR AJU', '=', '03_DOKUMEN.NOMOR AJU')
+                            ->where('03_DOKUMEN.NOMOR DOKUMEN', $document['NOMOR DOKUMEN'])
                             ->get()
                             ->toArray();
 
