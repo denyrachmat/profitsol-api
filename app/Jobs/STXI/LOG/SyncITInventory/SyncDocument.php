@@ -138,24 +138,24 @@ class SyncDocument implements ShouldQueue
                     ->where('BCTYPE', $this->typeBC['code'])
                     ->where('BCDOCDT', $this->header['TANGGAL DAFTAR']);
 
-                $dataOut->whereNull(DB::raw("NULLIF(TAXINV, '')"))
+                (clone $dataOut)->whereNull(DB::raw("NULLIF(HHEINVNO, '')"))
                     ->update([
-                        'TAXINV' => $dataHHEInvNo,
+                        'HHEINVNO' => $dataHHEInvNo,
                     ]);
 
-                $dataOut->whereNull(DB::raw("NULLIF(BCDOCNO, '')"))
+                (clone $dataOut)->whereNull(DB::raw("NULLIF(BCDOCNO, '')"))
                     ->update([
                         'BCDOCNO' => $dataDocNo,
                     ]);
 
-                $dataOut->whereNull(DB::raw("NULLIF(BC23BCTYPE, '')"))
+                (clone $dataOut)->whereNull(DB::raw("NULLIF(BC23BCTYPE, '')"))
                     ->update([
                         'BC23BCTYPE' => $dataBC23BCTYPE,
                         'BC23DOCNO' => $dataBC23DOCNO,
                         'BC23DOCDT' => $dataBC23DOCDT,
                     ]);
 
-                $dataOut->whereNull(DB::raw("NULLIF(BC33DOCNO, '')"))
+                (clone $dataOut)->whereNull(DB::raw("NULLIF(BC33DOCNO, '')"))
                     ->update([
                         'BC33DOCDT' => $dataBC33Arr['BC33DOCDT'],
                         'BC33EXBCTYPE' => $dataBC33Arr['BC33EXBCTYPE'],
@@ -163,7 +163,7 @@ class SyncDocument implements ShouldQueue
                         'BC33EXBCDOCDT' => $dataBC33Arr['BC33EXBCDOCDT'],
                     ]);
 
-                $dataOut->whereNull(DB::raw("NULLIF(BC33DOCNO, '')"))
+                (clone $dataOut)->whereNull(DB::raw("NULLIF(BC33DOCNO, '')"))
                     ->update([
                         'BC33DOCNO' => $dataBC33Arr['BC33DOCNO'],
                     ]);
