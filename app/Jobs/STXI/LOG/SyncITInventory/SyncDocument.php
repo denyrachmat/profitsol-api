@@ -157,11 +157,15 @@ class SyncDocument implements ShouldQueue
 
                 $dataOut->whereNull(DB::raw("NULLIF(BC33DOCNO, '')"))
                     ->update([
-                        'BC33DOCNO' => $dataBC33Arr['BC33DOCNO'],
                         'BC33DOCDT' => $dataBC33Arr['BC33DOCDT'],
                         'BC33EXBCTYPE' => $dataBC33Arr['BC33EXBCTYPE'],
                         'BC33EXBCDOCNO' => $dataBC33Arr['BC33EXBCDOCNO'],
                         'BC33EXBCDOCDT' => $dataBC33Arr['BC33EXBCDOCDT'],
+                    ]);
+
+                $dataOut->whereNull(DB::raw("NULLIF(BC33DOCNO, '')"))
+                    ->update([
+                        'BC33DOCNO' => $dataBC33Arr['BC33DOCNO'],
                     ]);
             }
 
