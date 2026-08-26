@@ -9,6 +9,8 @@ use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 
 use App\Models\STXI\CEISA40\DOCUMENTCEISA;
+use App\Models\STXI\CEISA40\HEADERCIESA;
+
 use App\Models\STXI\LOG\ITINVIncoming;
 use App\Models\STXI\LOG\ITINVOutgoing;
 
@@ -51,6 +53,14 @@ class SyncDocument implements ShouldQueue
             $dataHHEInvNo = '';
             $dataTAXINV = '';
             $dataDocNo = '';
+            $dataBC33Arr = [
+                'BC33DOCNO' => '',
+                'BC33DOCDT' => '',
+                'BC33EXBCTYPE' => '',
+                'BC33EXDOCNO' => '',
+                'BC33EXDOCDT' => '',
+            ];
+
             foreach ($getDataDocument as $key => $document) {
                 if ($this->typeBC['type'] === 'INC') {
                     if ($document['KODE DOKUMEN'] == '380') {
@@ -76,6 +86,23 @@ class SyncDocument implements ShouldQueue
                         $dataBC23BCTYPE = 'BC3.3';
                         $dataBC23DOCNO = $document['NOMOR DOKUMEN'];
                         $dataBC23DOCDT = $document['TANGGAL DOKUMEN'];
+
+                        $dataBC33Arr['BC33DOCNO'] = $document['NOMOR DOKUMEN'];
+                        $dataBC33Arr['BC33DOCDT'] = $document['TANGGAL DOKUMEN'];
+
+                        $dataBC33 = HEADERCIESA::where('NOMOR AJU', $this->header['NOMOR AJU'])
+                            ->where('KODE DOKUMEN', '33')
+                            ->where('NOMOR DOKUMEN', $document['NOMOR DOKUMEN'])
+                            ->join('03_DOKUMEN', '01_HEADER.[NOMOR AJU]', '=', '03_DOKUMEN.[NOMOR AJU]')
+                            ->get();
+
+                        foreach ($dataBC33 as $key => $documentEx33) {
+                            if ($documentEx33['KODE DOKUMEN'] == '16' || $documentEx33['KODE DOKUMEN'] == '40') {
+                                $dataBC33Arr['BC33EXBCTYPE'] = $documentEx33['KODE DOKUMEN'] == '16' ? 'BC1.6' : 'BC4.0';
+                                $dataBC33Arr['BC33EXDOCNO'] = $documentEx33['NOMOR DOKUMEN'];
+                                $dataBC33Arr['BC33EXDOCDT'] = $documentEx33['TANGGAL DOKUMEN'];
+                            }
+                        }
                     }
                 }
             }
@@ -120,6 +147,11 @@ class SyncDocument implements ShouldQueue
                         'BC23BCTYPE' => $dataBC23BCTYPE,
                         'BC23DOCNO' => $dataBC23DOCNO,
                         'BC23DOCDT' => $dataBC23DOCDT,
+                        'BC33DOCNO' => $dataBC33Arr['BC33DOCNO'],
+                        'BC33DOCDT' => $dataBC33Arr['BC33DOCDT'],
+                        'BC33EXBCTYPE' => $dataBC33Arr['BC33EXBCTYPE'],
+                        'BC33EXDOCNO' => $dataBC33Arr['BC33EXDOCNO'],
+                        'BC33EXDOCDT' => $dataBC33Arr['BC33EXDOCDT'],
                     ]);
             }
 
