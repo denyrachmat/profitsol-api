@@ -226,6 +226,7 @@ class SyncDocument implements ShouldQueue
                             'status' => true,
                             'data' => $getDataDocument,
                             'is_failed' => true,
+                            'failed_message' => $e->getMessage(),
                         ],
                     ]
                 ],
