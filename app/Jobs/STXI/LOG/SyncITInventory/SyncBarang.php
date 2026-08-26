@@ -149,7 +149,7 @@ class SyncBarang implements ShouldQueue
                             'LOCCD' => $barang['LOCCD'],
                             'BCTYPE' => $this->typeBC['code'],
                             'BCDOCNO' => $this->header['NOMOR DAFTAR'],
-                            'BCDOCDT' => $this->header['TGL_DAFTAR'],
+                            'BCDOCDT' => $this->header['TANGGAL DAFTAR'],
                             'BSGRP' => $barang['BSGRP'],
                             'DOCCD' => $barang['DOCCD'],
                             'DOCNO' => $barang['DOCNO'],
