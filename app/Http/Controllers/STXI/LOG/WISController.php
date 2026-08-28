@@ -68,12 +68,19 @@ class WISController extends Controller
             $items = $data->orderByDesc('ID')->limit(10)->get();
         }
 
+        // Batch-fetch ACTSPEC for all items to avoid N+1 queries.
+        $itmcds = collect($items)->map(function ($i) { return $i->ITMCD; })->filter()->unique()->values();
+        $actspec = collect();
+        if ($itmcds->isNotEmpty()) {
+            $actspec = DB::connection('sqlsrv_wiswms')->table('MITM_ACTSPEC')
+                ->whereIn('ITMCD', $itmcds)
+                ->get()
+                ->pluck('ACTSPQ', 'ITMCD');
+        }
+
         foreach ($items as $item) {
             $qty = (int) ($item->RCVQT ?? 0);
-            $spq = (int) DB::connection('sqlsrv_wiswms')->table('MITM_ACTSPEC')
-                ->where('ITMCD', $item->ITMCD)
-                ->first()
-                ->ACTSPQ ?? $item->RCVQT;
+            $spq = (int) ($actspec[$item->ITMCD] ?? $item->RCVQT);
 
             $itemDesc = mb_strlen((string) ($item->ITMD1 ?? '')) > 20 ? mb_substr((string) ($item->ITMD1 ?? ''), 0, 20) . '...' : (string) ($item->ITMD1 ?? '');
                 
@@ -116,7 +123,8 @@ class WISController extends Controller
                         'MAKERPN'   => $item->SPTNO,
                         'ITEMDESC'  => $item->ITMD1,
                         'RCVQTY'    => (int) $item->RCVQT,
-                        'SPQ'       => $spq,
+                        // 'SPQ'       => $spq,
+                        'SPQ'       => (int) $printQty,
                         'RCVDT'     => $item->RCVDT,
                         'SHPINVNO'  => $item->SHPINVNO,
                         'SUPTAXINV' => $item->SUPTAXINV,
