@@ -62,7 +62,7 @@ class WISController extends Controller
         if ($pages) {
             $paginator = $data->orderByDesc('ID')
                 ->paginate((int) ($request->paginate['rowsPerPage'] ?? 10), ['*'], 'page', (int) ($request->paginate['page'] ?? 1));
-            $items = $paginator;
+            $items = $paginator->items();
         } else {
             $paginator = null;
             $items = $data->orderByDesc('ID')->limit(10)->get();
