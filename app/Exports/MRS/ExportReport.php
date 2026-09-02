@@ -84,7 +84,8 @@ class ExportReport implements FromCollection, WithHeadings, WithEvents
         //     ->toArray();
 
         if (count($this->data) === 0) {
-            return collect($hasil);
+            logger('data kosong');
+            // return collect($hasil);
         }
 
         if (is_object($this->data)) {

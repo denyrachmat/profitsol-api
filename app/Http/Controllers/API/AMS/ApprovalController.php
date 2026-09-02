@@ -46,7 +46,7 @@ class ApprovalController extends BaseController
             $id = "APV" . date('ymd') . "0001";
         } else {
             $getLastNumAdd = substr($cekLastApprv->ams_idapv, -4);
-            $id = "APV" . date('ymd') . "{sprintf('%04d', ((int)$getLastNumAdd + 1))}";
+            $id = "APV" . date('ymd') . sprintf('%04d', (int)$getLastNumAdd + 1);
         }
 
         $createMaster = ApprovalMaster::create([

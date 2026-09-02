@@ -386,15 +386,19 @@ class FormController extends BaseController
 
         if ($formTitle && $formTitle->cfmt_quiz_flag !== 1) {
             $checkSetup = $this->getSetupFormsForForm($request->id);
-            $now = now()->format('Y-m-d H:i');
-            $start = $checkSetup['startQuiz'] ?? null;
-            $end = $checkSetup['endQuiz'] ?? null;
+            $addPeriod = isset($checkSetup['addPeriod']) && ($checkSetup['addPeriod'] === true || $checkSetup['addPeriod'] == 1 || $checkSetup['addPeriod'] === '1');
 
-            if (!empty($start) && $now < $start) {
-                return $this->handleError('This form is not yet available.', []);
-            }
-            if (!empty($end) && $now > $end) {
-                return $this->handleError('This form is no longer available. The deadline has passed.', []);
+            if ($addPeriod) {
+                $now = now()->format('Y-m-d H:i');
+                $start = $checkSetup['startQuiz'] ?? null;
+                $end = $checkSetup['endQuiz'] ?? null;
+
+                if (!empty($start) && $now < $start) {
+                    return $this->handleError('This form is not yet available.', []);
+                }
+                if (!empty($end) && $now > $end) {
+                    return $this->handleError('This form is no longer available. The deadline has passed.', []);
+                }
             }
         }
 
@@ -419,18 +423,55 @@ class FormController extends BaseController
             $nextID = $request->batch_id;
         }
 
-        $cekForm = FormMaster::where('cfmt_id', $request->id)->where('cfm_type', 'form')->where('cfm_required', 1)->get()->toArray();
+        $checkSetup = $this->getSetupFormsForForm($request->id);
+        $ans = $request->ans;
+        if (!is_array($ans)) {
+            $ans = [];
+        }
 
-        $spreadAnswer = [];
-        foreach ($request->ans as $keyAns => $valueAns) {
-            foreach ($valueAns as $keyAnsDet => $valueAnsDet) {
-                $spreadAnswer[$keyAnsDet] = $valueAnsDet;
+        // Build canonical → live ID mapping from historyTableList (by label)
+        $canonicalToLive = [];
+        if (isset($checkSetup['historyTableList']) && is_array($checkSetup['historyTableList'])) {
+            $liveFormFields = FormMaster::where('cfmt_id', $request->id)
+                ->where('cfm_type', 'form')
+                ->get();
+            foreach ($checkSetup['historyTableList'] as $histField) {
+                if (!isset($histField['forms']['id'])) continue;
+                $canonicalId = $histField['forms']['id'];
+                $canonicalLabel = trim($histField['forms']['content']['label'] ?? $histField['label'] ?? '');
+                if (!$canonicalLabel) continue;
+
+                // Find matching live field by label
+                $liveField = $liveFormFields->first(function ($field) use ($canonicalLabel) {
+                    $content = json_decode($field->cfm_content, true);
+                    $liveLabel = trim($content['label'] ?? '');
+                    return $liveLabel === $canonicalLabel;
+                });
+
+                if ($liveField) {
+                    $canonicalToLive[$canonicalId] = $liveField->id;
+                }
             }
         }
 
+        // Collect all filled field IDs (accept both canonical and live IDs for validation)
+        $allFilledIds = [];
+        foreach ($ans as $rowAnswers) {
+            if (is_array($rowAnswers)) {
+                foreach ($rowAnswers as $fieldId => $value) {
+                    $allFilledIds[] = $fieldId; // canonical ID from frontend
+                    // Also add corresponding live ID if mapped
+                    if (isset($canonicalToLive[$fieldId])) {
+                        $allFilledIds[] = $canonicalToLive[$fieldId];
+                    }
+                }
+            }
+        }
+
+        $cekForm = FormMaster::where('cfmt_id', $request->id)->where('cfm_type', 'form')->where('cfm_required', 1)->get()->toArray();
         $hasilError = [];
-        foreach ($cekForm as $keyCekForms => $valueCekForms) {
-            if (!isset($spreadAnswer[$valueCekForms['id']])) {
+        foreach ($cekForm as $valueCekForms) {
+            if (!in_array($valueCekForms['id'], $allFilledIds)) {
                 $getContent = json_decode($valueCekForms['cfm_content']);
                 $hasilError[$valueCekForms['id']] = [$getContent->label . ' is required'];
             }
@@ -440,8 +481,17 @@ class FormController extends BaseController
             return $this->handleError('There is required field not filled yet !', $hasilError);
         }
 
-        $checkSetup = $this->getSetupFormsForForm($request->id);
-        // return $checkSetup;
+        // Flatten first row for API param lookup (backward compatible)
+        $spreadAnswer = [];
+        foreach ($ans as $rowAnswers) {
+            if (is_array($rowAnswers)) {
+                foreach ($rowAnswers as $fieldId => $value) {
+                    $spreadAnswer[$fieldId] = $value;
+                }
+            }
+        }
+
+        // RPA, approval, notif (only once per submission, using first batch)
         if ($checkSetup['isRPA'] == 1) {
             $getRPAId = $checkSetup['rpaId'];
             $params = $this->buildNestedParams($checkSetup['rpaParams'], $request->id, $nextID);
@@ -477,7 +527,6 @@ class FormController extends BaseController
             foreach ($checkSetup['apiOpt'] as $keyApi => $valueApi) {
                 $buildParams = [];
                 foreach ($valueApi['params'] as $keyParam => $valueParam) {
-                    // Get the value from form answers using form_id
                     $formValue = $spreadAnswer[$valueParam['form_id']] ?? $valueParam['param_default'] ?? null;
                     $buildParams[$valueParam['param_name']] = $formValue;
                 }
@@ -495,12 +544,10 @@ class FormController extends BaseController
 
             $apiCallsList = array_map(function ($index) use ($hasilAPICall, $checkSetup) {
                 $item = $hasilAPICall[$index];
-                // Handle JsonResponse objects
                 $data = $item;
                 if ($item instanceof \Illuminate\Http\JsonResponse) {
                     $data = json_decode($item->getContent(), true);
                 }
-                // Handle both array and object responses
                 if (is_array($item)) {
                     $data = $item['original'] ?? $item;
                 }
@@ -521,26 +568,34 @@ class FormController extends BaseController
             }
         }
 
+        // Store answers — batch strategy depends on renderMode:
+        // - "multiple": each row = separate instance → separate batch (nextID + rowIdx)
+        // - "disabled" / wizard: all rows = same submission → single batch (nextID)
+        $renderMode = $checkSetup['renderMode'] ?? 'disabled';
+        $isMultipleMode = $renderMode === 'multiple';
+
         $hasil = [];
+        foreach ($ans as $rowIdx => $rowAnswers) {
+            if (!is_array($rowAnswers)) continue;
 
-        // logger('Storing answers for batch ID: ' . $nextID);
-        // logger('Answers: ' . json_encode($spreadAnswer));
+            $rowBatchId = $isMultipleMode ? ($nextID + $rowIdx) : $nextID;
 
-        foreach ($spreadAnswer as $key => $value) {
-            $result = FormAnswerUserDet::updateOrCreate([
-                'p_u_username' => $request->has('username') ? $request->username : $request->header('username'),
-                'cfaud_batch' => $nextID,
-                'cfm_id' => $request->id,
-                'cfmd_id' => $key,
-            ], [
-                'p_u_username' => $request->has('username') ? $request->username : $request->header('username'),
-                'cfaud_batch' => $nextID,
-                'cfm_id' => $request->id,
-                'cfmd_id' => $key,
-                'cfm_val' => (string) $value,
-            ])->toArray();
+            foreach ($rowAnswers as $fieldId => $value) {
+                $result = FormAnswerUserDet::updateOrCreate([
+                    'p_u_username' => $request->has('username') ? $request->username : $request->header('username'),
+                    'cfaud_batch' => $rowBatchId,
+                    'cfm_id' => $request->id,
+                    'cfmd_id' => $fieldId,
+                ], [
+                    'p_u_username' => $request->has('username') ? $request->username : $request->header('username'),
+                    'cfaud_batch' => $rowBatchId,
+                    'cfm_id' => $request->id,
+                    'cfmd_id' => $fieldId,
+                    'cfm_val' => (string) $value,
+                ])->toArray();
 
-            $hasil[] = $result;
+                $hasil[] = $result;
+            }
         }
 
         return $this->handleResponse($checkSetup['isAPI'] == 1 && !empty($checkSetup['apiOpt']) ? $apiCallsList : $hasil, 'Form submited !');
@@ -886,6 +941,43 @@ class FormController extends BaseController
         //
     }
 
+    public function updateStatus(Request $request)
+    {
+        $formTitle = FormMasterTitle::find($request->id);
+        if (!$formTitle) {
+            return response(['status' => false, 'message' => 'Form not found'], 404);
+        }
+
+        $formTitle->cfmt_status = $request->input('status', 'draft');
+        $formTitle->save();
+
+        return response(['status' => true, 'message' => 'Status updated successfully']);
+    }
+
+    public function saveSetupTraining(Request $request)
+    {
+        $idRef = $request->idRef;
+        if (!$idRef || !$request->has('setupTraining')) {
+            return response(['status' => false, 'message' => 'Missing idRef or setupTraining'], 400);
+        }
+
+        foreach ($request->setupTraining as $key => $valueSetup) {
+            PortalGencode::updateOrCreate([
+                'pgm_code' => 'FORMS_SETUP',
+                'pgm_value' => $idRef,
+                'pgm_desc' => $key,
+            ], [
+                'pgm_code' => 'FORMS_SETUP',
+                'pgm_value' => $idRef,
+                'pgm_value2' => is_array($valueSetup) ? json_encode($valueSetup) : $valueSetup,
+                'pgm_desc' => $key,
+                'pgm_created_by' => $request->header('username'),
+            ]);
+        }
+
+        return response(['status' => true, 'message' => 'Setup training saved successfully']);
+    }
+
     /**
      * Remove the specified resource from storage.
      *
@@ -894,36 +986,43 @@ class FormController extends BaseController
      */
     public function destroy($id)
     {
-        // Delete all related data
-        formMasterTitle::where('id', $id)->delete();
-        $fmIds = FormMaster::where('cfmt_id', $id)->pluck('id')->toArray();
-        FormMaster::where('cfmt_id', $id)->delete();
-
-        foreach ($fmIds as $idx) {
-            FormMultiDet::where('cfm_id', $idx)->delete();
-            FormAnswerDet::where('cfmd_id', $idx)->delete();
-            FormLogicsDet::where('cfm_id', $idx)->delete();
-            FormAnswerUserDet::where('cfm_id', $idx)->delete();
+        $form = FormMasterTitle::withTrashed()->find($id);
+        if (!$form) {
+            return response(['status' => false, 'message' => 'Form not found'], 404);
         }
 
-        FormSetupDet::where('cfmt_id', $id)->delete();
-        FormShareDet::where('cfmt_id', $id)->delete();
-
-        // Delete related PortalGencode entries
-        PortalGencode::where('pgm_code', 'URL_PAGE_GEN')
-            ->where('pgm_value', $id)
-            ->orWhere('pgm_code', 'FORMS_SETUP')
-            ->where('pgm_value', $id)
-            ->delete();
-
-        // Delete related PortalApp entries
-        PortalApp::where('am_app_code', 'FRM-' . $id)->delete();
-        PortalRoleAppMap::where('am_app_id', 'FRM-' . $id)->delete();
-        PortalRoleAppMap::where('am_app_parent', 'FRM-' . $id)->delete();
+        $form->delete();
 
         return response([
             'status' => true,
-            'message' => 'Form and related data deleted successfully.'
+            'message' => 'Form moved to trash successfully.'
+        ]);
+    }
+
+    public function restore($id)
+    {
+        $form = FormMasterTitle::withTrashed()->find($id);
+        if (!$form) {
+            return response(['status' => false, 'message' => 'Form not found'], 404);
+        }
+
+        $form->restore();
+
+        return response([
+            'status' => true,
+            'message' => 'Form restored successfully.'
+        ]);
+    }
+
+    public function trashed()
+    {
+        $forms = FormMasterTitle::onlyTrashed()
+            ->with(['formMaster', 'quizSetup', 'shared'])
+            ->get();
+
+        return response([
+            'status' => true,
+            'data' => $forms
         ]);
     }
 
@@ -973,22 +1072,26 @@ class FormController extends BaseController
         }
 
         $setup = $formData['setupTraining'] ?? [];
-        $now = now()->format('Y-m-d H:i');
-        $start = $setup['startQuiz'] ?? null;
-        $end = $setup['endQuiz'] ?? null;
+        $addPeriod = isset($setup['addPeriod']) && ($setup['addPeriod'] === true || $setup['addPeriod'] == 1 || $setup['addPeriod'] === '1');
 
-        if (!empty($start) && $now < $start) {
-            return response([
-                'status' => false,
-                'message' => 'This form is not yet available. It will open on ' . $start . '.'
-            ], 403);
-        }
+        if ($addPeriod) {
+            $now = now()->format('Y-m-d H:i');
+            $start = $setup['startQuiz'] ?? null;
+            $end = $setup['endQuiz'] ?? null;
 
-        if (!empty($end) && $now > $end) {
-            return response([
-                'status' => false,
-                'message' => 'This form is no longer available. The deadline was ' . $end . '.'
-            ], 403);
+            if (!empty($start) && $now < $start) {
+                return response([
+                    'status' => false,
+                    'message' => 'This form is not yet available. It will open on ' . $start . '.'
+                ], 403);
+            }
+
+            if (!empty($end) && $now > $end) {
+                return response([
+                    'status' => false,
+                    'message' => 'This form is no longer available. The deadline was ' . $end . '.'
+                ], 403);
+            }
         }
 
         $hasil = [
@@ -1121,6 +1224,60 @@ class FormController extends BaseController
             'id' => $newMaster->id,
             'title' => $newMaster->cfmt_title,
         ], 'Form cloned successfully!');
+    }
+
+    public function getCompletionStatus($id)
+    {
+        $form = FormMasterTitle::with(['shared'])->find($id);
+
+        if (!$form) {
+            return $this->handleError('Form not found.', []);
+        }
+
+        $assignedUsers = FormShareDet::where('cfmt_id', $id)
+            ->whereNotNull('cfsd_to')
+            ->where('cfsd_to', '!=', '')
+            ->pluck('cfsd_to')
+            ->unique()
+            ->values()
+            ->toArray();
+
+        $roleUsers = FormShareDet::where('cfmt_id', $id)
+            ->whereNotNull('cfsd_role_id')
+            ->where('cfsd_role_id', '!=', '')
+            ->get();
+
+        foreach ($roleUsers as $ru) {
+            $usersInRole = DB::connection('sqlsrv')->table('portal_users_det')
+                ->join('portal_user_role_det', 'u_username', 'purd_username')
+                ->where('purd_rlid', $ru->cfsd_role_id)
+                ->where('pud_is_active', 1)
+                ->pluck('u_username')
+                ->toArray();
+            $assignedUsers = array_merge($assignedUsers, $usersInRole);
+        }
+
+        $assignedUsers = array_unique($assignedUsers);
+
+        $submittedUsers = FormAnswerUserDet::where('cfm_id', $id)
+            ->select('p_u_username', DB::raw('MAX(cfaud_batch) as latest_batch'), DB::raw('MAX(created_at) as submitted_at'))
+            ->groupBy('p_u_username')
+            ->pluck('p_u_username')
+            ->toArray();
+
+        $result = [];
+        foreach ($assignedUsers as $user) {
+            $result[] = [
+                'username' => $user,
+                'submitted' => in_array($user, $submittedUsers),
+            ];
+        }
+
+        return $this->handleResponse([
+            'total_assigned' => count($assignedUsers),
+            'total_submitted' => count($submittedUsers),
+            'users' => $result,
+        ], 'Completion status retrieved.');
     }
 
     public function viewByID($id, $username = '')
@@ -1305,12 +1462,9 @@ class FormController extends BaseController
         return $this->viewByID($getGencode->pgm_value, $request->header('username'))->getOriginalContent();
     }
 
-    public function updateAMSMapping(Request $request, $id)
+    public function updateAMSMapping(Request $request)
     {
-
-
         return $this->handleResponse([], 'AMS Mapping updated successfully.');
-
     }
 
     public function sendApproval(Request $request)
@@ -1328,13 +1482,10 @@ class FormController extends BaseController
         $getMasterData = isset($getMasterContent['data']) ? $getMasterContent['data'] : null;
 
         $dataAnswers = $this->showHistory(new Request(), $request->idRef, $request->batch_id)->getOriginalContent()['data']['data'][0];
-        // FormAMSMapDet::update(
-        //     ['amsm_id' => $getMasterData['id'] ?? null],
-        //     ['cfmt_id' => $request->idRef]
-        // );
 
         // You need to provide actual values for HSCD_DOCNO and item_det if required by your business logic.
         // For now, we will use placeholders or empty values to avoid undefined variable errors.
+        $getUrl = config('app.url');
         $getApproval = $this->approveAction(new ApprovalRunningApproveActionRequest([
             'username' => $request->username,
             'amsm_id' => $getMasterData['id'] ?? null,
@@ -1347,7 +1498,7 @@ class FormController extends BaseController
                     'amstd_token' => 'token',
                     'amshd_remarks' => 'Remarks',
                 ],
-                'url' => 'http://192.168.100.32/api/cms/updateApprovalStatus'
+                    'url' => $getUrl . '/api/cms/updateApprovalStatus'
                 // 'url' => 'http://localhost/STX/stx-api/public/api/cms/updateApprovalStatus'
             ],
             'onDone' => [
@@ -1356,7 +1507,7 @@ class FormController extends BaseController
                     'amstd_token' => 'token',
                     'amshd_remarks' => 'Remarks',
                 ],
-                'url' => 'http://192.168.100.32/api/cms/updateApprovalStatus'
+                'url' => $getUrl . '/api/cms/updateApprovalStatus'
                 // 'url' => 'http://localhost/STX/stx-api/public/api/cms/updateApprovalStatus'
             ],
             'msgkey' => ''

@@ -43,27 +43,40 @@ class ApprovalSettingsController extends BaseController
             'amssd_iswa' => $request->amssd_iswa,
             'amssd_issms' => $request->amssd_issms,
             'amssd_is_docsign' => $request->amssd_is_docsign,
+            'amssd_sign_uploaded_doc' => $request->amssd_sign_uploaded_doc ?? false,
             'amssd_unread_autonotif' => $request->amssd_unread_autonotif,
             'amssd_unread_chktime' => $request->amssd_unread_chktime,
             'amssd_autorun' => $request->amssd_autorun,
             'amssd_autorun_chktime' => $request->amssd_autorun_chktime,
             'amssd_content' => $request->amssd_content,
+            'amssd_content_variables' => $request->content_variables,
             'amssd_attachment' => $request->amssd_attachment
         ]);
 
         if ($request->has('amssd_quotkn') && $request->amssd_quotkn > 0) {
-            $cekTokenTotNow = ApprovalTokenDetail::where('amsm_id', $request->id)->count();
+            $target = (int) $request->amssd_quotkn;
 
-            if ($cekTokenTotNow === 0) {
-                ApprovalTokenDetail::where('amsm_id', $request->id)->forceDelete();
-            }
+            // Count only tokens not yet used (no history attached).
+            $existingUnused = $this->unusedTokenCount($request->id);
 
-            for ($i = 0; $i < ($request->amssd_quotkn - $cekTokenTotNow); $i++) {
-                ApprovalTokenDetail::create([
-                    'p_u_username' => $request->header('username'),
-                    'amsm_id' => $request->id,
-                    'amstd_token' => Str::random(50)
-                ]);
+            if ($existingUnused < $target) {
+                for ($i = 0; $i < ($target - $existingUnused); $i++) {
+                    ApprovalTokenDetail::create([
+                        'p_u_username' => $request->header('username'),
+                        'amsm_id' => $request->id,
+                        'amstd_token' => Str::random(50),
+                    ]);
+                }
+            } elseif ($existingUnused > $target) {
+                // Quota lowered: reclaim unused tokens only (never in-flight ones).
+                $toDelete = $existingUnused - $target;
+                $ids = ApprovalTokenDetail::where('amsm_id', $request->id)
+                    ->whereDoesntHave('hist')
+                    ->orderBy('id', 'asc')
+                    ->limit($toDelete)
+                    ->pluck('id');
+
+                ApprovalTokenDetail::whereIn('id', $ids)->forceDelete();
             }
         }
 
@@ -84,6 +97,16 @@ class ApprovalSettingsController extends BaseController
         }
 
         return $this->handleResponse($createMaster, 'Approval setting, setted up !');
+    }
+
+    /**
+     * Count tokens for an approval that are not yet attached to any approval history.
+     */
+    private function unusedTokenCount($amsmId): int
+    {
+        return ApprovalTokenDetail::where('amsm_id', $amsmId)
+            ->whereDoesntHave('hist')
+            ->count();
     }
 
     /**

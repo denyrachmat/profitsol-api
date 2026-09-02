@@ -16,6 +16,14 @@ class ApprovalAttachHist extends Model
         'amaad_filename',
         'amaad_path',
         'amaad_size',
-        'amaad_dl_link'
+        'amaad_dl_link',
+        'amaad_signed_by',
+        'amaad_signed_at',
+        'amaad_signatures',
+    ];
+
+    protected $casts = [
+        'amaad_signatures' => 'array',
+        'amaad_signed_at' => 'datetime',
     ];
 }

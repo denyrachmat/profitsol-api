@@ -437,7 +437,7 @@ Route::group(['prefix' => 'div'], function () {
         Route::get('autoExportData/{withHist}', [HSCodeUploadController::class, 'autoExportData']);
 
         Route::post('filterQRIncData', [WISController::class, 'filterQRIncData']);
-        Route::post('autocompleteQRIncData', [WISController::class, 'autocompleteQRIncData']);
+        Route::post('autocompleteQRIncData', [WISController::class, 'autocompleteQRIncData']); //new
     });
 
     Route::group(['prefix' => 'pu'], function () {

@@ -5,6 +5,7 @@ namespace App\Http\Controllers\API\PORTAL;
 use App\Http\Controllers\API\PORTAL\BaseController;
 use Illuminate\Http\Request;
 use App\Models\PORTAL\PortalApp;
+use App\Models\PORTAL\PortalRoleAppMap;
 use App\Http\Requests\PORTAL\AppsRequest;
 
 class AppController extends BaseController
@@ -88,6 +89,12 @@ class AppController extends BaseController
             'am_app_parent' => $req->am_app_parent,
             'am_is_files' => $req->am_is_files,
             'am_is_shared' => $req->am_is_shared,
+        ]);
+
+        PortalRoleAppMap::where('am_app_id', $id)->update([
+            'u_username' => $req->u_username,
+            'am_app_id' => $req->am_app_code,
+            'am_app_parent' => $req->am_app_parent,
         ]);
 
         return $this->handleResponse($update, 'Update Successfull !');

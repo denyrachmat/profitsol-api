@@ -19,12 +19,18 @@ class ApprovalSetDetail extends Model
         'amssd_iswa',
         'amssd_issms',
         'amssd_is_docsign',
+        'amssd_sign_uploaded_doc',
         'amssd_unread_autonotif',
         'amssd_unread_chktime',
         'amssd_autorun',
         'amssd_autorun_chktime',
         'amssd_content',
+        'amssd_content_variables',
         'amssd_attachment'
+    ];
+
+    protected $casts = [
+        'amssd_content_variables' => 'array',
     ];
 
     public function attch () {

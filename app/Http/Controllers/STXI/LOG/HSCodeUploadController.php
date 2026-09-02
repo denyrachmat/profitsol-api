@@ -17,6 +17,7 @@ use App\Models\STXI\LOG\HSCodeUplMaster;
 use App\Models\STXI\LOG\HSCodeGroupBeaDetail;
 
 use App\Exports\STXI\LOG\ExportHSCodeReport;
+use App\Exports\STXI\LOG\ExportHSCodeReportNew;
 use App\Traits\AMS\ApprovalActionTraits;
 use App\Http\Requests\AMS\ApprovalRunningApproveActionRequest;
 use App\Jobs\STXI\LOG\ExportHSCodeQueue;
@@ -162,7 +163,7 @@ class HSCodeUploadController extends BaseController
         ];
 
 
-        Excel::store(new ExportHSCodeReport($filter, $withHist === 'false' ? false : (bool) $withHist), 'export_hscode_auto.xlsx', 'public');
+        Excel::store(new ExportHSCodeReportNew($filter, $withHist === 'false' ? false : (bool) $withHist), 'export_hscode_auto.xlsx', 'public');
 
         $download = 'storage/export_hscode_auto.xlsx';
 
@@ -183,7 +184,7 @@ class HSCodeUploadController extends BaseController
         ];
 
         $datetime = date('y-m-d his');
-        Excel::store(new ExportHSCodeReport($filter, true), 'export_hscode_auto.xlsx', 'public');
+        Excel::store(new ExportHSCodeReportNew($filter, true), 'export_hscode_auto.xlsx', 'public');
 
         $download = 'storage/export_hscode_auto.xlsx';
 

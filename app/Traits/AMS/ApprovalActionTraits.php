@@ -18,6 +18,7 @@ use App\Models\AMS\ApprovalMaster;
 use App\Models\AMS\ApprovalHistDetail;
 use App\Models\AMS\ApprovalAttachSet;
 use App\Models\AMS\ApprovalAttachHist;
+use App\Models\AMS\ApprovalDocSignBox;
 
 use App\Jobs\AMS\EmailNotificationQueue;
 use App\Models\PORTAL\PortalUserDet;
@@ -26,6 +27,7 @@ trait ApprovalActionTraits
 {
     public function approveAction(ApprovalRunningApproveActionRequest $request)
     {
+        DB::beginTransaction();
         $checkLatestOrder = 0;
         $getLatestData = null;
         if ($request->has('token') && !empty($request->token)) {
@@ -66,6 +68,7 @@ trait ApprovalActionTraits
                 $useTokenTest = (clone $getToken)->whereDoesntHave('hist')->first();
 
                 if (empty($useTokenTest)) {
+                    DB::rollBack();
                     return $this->handleError('Your quota is empty, please consult administrator !!');
                 } else {
                     // Check if key already running
@@ -82,25 +85,27 @@ trait ApprovalActionTraits
                             foreach (array_values($dataSent) as $keySent => $valueSent) {
                                 $getParam = json_decode($valueSent['amshd_paramstore']);
 
-                                if (isset($getParam->msgkey) && !empty($getParam->msgkey)) {
-                                    $cekValue = $getParam->data->{$getParam->msgkey};
+                                // Only flag a duplicate when the current submission's
+                                // msgkey actually matches an in-flight one. No msgkey
+                                // (or no matching key) must never auto-block a re-send.
+                                if (isset($getParam->msgkey) && !empty($getParam->msgkey)
+                                    && isset($getParam->data) && isset($getParam->data->{$getParam->msgkey})) {
                                     $checkJSON = is_string($request->data) ? json_decode($request->data, true) : $request->data;
-
-                                    if ($cekValue == $checkJSON[$getParam->msgkey]) {
+                                    if (is_array($checkJSON) && array_key_exists($getParam->msgkey, $checkJSON)
+                                        && $getParam->data->{$getParam->msgkey} == $checkJSON[$getParam->msgkey]) {
                                         $runningToken[] = $checkJSON[$getParam->msgkey];
                                     }
-                                } else {
-                                    $objectArray = (array) $getParam->data;
-                                    $firstKey = array_keys($objectArray)[0];
-                                    $runningToken[] = $objectArray[$firstKey];
-
-                                    // $runningToken[] = $getParam->data[array_keys((array) $getParam->data)[0]];
                                 }
                             }
                         }
 
                         if (count($runningToken) > 0) {
-                            return $this->handleError('you already send this Approval, please check again your data.');
+                            DB::rollBack();
+                            return $this->handleError('you already send this Approval, please check again your data.', [
+                                'runningToken' => $runningToken,
+                                'token' => $useTokenTest->amstd_token,
+                                'useTokenCheckRunning' => $useTokenCheckRunning
+                            ]);
                         }
                         $useToken = $useTokenTest->amstd_token;
                     } else {
@@ -123,6 +128,15 @@ trait ApprovalActionTraits
             return !str_contains($fc, 'fullname') && !str_contains($fc, "['");
         }));
 
+        // Also require any loop/collection the template iterates (e.g. @foreach($item_det ...)).
+        // A missing collection would crash Blade::render at read time, so validate here at send.
+        preg_match_all('/@foreach\(\s*\$([A-Za-z_][A-Za-z0-9_]*)\s+as|@forelse\(\s*\$([A-Za-z_][A-Za-z0-9_]*)\s+as/', $dataMaster->apprvSet->amssd_content, $loopMatches);
+        foreach (array_filter(array_merge($loopMatches[1], $loopMatches[2])) as $loopVar) {
+            if (!in_array($loopVar, $listVariable, true) && !str_contains($loopVar, 'fullname')) {
+                $listVariable[] = $loopVar;
+            }
+        }
+
         if (count($listVariable) > 0) {
             if ($request->has('data')) {
                 $checkJSON = is_string($request->data) ? json_decode($request->data, true) : $request->data;
@@ -131,7 +145,18 @@ trait ApprovalActionTraits
                 }));
 
                 if (count($checkFil) > 0) {
+                    DB::rollBack();
                     return $this->handleError("you hasn't provide some data keys on request!!", $checkFil);
+                }
+
+                // Type validation: check data types against defined variable schema
+                if ($dataMaster->apprvSet->amssd_content_variables) {
+                    $varSchema = $dataMaster->apprvSet->amssd_content_variables;
+                    $typeErrors = $this->validateDataTypes($checkJSON, $varSchema);
+                    if (!empty($typeErrors)) {
+                        DB::rollBack();
+                        return $this->handleError("Data type validation failed", $typeErrors);
+                    }
                 }
 
                 if ($request->has('msgkey') && !empty($request->msgkey)) {
@@ -139,6 +164,7 @@ trait ApprovalActionTraits
                     $cekHist = ApprovalHistDetail::where('amsm_id', $request->amsm_id)->where('amshd_paramstore', 'like', "%" . $keyRequest . "%")->first();
 
                     if (!empty($cekHist) && $useToken !== $cekHist->amstd_token) {
+                        DB::rollBack();
                         return $this->handleError("Key " . $keyRequest . " already submited !!", [
                             'hist' => $cekHist,
                             'token_used' => $useToken
@@ -146,6 +172,7 @@ trait ApprovalActionTraits
                     }
                 }
             } else {
+                DB::rollBack();
                 return $this->handleError("you hasn't provide data keys on request!!", $listVariable);
             }
         }
@@ -153,8 +180,16 @@ trait ApprovalActionTraits
         // Start Calculating approval
         $hist = [];
         $getfirstOrder = $checkLatestOrder;
+        $lastSentOrder = null; // order of the last step we sent, to stop the cascade
         // logger($dataMaster->det);
         foreach ($dataMaster->det as $keyDet => $valueDet) {
+            // Only send one order at a time: once we've pushed a higher order's
+            // notification out, do NOT pre-notify subsequent orders — they wait
+            // until the current order is approved (handled by the approve path).
+            if ($lastSentOrder !== null && (int) $valueDet['amsmd_order'] !== $lastSentOrder) {
+                break;
+            }
+
             $checkLatestToken = ApprovalHistDetail::where('amsm_id', $request->amsm_id)
                 ->with('mapdet')
                 ->with('senderUser')
@@ -194,6 +229,9 @@ trait ApprovalActionTraits
                 if ($valueDet['amsmd_order'] == (int) $checkLatestOrder + 1) {
                     logger('masuk 1');
                     $this->sendingApproval($request, $dataMaster, $checkFirst, $checkLatest, $valueDet, $histToken, $useToken, $nextStat);
+                    // Advance cursor so the next approver (order +1) can send too
+                    $checkLatestOrder = (int) $valueDet['amsmd_order'];
+                    $lastSentOrder = (int) $valueDet['amsmd_order'];
                 } else {
                     logger('masuk 2');
                     break;
@@ -239,6 +277,7 @@ trait ApprovalActionTraits
                 ->first();
         }
 
+        DB::commit();
         return $this->handleResponse($hist, 'Success');
     }
 
@@ -335,6 +374,33 @@ trait ApprovalActionTraits
                 $f->get();
             })->first();
 
+            // Document signing: attach signature boxes for the current approver step
+            if (!empty($hasil->apprvSet->amssd_is_docsign)) {
+                $currentStep = $getReceiver['mapdet']['amsmd_order'] ?? $getSender['mapdet']['amsmd_order'] ?? null;
+                $signBoxes = ApprovalDocSignBox::with('mapdet.userDet')
+                    ->where('amsm_id', $hasil->id);
+                if ($currentStep !== null) {
+                    $signBoxes->whereHas('mapdet', function ($q) use ($currentStep) {
+                        $q->where('amsmd_order', $currentStep);
+                    });
+                }
+                $hasilnyaSignBox = $signBoxes->get()->map(function ($box) {
+                    return [
+                        'amsmd_id' => $box->amsmd_id,
+                        'amsmd_order' => $box->mapdet->amsmd_order ?? null,
+                        'username' => $box->mapdet->amsmd_username ?? null,
+                        'fullname' => $box->mapdet->userDet->fullname ?? $box->mapdet->amsmd_username ?? null,
+                        'page_no' => $box->dsbx_page_no,
+                        'x' => $box->dsbx_x,
+                        'y' => $box->dsbx_y,
+                        'width' => $box->dsbx_width,
+                        'height' => $box->dsbx_height,
+                        'label' => $box->dsbx_label,
+                        'signed' => !empty($box->mapdet->hist->where('amshd_stat', 'approve')->first()->amshd_username_apprv),
+                    ];
+                });
+            }
+
             if (!empty($hasil->apprvSet->amssd_content)) {
                 $hasilnya = $hasil->apprvSet->amssd_content;
                 $checkJSON = is_string($getReceiver['amshd_paramstore']) ? json_decode($getReceiver['amshd_paramstore'], true)['data'] : $getReceiver['amshd_paramstore']['data'];
@@ -350,7 +416,7 @@ trait ApprovalActionTraits
                 $hasilnya = $hasil->toArray();
             }
 
-            return $this->handleResponse(array_merge($hasilnya, ['token' => $cekToken]), 'Token found !!');
+            return $this->handleResponse(array_merge($hasilnya, ['token' => $cekToken], isset($hasilnyaSignBox) ? ['sign_boxes' => $hasilnyaSignBox] : []), 'Token found !!');
         }
 
         return $this->handleError('Token not found !! please check again !!');
@@ -518,6 +584,17 @@ trait ApprovalActionTraits
             }
         }
 
+        // If document signing is enabled, apply signature and return sign boxes
+        if ($dataMaster->apprvSet->amssd_is_docsign) {
+            $signBoxes = ApprovalDocSignBox::where('amsm_id', $dataMaster->id)
+                ->with('mapdet')
+                ->get();
+            
+            if ($signBoxes->isNotEmpty()) {
+                $hist->sign_boxes = $signBoxes;
+            }
+        }
+
         // If Email notification is on
         if ($dataMaster->apprvSet->amssd_isemail) {
             $cekKeyValue = array_values((array) $request->data)[0];
@@ -556,14 +633,20 @@ trait ApprovalActionTraits
             );
         }
 
-        Redis::publish('portalv2', json_encode([
-            'app' => 'portal_notif',
-            'message' => "You have new notification from {$getSender->pud_first_name} {$getSender->pud_last_name}",
-            'type' => 'info',
-            'data' => [
-                'username_dest' => empty($checkFirst) ? $valueDet['amsmd_username'] : $checkFirst->p_u_username
-            ]
-        ]));
+        try {
+            Redis::publish('portalv2', json_encode([
+                'app' => 'portal_notif',
+                'message' => "You have new notification from {$getSender->pud_first_name} {$getSender->pud_last_name}",
+                'type' => 'info',
+                'data' => [
+                    'username_dest' => empty($checkFirst) ? $valueDet['amsmd_username'] : $checkFirst->p_u_username
+                ]
+            ]));
+        } catch (\Throwable $e) {
+            // Redis/real-time push is best-effort; a down broker must not
+            // abort/rollback the whole approval flow (token + hist + email).
+            logger()->warning('Redis publish failed during approval sending: ' . $e->getMessage());
+        }
     }
 
     public function convertValuetoContent($content, $fromUname, $toUname, $param = [], $token = '')
@@ -577,10 +660,24 @@ trait ApprovalActionTraits
             // $convertContent = str_replace(search: "{{" . $keyVar . "}}", replace: $valueVar, subject: $convertContent);
         }
 
-        $convertContent = Blade::render($content, array_merge([
+        // Provide empty defaults for any variable/loop referenced in the template
+        // but not supplied, so Blade::render never blows up on missing data
+        // (e.g. a generic approval template that references $item_det).
+        $renderParams = array_merge([
             'recipient_fullname' => !empty($getUsers) ? "{$getUsers->pud_first_name} {$getUsers->pud_last_name}" : $toUname,
             'fullname' => !empty($getUsersFrom) ? "{$getUsersFrom->pud_first_name} {$getUsersFrom->pud_last_name}" : $fromUname
-        ], $params));
+        ], $params);
+
+        preg_match_all('/\$(?!\d)[A-Za-z_][A-Za-z0-9_]*/', $content, $matches);
+        foreach (array_unique($matches[0]) as $varRef) {
+            $varName = substr($varRef, 1); // strip leading $
+            if (!array_key_exists($varName, $renderParams)) {
+                // Loops default to empty array, scalars to empty string
+                $renderParams[$varName] = str_contains($content, '@foreach(' . $varRef . ' ') || str_contains($content, '@forelse(' . $varRef . ' ') ? [] : '';
+            }
+        }
+
+        $convertContent = Blade::render($content, $renderParams);
 
         return $convertContent;
     }
@@ -766,4 +863,185 @@ trait ApprovalActionTraits
 
         return $this->handleResponse($getData, 'Data Fetched');
     }
+
+    public function applySignatureToAttachment($attachmentPath, $signatureBase64, $signatureX, $signatureY, $pageNumber, $signerUsername)
+    {
+        try {
+            if (!file_exists($attachmentPath)) {
+                return null;
+            }
+
+            if (!str_ends_with(strtolower($attachmentPath), '.pdf')) {
+                return null;
+            }
+
+            return $this->stampSignatureOnPdf($attachmentPath, $signatureBase64, $signatureX, $signatureY, $pageNumber);
+        } catch (\Exception $e) {
+            logger('Signature stamping failed: ' . $e->getMessage());
+            return null;
+        }
+    }
+
+    public function stampSignatureOnPdf($pdfPath, $signatureBase64, $x, $y, $pageNum = 1)
+    {
+        $signatureImage = $this->base64ToImage($signatureBase64);
+        if (!$signatureImage) {
+            return null;
+        }
+
+        return [
+            'signed_pdf_path' => $pdfPath,
+            'signature_image_path' => $signatureImage,
+            'x' => $x,
+            'y' => $y,
+            'page' => $pageNum,
+            'status' => 'pending_fpdi_overlay'
+        ];
+    }
+
+    public function base64ToImage($base64String)
+    {
+        try {
+            if (str_starts_with($base64String, 'data:image')) {
+                $data = explode(',', $base64String);
+                $data = base64_decode($data[1]);
+            } else {
+                $data = base64_decode($base64String);
+            }
+
+            $filename = 'sig_' . Str::random(12) . '.png';
+            Storage::disk('local')->put($filename, $data);
+            return Storage::disk('local')->path($filename);
+        } catch (\Exception $e) {
+            return null;
+        }
+    }
+
+    /**
+     * Validate submitted data against a declared variable type schema.
+     * Returns a list of human-readable errors (empty array if all pass).
+     *
+     * @param array $data          The submitted data payload
+     * @param array $varSchema     [{name, type, label?, group?}] declared variables
+     * @return array
+     */
+    public function validateDataTypes(array $data, array $varSchema)
+    {
+        $errors = [];
+
+        foreach ($varSchema as $var) {
+            if (!isset($var['name'])) continue;
+
+            $name = $var['name'];
+            $type = strtolower($var['type'] ?? 'string');
+            $label = $var['label'] ?? $name;
+
+            // Skip if the key isn't present (missing-key check happens elsewhere)
+            if (!array_key_exists($name, $data)) continue;
+
+            $value = $data[$name];
+
+            switch ($type) {
+                case 'string':
+                case 'number':
+                case 'integer':
+                case 'float':
+                case 'decimal':
+                case 'boolean':
+                case 'bool':
+                case 'date':
+                    if (!$this->passesTypeCheck($value, $type)) {
+                        $errors[] = "{$label} must be {$this->typeDisplayName($type)}.";
+                    }
+                    break;
+                case 'array':
+                case 'list':
+                    if (!is_array($value)) {
+                        $errors[] = "{$label} must be an array.";
+                        break;
+                    }
+                    // If this variable declares child fields, treat it as a loop of objects
+                    // and validate each row's fields against their declared types.
+                    if (!empty($var['fields']) && is_array($var['fields'])) {
+                        foreach ($value as $i => $row) {
+                            if (!is_array($row)) {
+                                $errors[] = "{$label}[{$i}] must be an object.";
+                                continue;
+                            }
+                            foreach ($var['fields'] as $field) {
+                                if (!isset($field['name'])) continue;
+                                $fName = $field['name'];
+                                $fType = strtolower($field['type'] ?? 'string');
+                                $fLabel = $field['label'] ?? $fName;
+                                if (!array_key_exists($fName, $row)) {
+                                    $errors[] = "{$label}[{$i}].{$fName} is required.";
+                                    continue;
+                                }
+                                if (!$this->passesTypeCheck($row[$fName], $fType)) {
+                                    $errors[] = "{$label}[{$i}].{$fLabel} must be {$this->typeDisplayName($fType)}.";
+                                }
+                            }
+                        }
+                    }
+                    break;
+                // 'string' is the default / catch-all; unknown types are ignored
+            }
+        }
+
+        return $errors;
+    }
+
+    private function isValidDate($value)
+    {
+        if (is_numeric($value)) return false;
+        if (!is_string($value)) return false;
+        // Accept YYYY-MM-DD or a parseable date string
+        $parsed = strtotime($value);
+        return $parsed !== false;
+    }
+
+    /**
+     * Check a single value against a data type.
+     */
+    private function passesTypeCheck($value, string $type): bool
+    {
+        switch ($type) {
+            case 'string':
+                return is_string($value);
+            case 'number':
+            case 'float':
+            case 'decimal':
+                return is_numeric($value);
+            case 'integer':
+                return is_int($value);
+            case 'boolean':
+            case 'bool':
+                return in_array($value, [true, false, 1, 0, '1', '0', 'true', 'false'], true);
+            case 'date':
+                return $this->isValidDate($value);
+            case 'array':
+            case 'list':
+                return is_array($value);
+            default:
+                return true; // unknown types are not validated
+        }
+    }
+
+    private function typeDisplayName(string $type): string
+    {
+        $names = [
+            'string' => 'a string',
+            'number' => 'an integer',
+            'integer' => 'an integer',
+            'float' => 'a number',
+            'decimal' => 'a number',
+            'boolean' => 'a boolean',
+            'bool' => 'a boolean',
+            'date' => 'a valid date (YYYY-MM-DD)',
+            'array' => 'an array',
+            'list' => 'an array',
+        ];
+        return $names[$type] ?? 'valid';
+    }
 }
+

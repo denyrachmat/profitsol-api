@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 class PortalRole extends Model
 {
     use HasFactory;
+    use \Awobaz\Compoships\Compoships;
 
     protected $table = 'portal_role_mstr';
     protected $fillable = [
@@ -28,7 +29,7 @@ class PortalRole extends Model
 
     public function role_app_map()
     {
-        return $this->hasMany('App\Models\PORTAL\PortalRoleAppMap', 'rm_role_id', 'id');
+        return $this->hasMany('App\Models\PORTAL\PortalRoleAppMap', ['rm_role_id', 'u_username'], ['id', 'u_username']);
     }
 
     public function role_app_map_trough()

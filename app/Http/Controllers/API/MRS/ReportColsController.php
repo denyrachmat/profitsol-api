@@ -77,6 +77,9 @@ class ReportColsController extends BaseController
             'colsParam' => $this->getCols($dataParam),
             'props' => $master->mrm_url_gen,
             'filterFirst' => $master->mrm_filter_flg,
+            'idForms' => (stripos($master->mrm_url_gen, 'cms') !== false || stripos($master->mrm_url_gen, 'rpa') !== false)
+                ? $master->mrm_query
+                : null,
         ], 'Data Found');
     }
 
