@@ -216,12 +216,38 @@ class FormController extends BaseController
             }
         }
 
-        // Setup Share forms
-        if (isset($request->shareForms) && !empty($request->idRef)) {
-            $randomString = Str::random(30);
+        // Setup Share forms - fixed: support role IDs, allow main-menu without shareForms, and create role mappings - keep link stable
+        $isMainMenu = !empty($request->shareFormsIsMainMenu) && $request->shareFormsIsMainMenu;
+        $existingLink = null;
+        if (!empty($request->idRef)) {
+            $existingLink = FormShareDet::where('cfmt_id', $request->idRef)->value('cfsd_gen_link');
+            if (!$existingLink) {
+                $existingApp = PortalApp::where('am_app_code', 'FRM-' . $request->idRef)->first();
+                if ($existingApp && preg_match('/linkID=([A-Za-z0-9]+)/', $existingApp->am_app_url, $m)) $existingLink = $m[1];
+            }
+        }
+        $randomString = $existingLink ?: Str::random(30);
+        $roleIdsForMenu = [];
+        if (isset($request->shareFormsRoleID) && is_array($request->shareFormsRoleID) && count($request->shareFormsRoleID) > 0) {
+            $roleIdsForMenu = array_values(array_unique(array_filter($request->shareFormsRoleID)));
+        } elseif ($isMainMenu && !empty($request->shareFormsIsRoles) && $request->shareFormsIsRoles && isset($request->shareForms) && is_array($request->shareForms)) {
+            foreach ($request->shareForms as $u) {
+                $map = PortalRoleUserMap::where('u_username', $u)->first();
+                if ($map && !in_array($map->rm_role_id, $roleIdsForMenu)) $roleIdsForMenu[] = $map->rm_role_id;
+            }
+        }
+
+        if (isset($request->shareForms) && !empty($request->idRef) && is_array($request->shareForms) && count($request->shareForms) > 0) {
             foreach ($request->shareForms as $keyShare => $valueShare) {
                 $cekIDRoles = PortalRoleUserMap::where('u_username', $valueShare)->first();
-
+                $roleIdForShare = '';
+                if (!empty($request->shareFormsIsRoles) && $request->shareFormsIsRoles) {
+                    if (!empty($roleIdsForMenu)) {
+                        $roleIdForShare = $roleIdsForMenu[0];
+                    } else {
+                        $roleIdForShare = $cekIDRoles ? $cekIDRoles->rm_role_id : '';
+                    }
+                }
                 FormShareDet::updateOrCreate([
                     'cfmt_id' => $request->idRef,
                     'cfsd_to' => $valueShare,
@@ -230,12 +256,11 @@ class FormController extends BaseController
                     'p_u_username' => $request->header('username'),
                     'cfsd_to' => $valueShare,
                     'cfsd_gen_link' => $randomString,
-                    'cfsd_role_id' => isset($request->shareFormsIsRoles) && $request->shareFormsIsRoles ? $cekIDRoles->rm_role_id : '',
-                    'cfsd_is_menu' => isset($request->shareFormsIsMainMenu) && $request->shareFormsIsMainMenu ? $request->shareFormsIsMainMenu : 0
+                    'cfsd_role_id' => $roleIdForShare,
+                    'cfsd_is_menu' => $isMainMenu ? 1 : 0
                 ]);
 
-                // If Form Added to information
-                if (!isset($request->shareFormsIsMainMenu) || $request->shareFormsIsMainMenu == 0) {
+                if (!$isMainMenu) {
                     PortalNotif::create([
                         'p_u_username' => $request->header('username'),
                         'pnm_to_users' => $valueShare,
@@ -250,42 +275,58 @@ class FormController extends BaseController
                         'pnm_start_date' => $request->has('setupTraining') ? $request->setupTraining['startQuiz'] : date('Y-m-d'),
                         'pnm_end_date' => $request->has('setupTraining') ? $request->setupTraining['endQuiz'] : NULL
                     ]);
-                } else { // If Form Added to Main Menu
-                    $appInsert = PortalApp::updateOrCreate([
-                        'am_app_code' => 'FRM-' . $request->idRef,
+                }
+            }
+        }
+
+        if ($isMainMenu && !empty($request->idRef)) {
+            $appInsert = PortalApp::updateOrCreate([
+                'am_app_code' => 'FRM-' . $request->idRef,
+            ], [
+                'u_username' => $request->header('username'),
+                'am_app_code' => 'FRM-' . $request->idRef,
+                'am_app_name' => $request->title,
+                'am_app_desc' => $request->title,
+                'am_app_url' => 'CMS/formsAsApps?linkID=' . $randomString,
+                'am_app_icon' => $request->shareFormsMenuIcon,
+                'am_app_parent' => $request->selectedSharedMenu,
+                'am_local_form' => 1
+            ]);
+
+            foreach ($roleIdsForMenu as $rid) {
+                if (!empty($request->selectedSharedMenu)) {
+                    PortalRoleAppMap::updateOrCreate([
+                        'rm_role_id' => $rid,
+                        'am_app_id' => $request->selectedSharedMenu,
                     ], [
                         'u_username' => $request->header('username'),
-                        'am_app_code' => 'FRM-' . $request->idRef,
-                        'am_app_name' => $request->title,
-                        'am_app_desc' => $request->title,
-                        'am_app_url' => 'CMS/formsAsApps?linkID=' . $randomString,
-                        'am_app_icon' => $request->shareFormsMenuIcon,
-                        'am_app_parent' => $request->selectedSharedMenu,
-                        'am_local_form' => 1
+                        'rm_role_id' => $rid,
+                        'am_app_id' => $request->selectedSharedMenu,
+                        'am_app_parent' => null
                     ]);
-
-                    // Insert parent menu
-                    // PortalRoleAppMap::updateOrCreate([
-                    //     'rm_role_id' => $cekIDRoles->rm_role_id,
-                    //     'am_app_id' => $request->selectedSharedMenu,
-                    // ], [
-                    //     'u_username' => $request->header('username'),
-                    //     'rm_role_id' => $cekIDRoles->rm_role_id,
-                    //     'am_app_id' => $request->selectedSharedMenu,
-                    //     'am_app_parent' => null
-                    // ]);
-
-                    // // Insert the forms
-                    // PortalRoleAppMap::updateOrCreate([
-                    //     'rm_role_id' => $cekIDRoles->rm_role_id,
-                    //     'am_app_id' => $appInsert->am_app_code,
-                    // ], [
-                    //     'u_username' => $request->header('username'),
-                    //     'rm_role_id' => $cekIDRoles->rm_role_id,
-                    //     'am_app_id' => $appInsert->am_app_code,
-                    //     'am_app_parent' => $request->selectedSharedMenu
-                    // ]);
                 }
+                PortalRoleAppMap::updateOrCreate([
+                    'rm_role_id' => $rid,
+                    'am_app_id' => $appInsert->am_app_code,
+                ], [
+                    'u_username' => $request->header('username'),
+                    'rm_role_id' => $rid,
+                    'am_app_id' => $appInsert->am_app_code,
+                    'am_app_parent' => $request->selectedSharedMenu
+                ]);
+            }
+            if (!FormShareDet::where('cfsd_gen_link', $randomString)->exists()) {
+                FormShareDet::updateOrCreate([
+                    'cfmt_id' => $request->idRef,
+                    'cfsd_to' => $request->header('username'),
+                ], [
+                    'cfmt_id' => $request->idRef,
+                    'p_u_username' => $request->header('username'),
+                    'cfsd_to' => $request->header('username'),
+                    'cfsd_gen_link' => $randomString,
+                    'cfsd_role_id' => $roleIdsForMenu[0] ?? '',
+                    'cfsd_is_menu' => 1
+                ]);
             }
         }
 
@@ -380,8 +421,56 @@ class FormController extends BaseController
     public function storeAnswers(Request $request)
     {
         $formTitle = FormMasterTitle::find($request->id);
-        if ($formTitle && $formTitle->cfmt_status === 'closed') {
-            return $this->handleError('This form is no longer accepting responses.', []);
+        $username = $request->has('username') ? $request->username : $request->header('username');
+        $status = $formTitle->cfmt_status ?? null;
+
+        $setup = $this->getSetupFormsForForm($request->id);
+        $listOn = in_array(
+            $setup['specificUserSetViewHistory'] ?? null,
+            [true, 1, '1', 'true'],
+            true
+        );
+
+        $memberBypass = false;
+        if ($listOn) {
+            $list = is_array($setup['listSpecificUserRoleSetViewHistory'] ?? null)
+                ? $setup['listSpecificUserRoleSetViewHistory']
+                : [];
+
+            if (($setup['userView'] ?? 'user') === 'role') {
+                $roleId = $request->header('roleid');
+                $memberBypass = collect($list)->contains(function ($r) use ($roleId) {
+                    return (string) $r === (string) $roleId;
+                });
+            } else {
+                $memberBypass = collect($list)->contains(function ($u) use ($username) {
+                    return strtolower(trim((string) $u)) === strtolower(trim((string) $username));
+                });
+            }
+        }
+
+        if ($formTitle && ($status === 'draft' || $status === 'closed') && !$memberBypass) {
+            return $this->handleError('This form is ' . ($status ?: 'draft') . ' and not accepting responses.', []);
+        }
+
+        if (!$memberBypass) {
+            $connectedMRS = $this->getConnectedMRS((string) $request->id);
+            if (!empty($connectedMRS) && !empty($connectedMRS->id)) {
+                $periodRow = PortalGencode::where('pgm_code', 'MRS_FORM_PERIOD')
+                    ->whereRaw("CAST(pgm_value AS varchar(max)) = ?", [(string) $connectedMRS->id])
+                    ->whereRaw("CAST(pgm_value2 AS varchar(max)) = ?", [(string) $username])
+                    ->first();
+                if (!empty($periodRow) && !empty($periodRow->pgm_value3)) {
+                    $period = json_decode($periodRow->pgm_value3, true);
+                    if (!empty($period['from']) && !empty($period['to'])) {
+                        $now = now()->format('Y-m-d H:i');
+                        $toBound = strlen($period['to']) <= 10 ? $period['to'] . ' 23:59:59' : $period['to'];
+                        if ($now < $period['from'] || $now > $toBound) {
+                            return $this->handleError('This form is outside the active period.', []);
+                        }
+                    }
+                }
+            }
         }
 
         if ($formTitle && $formTitle->cfmt_quiz_flag !== 1) {
@@ -1039,9 +1128,18 @@ class FormController extends BaseController
         }
     }
 
-    public function viewByLinkForm($link)
+    public function viewByLinkForm(Request $request, $link)
     {
         $getID = FormShareDet::where('cfsd_gen_link', $link)->first();
+        if (!$getID) {
+            $app = PortalApp::where('am_app_url', 'like', '%' . $link . '%')->first();
+            if ($app && str_starts_with($app->am_app_code, 'FRM-')) {
+                $formId = substr($app->am_app_code, 4);
+                $getID = (object) ['cfmt_id' => $formId];
+            } else {
+                return response(['status' => false, 'message' => 'Form link not found'], 404);
+            }
+        }
 
         $data = formMasterTitle::with([
             'formMaster' => function ($f) {
@@ -1072,9 +1170,30 @@ class FormController extends BaseController
         }
 
         $setup = $formData['setupTraining'] ?? [];
+        $memberBypass = false;
+        $isMainMenuLink = isset($getID->cfsd_is_menu) && $getID->cfsd_is_menu == 1;
+        if (!$isMainMenuLink) {
+            $appFallback = PortalApp::where('am_app_url', 'like', '%' . $link . '%')->first();
+            $isMainMenuLink = $appFallback && str_starts_with($appFallback->am_app_code, 'FRM-');
+        }
+        if (!$isMainMenuLink) {
+            $listOn = in_array($setup['specificUserSetViewHistory'] ?? null, [true, 1, '1', 'true'], true);
+            if ($listOn) {
+                $list = is_array($setup['listSpecificUserRoleSetViewHistory'] ?? null) ? $setup['listSpecificUserRoleSetViewHistory'] : [];
+                $username = $request->header('username') ?? '';
+                $roleId = $request->header('roleid') ?? '';
+                if (($setup['userView'] ?? 'user') === 'role') {
+                    $memberBypass = collect($list)->contains(fn($r) => (string) $r === (string) $roleId);
+                } else {
+                    $memberBypass = collect($list)->contains(fn($u) => strtolower(trim((string) $u)) === strtolower(trim((string) $username)));
+                }
+            }
+        } else {
+            $memberBypass = true;
+        }
         $addPeriod = isset($setup['addPeriod']) && ($setup['addPeriod'] === true || $setup['addPeriod'] == 1 || $setup['addPeriod'] === '1');
 
-        if ($addPeriod) {
+        if (!$memberBypass && $addPeriod) {
             $now = now()->format('Y-m-d H:i');
             $start = $setup['startQuiz'] ?? null;
             $end = $setup['endQuiz'] ?? null;
@@ -1091,6 +1210,30 @@ class FormController extends BaseController
                     'status' => false,
                     'message' => 'This form is no longer available. The deadline was ' . $end . '.'
                 ], 403);
+            }
+        }
+
+        $connectedMRS = $this->getConnectedMRS((string) $getID->cfmt_id);
+        if (!$memberBypass && !empty($connectedMRS) && !empty($connectedMRS->id)) {
+            $periodUsername = $request->header('username');
+            if (!empty($periodUsername)) {
+                $periodRow = PortalGencode::where('pgm_code', 'MRS_FORM_PERIOD')
+                    ->whereRaw("CAST(pgm_value AS varchar(max)) = ?", [(string) $connectedMRS->id])
+                    ->whereRaw("CAST(pgm_value2 AS varchar(max)) = ?", [(string) $periodUsername])
+                    ->first();
+                if (!empty($periodRow) && !empty($periodRow->pgm_value3)) {
+                    $period = json_decode($periodRow->pgm_value3, true);
+                    if (!empty($period['from']) && !empty($period['to'])) {
+                        $periodNow = now()->format('Y-m-d H:i');
+                        $toBound = strlen($period['to']) <= 10 ? $period['to'] . ' 23:59:59' : $period['to'];
+                        if ($periodNow < $period['from'] || $periodNow > $toBound) {
+                            return response([
+                                'status' => false,
+                                'message' => 'This form is outside the active period.'
+                            ], 403);
+                        }
+                    }
+                }
             }
         }
 
@@ -1452,7 +1595,12 @@ class FormController extends BaseController
             ->where('pgm_desc', $slug)
             ->first();
 
-        if (!$getGencode) {
+        return $getGencode->pgm_value ? $this->viewByID((int)$getGencode->pgm_value, $request->header('username'))->getOriginalContent() : response([
+            'status' => false,
+            'message' => 'Form not found'
+        ]);
+
+        if (!$getGencode || !$getGencode->pgm_value) {
             return response([
                 'status' => false,
                 'message' => 'Form not found'

@@ -11,6 +11,7 @@ use App\Models\CMS\FormShareDet;
 use App\Models\CMS\FormLogicsDet;
 use App\Models\MRS\MRSReportMstr;
 use App\Models\PORTAL\PortalGencode;
+use App\Models\PORTAL\PortalApp;
 use App\Models\CMS\FormAnswerUserDet;
 use Illuminate\Support\Facades\DB;
 
@@ -62,8 +63,9 @@ trait FormsTraits
 
             $roleList = [];
             foreach ((clone $shared)->toArray() as $key => $value2) {
-                $roleList[$value2['cfsd_role_id']] = (int) $value2['cfsd_role_id'];
+                if (!empty($value2['cfsd_role_id'])) $roleList[$value2['cfsd_role_id']] = (int) $value2['cfsd_role_id'];
             }
+            $menuApp = PortalApp::where('am_app_code', 'FRM-' . $value['id'])->first();
 
             // If the form is a quiz, get the setup from the quiz setup table
             if ($value['cfmt_quiz_flag'] == 1) {
@@ -119,11 +121,11 @@ trait FormsTraits
                 'ans_id' => $answerID,
                 'share' => (clone $shared)->pluck('cfsd_to'),
                 'setupTraining' => $setupTrainingRes,
-                'shareFormsIsMainMenu' => count((clone $shared)) > 0 && (clone $shared)[0]->cfsd_is_menu == 1 ? true : false,
-                'shareFormsIsRoles' => count((clone $shared)) > 0 && !empty((clone $shared)[0]->cfsd_role_id) ? true : false,
-                'selectedSharedMenu' => count((clone $shared)) > 0 && !empty((clone $shared)[0]->cfsd_role_id) ? (clone $shared)[0]->am_app_parent : '',
-                'shareFormsMenuIcon' => count((clone $shared)) > 0 && !empty((clone $shared)[0]->cfsd_role_id) ? (clone $shared)[0]->am_app_icon : '',
-                'shareFormsRoleID' => count((clone $shared)) > 0 && !empty((clone $shared)[0]->cfsd_role_id) ? array_values($roleList) : '',
+                'shareFormsIsMainMenu' => $menuApp ? true : (count((clone $shared)) > 0 && (clone $shared)[0]->cfsd_is_menu == 1 ? true : false),
+                'shareFormsIsRoles' => count((clone $shared)) > 0 && !empty((clone $shared)[0]->cfsd_role_id) ? true : (!empty($roleList) ? true : false),
+                'selectedSharedMenu' => $menuApp ? ($menuApp->am_app_parent ?? '') : (count((clone $shared)) > 0 && isset((clone $shared)[0]->am_app_parent) ? (clone $shared)[0]->am_app_parent : ''),
+                'shareFormsMenuIcon' => $menuApp ? ($menuApp->am_app_icon ?? '') : (count((clone $shared)) > 0 && isset((clone $shared)[0]->am_app_icon) ? (clone $shared)[0]->am_app_icon : ''),
+                'shareFormsRoleID' => !empty($roleList) ? array_values($roleList) : (count((clone $shared)) > 0 && !empty((clone $shared)[0]->cfsd_role_id) ? array_values($roleList) : ''),
                 'connectedMRS' => $this->getConnectedMRS((string) $value['id']),
                 'created_at' => $value['created_at'],
                 'tags' => $value['tags'] ?? [],
