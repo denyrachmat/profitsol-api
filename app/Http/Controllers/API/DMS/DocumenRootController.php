@@ -129,6 +129,22 @@ class DocumenRootController extends BaseController
         return $this->migrateFolderToDB($users, '', [], $root);
     }
 
+    public function folderFilesSyncStart($users, $root) {
+        $data = $this->syncFolderToDBPrepare($users, $root);
+        return $this->handleResponse($data, 'Sync started');
+    }
+
+    public function folderFilesSyncPoll($token) {
+        $batch = request()->query('batch', 20);
+        $data = $this->syncFolderToDBStep($token, $batch);
+        return $this->handleResponse($data, 'Sync progress');
+    }
+
+    public function folderFilesSyncInfo($token) {
+        $data = $this->syncFolderToDBInfo($token);
+        return $this->handleResponse($data, 'Sync info');
+    }
+
     public function getfiles($root, $path) {
         $files = Storage::disk($root)->get(base64_decode($path));
 

@@ -8,6 +8,7 @@ use App\Models\DMS\DMSFolderRootMstr;
 use App\Models\DMS\DMSDocRootMstr;
 use App\Models\DMS\DMSShareDet;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
 use Config;
 use Illuminate\Http\Request;
@@ -689,6 +690,178 @@ trait FolderDocumentTraits
             'listFolderFile' => $folderNames,
             'listFile' => $fileNames
         ];
+    }
+
+    /**
+     * Start a chunked folder/file sync. Builds the full directory list once,
+     * stores the remaining work queue in cache, returns a token + total.
+     * Keeps each HTTP request short so it survives proxy timeouts (e.g. Cloudflare).
+     */
+    public function syncFolderToDBPrepare($author, $root = '')
+    {
+        $disk = $this->getDiskAlias($author, $root);
+        $dbUser = $this->getAliasFolderbyAuthor($author, 'user');
+
+        $dirs = $disk->allDirectories();
+        sort($dirs);
+
+        $token = 'dms_sync_' . Str::random(24);
+        Cache::put($token, [
+            'author' => $author,
+            'db_user' => $dbUser,
+            'root' => $root,
+            'queue' => $dirs,
+            'done' => 0,
+            'total' => count($dirs),
+            'started_at' => now()->toDateTimeString(),
+        ], now()->addHours(6));
+
+        return [
+            'token' => $token,
+            'total' => count($dirs),
+            'done' => 0,
+        ];
+    }
+
+    /**
+     * Process the next batch of directories for a running sync token.
+     */
+    public function syncFolderToDBStep($token, $batch = 20)
+    {
+        $state = Cache::get($token);
+        if (!$state) {
+            return ['status' => 'done', 'token' => $token];
+        }
+
+        $queue = $state['queue'];
+        $batch = max(1, (int) $batch);
+        $slice = array_splice($queue, 0, $batch);
+
+        foreach ($slice as $dirPath) {
+            $this->migrateSingleDirToDB($state['author'], $dirPath, $state['root']);
+            $state['done']++;
+        }
+
+        $state['queue'] = $queue;
+        Cache::put($token, $state, now()->addHours(6));
+
+        $remaining = count($queue);
+        if ($remaining === 0) {
+            Cache::forget($token);
+            return [
+                'status' => 'done',
+                'token' => $token,
+                'total' => $state['total'],
+                'done' => $state['done'],
+            ];
+        }
+
+        return [
+            'status' => 'running',
+            'token' => $token,
+            'total' => $state['total'],
+            'done' => $state['done'],
+            'remaining' => $remaining,
+        ];
+    }
+
+    public function syncFolderToDBInfo($token)
+    {
+        $state = Cache::get($token);
+        if (!$state) {
+            return ['status' => 'done', 'token' => $token];
+        }
+        return [
+            'status' => 'running',
+            'token' => $token,
+            'total' => $state['total'],
+            'done' => $state['done'],
+            'remaining' => count($state['queue']),
+        ];
+    }
+
+    /**
+     * Migrate a single directory (folder + its files) into the DB.
+     * $dirPath is a path relative to the disk root, e.g. "FolderA/Sub".
+     */
+    public function migrateSingleDirToDB($author, $dirPath, $root = '')
+    {
+        $disk = $this->getDiskAlias($author, $root);
+        $dbUser = $this->getAliasFolderbyAuthor($author, 'user');
+
+        $dirPath = trim($dirPath, '/');
+        $expFolder = $dirPath === '' ? [] : explode('/', $dirPath);
+        $folderName = count($expFolder) > 0 ? $expFolder[count($expFolder) - 1] : '';
+        $parentName = count($expFolder) > 1 ? $expFolder[count($expFolder) - 2] : null;
+
+        $cekParent = null;
+        if (!empty($parentName)) {
+            $cekParent = DMSFolderMstr::where('dfm_folder_name', $parentName)
+                ->where('p_u_username', $dbUser)
+                ->where('dfm_root_mstr', $root)
+                ->orderBy('id', 'desc')
+                ->first();
+        }
+        $checkParent = !empty($cekParent) ? $cekParent->id : null;
+
+        // Folder
+        $idFolder = null;
+        $dataDBFolder = DMSFolderMstr::where('dfm_folder_name', $folderName)
+            ->where('dfm_parent_id', $checkParent)
+            ->where('p_u_username', $dbUser)
+            ->where('dfm_root_mstr', $root)
+            ->first();
+
+        if (empty($dataDBFolder)) {
+            $dataDBFolder = DMSFolderMstr::create([
+                'p_u_username' => $dbUser,
+                'dfm_folder_name' => $folderName,
+                'dfm_parent_id' => $checkParent,
+                'dfm_root_mstr' => $root,
+            ]);
+        }
+        $idFolder = $dataDBFolder->id;
+
+        // Files
+        try {
+            $filesInDir = $disk->files($dirPath);
+        } catch (\Throwable $e) {
+            $filesInDir = [];
+        }
+
+        $existingFiles = [];
+        foreach ($filesInDir as $valueFile) {
+            $expFile = explode('/', $valueFile);
+            $realName = $expFile[count($expFile) - 1];
+
+            $exists = DMSDocMstr::where('ddm_doc_real_name', $realName)
+                ->where('dfm_id', $idFolder)
+                ->where('p_u_username', $dbUser)
+                ->where('dfm_root_mstr', $root)
+                ->first();
+
+            if (empty($exists)) {
+                DMSDocMstr::create([
+                    'p_u_username' => $dbUser,
+                    'dfm_id' => $idFolder,
+                    'ddm_doc_name' => $realName,
+                    'ddm_doc_real_name' => $realName,
+                    'ddm_doc_size' => 0,
+                    'ddm_doc_flag' => 0,
+                    'dfm_root_mstr' => $root,
+                ]);
+            }
+            $existingFiles[] = $realName;
+        }
+
+        // Cleanup: remove DB files in this folder that no longer exist on disk
+        if (count($existingFiles) > 0) {
+            DMSDocMstr::whereNotIn('ddm_doc_real_name', $existingFiles)
+                ->where('dfm_id', $idFolder)
+                ->where('p_u_username', $dbUser)
+                ->where('dfm_root_mstr', $root)
+                ->delete();
+        }
     }
 
     public function dbSyncToRealDoc($author, $root = '')
