@@ -313,7 +313,9 @@ trait FolderDocumentTraits
             // }
         } else {
             $checkID = DMSDocRootMstr::where('ddrm_name', $root)->first();
-            $this->installDisk($checkID->dudrm_source);
+            if ($checkID) {
+                $this->installDisk($checkID->ddrm_name);
+            }
         }
 
         $isUseRealNameFile = empty($checkRootAlias)
@@ -671,7 +673,15 @@ trait FolderDocumentTraits
 
     public function checkPerm($author, $root = '')
     {
-        return Storage::disk($this->getAliasFolderbyAuthor($author, 'root', $root))->allDirectories();
+        $diskName = $this->getAliasFolderbyAuthor($author, 'root', $root);
+        try {
+            // use ephemeral disk to support dynamic ddrm_name not registered in config/filesystems.php
+            $disk = $this->installDisk($diskName);
+            return $disk->allDirectories();
+        } catch (\Throwable $e) {
+            logger()->warning('checkPerm installDisk failed, fallback to Storage::disk', ['author' => $author, 'root' => $root, 'disk' => $diskName, 'error' => $e->getMessage()]);
+            return Storage::disk($diskName)->allDirectories();
+        }
     }
 
     public function syncRootFiles($author, $root = '')
@@ -756,6 +766,10 @@ trait FolderDocumentTraits
         if ($driver === 'local') {
             $root = rtrim(str_replace('\\', '/', $r->ddrm_root), '/');
 
+            if (!is_dir($r->ddrm_root) || !is_readable($r->ddrm_root)) {
+                throw new \RuntimeException("Local disk root not accessible: {$r->ddrm_root}");
+            }
+
             return Storage::build([
                 'driver' => 'local',
                 'root' => $root,
@@ -827,21 +841,24 @@ trait FolderDocumentTraits
             $hasil = [];
             foreach ($datanya as $value) {
                 $status = true;
-                $checkList = null; // Initialize
-                $configDisks = Config::get('filesystems.disks'); // This won't throw, get it once.
+                $checkList = null;
+                $error = null;
 
                 try {
-                    $this->installDisk($value['ddrm_name']); // Primarily to trigger the configuration. Disk object isn't directly used here.
-                    $checkList = $this->checkPerm('deny-rachmat@sumitronics.co.jp', $value['ddrm_name']);
-                } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+                    $disk = $this->installDisk($value['ddrm_name']);
+                    // probe filesystem - will throw if path not readable / credentials invalid
+                    $checkList = $disk->allDirectories();
+                } catch (\Throwable $e) {
                     $status = false;
-                    logger()->warning('DMSDocRootMstr not found for ddrm_name: ' . $value['ddrm_name'], ['exception' => $e]);
+                    $error = $e->getMessage();
+                    logger()->warning('Disk check failed for ddrm_name: ' . $value['ddrm_name'], ['exception' => $e]);
+                    $checkList = [];
                 }
 
                 $hasil[] = array_merge($value, [
                     'config_status' => $status,
-                    'check_config' => $configDisks,
-                    'check_list' => $checkList
+                    'check_list' => $checkList,
+                    'check_error' => $error,
                 ]);
             }
 
