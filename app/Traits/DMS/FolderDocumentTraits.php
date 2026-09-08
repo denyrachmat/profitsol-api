@@ -693,38 +693,39 @@ trait FolderDocumentTraits
     }
 
     /**
-     * Start a chunked folder/file sync. Builds the full directory list once,
-     * stores the remaining work queue in cache, returns a token + total.
-     * Keeps each HTTP request short so it survives proxy timeouts (e.g. Cloudflare).
+     * Start a chunked folder/file sync. Lists only top-level directories initially
+     * (fast), stores queue in cache. Subdirectories are expanded during polling.
      */
     public function syncFolderToDBPrepare($author, $root = '')
     {
         $disk = $this->getDiskAlias($author, $root);
         $dbUser = $this->getAliasFolderbyAuthor($author, 'user');
 
-        $dirs = $disk->allDirectories();
-        sort($dirs);
+        // Only scan top-level dirs here - fast, no recursive walk
+        $topDirs = $disk->directories('');
+        sort($topDirs);
 
         $token = 'dms_sync_' . Str::random(24);
         Cache::put($token, [
             'author' => $author,
             'db_user' => $dbUser,
             'root' => $root,
-            'queue' => $dirs,
+            'queue' => $topDirs,
             'done' => 0,
-            'total' => count($dirs),
+            'total' => count($topDirs), // initial estimate, grows as subdirs expand
             'started_at' => now()->toDateTimeString(),
         ], now()->addHours(6));
 
         return [
             'token' => $token,
-            'total' => count($dirs),
+            'total' => count($topDirs),
             'done' => 0,
         ];
     }
 
     /**
      * Process the next batch of directories for a running sync token.
+     * For each dir: migrate folder + files, then enqueue its subdirectories.
      */
     public function syncFolderToDBStep($token, $batch = 20)
     {
@@ -737,9 +738,23 @@ trait FolderDocumentTraits
         $batch = max(1, (int) $batch);
         $slice = array_splice($queue, 0, $batch);
 
+        $disk = $this->getDiskAlias($state['author'], $state['root']);
+
         foreach ($slice as $dirPath) {
             $this->migrateSingleDirToDB($state['author'], $dirPath, $state['root']);
             $state['done']++;
+
+            // Expand subdirectories and add to queue
+            try {
+                $subDirs = $disk->directories($dirPath);
+                if (count($subDirs) > 0) {
+                    sort($subDirs);
+                    $queue = array_merge($queue, $subDirs);
+                    $state['total'] += count($subDirs);
+                }
+            } catch (\Throwable $e) {
+                // ignore scan errors for subdirs
+            }
         }
 
         $state['queue'] = $queue;
