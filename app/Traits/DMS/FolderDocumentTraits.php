@@ -265,8 +265,17 @@ trait FolderDocumentTraits
     public function getDiskAlias($author, $source)
     {
         $getMapping = DMSFolderRootMstr::where('p_u_username', $author)->where('dudrm_source', $source)->first();
-
-        // return $getMapping->dudrm_source;
+        // fallback to alias user if mapping not found for original author
+        if (!$getMapping) {
+            $aliasUser = $this->getAliasFolderbyAuthor($author, 'user');
+            if ($aliasUser !== $author) {
+                $getMapping = DMSFolderRootMstr::where('p_u_username', $aliasUser)->where('dudrm_source', $source)->first();
+            }
+        }
+        if (!$getMapping) {
+            logger()->warning('getDiskAlias mapping not found', ['author' => $author, 'source' => $source]);
+            abort(404, "Disk mapping not found for user {$author} / source {$source}");
+        }
         return $this->installDisk($getMapping->dudrm_source);
     }
 
@@ -432,19 +441,35 @@ trait FolderDocumentTraits
 
     public function convertFolderPathToArray($author, $path = '', $parentKey = 0, $hasil = [], $root = '')
     {
-        $disk = $this->getDiskAlias($author, $root);
+        try {
+            $disk = $this->getDiskAlias($author, $root);
+        } catch (\Throwable $e) {
+            logger()->error('convertFolderPathToArray getDiskAlias failed', ['author' => $author, 'root' => $root, 'error' => $e->getMessage()]);
+            return $parentKey == 0 ? ['key' => 0, 'folders_name' => $path, 'list_files' => [], 'children' => []] : [];
+        }
         $baseAlias = $this->getAliasFolderbyAuthor($author);
         $scanPath = $path === '' ? $baseAlias : $path;
-        $data = $disk->directories($scanPath);
+        try {
+            $data = $disk->directories($scanPath);
+        } catch (\Throwable $e) {
+            logger()->warning('convertFolderPathToArray directories failed', ['author' => $author, 'root' => $root, 'scanPath' => $scanPath, 'error' => $e->getMessage()]);
+            $data = [];
+        }
 
         $kunci = 1;
         $pathDet = $path;
         foreach ($data as $key => $value) {
             $pathDet = !empty($path) ? $pathDet . '/' . $value : $value;
+            try {
+                $files = $disk->files($value);
+            } catch (\Throwable $e) {
+                logger()->warning('convertFolderPathToArray files failed', ['value' => $value, 'error' => $e->getMessage()]);
+                $files = [];
+            }
             $hasil[] = [
                 'key' => $parentKey + $kunci,
                 'folders_name' => $value,
-                'list_files' => $disk->files($value),
+                'list_files' => $files,
                 'children' => $this->convertFolderPathToArray($author, $value, $kunci, [], $root)
             ];
 
@@ -452,10 +477,16 @@ trait FolderDocumentTraits
         }
 
         if ($parentKey == 0) {
+            try {
+                $rootFiles = $disk->files($path === '' ? $baseAlias : $path);
+            } catch (\Throwable $e) {
+                logger()->warning('convertFolderPathToArray root files failed', ['path' => $path, 'error' => $e->getMessage()]);
+                $rootFiles = [];
+            }
             return [
                 'key' => 0,
                 'folders_name' => $path,
-                'list_files' => $this->getDiskAlias($author, $root)->files($path),
+                'list_files' => $rootFiles,
                 'children' => $hasil
             ];
         }
@@ -465,11 +496,13 @@ trait FolderDocumentTraits
 
     public function migrateFolderToDB($author, $path = '', $data = [], $root = '')
     {
+        $dbUser = $this->getAliasFolderbyAuthor($author, 'user');
+        logger()->info('migrateFolderToDB start', ['author' => $author, 'dbUser' => $dbUser, 'root' => $root, 'path' => $path]);
         if (count($data) === 0) {
-            $data = [$this->convertFolderPathToArray($author, $path, 0, [], $root)];
+            $converted = $this->convertFolderPathToArray($author, $path, 0, [], $root);
+            logger()->info('convertFolderPathToArray result', ['converted' => $converted]);
+            $data = [$converted];
         }
-
-        // return $data;
 
         $hasil = [];
         $listUpdatedData = [];
@@ -499,7 +532,7 @@ trait FolderDocumentTraits
 
                 if (!empty($parentName)) {
                     $cekParent = DMSFolderMstr::where('dfm_folder_name', $parentName)
-                        ->where('p_u_username', $author)
+                        ->where('p_u_username', $dbUser)
                         ->where('dfm_root_mstr', $root)
                         ->orderBy('id', 'desc')
                         ->first();
@@ -507,7 +540,7 @@ trait FolderDocumentTraits
 
                 $dataDBFolder = DMSFolderMstr::where('dfm_folder_name', $folderName)
                     ->where('dfm_parent_id', !empty($cekParent) ? $cekParent->id : null)
-                    ->where('p_u_username', $author)
+                    ->where('p_u_username', $dbUser)
                     ->where('dfm_root_mstr', $root)
                     ->first();
 
@@ -515,7 +548,7 @@ trait FolderDocumentTraits
 
                 if (empty($dataDBFolder)) {
                     $insert = DMSFolderMstr::create([
-                        'p_u_username' => $author,
+                        'p_u_username' => $dbUser,
                         'dfm_folder_name' => $folderName,
                         'dfm_parent_id' => $checkParent,
                         'dfm_root_mstr' => $root
@@ -528,7 +561,7 @@ trait FolderDocumentTraits
                             'folderName' => $folderName,
                             'parents' => $parentName,
                             'created_data' => [
-                                'p_u_username' => $author,
+                                'p_u_username' => $dbUser,
                                 'dfm_folder_name' => $folderName,
                                 'dfm_parent_id' => $checkParent,
                                 'dfm_root_mstr' => $root
@@ -566,7 +599,7 @@ trait FolderDocumentTraits
             foreach ($value['list_files'] as $keyFile => $valueFile) {
                 $expFile = explode('/', $valueFile);
                 $dataDBFileCheck = DMSDocMstr::where('ddm_doc_real_name', $expFile[count($expFile) - 1])
-                    ->where('p_u_username', $author)
+                    ->where('p_u_username', $dbUser)
                     ->where('dfm_root_mstr', $root);
 
                 if (!empty($idFolder)) {
@@ -581,7 +614,7 @@ trait FolderDocumentTraits
                 $docName = 'DMS_' . Str::random(50) . '.' . explode(".", $getRealName)[count(explode(".", $getRealName)) - 1];
                 if (empty($dataDBFile)) {
                     $insertFile = DMSDocMstr::create([
-                        'p_u_username' => $author,
+                        'p_u_username' => $dbUser,
                         'dfm_id' => $idFolder,
                         'ddm_doc_name' => $getRealName,
                         'ddm_doc_real_name' => $getRealName,
@@ -624,7 +657,7 @@ trait FolderDocumentTraits
         if (count($folderNames) > 0) {
             DMSFolderMstr::whereNotIn('dfm_folder_name', $folderNames)
                 ->where('dfm_parent_id', !empty($cekParent) ? $cekParent->id : null)
-                ->where('p_u_username', $author)
+                ->where('p_u_username', $dbUser)
                 ->where('dfm_root_mstr', $root)
                 ->delete();
         }
@@ -639,7 +672,7 @@ trait FolderDocumentTraits
         }
         foreach ($filesByFolder as $fid => $names) {
             $q = DMSDocMstr::whereNotIn('ddm_doc_real_name', $names)
-                ->where('p_u_username', $author)
+                ->where('p_u_username', $dbUser)
                 ->where('dfm_root_mstr', $root);
             if ($fid === '__root__') {
                 $q->whereNull('dfm_id');
