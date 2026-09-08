@@ -432,11 +432,11 @@ trait FolderDocumentTraits
 
     public function convertFolderPathToArray($author, $path = '', $parentKey = 0, $hasil = [], $root = '')
     {
-        // return [$this->getAliasFolderbyAuthor($author, 'root'), $path === '' ? $this->getAliasFolderbyAuthor($author) : $path];
-        $data = $this->getDiskAlias($author, $root)->directories($path === '' ? $this->getAliasFolderbyAuthor($author) : $path);
-        // return $this->getAliasFolderbyAuthor($author, 'root', $root);
+        $disk = $this->getDiskAlias($author, $root);
+        $baseAlias = $this->getAliasFolderbyAuthor($author);
+        $scanPath = $path === '' ? $baseAlias : $path;
+        $data = $disk->directories($scanPath);
 
-        // return $data;
         $kunci = 1;
         $pathDet = $path;
         foreach ($data as $key => $value) {
@@ -444,7 +444,7 @@ trait FolderDocumentTraits
             $hasil[] = [
                 'key' => $parentKey + $kunci,
                 'folders_name' => $value,
-                'list_files' => $this->getDiskAlias($author, $root)->files($value),
+                'list_files' => $disk->files($value),
                 'children' => $this->convertFolderPathToArray($author, $value, $kunci, [], $root)
             ];
 
@@ -483,29 +483,40 @@ trait FolderDocumentTraits
                     'children' => count($value['children']) > 0 ? $this->migrateFolderToDB($author, '', $value['children'], $root) : []
                 ];
             } else {
-                $expFolder = explode('/', $value['folders_name']);
+                // strip user alias prefix (e.g. "deny-rachmat/FolderA/Sub" -> "FolderA/Sub")
+                $baseAlias = trim($this->getAliasFolderbyAuthor($author), '/');
+                $rawPath = trim($value['folders_name'], '/');
+                if ($baseAlias !== '' && str_starts_with($rawPath, $baseAlias)) {
+                    $rawPath = ltrim(substr($rawPath, strlen($baseAlias)), '/');
+                }
+                $expFolder = $rawPath === '' ? [] : explode('/', $rawPath);
+                if (empty($expFolder)) {
+                    // fallback if stripping failed - use basename
+                    $expFolder = [basename(trim($value['folders_name'], '/'))];
+                }
+                $folderName = $expFolder[count($expFolder) - 1];
+                $parentName = count($expFolder) > 1 ? $expFolder[count($expFolder) - 2] : null;
 
-                if (count($expFolder) > 1) {
-                    $cekParent = DMSFolderMstr::where('dfm_folder_name', $expFolder[count($expFolder) - 2])
+                if (!empty($parentName)) {
+                    $cekParent = DMSFolderMstr::where('dfm_folder_name', $parentName)
                         ->where('p_u_username', $author)
+                        ->where('dfm_root_mstr', $root)
                         ->orderBy('id', 'desc')
                         ->first();
                 }
 
-                $dataDBFolder = DMSFolderMstr::where('dfm_folder_name', $expFolder[count($expFolder) - 1])
+                $dataDBFolder = DMSFolderMstr::where('dfm_folder_name', $folderName)
                     ->where('dfm_parent_id', !empty($cekParent) ? $cekParent->id : null)
                     ->where('p_u_username', $author)
                     ->where('dfm_root_mstr', $root)
                     ->first();
 
-                $checkParent = !empty($cekParent) && count($expFolder) > 1
-                    ? $cekParent->id
-                    : NULL;
+                $checkParent = !empty($cekParent) ? $cekParent->id : null;
 
                 if (empty($dataDBFolder)) {
                     $insert = DMSFolderMstr::create([
                         'p_u_username' => $author,
-                        'dfm_folder_name' => $expFolder[count($expFolder) - 1],
+                        'dfm_folder_name' => $folderName,
                         'dfm_parent_id' => $checkParent,
                         'dfm_root_mstr' => $root
                     ]);
@@ -514,11 +525,11 @@ trait FolderDocumentTraits
                         $insert->toArray(),
                         [
                             'status' => 'Inserted successfully !',
-                            'folderName' => $expFolder[count($expFolder) - 1],
-                            'parents' => $expFolder[count($expFolder) - 2] ?? null,
+                            'folderName' => $folderName,
+                            'parents' => $parentName,
                             'created_data' => [
                                 'p_u_username' => $author,
-                                'dfm_folder_name' => $expFolder[count($expFolder) - 1],
+                                'dfm_folder_name' => $folderName,
                                 'dfm_parent_id' => $checkParent,
                                 'dfm_root_mstr' => $root
                             ],
@@ -555,7 +566,8 @@ trait FolderDocumentTraits
             foreach ($value['list_files'] as $keyFile => $valueFile) {
                 $expFile = explode('/', $valueFile);
                 $dataDBFileCheck = DMSDocMstr::where('ddm_doc_real_name', $expFile[count($expFile) - 1])
-                    ->where('p_u_username', $author);
+                    ->where('p_u_username', $author)
+                    ->where('dfm_root_mstr', $root);
 
                 if (!empty($idFolder)) {
                     $dataDBFileCheck->where('dfm_id', $idFolder);
@@ -609,25 +621,36 @@ trait FolderDocumentTraits
             return $item['type'] == 'folder';
         }), 'dfm_folder_name');
 
-        $fileNames = array_column(array_filter($listUpdatedData, function ($item) {
-            return $item['type'] == 'file';
-        }), 'ddm_doc_real_name');
-
         if (count($folderNames) > 0) {
-            $dataDBFolder = DMSFolderMstr::whereNotIn('dfm_folder_name', $folderNames)
+            DMSFolderMstr::whereNotIn('dfm_folder_name', $folderNames)
                 ->where('dfm_parent_id', !empty($cekParent) ? $cekParent->id : null)
                 ->where('p_u_username', $author)
                 ->where('dfm_root_mstr', $root)
                 ->delete();
         }
 
-        if (count($fileNames) > 0) {
-            $dataDBFile = DMSDocMstr::whereNotIn('ddm_doc_real_name', $fileNames)
-                ->where('dfm_id', $idFolder)
-                ->where('p_u_username', $author)
-                ->where('dfm_root_mstr', $root)
-                ->delete();
+        // per-folder file cleanup (fixes bug where only last $idFolder was cleaned)
+        $filesByFolder = [];
+        foreach ($listUpdatedData as $item) {
+            if ($item['type'] === 'file') {
+                $key = $item['dfm_id'] ?? '__root__';
+                $filesByFolder[$key][] = $item['ddm_doc_real_name'];
+            }
         }
+        foreach ($filesByFolder as $fid => $names) {
+            $q = DMSDocMstr::whereNotIn('ddm_doc_real_name', $names)
+                ->where('p_u_username', $author)
+                ->where('dfm_root_mstr', $root);
+            if ($fid === '__root__') {
+                $q->whereNull('dfm_id');
+            } else {
+                $q->where('dfm_id', $fid);
+            }
+            $q->delete();
+        }
+        $fileNames = array_column(array_filter($listUpdatedData, function ($item) {
+            return $item['type'] == 'file';
+        }), 'ddm_doc_real_name');
 
         return [
             'data' => $hasil,
