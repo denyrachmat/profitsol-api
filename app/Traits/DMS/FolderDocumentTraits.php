@@ -447,8 +447,7 @@ trait FolderDocumentTraits
             logger()->error('convertFolderPathToArray getDiskAlias failed', ['author' => $author, 'root' => $root, 'error' => $e->getMessage()]);
             return $parentKey == 0 ? ['key' => 0, 'folders_name' => $path, 'list_files' => [], 'children' => []] : [];
         }
-        $baseAlias = $this->getAliasFolderbyAuthor($author);
-        $scanPath = $path === '' ? $baseAlias : $path;
+        $scanPath = $path === '' ? '' : $path;
         try {
             $data = $disk->directories($scanPath);
         } catch (\Throwable $e) {
@@ -478,7 +477,7 @@ trait FolderDocumentTraits
 
         if ($parentKey == 0) {
             try {
-                $rootFiles = $disk->files($path === '' ? $baseAlias : $path);
+                $rootFiles = $disk->files($path === '' ? '' : $path);
             } catch (\Throwable $e) {
                 logger()->warning('convertFolderPathToArray root files failed', ['path' => $path, 'error' => $e->getMessage()]);
                 $rootFiles = [];
