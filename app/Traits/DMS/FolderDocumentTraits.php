@@ -846,8 +846,19 @@ trait FolderDocumentTraits
 
                 try {
                     $disk = $this->installDisk($value['ddrm_name']);
-                    // probe filesystem - will throw if path not readable / credentials invalid
-                    $checkList = $disk->allDirectories();
+                    // lightweight probe - do NOT use allDirectories/allFiles (recursive scan of entire NAS)
+                    // is_dir already validated in installDisk for local; just verify disk is usable
+                    $exists = $disk->directoryExists('') || $disk->exists('');
+                    if (!$exists) {
+                        throw new \RuntimeException("Disk root not reachable: {$value['ddrm_root']}");
+                    }
+                    // shallow listing only (no recursion) for sample - limit to 5 entries to avoid blocking
+                    try {
+                        $checkList = $disk->directories('', false);
+                        $checkList = array_slice($checkList, 0, 5);
+                    } catch (\Throwable $inner) {
+                        $checkList = [];
+                    }
                 } catch (\Throwable $e) {
                     $status = false;
                     $error = $e->getMessage();
