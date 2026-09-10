@@ -19,6 +19,8 @@ use Illuminate\Filesystem\FilesystemAdapter;
 trait FolderDocumentTraits
 {
     use GencodeTraits;
+    /** Last resolved scan path from browsePath(), for debugging. */
+    public $browseScanPath = '';
     public function getFolder($author, $idParentFolder = 0, $root = '', $isFetchAll = false, $isFetchShared = true, $id = 0, $sharedOnly = false)
     {
         set_time_limit(60);
@@ -937,6 +939,8 @@ trait FolderDocumentTraits
             $base = trim($this->getAliasFolderbyAuthor($author), '/');
             $scanPath = trim($base !== '' ? $base . '/' . $relative : $relative, '/');
         }
+
+        $this->browseScanPath = $scanPath;
 
         $dirs = $recursive
             ? $disk->allDirectories($scanPath)

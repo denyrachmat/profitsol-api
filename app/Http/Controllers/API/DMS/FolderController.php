@@ -107,6 +107,17 @@ class FolderController extends BaseController
             $recursive = filter_var($request->query('recursive', false), FILTER_VALIDATE_BOOLEAN);
             $data = $this->browsePath($users, $root, $path ?? '', $recursive);
 
+            if ($request->query('debug')) {
+                return $this->handleResponse([
+                    'rows' => $data,
+                    'debug' => [
+                        'scan_path' => $this->browseScanPath,
+                        'recursive' => $recursive,
+                        'total' => count($data),
+                    ],
+                ], 'Data Found !!');
+            }
+
             return $this->handleResponse($data, 'Data Found !!');
         } catch (\Throwable $th) {
             return $this->handleError($th->getMessage());
