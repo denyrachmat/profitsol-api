@@ -914,6 +914,44 @@ trait FolderDocumentTraits
         return $files;
     }
 
+    /**
+     * Flat listing of folders + files under a specific path.
+     * Returns Table-Select friendly rows: value (relative path), label (name),
+     * type (folder|file), path (relative path).
+     */
+    public function browsePath($author, $root = '', $path = '', $recursive = false)
+    {
+        $disk = $this->getDiskAlias($author, $root);
+        $scanPath = trim($path ?? '', '/');
+
+        $dirs = $recursive
+            ? $disk->allDirectories($scanPath)
+            : $disk->directories($scanPath);
+        $files = $recursive
+            ? $disk->allFiles($scanPath)
+            : $disk->files($scanPath);
+
+        $result = [];
+        foreach ($dirs as $dir) {
+            $result[] = [
+                'value' => $dir,
+                'label' => basename($dir),
+                'type' => 'folder',
+                'path' => $dir,
+            ];
+        }
+        foreach ($files as $file) {
+            $result[] = [
+                'value' => $file,
+                'label' => basename($file),
+                'type' => 'file',
+                'path' => $file,
+            ];
+        }
+
+        return $result;
+    }
+
     public function checkPerm($author, $root = '')
     {
         $diskName = $this->getAliasFolderbyAuthor($author, 'root', $root);

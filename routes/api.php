@@ -204,6 +204,7 @@ Route::group(['prefix' => 'dms'], function () {
     // Tester
     Route::get('checkFolders/{users}', [FolderController::class, 'checkPerm']);
     Route::get('checkPath/{users}/{path?}', [FolderController::class, 'checkPath']);
+    Route::get('browse/{users}/{root}/{path?}', [FolderController::class, 'browse'])->where('path', '.*');
     Route::get('checkDeletedFolders/{users}', [FolderController::class, 'dbSyncToRealDoc']);
     Route::get('syncRootFiles/{users}', [FolderController::class, 'syncRootFiles']);
     Route::post('uploadFiles', [DocumentController::class, 'uploadFilesForAPI']);

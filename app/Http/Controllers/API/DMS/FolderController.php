@@ -98,6 +98,22 @@ class FolderController extends BaseController
     }
 
     /**
+     * Flat folder + file listing under a specific storage path.
+     * Query: ?recursive=1 to include all children recursively.
+     */
+    public function browse(Request $request, $users, $root, $path = null)
+    {
+        try {
+            $recursive = filter_var($request->query('recursive', false), FILTER_VALIDATE_BOOLEAN);
+            $data = $this->browsePath($users, $root, $path ?? '', $recursive);
+
+            return $this->handleResponse($data, 'Data Found !!');
+        } catch (\Throwable $th) {
+            return $this->handleError($th->getMessage());
+        }
+    }
+
+    /**
      * Show the form for editing the specified resource.
      *
      * @param  int  $id
