@@ -924,6 +924,20 @@ trait FolderDocumentTraits
         $disk = $this->getDiskAlias($author, $root);
         $scanPath = trim($path ?? '', '/');
 
+        // Accept a DMS folder ID as well as a raw storage path
+        if ($scanPath !== '' && is_numeric($scanPath)) {
+            $folder = DMSFolderMstr::with('parentFolders')->find((int) $scanPath);
+            if (!$folder) {
+                abort(404, "Folder ID {$scanPath} not found");
+            }
+            if (!empty($root) && !empty($folder->dfm_root_mstr) && $folder->dfm_root_mstr !== $root) {
+                abort(404, "Folder ID {$scanPath} does not belong to root {$root}");
+            }
+            $relative = $this->pathCreator($folder->toArray());
+            $base = trim($this->getAliasFolderbyAuthor($author), '/');
+            $scanPath = trim($base !== '' ? $base . '/' . $relative : $relative, '/');
+        }
+
         $dirs = $recursive
             ? $disk->allDirectories($scanPath)
             : $disk->directories($scanPath);
