@@ -100,16 +100,34 @@ class FolderController extends BaseController
     /**
      * Flat folder + file listing under a specific storage path.
      * Query: ?recursive=1 to include all children recursively.
+     *        ?realtime=1 to also diff disk vs DB (folder ID or empty path only).
      */
     public function browse(Request $request, $users, $root, $path = null)
     {
         try {
             $recursive = filter_var($request->query('recursive', false), FILTER_VALIDATE_BOOLEAN);
+            $realtime = filter_var($request->query('realtime', false), FILTER_VALIDATE_BOOLEAN);
             $data = $this->browsePath($users, $root, $path ?? '', $recursive);
+
+            $sync = null;
+            if ($realtime) {
+                $trimmed = trim($path ?? '', '/');
+                if ($trimmed !== '' && !is_numeric($trimmed)) {
+                    return $this->handleError('Realtime check requires a folder ID or empty path.');
+                }
+                $sync = $this->browseRealtimeCheck(
+                    $users,
+                    $root,
+                    $trimmed === '' ? null : (int) $trimmed,
+                    $data,
+                    $this->browseScanPath
+                );
+            }
 
             if ($request->query('debug')) {
                 return $this->handleResponse([
                     'rows' => $data,
+                    'sync' => $sync,
                     'debug' => array_merge(
                         $this->browseDebugInfo($users, $root),
                         [
@@ -117,6 +135,13 @@ class FolderController extends BaseController
                             'total' => count($data),
                         ]
                     ),
+                ], 'Data Found !!');
+            }
+
+            if ($sync !== null) {
+                return $this->handleResponse([
+                    'rows' => $data,
+                    'sync' => $sync,
                 ], 'Data Found !!');
             }
 

@@ -976,6 +976,88 @@ trait FolderDocumentTraits
     }
 
     /**
+     * Realtime check: compare real disk content against DB records.
+     * $folderId null = top level (dfm_parent_id / dfm_id IS NULL).
+     * Read-only — reports differences, never modifies anything.
+     */
+    public function browseRealtimeCheck($author, $root, $folderId, array $diskRows, $scanPath)
+    {
+        if ($folderId === null) {
+            $dbFolderRows = DMSFolderMstr::whereNull('dfm_parent_id')->get(['id', 'dfm_folder_name']);
+            $dbDocRows = DMSDocMstr::whereNull('dfm_id')->get(['id', 'ddm_doc_name', 'ddm_doc_real_name']);
+        } else {
+            $dbFolderRows = DMSFolderMstr::where('dfm_parent_id', $folderId)->get(['id', 'dfm_folder_name']);
+            $dbDocRows = DMSDocMstr::where('dfm_id', $folderId)->get(['id', 'ddm_doc_name', 'ddm_doc_real_name']);
+        }
+
+        $dbFolderNames = [];
+        foreach ($dbFolderRows as $f) {
+            $dbFolderNames[$f->dfm_folder_name] = $f->id;
+        }
+
+        // A doc matches if EITHER its display name or real name is on disk.
+        $docVariants = [];
+        foreach ($dbDocRows as $d) {
+            foreach ([$d->ddm_doc_name, $d->ddm_doc_real_name] as $n) {
+                if ($n !== null && $n !== '') {
+                    $docVariants[$n] = true;
+                }
+            }
+        }
+
+        $diskFolderNames = [];
+        $diskFileNames = [];
+        foreach ($diskRows as $row) {
+            if (($row['type'] ?? '') === 'folder') {
+                $diskFolderNames[$row['label']] = true;
+            } elseif (($row['type'] ?? '') === 'file') {
+                $diskFileNames[$row['label']] = true;
+            }
+        }
+
+        $base = trim($scanPath ?? '', '/');
+        $onlyOnDisk = array_values(array_filter($diskRows, function ($row) use ($dbFolderNames, $docVariants) {
+            if (($row['type'] ?? '') === 'folder') {
+                return !isset($dbFolderNames[$row['label']]);
+            }
+            if (($row['type'] ?? '') === 'file') {
+                return !isset($docVariants[$row['label']]);
+            }
+            return false;
+        }));
+
+        $onlyInDb = [];
+        foreach ($dbFolderRows as $f) {
+            if (!isset($diskFolderNames[$f->dfm_folder_name])) {
+                $onlyInDb[] = [
+                    'label' => $f->dfm_folder_name,
+                    'type' => 'folder',
+                    'path' => $base !== '' ? $base . '/' . $f->dfm_folder_name : $f->dfm_folder_name,
+                    'id' => $f->id,
+                ];
+            }
+        }
+        foreach ($dbDocRows as $d) {
+            if (!isset($diskFileNames[$d->ddm_doc_name]) && !isset($diskFileNames[$d->ddm_doc_real_name])) {
+                $name = $d->ddm_doc_name ?: $d->ddm_doc_real_name;
+                $onlyInDb[] = [
+                    'label' => $name,
+                    'type' => 'file',
+                    'path' => $base !== '' ? $base . '/' . $name : $name,
+                    'id' => $d->id,
+                ];
+            }
+        }
+
+        return [
+            'in_sync' => count($onlyOnDisk) === 0 && count($onlyInDb) === 0,
+            'folder_id' => $folderId,
+            'only_on_disk' => $onlyOnDisk,
+            'only_in_db' => $onlyInDb,
+        ];
+    }
+
+    /**
      * Diagnostics for browsePath(): what the disk actually contains
      * around the resolved scan path. Only used with ?debug=1.
      */
