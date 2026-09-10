@@ -100,6 +100,7 @@ class FolderController extends BaseController
     /**
      * Flat folder + file listing under a specific storage path.
      * Query: ?recursive=1 to include all children recursively.
+     *        ?type=folder|file to list only that kind (default: both).
      *        ?realtime=1 to also diff disk vs DB (folder ID or empty path only).
      */
     public function browse(Request $request, $users, $root, $path = null)
@@ -107,7 +108,13 @@ class FolderController extends BaseController
         try {
             $recursive = filter_var($request->query('recursive', false), FILTER_VALIDATE_BOOLEAN);
             $realtime = filter_var($request->query('realtime', false), FILTER_VALIDATE_BOOLEAN);
-            $data = $this->browsePath($users, $root, $path ?? '', $recursive);
+            $type = strtolower(trim($request->query('type', 'both')));
+            $wantFolders = in_array($type, ['both', 'folder', 'folders'], true);
+            $wantFiles = in_array($type, ['both', 'file', 'files'], true);
+            if (!$wantFolders && !$wantFiles) {
+                $wantFolders = $wantFiles = true;
+            }
+            $data = $this->browsePath($users, $root, $path ?? '', $recursive, $wantFolders && $wantFiles ? 'both' : ($wantFolders ? 'folder' : 'file'));
 
             $sync = null;
             if ($realtime) {
@@ -115,12 +122,20 @@ class FolderController extends BaseController
                 if ($trimmed !== '' && !is_numeric($trimmed)) {
                     return $this->handleError('Realtime check requires a folder ID or empty path.');
                 }
+                $syncTypes = [];
+                if ($wantFolders) {
+                    $syncTypes[] = 'folder';
+                }
+                if ($wantFiles) {
+                    $syncTypes[] = 'file';
+                }
                 $sync = $this->browseRealtimeCheck(
                     $users,
                     $root,
                     $trimmed === '' ? null : (int) $trimmed,
                     $data,
-                    $this->browseScanPath
+                    $this->browseScanPath,
+                    $syncTypes
                 );
             }
 

@@ -919,22 +919,28 @@ trait FolderDocumentTraits
     /**
      * Flat listing of folders + files under a specific path.
      * Returns Table-Select friendly rows: value (relative path), label (name),
-     * type (folder|file), path (relative path).
+     * type (folder|file), path (relative path), id (DB id or null).
+     * $type: 'both' (default), 'folder', 'file'.
      */
-    public function browsePath($author, $root = '', $path = '', $recursive = false)
+    public function browsePath($author, $root = '', $path = '', $recursive = false, $type = 'both')
     {
         $disk = $this->getDiskAlias($author, $root);
-        $scanPath = trim($path ?? '', '/');
+        $rawPath = trim($path ?? '', '/');
+        $scanPath = $rawPath;
+        $folderId = null;
+        $canResolveIds = false;
 
         // Accept a DMS folder ID as well as a raw storage path
-        if ($scanPath !== '' && is_numeric($scanPath)) {
-            $folder = DMSFolderMstr::with('parentFolders')->find((int) $scanPath);
+        if ($rawPath !== '' && is_numeric($rawPath)) {
+            $folder = DMSFolderMstr::with('parentFolders')->find((int) $rawPath);
             if (!$folder) {
-                abort(404, "Folder ID {$scanPath} not found");
+                abort(404, "Folder ID {$rawPath} not found");
             }
             if (!empty($root) && !empty($folder->dfm_root_mstr) && $folder->dfm_root_mstr !== $root) {
-                abort(404, "Folder ID {$scanPath} does not belong to root {$root}");
+                abort(404, "Folder ID {$rawPath} does not belong to root {$root}");
             }
+            $folderId = (int) $rawPath;
+            $canResolveIds = true;
             $relative = $this->pathCreator($folder->toArray());
             $base = trim($this->getAliasFolderbyAuthor($author), '/');
             $prefixed = trim($base !== '' ? $base . '/' . $relative : $relative, '/');
@@ -943,16 +949,25 @@ trait FolderDocumentTraits
             $scanPath = ($prefixed !== '' && $disk->directoryExists($prefixed))
                 ? $prefixed
                 : trim($relative, '/');
+        } elseif ($rawPath === '') {
+            $canResolveIds = true;
         }
 
         $this->browseScanPath = $scanPath;
 
-        $dirs = $recursive
-            ? $disk->allDirectories($scanPath)
-            : $disk->directories($scanPath);
-        $files = $recursive
-            ? $disk->allFiles($scanPath)
-            : $disk->files($scanPath);
+        $type = strtolower(trim($type ?? 'both'));
+        $wantFolders = in_array($type, ['both', 'folder', 'folders'], true);
+        $wantFiles = in_array($type, ['both', 'file', 'files'], true);
+        if (!$wantFolders && !$wantFiles) {
+            $wantFolders = $wantFiles = true;
+        }
+
+        $dirs = $wantFolders
+            ? ($recursive ? $disk->allDirectories($scanPath) : $disk->directories($scanPath))
+            : [];
+        $files = $wantFiles
+            ? ($recursive ? $disk->allFiles($scanPath) : $disk->files($scanPath))
+            : [];
 
         $result = [];
         foreach ($dirs as $dir) {
@@ -961,15 +976,56 @@ trait FolderDocumentTraits
                 'label' => basename($dir),
                 'type' => 'folder',
                 'path' => $dir,
+                'id' => null,
             ];
         }
         foreach ($files as $file) {
+            try {
+                $size = $disk->size($file);
+            } catch (\Throwable $e) {
+                $size = null;
+            }
             $result[] = [
                 'value' => $file,
                 'label' => basename($file),
                 'type' => 'file',
                 'path' => $file,
+                'id' => null,
+                'size' => $size,
+                'size_human' => $size === null ? null : $this->formatBytes($size),
             ];
+        }
+
+        // Attach DB ids (folders by parent link, files by name variants).
+        // Only possible for folder IDs and top level — raw paths skip this.
+        if ($canResolveIds) {
+            if ($folderId === null) {
+                $dbFolders = DMSFolderMstr::whereNull('dfm_parent_id')->get(['id', 'dfm_folder_name']);
+                $dbDocs = DMSDocMstr::whereNull('dfm_id')->get(['id', 'ddm_doc_name', 'ddm_doc_real_name']);
+            } else {
+                $dbFolders = DMSFolderMstr::where('dfm_parent_id', $folderId)->get(['id', 'dfm_folder_name']);
+                $dbDocs = DMSDocMstr::where('dfm_id', $folderId)->get(['id', 'ddm_doc_name', 'ddm_doc_real_name']);
+            }
+            $folderIds = [];
+            foreach ($dbFolders as $f) {
+                if (!isset($folderIds[$f->dfm_folder_name])) {
+                    $folderIds[$f->dfm_folder_name] = $f->id;
+                }
+            }
+            $docIds = [];
+            foreach ($dbDocs as $d) {
+                foreach ([$d->ddm_doc_name, $d->ddm_doc_real_name] as $n) {
+                    if ($n !== null && $n !== '' && !isset($docIds[$n])) {
+                        $docIds[$n] = $d->id;
+                    }
+                }
+            }
+            foreach ($result as &$row) {
+                $row['id'] = $row['type'] === 'folder'
+                    ? ($folderIds[$row['label']] ?? null)
+                    : ($docIds[$row['label']] ?? null);
+            }
+            unset($row);
         }
 
         return $result;
@@ -980,8 +1036,10 @@ trait FolderDocumentTraits
      * $folderId null = top level (dfm_parent_id / dfm_id IS NULL).
      * Read-only — reports differences, never modifies anything.
      */
-    public function browseRealtimeCheck($author, $root, $folderId, array $diskRows, $scanPath)
+    public function browseRealtimeCheck($author, $root, $folderId, array $diskRows, $scanPath, array $types = ['folder', 'file'])
     {
+        $checkFolders = in_array('folder', $types, true);
+        $checkFiles = in_array('file', $types, true);
         if ($folderId === null) {
             $dbFolderRows = DMSFolderMstr::whereNull('dfm_parent_id')->get(['id', 'dfm_folder_name']);
             $dbDocRows = DMSDocMstr::whereNull('dfm_id')->get(['id', 'ddm_doc_name', 'ddm_doc_real_name']);
@@ -1028,7 +1086,7 @@ trait FolderDocumentTraits
 
         $onlyInDb = [];
         foreach ($dbFolderRows as $f) {
-            if (!isset($diskFolderNames[$f->dfm_folder_name])) {
+            if ($checkFolders && !isset($diskFolderNames[$f->dfm_folder_name])) {
                 $onlyInDb[] = [
                     'label' => $f->dfm_folder_name,
                     'type' => 'folder',
@@ -1038,7 +1096,7 @@ trait FolderDocumentTraits
             }
         }
         foreach ($dbDocRows as $d) {
-            if (!isset($diskFileNames[$d->ddm_doc_name]) && !isset($diskFileNames[$d->ddm_doc_real_name])) {
+            if ($checkFiles && !isset($diskFileNames[$d->ddm_doc_name]) && !isset($diskFileNames[$d->ddm_doc_real_name])) {
                 $name = $d->ddm_doc_name ?: $d->ddm_doc_real_name;
                 $onlyInDb[] = [
                     'label' => $name,
@@ -1061,7 +1119,14 @@ trait FolderDocumentTraits
      * Diagnostics for browsePath(): what the disk actually contains
      * around the resolved scan path. Only used with ?debug=1.
      */
-    public function browseDebugInfo($author, $root = '')
+    protected function formatBytes($bytes, $precision = 2)
+    {
+        $units = ['B', 'KB', 'MB', 'GB', 'TB'];
+        $bytes = max((float) $bytes, 0);
+        $pow = $bytes > 0 ? floor(log($bytes, 1024)) : 0;
+        $pow = min($pow, count($units) - 1);
+        return round($bytes / pow(1024, $pow), $precision) . ' ' . $units[$pow];
+    }    public function browseDebugInfo($author, $root = '')
     {
         $disk = $this->getDiskAlias($author, $root);
         $scanPath = $this->browseScanPath;
