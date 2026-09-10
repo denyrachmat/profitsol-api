@@ -937,7 +937,12 @@ trait FolderDocumentTraits
             }
             $relative = $this->pathCreator($folder->toArray());
             $base = trim($this->getAliasFolderbyAuthor($author), '/');
-            $scanPath = trim($base !== '' ? $base . '/' . $relative : $relative, '/');
+            $prefixed = trim($base !== '' ? $base . '/' . $relative : $relative, '/');
+            // Some roots (e.g. shared drives) are already scoped without the
+            // user-alias prefix — use whichever variant actually exists.
+            $scanPath = ($prefixed !== '' && $disk->directoryExists($prefixed))
+                ? $prefixed
+                : trim($relative, '/');
         }
 
         $this->browseScanPath = $scanPath;
