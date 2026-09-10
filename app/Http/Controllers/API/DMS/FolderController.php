@@ -110,11 +110,13 @@ class FolderController extends BaseController
             if ($request->query('debug')) {
                 return $this->handleResponse([
                     'rows' => $data,
-                    'debug' => [
-                        'scan_path' => $this->browseScanPath,
-                        'recursive' => $recursive,
-                        'total' => count($data),
-                    ],
+                    'debug' => array_merge(
+                        $this->browseDebugInfo($users, $root),
+                        [
+                            'recursive' => $recursive,
+                            'total' => count($data),
+                        ]
+                    ),
                 ], 'Data Found !!');
             }
 

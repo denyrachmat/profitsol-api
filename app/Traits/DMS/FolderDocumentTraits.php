@@ -970,6 +970,29 @@ trait FolderDocumentTraits
         return $result;
     }
 
+    /**
+     * Diagnostics for browsePath(): what the disk actually contains
+     * around the resolved scan path. Only used with ?debug=1.
+     */
+    public function browseDebugInfo($author, $root = '')
+    {
+        $disk = $this->getDiskAlias($author, $root);
+        $scanPath = $this->browseScanPath;
+        $parent = dirname($scanPath);
+        if ($parent === '.' || $parent === '/') {
+            $parent = '';
+        }
+
+        return [
+            'scan_path' => $scanPath,
+            'scan_path_exists' => $disk->directoryExists($scanPath),
+            'parent' => $parent,
+            'parent_exists' => $parent === '' ? true : $disk->directoryExists($parent),
+            'parent_listing' => array_slice($disk->directories($parent), 0, 50),
+            'root_listing' => array_slice($disk->directories(''), 0, 50),
+        ];
+    }
+
     public function checkPerm($author, $root = '')
     {
         $diskName = $this->getAliasFolderbyAuthor($author, 'root', $root);
