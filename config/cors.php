@@ -22,6 +22,7 @@ return [
     'allowed_origins' => [
         'https://intranet.sumitronics-indonesia.com',
         'https://portal.sumitronics-indonesia.com',
+        'http://192.168.100.32:8081',
         'http://localhost:8080',
     ],
 
