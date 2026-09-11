@@ -937,7 +937,16 @@ trait FormsTraits
             }
         }
 
-        return $setupTrainingRes;
+        return array_merge([
+            'isRPA' => false,
+            'rpaId' => null,
+            'rpaParams' => [],
+            'isApproval' => false,
+            'isAPI' => false,
+            'apiOpt' => [],
+            'isNotif' => false,
+            'bulkMode' => 'once',
+        ], $setupTrainingRes);
     }
 
     public function downloadTemplateBulk($id)

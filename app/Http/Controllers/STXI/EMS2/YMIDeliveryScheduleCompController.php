@@ -10,6 +10,7 @@ class YMIDeliveryScheduleCompController extends Controller
     public function export(Request $request)
     {
         return response()->json(['message' => 'Export functionality is currently disabled.'], 403);
+        
         // Validate the request parameters
         $request->validate([
             'start_date' => 'required|date',

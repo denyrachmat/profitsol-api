@@ -165,13 +165,13 @@ class FormController extends BaseController
 
                         $checkSetup = $this->getSetupFormsForForm($request->idRef);
                         // return $checkSetup;
-                        if ($checkSetup['isRPA'] == 1) {
+                        if (($checkSetup['isRPA'] ?? 0) == 1) {
                             $descUrl = 'rpa';
                         } else {
                             $descUrl = 'cms';
                         }
 
-                        if ($checkSetup['isApproval'] == 1) {
+                        if (($checkSetup['isApproval'] ?? 0) == 1) {
                             $descUrl .= '|approval';
                         }
 
@@ -592,16 +592,16 @@ class FormController extends BaseController
         $isBulk = is_array($ans) && count($ans) > 1;
 
         // RPA - bulk aware
-        if ($checkSetup['isRPA'] == 1) {
+        if (($checkSetup['isRPA'] ?? 0) == 1) {
             if ($isBulk && $bulkMode === 'skip') {
                 // skip RPA for bulk
             } elseif ($isBulk && $bulkMode === 'perRow') {
                 foreach ($ans as $rowIdx => $rowAns) {
                     $rowBatchId = $nextID + $rowIdx;
-                    $params = $this->buildNestedParams($checkSetup['rpaParams'], $request->id, $rowBatchId);
+                    $params = $this->buildNestedParams($checkSetup['rpaParams'] ?? [], $request->id, $rowBatchId);
                     app('App\Http\Controllers\API\RPA\RPAHistController')->store(new Request([
-                        'prh_prmid' => $checkSetup['rpaId']['id'],
-                        'prh_robotnm' => $checkSetup['rpaId']['prm_name'],
+                        'prh_prmid' => ($checkSetup['rpaId'] ?? [])['id'] ?? null,
+                        'prh_robotnm' => ($checkSetup['rpaId'] ?? [])['prm_name'] ?? null,
                         'prh_command' => json_encode($params),
                         'prh_flag' => 0,
                         'prh_result' => 'Starting RPA',
@@ -610,11 +610,11 @@ class FormController extends BaseController
                     ]));
                 }
             } else {
-                $getRPAId = $checkSetup['rpaId'];
-                $params = $this->buildNestedParams($checkSetup['rpaParams'], $request->id, $nextID);
+                $getRPAId = $checkSetup['rpaId'] ?? [];
+                $params = $this->buildNestedParams($checkSetup['rpaParams'] ?? [], $request->id, $nextID);
                 app('App\Http\Controllers\API\RPA\RPAHistController')->store(new Request([
-                    'prh_prmid' => $getRPAId['id'],
-                    'prh_robotnm' => $getRPAId['prm_name'],
+                    'prh_prmid' => $getRPAId['id'] ?? null,
+                    'prh_robotnm' => $getRPAId['prm_name'] ?? null,
                     'prh_command' => json_encode($params),
                     'prh_flag' => 0,
                     'prh_result' => 'Starting RPA',
@@ -624,7 +624,7 @@ class FormController extends BaseController
             }
         }
 
-        if ($checkSetup['isApproval'] == 1) {
+        if (($checkSetup['isApproval'] ?? 0) == 1) {
             if ($isBulk && $bulkMode === 'skip') {
                 // skip approval for bulk
             } elseif ($isBulk && $bulkMode === 'perRow') {
@@ -663,7 +663,7 @@ class FormController extends BaseController
         }
 
         $hasilAPICall = [];
-        if ($checkSetup['isAPI'] == 1 && !empty($checkSetup['apiOpt'])) {
+        if (($checkSetup['isAPI'] ?? 0) == 1 && !empty($checkSetup['apiOpt'])) {
             if ($isBulk && $bulkMode === 'skip') {
                 // skip API for bulk
             } elseif ($isBulk && $bulkMode === 'perRow') {
@@ -760,7 +760,7 @@ class FormController extends BaseController
             }
         }
 
-        return $this->handleResponse($checkSetup['isAPI'] == 1 && !empty($checkSetup['apiOpt']) ? $apiCallsList : $hasil, 'Form submited !');
+        return $this->handleResponse(($checkSetup['isAPI'] ?? 0) == 1 && !empty($checkSetup['apiOpt']) ? $apiCallsList : $hasil, 'Form submited !');
     }
 
     public function storeBulkAnswers(Request $request)
