@@ -54,6 +54,7 @@ use App\Http\Controllers\API\PORTAL\UsersController;
 use App\Http\Controllers\API\PORTAL\AppController;
 use App\Http\Controllers\API\PORTAL\RoleController;
 use App\Http\Controllers\API\RPA\RPAMasterController;
+use App\Http\Controllers\STXI\EMS2\YMIDeliveryScheduleCompController;
 /*
 |--------------------------------------------------------------------------
 | API Routes
@@ -391,6 +392,8 @@ Route::group(['prefix' => 'div'], function () {
             Route::post('searchAllInvByItem/{item}', [labelPrintController::class, 'searchAllInvByItem']);
 
         });
+
+        Route::post('exportYMIDeliverySchedule', [YMIDeliveryScheduleCompController::class, 'export']);
     });
 
     Route::group(['prefix' => 'log'], function () {
