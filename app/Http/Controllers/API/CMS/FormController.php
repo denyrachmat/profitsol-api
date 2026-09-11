@@ -331,22 +331,32 @@ class FormController extends BaseController
         }
 
         if (!empty($request->idRef)) {
-            function extractIds($array, &$ids = [])
-            {
-                if (isset($array['id']) && is_numeric($array['id'])) {
-                    $ids[] = (int) $array['id'];
-                }
+            // Collect ids that correspond to REAL FormMaster rows for this page:
+            // top-level items, plus children of 'row' (the only type that
+            // stores children as separate rows). Nested children of
+            // columns/carousel live inside the parent's JSON content, so they
+            // must NOT be treated as rows — otherwise a stale nested id can
+            // keep a deleted top-level row alive.
+            $formsForExtract = json_decode(json_encode($request->forms), true);
 
-                foreach ($array as $value) {
-                    if (is_array($value)) {
-                        extractIds($value, $ids);
+            $getListUpdatedID = [];
+            $collectRowIds = function ($items) use (&$getListUpdatedID, &$collectRowIds) {
+                if (!is_array($items)) {
+                    return;
+                }
+                foreach ($items as $item) {
+                    if (!is_array($item)) {
+                        continue;
+                    }
+                    if (isset($item['id']) && is_numeric($item['id'])) {
+                        $getListUpdatedID[] = (int) $item['id'];
+                    }
+                    if (($item['type'] ?? '') === 'row' && isset($item['content']) && is_array($item['content'])) {
+                        $collectRowIds($item['content']);
                     }
                 }
-
-                return $ids;
-            }
-
-            $getListUpdatedID = extractIds($data);
+            };
+            $collectRowIds($formsForExtract);
 
             if (count($getListUpdatedID) > 0) {
                 FormMaster::where('cfmt_id', $insertMaster->id)
@@ -357,16 +367,14 @@ class FormController extends BaseController
                     ->delete();
 
                 FormLogicsDet::where('cfm_id', $insertMaster->id)
-                    ->whereNotIn('cfm_id', $getListUpdatedID)
+                    ->whereNotIn('id', $getListUpdatedID)
                     ->delete();
-                // FormAnswerUserDet::where('cfm_id', $insertMaster->id)
-                //     ->whereNotIn('cfmd_id', $getListUpdatedID)
-                //     ->delete();
             }
         }
 
         $hasil = [];
         $listPage = [];
+
         foreach ($data as $key => $value) {
             // $listPage[] = $value['seq_name'];
             if (empty($value['seq_name'])) {
@@ -413,7 +421,7 @@ class FormController extends BaseController
 
         return $this->handleResponse([
             'insert' => $hasil,
-            'id' => $insertMaster->id
+            'id' => $insertMaster->id,
         ], 'Data Found !');
         // return response($hasil);
     }
@@ -580,55 +588,120 @@ class FormController extends BaseController
             }
         }
 
-        // RPA, approval, notif (only once per submission, using first batch)
-        if ($checkSetup['isRPA'] == 1) {
-            $getRPAId = $checkSetup['rpaId'];
-            $params = $this->buildNestedParams($checkSetup['rpaParams'], $request->id, $nextID);
+        $bulkMode = $checkSetup['bulkMode'] ?? 'once';
+        $isBulk = is_array($ans) && count($ans) > 1;
 
-            app('App\Http\Controllers\API\RPA\RPAHistController')->store(new Request([
-                'prh_prmid' => $getRPAId['id'],
-                'prh_robotnm' => $getRPAId['prm_name'],
-                'prh_command' => json_encode($params),
-                'prh_flag' => 0, // pending
-                'prh_result' => 'Starting RPA',
-                'prh_cfaud_id' => $request->id,
-                'prh_cfaud_batch_id' => $nextID,
-            ]));
+        // RPA - bulk aware
+        if ($checkSetup['isRPA'] == 1) {
+            if ($isBulk && $bulkMode === 'skip') {
+                // skip RPA for bulk
+            } elseif ($isBulk && $bulkMode === 'perRow') {
+                foreach ($ans as $rowIdx => $rowAns) {
+                    $rowBatchId = $nextID + $rowIdx;
+                    $params = $this->buildNestedParams($checkSetup['rpaParams'], $request->id, $rowBatchId);
+                    app('App\Http\Controllers\API\RPA\RPAHistController')->store(new Request([
+                        'prh_prmid' => $checkSetup['rpaId']['id'],
+                        'prh_robotnm' => $checkSetup['rpaId']['prm_name'],
+                        'prh_command' => json_encode($params),
+                        'prh_flag' => 0,
+                        'prh_result' => 'Starting RPA',
+                        'prh_cfaud_id' => $request->id,
+                        'prh_cfaud_batch_id' => $rowBatchId,
+                    ]));
+                }
+            } else {
+                $getRPAId = $checkSetup['rpaId'];
+                $params = $this->buildNestedParams($checkSetup['rpaParams'], $request->id, $nextID);
+                app('App\Http\Controllers\API\RPA\RPAHistController')->store(new Request([
+                    'prh_prmid' => $getRPAId['id'],
+                    'prh_robotnm' => $getRPAId['prm_name'],
+                    'prh_command' => json_encode($params),
+                    'prh_flag' => 0,
+                    'prh_result' => 'Starting RPA',
+                    'prh_cfaud_id' => $request->id,
+                    'prh_cfaud_batch_id' => $nextID,
+                ]));
+            }
         }
 
         if ($checkSetup['isApproval'] == 1) {
-            $this->sendApproval(new Request([
-                'idRef' => $request->id,
-                'username' => $request->has('username') ? $request->username : $request->header('username'),
-            ]));
-
+            if ($isBulk && $bulkMode === 'skip') {
+                // skip approval for bulk
+            } elseif ($isBulk && $bulkMode === 'perRow') {
+                foreach ($ans as $rowIdx => $rowAns) {
+                    $this->sendApproval(new Request([
+                        'idRef' => $request->id,
+                        'username' => $request->has('username') ? $request->username : $request->header('username'),
+                        'batch_id' => $nextID + $rowIdx,
+                    ]));
+                }
+            } else {
+                $this->sendApproval(new Request([
+                    'idRef' => $request->id,
+                    'username' => $request->has('username') ? $request->username : $request->header('username'),
+                ]));
+            }
         }
 
         if (isset($checkSetup['isNotif']) && $checkSetup['isNotif'] == 1) {
-            $this->sendNotifFormsSubmitted(new Request([
-                'idRef' => $request->id,
-                'username' => $request->has('username') ? $request->username : $request->header('username'),
-            ]));
+            if ($isBulk && $bulkMode === 'skip') {
+                // skip notif for bulk
+            } elseif ($isBulk && $bulkMode === 'perRow') {
+                foreach ($ans as $rowIdx => $rowAns) {
+                    $this->sendNotifFormsSubmitted(new Request([
+                        'idRef' => $request->id,
+                        'username' => $request->has('username') ? $request->username : $request->header('username'),
+                        'batch_id' => $nextID + $rowIdx,
+                    ]));
+                }
+            } else {
+                $this->sendNotifFormsSubmitted(new Request([
+                    'idRef' => $request->id,
+                    'username' => $request->has('username') ? $request->username : $request->header('username'),
+                ]));
+            }
         }
 
         $hasilAPICall = [];
         if ($checkSetup['isAPI'] == 1 && !empty($checkSetup['apiOpt'])) {
-            foreach ($checkSetup['apiOpt'] as $keyApi => $valueApi) {
-                $buildParams = [];
-                foreach ($valueApi['params'] as $keyParam => $valueParam) {
-                    $formValue = $spreadAnswer[$valueParam['form_id']] ?? $valueParam['param_default'] ?? null;
-                    $buildParams[$valueParam['param_name']] = $formValue;
+            if ($isBulk && $bulkMode === 'skip') {
+                // skip API for bulk
+            } elseif ($isBulk && $bulkMode === 'perRow') {
+                foreach ($ans as $rowIdx => $rowAns) {
+                    foreach ($checkSetup['apiOpt'] as $keyApi => $valueApi) {
+                        $buildParams = [];
+                        foreach ($valueApi['params'] as $keyParam => $valueParam) {
+                            $formValue = $rowAns[$valueParam['form_id']] ?? $valueParam['param_default'] ?? null;
+                            $buildParams[$valueParam['param_name']] = $formValue;
+                        }
+                        $hasilAPICall[] = $this->sendAPIFormsSubmitted(new Request([
+                            'idRef' => $request->id,
+                            'username' => $request->has('username') ? $request->username : $request->header('username'),
+                            'apiUrl' => $valueApi['apiUrl'],
+                            'method' => $valueApi['method'],
+                            'headers' => $valueApi['headers'],
+                            'isDownload' => isset($valueApi['isDownload']) ? $valueApi['isDownload'] : false,
+                            'params' => $buildParams,
+                        ]));
+                    }
                 }
-
-                $hasilAPICall[] = $this->sendAPIFormsSubmitted(new Request([
-                    'idRef' => $request->id,
-                    'username' => $request->has('username') ? $request->username : $request->header('username'),
-                    'apiUrl' => $valueApi['apiUrl'],
-                    'method' => $valueApi['method'],
-                    'headers' => $valueApi['headers'],
-                    'isDownload' => isset($valueApi['isDownload']) ? $valueApi['isDownload'] : false,
-                    'params' => $buildParams,
-                ]));
+            } else {
+                foreach ($checkSetup['apiOpt'] as $keyApi => $valueApi) {
+                    $buildParams = [];
+                    foreach ($valueApi['params'] as $keyParam => $valueParam) {
+                        $formValue = $spreadAnswer[$valueParam['form_id']] ?? $valueParam['param_default'] ?? null;
+                        $buildParams[$valueParam['param_name']] = $formValue;
+                    }
+                    $hasilAPICall[] = $this->sendAPIFormsSubmitted(new Request([
+                        'idRef' => $request->id,
+                        'username' => $request->has('username') ? $request->username : $request->header('username'),
+                        'apiUrl' => $valueApi['apiUrl'],
+                        'method' => $valueApi['method'],
+                        'headers' => $valueApi['headers'],
+                        'isDownload' => isset($valueApi['isDownload']) ? $valueApi['isDownload'] : false,
+                        'params' => $buildParams,
+                    ]));
+                }
             }
 
             $apiCallsList = array_map(function ($index) use ($hasilAPICall, $checkSetup) {
@@ -805,13 +878,20 @@ class FormController extends BaseController
             }
 
             if (!empty($tags)) {
-                $decodedTags = base64_decode($tags);
+                $decodedTagsArray = json_decode(base64_decode($tags), true);
+                if (!is_array($decodedTagsArray)) {
+                    $decodedTagsArray = [];
+                }
 
-                $decodedTagsArray = json_decode($decodedTags, true);
-                if ($decodedTagsArray !== ['all']) {
+                // Keep only real tag values. "all", empty, or blank entries mean
+                // "no tag filter" — otherwise whereIn([...]) with no values
+                // would match nothing and the feed would always be empty.
+                $decodedTagsArray = array_values(array_filter($decodedTagsArray, function ($tag) {
+                    return $tag !== null && $tag !== '' && $tag !== 'all';
+                }));
+
+                if (count($decodedTagsArray) > 0) {
                     $dataBuild->whereIn('pgTags.pgm_value2', $decodedTagsArray);
-                } else {
-                    $dataBuild->whereNotNull('pgTags.pgm_value2');
                 }
             }
 
@@ -1625,11 +1705,31 @@ class FormController extends BaseController
 
         $checkSetup = $this->getSetupFormsForForm($request->idRef);
 
-        $getMasterResponse = $this->viewApprovalMasterByApprvCode($checkSetup['approvalCode']);
+        $dataAnswers = $this->showHistory(new Request(), $request->idRef, $request->batch_id)->getOriginalContent()['data']['data'][0] ?? [];
+
+        $approvalCode = $checkSetup['approvalCode'] ?? null;
+        if (!empty($checkSetup['approvalConditions']) && is_array($checkSetup['approvalConditions'])) {
+            $fieldId = $checkSetup['approvalConditionField'] ?? null;
+            if (!$fieldId && !empty($checkSetup['defaultFilterData']) && is_array($checkSetup['defaultFilterData'])) {
+                $firstFilter = $checkSetup['defaultFilterData'][0];
+                $colVal = $firstFilter['cols']['value'] ?? $firstFilter['cols']['field'] ?? $firstFilter['cols']['cols'] ?? null;
+                if ($colVal) $fieldId = str_replace('CMS_REPORT_', '', $colVal);
+            }
+            if ($fieldId) {
+                $fieldKey = 'CMS_REPORT_' . $fieldId;
+                $fieldVal = $dataAnswers[$fieldKey] ?? null;
+                foreach ($checkSetup['approvalConditions'] as $cond) {
+                    if (isset($cond['value']) && (string) $cond['value'] === (string) $fieldVal && !empty($cond['approvalCode'])) {
+                        $approvalCode = $cond['approvalCode'];
+                        break;
+                    }
+                }
+            }
+        }
+
+        $getMasterResponse = $this->viewApprovalMasterByApprvCode($approvalCode);
         $getMasterContent = json_decode($getMasterResponse->getContent(), true);
         $getMasterData = isset($getMasterContent['data']) ? $getMasterContent['data'] : null;
-
-        $dataAnswers = $this->showHistory(new Request(), $request->idRef, $request->batch_id)->getOriginalContent()['data']['data'][0];
 
         // You need to provide actual values for HSCD_DOCNO and item_det if required by your business logic.
         // For now, we will use placeholders or empty values to avoid undefined variable errors.
