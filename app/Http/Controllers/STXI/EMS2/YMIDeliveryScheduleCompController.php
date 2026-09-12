@@ -38,13 +38,13 @@ class YMIDeliveryScheduleCompController extends Controller
         }
 
         // installDisk() already returns a filesystem disk instance, so use it
-        // directly. Use allFiles() instead of files() if you also need files in
-        // nested sub-folders.
+        // directly. allFiles() recurses into child folders; use files() if you
+        // only want the top level.
         $disk = $this->installDisk('ems2_yeid_root');
 
         $result = [];
         foreach ($request->folder as $valueFolder) {
-            $result[$valueFolder] = collect($disk->files($valueFolder))
+            $result[$valueFolder] = collect($disk->allFiles($valueFolder))
                 ->filter(function ($file) use ($patterns) {
                     $name = basename($file);
                     foreach ($patterns as $pattern) {
