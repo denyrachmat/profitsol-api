@@ -1802,7 +1802,11 @@ class FormController extends BaseController
             'isDownload' => 'required|boolean',
             'params' => 'nullable|array',
         ]);
-        $dataAnswers = $this->showHistory(new Request(), $request->idRef, $request->batch_id)->getOriginalContent()['data']['data'][0];
+        // Answers are stored AFTER the API call, so on a first submission the
+        // history query is empty. Fall back to an empty base and rely on the
+        // request params merged below.
+        $historyContent = $this->showHistory(new Request(), $request->idRef, $request->batch_id)->getOriginalContent();
+        $dataAnswers = $historyContent['data']['data'][0] ?? [];
         $headersArray = [];
         if (!empty($request->headers)) {
             $headersArray = json_decode($request->headers, true);
