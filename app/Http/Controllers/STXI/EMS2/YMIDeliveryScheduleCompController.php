@@ -6,13 +6,16 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 
+use App\Exports\STXI\EMS2\ExportDeliveryScheduleComp;
 use App\Traits\DMS\FolderDocumentTraits;
+use Excel;
 
 class YMIDeliveryScheduleCompController extends Controller
 {
     use FolderDocumentTraits;
+
     public function export(Request $request)
-    {        
+    {
         // Validate the request parameters
         $request->validate([
             'inc' => 'required|integer',
@@ -24,11 +27,8 @@ class YMIDeliveryScheduleCompController extends Controller
             'patterns' => 'nullable',
         ]);
 
-        // Wildcard filters, e.g. ["*.xlsx", "*delivery*"]. A file is kept if it
-        // matches ANY pattern (OR). `patterns` may arrive as a real array, a JSON
-        // string ('["*.xlsx","*pdf*"]') or a comma-separated string; `pattern`
-        // (single) is still accepted. Default ["*"] = all files. Matches against
-        // the basename; switch basename($file) to the path to match the full path.
+        // `patterns` may arrive as a real array, a JSON string or a comma-separated
+        // string; `pattern` (single) is still accepted. Default ["*"] = all files.
         $patterns = $this->normalizePatterns(
             $request->input('patterns', []),
             $request->filled('pattern') ? $request->input('pattern') : null
@@ -37,33 +37,75 @@ class YMIDeliveryScheduleCompController extends Controller
             $patterns = ['*'];
         }
 
+        // A file is kept if it matches ANY name pattern (OR), AND has one of the
+        // requested extensions (also OR). Pure-extension patterns like "*.xlsx"
+        // are treated as a file-type filter rather than a name alternative, so
+        // ["STX Forecast*", "DS Ex*", "*.xlsx"] means
+        // "(STX Forecast* OR DS Ex*) AND .xlsx" — not "every .xlsx".
+        [$namePatterns, $extensions] = $this->splitPatterns($patterns);
+
         // installDisk() already returns a filesystem disk instance, so use it
         // directly.
         $disk = $this->installDisk('ems2_yeid_root');
 
-        $result = [];
+        $matchedFiles = [];
         foreach ($request->folder as $valueFolder) {
             $visited = [];
-            $result[$valueFolder] = $this->collectFilesRecursive($disk, $valueFolder, $patterns, $visited);
+            $matchedFiles = array_merge(
+                $matchedFiles,
+                $this->collectFilesRecursive($disk, $valueFolder, $namePatterns, $extensions, $visited)
+            );
+        }
+        $matchedFiles = array_values(array_unique($matchedFiles));
+
+        // Read every matched spreadsheet into raw rows and hand them to the export
+        // class, which is responsible for parsing/formatting.
+        $rows = [];
+        foreach ($matchedFiles as $file) {
+            try {
+                $sheets = Excel::toArray(new \stdClass, $disk->path($file));
+            } catch (\Throwable $e) {
+                logger()->warning('YMIDeliveryScheduleCompController failed reading ' . $file, [
+                    'error' => $e->getMessage(),
+                ]);
+                continue;
+            }
+
+            foreach ($sheets as $sheetRows) {
+                foreach ($sheetRows as $row) {
+                    $rows[] = $row;
+                }
+            }
         }
 
-        logger()->info('YMIDeliveryScheduleCompController export result: ', $result);
-        return response()->json([
-            'status' => 'success',
-            'data' => $result,
+        logger()->info('YMIDeliveryScheduleCompController export', [
+            'files' => $matchedFiles,
+            'row_count' => count($rows),
         ]);
+
+        return Excel::download(
+            new ExportDeliveryScheduleComp($rows, [
+                'inc' => (int) $request->inc,
+                'dec' => (int) $request->dec,
+                'bg' => $request->bg,
+                'folders' => $request->folder,
+                'patterns' => $patterns,
+                'files' => $matchedFiles,
+            ]),
+            'DeliveryScheduleComp_' . date('Ymd_His') . '.xlsx'
+        );
     }
 
     /**
-     * Recursively collect files under $directory whose basename matches any of
-     * the wildcard $patterns.
+     * Recursively collect files under $directory matching the name patterns and
+     * extensions.
      *
      * For local disks we read the directory with PHP's scandir()/is_dir() on the
      * resolved path. Flysystem's iterators treat junctions/reparse points (common
      * on mapped NAS drives) as files and never descend into them, so recursive
      * listing stopped after one level. Non-local disks fall back to Flysystem.
      */
-    private function collectFilesRecursive($disk, string $directory, array $patterns, array &$visited, int $depth = 0): array
+    private function collectFilesRecursive($disk, string $directory, array $namePatterns, array $extensions, array &$visited, int $depth = 0): array
     {
         if ($depth > 30) {
             return [];
@@ -96,9 +138,9 @@ class YMIDeliveryScheduleCompController extends Controller
                 if (is_dir($abs)) {
                     $matches = array_merge(
                         $matches,
-                        $this->collectFilesRecursive($disk, $rel, $patterns, $visited, $depth + 1)
+                        $this->collectFilesRecursive($disk, $rel, $namePatterns, $extensions, $visited, $depth + 1)
                     );
-                } elseif ($this->matchesAnyPattern($entry, $patterns)) {
+                } elseif ($this->fileMatches($entry, $namePatterns, $extensions)) {
                     $matches[] = $rel;
                 }
             }
@@ -113,7 +155,7 @@ class YMIDeliveryScheduleCompController extends Controller
             $files = [];
         }
         foreach ($files as $file) {
-            if ($this->matchesAnyPattern(basename($file), $patterns)) {
+            if ($this->fileMatches(basename($file), $namePatterns, $extensions)) {
                 $matches[] = $file;
             }
         }
@@ -126,11 +168,60 @@ class YMIDeliveryScheduleCompController extends Controller
         foreach ($children as $child) {
             $matches = array_merge(
                 $matches,
-                $this->collectFilesRecursive($disk, $child, $patterns, $visited, $depth + 1)
+                $this->collectFilesRecursive($disk, $child, $namePatterns, $extensions, $visited, $depth + 1)
             );
         }
 
         return $matches;
+    }
+
+    /**
+     * Split wildcard patterns into name patterns (OR) and pure extension
+     * patterns (`*.xlsx`, OR among themselves, ANDed with the name group).
+     */
+    private function splitPatterns(array $patterns): array
+    {
+        $names = [];
+        $extensions = [];
+
+        foreach ($patterns as $pattern) {
+            $pattern = trim((string) $pattern);
+            if ($pattern === '') {
+                continue;
+            }
+
+            if (preg_match('/^\*\.([A-Za-z0-9]+)$/', $pattern, $match)) {
+                $extensions[] = strtolower($match[1]);
+            } else {
+                $names[] = $pattern;
+            }
+        }
+
+        return [array_values(array_unique($names)), array_values(array_unique($extensions))];
+    }
+
+    private function fileMatches(string $name, array $namePatterns, array $extensions): bool
+    {
+        $base = basename($name);
+
+        if (!empty($extensions)) {
+            $extension = strtolower(pathinfo($base, PATHINFO_EXTENSION));
+            if (!in_array($extension, $extensions, true)) {
+                return false;
+            }
+        }
+
+        if (empty($namePatterns)) {
+            return true;
+        }
+
+        foreach ($namePatterns as $pattern) {
+            if (Str::is($pattern, $base)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private function normalizePatterns($patterns, ?string $single): array
@@ -152,16 +243,5 @@ class YMIDeliveryScheduleCompController extends Controller
             fn ($pattern) => is_string($pattern) ? trim($pattern) : $pattern,
             $patterns
         ), fn ($pattern) => $pattern !== null && $pattern !== ''));
-    }
-
-    private function matchesAnyPattern(string $name, array $patterns): bool
-    {
-        foreach ($patterns as $pattern) {
-            if (Str::is($pattern, $name)) {
-                return true;
-            }
-        }
-
-        return false;
     }
 }
