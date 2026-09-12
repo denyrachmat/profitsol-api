@@ -31,6 +31,7 @@ class ExportDeliveryScheduleComp implements FromCollection
      */
     public function collection()
     {
+        logger('rows', $this->rows);
         // TODO: parse/compare $this->rows using $this->context
         // (e.g. thresholds inc/dec, bg, source folders).
         return collect($this->rows);

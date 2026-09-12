@@ -1849,8 +1849,9 @@ class FormController extends BaseController
 
                 logger('Header is done, content type: ' . $contentType);
                 // Best-effort extension from the HEAD probe; may be corrected
-                // from the actual response (and Content-Disposition) below.
-                $extension = $this->extensionFromContentType($contentType) ?? 'pdf';
+                // from the actual response (and Content-Disposition) below. Use
+                // "bin" (not "pdf") when unknown so it never masquerades as PDF.
+                $extension = $this->extensionFromContentType($contentType) ?? 'bin';
 
                 $downloadPath = Storage::disk('public')->path('downloads');
                 if (!file_exists($downloadPath)) {
@@ -1883,8 +1884,9 @@ class FormController extends BaseController
             if ($request->isDownload) {
                 // The HEAD probe often can't report the type (POST-only endpoints
                 // reject it), so use the actual response Content-Type and, when
-                // available, the remote Content-Disposition filename. Otherwise the
-                // file keeps the .pdf default and the browser opens a PDF viewer.
+                // available, the remote Content-Disposition filename. If both are
+                // missing/unknown, sniff the downloaded file's magic bytes, then
+                // fall back to "bin" so it never masquerades as PDF.
                 $sinkPath = $options['sink'];
 
                 $remoteName = null;
@@ -1897,10 +1899,14 @@ class FormController extends BaseController
 
                 if ($remoteName) {
                     $newFileName = time() . '_' . $remoteName;
-                } elseif ($actualExtension && $actualExtension !== $extension) {
-                    $newFileName = pathinfo($fileName, PATHINFO_FILENAME) . '.' . $actualExtension;
                 } else {
-                    $newFileName = $fileName;
+                    if (!$actualExtension) {
+                        $actualExtension = $this->extensionFromMagicBytes($sinkPath) ?? 'bin';
+                    }
+
+                    $newFileName = $actualExtension !== $extension
+                        ? pathinfo($fileName, PATHINFO_FILENAME) . '.' . $actualExtension
+                        : $fileName;
                 }
 
                 if ($newFileName !== $fileName && @rename($sinkPath, $downloadPath . '/' . $newFileName)) {
@@ -2015,6 +2021,7 @@ class FormController extends BaseController
             'application/zip' => 'zip',
             'image/jpeg' => 'jpg',
             'image/png' => 'png',
+            'image/gif' => 'gif',
             'text/csv' => 'csv',
             'application/json' => 'json',
             'text/plain' => 'txt',
@@ -2022,6 +2029,59 @@ class FormController extends BaseController
 
         foreach ($map as $mime => $extension) {
             if (strpos($contentType, $mime) !== false) {
+                return $extension;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Detect a file extension from the downloaded file's content (magic bytes).
+     * Prefers libmagic via fileinfo; falls back to signature sniffing.
+     */
+    private function extensionFromMagicBytes(?string $path): ?string
+    {
+        if (!$path || !is_file($path)) {
+            return null;
+        }
+
+        if (class_exists(\finfo::class)) {
+            try {
+                $mime = (new \finfo(FILEINFO_MIME_TYPE))->file($path);
+                if (!empty($mime)) {
+                    $extension = $this->extensionFromContentType($mime);
+                    if ($extension) {
+                        return $extension;
+                    }
+                }
+            } catch (\Throwable $e) {
+                // Fall through to signature sniffing.
+            }
+        }
+
+        $handle = @fopen($path, 'rb');
+        if (!$handle) {
+            return null;
+        }
+        $bytes = fread($handle, 16);
+        fclose($handle);
+
+        if ($bytes === false || $bytes === '') {
+            return null;
+        }
+
+        $signatures = [
+            '%PDF' => 'pdf',
+            "\x89PNG" => 'png',
+            "\xFF\xD8\xFF" => 'jpg',
+            'GIF8' => 'gif',
+            "PK\x03\x04" => 'zip',
+            "\xD0\xCF\x11\xE0\xA1\xB1\x1A\xE1" => 'doc',
+        ];
+
+        foreach ($signatures as $signature => $extension) {
+            if (strncmp($bytes, $signature, strlen($signature)) === 0) {
                 return $extension;
             }
         }
