@@ -1835,17 +1835,12 @@ class FormController extends BaseController
                     $headResponse = $client->head($request->input('apiUrl'), $headOptions);
                     $contentType = $headResponse->getHeaderLine('Content-Type');
                 } catch (\Exception $e) {
-                    logger('HEAD request failed: ' . $e->getMessage());
-                    // If HEAD fails, we'll determine extension from actual response later
-                    $response = [
-                        'status' => false,
-                        'message' => 'API request failed',
-                        'error' => $e->getMessage(),
-                        'request' => $request->all(),
-                        'params_sent' => $dataAnswers
-                    ];
-
-                    return $response;
+                    // HEAD is only a best-effort content-type probe. Many endpoints
+                    // (e.g. POST-only exports) reject HEAD with 405, so don't fail
+                    // the whole submission here — default to pdf and proceed with
+                    // the configured method below.
+                    logger('HEAD request failed (non-fatal), falling back to default extension: ' . $e->getMessage());
+                    $contentType = '';
                 }
 
                 logger('Header is done, content type: ' . $contentType);
