@@ -1848,29 +1848,9 @@ class FormController extends BaseController
                 }
 
                 logger('Header is done, content type: ' . $contentType);
-                // Determine extension from content type
-                $extension = 'pdf'; // default
-                if (strpos($contentType, 'application/pdf') !== false) {
-                    $extension = 'pdf';
-                } elseif (strpos($contentType, 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet') !== false) {
-                    $extension = 'xlsx';
-                } elseif (strpos($contentType, 'application/vnd.ms-excel') !== false) {
-                    $extension = 'xls';
-                } elseif (strpos($contentType, 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') !== false) {
-                    $extension = 'docx';
-                } elseif (strpos($contentType, 'application/msword') !== false) {
-                    $extension = 'doc';
-                } elseif (strpos($contentType, 'image/jpeg') !== false) {
-                    $extension = 'jpg';
-                } elseif (strpos($contentType, 'image/png') !== false) {
-                    $extension = 'png';
-                } elseif (strpos($contentType, 'text/csv') !== false) {
-                    $extension = 'csv';
-                } elseif (strpos($contentType, 'application/json') !== false) {
-                    $extension = 'json';
-                } elseif (strpos($contentType, 'text/plain') !== false) {
-                    $extension = 'txt';
-                }
+                // Best-effort extension from the HEAD probe; may be corrected
+                // from the actual response (and Content-Disposition) below.
+                $extension = $this->extensionFromContentType($contentType) ?? 'pdf';
 
                 $downloadPath = Storage::disk('public')->path('downloads');
                 if (!file_exists($downloadPath)) {
@@ -1901,6 +1881,33 @@ class FormController extends BaseController
             logger('API request to ' . $apiUrl . ' completed with status ' . $response->getStatusCode());
 
             if ($request->isDownload) {
+                // The HEAD probe often can't report the type (POST-only endpoints
+                // reject it), so use the actual response Content-Type and, when
+                // available, the remote Content-Disposition filename. Otherwise the
+                // file keeps the .pdf default and the browser opens a PDF viewer.
+                $sinkPath = $options['sink'];
+
+                $remoteName = null;
+                $disposition = $response->getHeaderLine('Content-Disposition');
+                if ($disposition && preg_match('/filename\*?=(?:UTF-8\'\')?"?([^\";]+)"?/i', $disposition, $matches)) {
+                    $remoteName = basename(urldecode(trim($matches[1])));
+                }
+
+                $actualExtension = $this->extensionFromContentType($response->getHeaderLine('Content-Type'));
+
+                if ($remoteName) {
+                    $newFileName = time() . '_' . $remoteName;
+                } elseif ($actualExtension && $actualExtension !== $extension) {
+                    $newFileName = pathinfo($fileName, PATHINFO_FILENAME) . '.' . $actualExtension;
+                } else {
+                    $newFileName = $fileName;
+                }
+
+                if ($newFileName !== $fileName && @rename($sinkPath, $downloadPath . '/' . $newFileName)) {
+                    $fileName = $newFileName;
+                    $downloadUrl = rtrim(env('APP_URL_DOWNLOAD', config('app.url') . '/storage/'), '/') . '/downloads/' . $fileName;
+                }
+
                 return response()->json([
                     'status' => true,
                     'message' => 'File downloaded successfully',
@@ -1988,5 +1995,37 @@ class FormController extends BaseController
                 }
                 return $value;
         }
+    }
+
+    /**
+     * Map a MIME content type to a file extension, or null when unknown.
+     */
+    private function extensionFromContentType(?string $contentType): ?string
+    {
+        $contentType = strtolower((string) $contentType);
+
+        $map = [
+            'application/pdf' => 'pdf',
+            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' => 'xlsx',
+            'application/vnd.ms-excel' => 'xls',
+            'application/vnd.openxmlformats-officedocument.wordprocessingml.document' => 'docx',
+            'application/msword' => 'doc',
+            'application/vnd.openxmlformats-officedocument.presentationml.presentation' => 'pptx',
+            'application/vnd.ms-powerpoint' => 'ppt',
+            'application/zip' => 'zip',
+            'image/jpeg' => 'jpg',
+            'image/png' => 'png',
+            'text/csv' => 'csv',
+            'application/json' => 'json',
+            'text/plain' => 'txt',
+        ];
+
+        foreach ($map as $mime => $extension) {
+            if (strpos($contentType, $mime) !== false) {
+                return $extension;
+            }
+        }
+
+        return null;
     }
 }
