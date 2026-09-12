@@ -20,19 +20,19 @@ class YMIDeliveryScheduleCompController extends Controller
             'bg' => 'required|string',
             'folder' => 'required|array',
             'folder.*' => 'required|string',
-            'pattern' => 'nullable|string',
-            'patterns' => 'nullable|array',
-            'patterns.*' => 'required|string',
+            'pattern' => 'nullable',
+            'patterns' => 'nullable',
         ]);
 
         // Wildcard filters, e.g. ["*.xlsx", "*delivery*"]. A file is kept if it
-        // matches ANY pattern (OR). `pattern` (single) is still accepted. Default
-        // ["*"] = all files. Matches against the basename; switch basename($file)
-        // to $file below to match the full path.
-        $patterns = array_values(array_filter(array_merge(
-            (array) $request->input('patterns', []),
-            $request->filled('pattern') ? [$request->input('pattern')] : []
-        )));
+        // matches ANY pattern (OR). `patterns` may arrive as a real array, a JSON
+        // string ('["*.xlsx","*pdf*"]') or a comma-separated string; `pattern`
+        // (single) is still accepted. Default ["*"] = all files. Matches against
+        // the basename; switch basename($file) to the path to match the full path.
+        $patterns = $this->normalizePatterns(
+            $request->input('patterns', []),
+            $request->filled('pattern') ? $request->input('pattern') : null
+        );
         if (empty($patterns)) {
             $patterns = ['*'];
         }
@@ -131,6 +131,27 @@ class YMIDeliveryScheduleCompController extends Controller
         }
 
         return $matches;
+    }
+
+    private function normalizePatterns($patterns, ?string $single): array
+    {
+        if (is_string($patterns)) {
+            $decoded = json_decode($patterns, true);
+            $patterns = is_array($decoded)
+                ? $decoded
+                : array_map('trim', explode(',', $patterns));
+        }
+
+        $patterns = is_array($patterns) ? $patterns : [];
+
+        if ($single !== null && $single !== '') {
+            $patterns[] = $single;
+        }
+
+        return array_values(array_filter(array_map(
+            fn ($pattern) => is_string($pattern) ? trim($pattern) : $pattern,
+            $patterns
+        ), fn ($pattern) => $pattern !== null && $pattern !== ''));
     }
 
     private function matchesAnyPattern(string $name, array $patterns): bool

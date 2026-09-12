@@ -672,13 +672,9 @@ class FormController extends BaseController
                         $buildParams = [];
                         foreach ($valueApi['params'] as $keyParam => $valueParam) {
                             // Params may be bound to a form field (`form_id`) or be
-                            // static (e.g. `pattern`); fall back to the configured
-                            // default so a missing form_id doesn't error.
-                            $formId = $valueParam['form_id'] ?? null;
-                            $formValue = ($formId !== null && isset($rowAns[$formId]))
-                                ? $rowAns[$formId]
-                                : ($valueParam['default_value'] ?? $valueParam['param_default'] ?? null);
-                            $buildParams[$valueParam['param_name']] = $formValue;
+                            // static (e.g. `patterns`); cast by `param_type` and fall
+                            // back to the configured default when unbound.
+                            $buildParams[$valueParam['param_name']] = $this->resolveApiParamValue($valueParam, $rowAns);
                         }
                         $hasilAPICall[] = $this->sendAPIFormsSubmitted(new Request([
                             'idRef' => $request->id,
@@ -696,13 +692,9 @@ class FormController extends BaseController
                     $buildParams = [];
                     foreach ($valueApi['params'] as $keyParam => $valueParam) {
                         // Params may be bound to a form field (`form_id`) or be
-                        // static (e.g. `pattern`); fall back to the configured
-                        // default so a missing form_id doesn't error.
-                        $formId = $valueParam['form_id'] ?? null;
-                        $formValue = ($formId !== null && isset($spreadAnswer[$formId]))
-                            ? $spreadAnswer[$formId]
-                            : ($valueParam['default_value'] ?? $valueParam['param_default'] ?? null);
-                        $buildParams[$valueParam['param_name']] = $formValue;
+                        // static (e.g. `patterns`); cast by `param_type` and fall
+                        // back to the configured default when unbound.
+                        $buildParams[$valueParam['param_name']] = $this->resolveApiParamValue($valueParam, $spreadAnswer);
                     }
                     $hasilAPICall[] = $this->sendAPIFormsSubmitted(new Request([
                         'idRef' => $request->id,
@@ -771,7 +763,7 @@ class FormController extends BaseController
                     'cfaud_batch' => $rowBatchId,
                     'cfm_id' => $request->id,
                     'cfmd_id' => $fieldId,
-                    'cfm_val' => (string) $value,
+                    'cfm_val' => is_array($value) || is_object($value) ? json_encode($value) : (string) $value,
                 ])->toArray();
 
                 $hasil[] = $result;
@@ -1933,5 +1925,68 @@ class FormController extends BaseController
         return array_merge([
             'request' => $request->all()
         ], $response);
+    }
+
+    /**
+     * Resolve an API-option parameter to its outgoing value.
+     *
+     * The value comes from the bound form field (`form_id`) or, when unbound, the
+     * configured default (`default_value`, then `param_default`). It is then cast
+     * according to `param_type`: text (default), number/int/float, boolean,
+     * json/array/object, date. A `text` param whose default is a JSON array/object
+     * string is treated as structured data (e.g. wildcard `patterns`).
+     */
+    private function resolveApiParamValue(array $valueParam, array $source)
+    {
+        $formId = $valueParam['form_id'] ?? null;
+        $value = ($formId !== null && isset($source[$formId]))
+            ? $source[$formId]
+            : ($valueParam['default_value'] ?? $valueParam['param_default'] ?? null);
+
+        $type = strtolower(trim((string) ($valueParam['param_type'] ?? 'text')));
+
+        switch ($type) {
+            case 'json':
+            case 'array':
+            case 'object':
+                if (is_string($value)) {
+                    $decoded = json_decode($value, true);
+                    if (json_last_error() === JSON_ERROR_NONE) {
+                        return $decoded;
+                    }
+                }
+                return $value;
+
+            case 'int':
+            case 'integer':
+                return is_numeric($value) ? (int) $value : $value;
+
+            case 'float':
+            case 'double':
+            case 'decimal':
+            case 'number':
+                return is_numeric($value) ? (float) $value : $value;
+
+            case 'bool':
+            case 'boolean':
+                if (is_bool($value) || !is_scalar($value)) {
+                    return $value;
+                }
+                $bool = filter_var($value, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
+                return $bool === null ? $value : $bool;
+
+            case 'date':
+                return $value;
+
+            case 'text':
+            default:
+                if (is_string($value)) {
+                    $decoded = json_decode($value, true);
+                    if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
+                        return $decoded;
+                    }
+                }
+                return $value;
+        }
     }
 }
