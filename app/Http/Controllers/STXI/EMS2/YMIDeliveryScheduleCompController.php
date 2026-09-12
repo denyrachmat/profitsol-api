@@ -5,7 +5,7 @@ namespace App\Http\Controllers\STXI\EMS2;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 
-use App\Traits\FolderDocumentTraits;
+use App\Traits\DMS\FolderDocumentTraits;
 
 class YMIDeliveryScheduleCompController extends Controller
 {
