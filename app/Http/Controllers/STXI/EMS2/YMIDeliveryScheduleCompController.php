@@ -38,24 +38,13 @@ class YMIDeliveryScheduleCompController extends Controller
         }
 
         // installDisk() already returns a filesystem disk instance, so use it
-        // directly. allFiles() recurses into child folders; use files() if you
-        // only want the top level.
+        // directly.
         $disk = $this->installDisk('ems2_yeid_root');
 
         $result = [];
         foreach ($request->folder as $valueFolder) {
-            $result[$valueFolder] = collect($disk->allFiles($valueFolder))
-                ->filter(function ($file) use ($patterns) {
-                    $name = basename($file);
-                    foreach ($patterns as $pattern) {
-                        if (Str::is($pattern, $name)) {
-                            return true;
-                        }
-                    }
-                    return false;
-                })
-                ->values()
-                ->all();
+            $visited = [];
+            $result[$valueFolder] = $this->collectFilesRecursive($disk, $valueFolder, $patterns, $visited);
         }
 
         logger()->info('YMIDeliveryScheduleCompController export result: ', $result);
@@ -63,5 +52,95 @@ class YMIDeliveryScheduleCompController extends Controller
             'status' => 'success',
             'data' => $result,
         ]);
+    }
+
+    /**
+     * Recursively collect files under $directory whose basename matches any of
+     * the wildcard $patterns.
+     *
+     * For local disks we read the directory with PHP's scandir()/is_dir() on the
+     * resolved path. Flysystem's iterators treat junctions/reparse points (common
+     * on mapped NAS drives) as files and never descend into them, so recursive
+     * listing stopped after one level. Non-local disks fall back to Flysystem.
+     */
+    private function collectFilesRecursive($disk, string $directory, array $patterns, array &$visited, int $depth = 0): array
+    {
+        if ($depth > 30) {
+            return [];
+        }
+
+        $directory = trim($directory, '/');
+        if (isset($visited[$directory])) {
+            return [];
+        }
+        $visited[$directory] = true;
+
+        $matches = [];
+
+        try {
+            $absDirectory = $disk->path($directory);
+        } catch (\Throwable $e) {
+            $absDirectory = null;
+        }
+
+        if ($absDirectory !== null && is_dir($absDirectory)) {
+            $entries = @scandir($absDirectory) ?: [];
+            foreach ($entries as $entry) {
+                if ($entry === '.' || $entry === '..') {
+                    continue;
+                }
+
+                $abs = rtrim($absDirectory, '\\/') . DIRECTORY_SEPARATOR . $entry;
+                $rel = ($directory === '' ? '' : $directory . '/') . $entry;
+
+                if (is_dir($abs)) {
+                    $matches = array_merge(
+                        $matches,
+                        $this->collectFilesRecursive($disk, $rel, $patterns, $visited, $depth + 1)
+                    );
+                } elseif ($this->matchesAnyPattern($entry, $patterns)) {
+                    $matches[] = $rel;
+                }
+            }
+
+            return $matches;
+        }
+
+        // Fallback for non-local disks where path() is unavailable.
+        try {
+            $files = $disk->files($directory);
+        } catch (\Throwable $e) {
+            $files = [];
+        }
+        foreach ($files as $file) {
+            if ($this->matchesAnyPattern(basename($file), $patterns)) {
+                $matches[] = $file;
+            }
+        }
+
+        try {
+            $children = $disk->directories($directory);
+        } catch (\Throwable $e) {
+            $children = [];
+        }
+        foreach ($children as $child) {
+            $matches = array_merge(
+                $matches,
+                $this->collectFilesRecursive($disk, $child, $patterns, $visited, $depth + 1)
+            );
+        }
+
+        return $matches;
+    }
+
+    private function matchesAnyPattern(string $name, array $patterns): bool
+    {
+        foreach ($patterns as $pattern) {
+            if (Str::is($pattern, $name)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 }
