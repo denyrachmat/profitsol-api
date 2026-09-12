@@ -671,7 +671,13 @@ class FormController extends BaseController
                     foreach ($checkSetup['apiOpt'] as $keyApi => $valueApi) {
                         $buildParams = [];
                         foreach ($valueApi['params'] as $keyParam => $valueParam) {
-                            $formValue = $rowAns[$valueParam['form_id']] ?? $valueParam['param_default'] ?? null;
+                            // Params may be bound to a form field (`form_id`) or be
+                            // static (e.g. `pattern`); fall back to the configured
+                            // default so a missing form_id doesn't error.
+                            $formId = $valueParam['form_id'] ?? null;
+                            $formValue = ($formId !== null && isset($rowAns[$formId]))
+                                ? $rowAns[$formId]
+                                : ($valueParam['default_value'] ?? $valueParam['param_default'] ?? null);
                             $buildParams[$valueParam['param_name']] = $formValue;
                         }
                         $hasilAPICall[] = $this->sendAPIFormsSubmitted(new Request([
@@ -689,7 +695,13 @@ class FormController extends BaseController
                 foreach ($checkSetup['apiOpt'] as $keyApi => $valueApi) {
                     $buildParams = [];
                     foreach ($valueApi['params'] as $keyParam => $valueParam) {
-                        $formValue = $spreadAnswer[$valueParam['form_id']] ?? $valueParam['param_default'] ?? null;
+                        // Params may be bound to a form field (`form_id`) or be
+                        // static (e.g. `pattern`); fall back to the configured
+                        // default so a missing form_id doesn't error.
+                        $formId = $valueParam['form_id'] ?? null;
+                        $formValue = ($formId !== null && isset($spreadAnswer[$formId]))
+                            ? $spreadAnswer[$formId]
+                            : ($valueParam['default_value'] ?? $valueParam['param_default'] ?? null);
                         $buildParams[$valueParam['param_name']] = $formValue;
                     }
                     $hasilAPICall[] = $this->sendAPIFormsSubmitted(new Request([
