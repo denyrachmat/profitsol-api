@@ -743,6 +743,12 @@ class FormController extends BaseController
             $rowBatchId = $isMultipleMode ? ($nextID + $rowIdx) : $nextID;
 
             foreach ($rowAnswers as $fieldId => $value) {
+                if ($fieldId === 'undefined' || $fieldId === 'null' || $fieldId === '' || $fieldId === null) {
+                    continue;
+                }
+                if (!is_numeric($fieldId)) {
+                    continue;
+                }
                 $result = FormAnswerUserDet::updateOrCreate([
                     'p_u_username' => $request->has('username') ? $request->username : $request->header('username'),
                     'cfaud_batch' => $rowBatchId,
@@ -758,6 +764,10 @@ class FormController extends BaseController
 
                 $hasil[] = $result;
             }
+        }
+
+        if (count($hasil) === 0 && count($ans) > 0) {
+            return $this->handleError('No valid answers to store (invalid field IDs).', $ans);
         }
 
         return $this->handleResponse(($checkSetup['isAPI'] ?? 0) == 1 && !empty($checkSetup['apiOpt']) ? $apiCallsList : $hasil, 'Form submited !');
@@ -1052,7 +1062,9 @@ class FormController extends BaseController
                     $f->with('allChildrenContent.formDetail.formAnswer');
                     $f->orderBy('cfm_seq_name', 'asc');
                 }
-            ])->where('cfmt_quiz_flag', 0)->get();
+            ])->where('cfmt_quiz_flag', 0)
+                ->orderBy('cms_form_mstr_title.created_at', 'desc')
+                ->get();
         }
 
         $hasilHeader = $this->getHeaderAllForms($data->toArray());

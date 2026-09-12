@@ -647,32 +647,7 @@ class QuizController extends Controller
         if (empty($apiKey) || empty($apiUrl)) {
             throw new \Exception("Konfigurasi NINEROUTER_API_KEY atau NINEROUTER_URL belum diset.");
         }
-
-        // STRATEGI DIET PAYLOAD: Minta format minimalis ke AI untuk menghemat token hingga 70%
-        // $prompt = "Berikut adalah teks mentah dari dokumen kuis yang harus kamu analisis:\n"
-        //     . "=========================================\n"
-        //     . $documentText . "\n"
-        //     . "=========================================\n\n"
-        //     . "Tugasmu: Transformasikan dan isi dokumen di atas menjadi objek JSON minimalis dengan skema kaku berikut:\n\n"
-        //     . "{\n"
-        //     . "  \"title\": \"[Judul Kuis]\",\n"
-        //     . "  \"quizzes\": [\n"
-        //     . "    {\n"
-        //     . "      \"q\": \"[Teks Pertanyaan]\",\n"
-        //     . "      \"options\": {\n"
-        //     . "        \"A\": \"[Isi Opsi A]\",\n"
-        //     . "        \"B\": \"[Isi Opsi B]\",\n"
-        //     . "        \"C\": \"[Isi Opsi C]\",\n"
-        //     . "        \"D\": \"[Isi Opsi D]\"\n"
-        //     . "      },\n"
-        //     . "      \"exp\": \"[Penjelasan singkat jawaban, atau kosongkan jika tidak ada]\",\n"
-        //     . "      \"ans\": \"[Huruf Kunci Jawaban tunggal (A/B/C/D) atau array jika jawaban banyak contoh [\\\"A\\\",\\\"B\\\"]]\"\n"
-        //     . "    }\n"
-        //     . "  ]\n"
-        //     . "}\n\n"
-        //     . "PERINGATAN: Sediakan output murni JSON mentah yang valid tanpa teks pembuka, penutup, atau markdown ```json!";
-
-        // STRATEGI DIET PAYLOAD: Minta format minimalis ke AI untuk menghemat token hingga 70%
+        
         // STRATEGI DIET PAYLOAD: Minta format minimalis ke AI untuk menghemat token hingga 70%
         $prompt = "Berikut adalah teks mentah dari dokumen kuis yang harus kamu analisis:\n"
             . "=========================================\n"
@@ -710,7 +685,7 @@ class QuizController extends Controller
             ->timeout(120)
             ->connectTimeout(15)
             ->post($apiUrl, [
-                "model" => "auto-coding-helper-free",
+                "model" => "profitsol-document-extractor-combo",
                 "messages" => [
                     [
                         "role" => "user",
