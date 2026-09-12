@@ -4,28 +4,29 @@ namespace App\Http\Controllers\STXI\EMS2;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
+use Storage;
 
 class YMIDeliveryScheduleCompController extends Controller
 {
     public function export(Request $request)
-    {
-        logger('request', $request->all());
-        return response()->json(['message' => 'Export functionality is currently disabled.'], 403);
-        
+    {        
         // Validate the request parameters
         $request->validate([
-            'start_date' => 'required|date',
-            'end_date' => 'required|date|after_or_equal:start_date',
+            'inc' => 'required|integer',
+            'dec' => 'required|integer',
+            'bg' => 'required|string',
+            'folder' => 'required|array',
         ]);
 
-        // Extract the start and end dates from the request
-        $startDate = $request->input('start_date');
-        $endDate = $request->input('end_date');
+        $result = [];
+        foreach ($request->folder as $keFolder => $valueFolder) {
+            $result[] = Storage::disk('ems2_yeid_root')->path($valueFolder)->files();
+        }
 
-        // Call the service to generate the Excel file
-        $excelFile = app('App\Services\YMIDeliveryScheduleService')->exportToExcel($startDate, $endDate);
-
-        // Return the Excel file as a response for download
-        return response()->download($excelFile, 'YMI_Delivery_Schedule.xlsx')->deleteFileAfterSend(true);
+        logger()->info('YMIDeliveryScheduleCompController export result: ', $result);
+        return response()->json([
+            'status' => 'success',
+            'data' => $result,
+        ]);
     }
 }
