@@ -9,6 +9,7 @@ use Illuminate\Support\Str;
 use App\Exports\STXI\EMS2\ExportDeliveryScheduleComp;
 use App\Traits\DMS\FolderDocumentTraits;
 use Excel;
+use DB;
 
 class YMIDeliveryScheduleCompController extends Controller
 {
@@ -58,9 +59,23 @@ class YMIDeliveryScheduleCompController extends Controller
         }
         $matchedFiles = array_values(array_unique($matchedFiles));
 
-        // Read every matched spreadsheet into raw rows and hand them to the export
-        // class, which is responsible for parsing/formatting.
+        // Read every matched spreadsheet into raw rows, separated per source
+        // file: $rows[<relative file path>] = [ [cell, cell, ...], ... ].
+        // This keeps files apart instead of mixing every row into one list.
         $rows = [];
+
+        $getItem = DB::connection('mysql_ems2')->table('MITM_TBL')
+            ->select(
+                'MITM_ITMCD',
+                'MITM_ITMD1',
+                'MITM_SPTNO',
+                'MITM_MAKERNM',
+                'MSUP_SUPNM',
+                'MITM_PLTDAY'
+            )
+            ->join('MSUP_TBL', 'MITM_TBL.MITM_SUPCD', '=', 'MSUP_TBL.MSUP_SUPCD')
+            ->get();
+            
         foreach ($matchedFiles as $file) {
             try {
                 $sheets = Excel::toArray(new \stdClass, $disk->path($file));
@@ -71,16 +86,22 @@ class YMIDeliveryScheduleCompController extends Controller
                 continue;
             }
 
+            $fileRows = [];
             foreach ($sheets as $sheetRows) {
                 foreach ($sheetRows as $row) {
-                    $rows[] = $row;
+                    $fileRows[] = $row;
                 }
+            }
+
+            if (!empty($fileRows)) {
+                $rows[$file] = $fileRows;
             }
         }
 
         logger()->info('YMIDeliveryScheduleCompController export', [
             'files' => $matchedFiles,
-            'row_count' => count($rows),
+            'row_count' => array_sum(array_map('count', $rows)),
+            'row_count_per_file' => array_map('count', $rows),
         ]);
 
         return Excel::download(
