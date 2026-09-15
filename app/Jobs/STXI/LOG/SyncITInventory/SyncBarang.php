@@ -287,16 +287,18 @@ class SyncBarang implements ShouldQueue
                         ->where('ITMCD', trim($barang['KODE BARANG']))
                         ->first();
                     $this->sendNotification($getBarang, $barang, 'Cannot found data on mega, use Ceisa Export processing, processing data.', false, $key + 1);
+
+                    $getBarangDataOnMega = array_filter($checkBCDocOnMega, function ($item) use ($barang) {
+                        return trim($item->ITMCD) === trim($barang['KODE BARANG']);
+                    });
+                    $firstItem = reset($getBarangDataOnMega);
+                    $loccd = $this->mode === 'export_only' && $firstItem !== false ? $firstItem->LOCCD : 'STX-I';
+                    $bsgrp = $this->mode === 'export_only' && $firstItem !== false ? $firstItem->BSGRP : 'LAIN NYA';
+                    $doccd = $this->mode === 'export_only' && $firstItem !== false ? $firstItem->DOCCD : '';
+                    $docno = $this->mode === 'export_only' && $firstItem !== false ? $firstItem->DOCNO : '';
+
                     if ($this->typeBC['type'] === 'INC') {
                         $barang['KODE SATUAN'] = $barang['KODE SATUAN'] !== 'PCE' ? $barang['KODE SATUAN'] : 'PIECE';
-                        $getBarangDataOnMega = array_filter($checkBCDocOnMega, function ($item) use ($barang) {
-                            return trim($item->ITMCD) === trim($barang['KODE BARANG']);
-                        });
-
-                        $loccd = $this->mode === 'export_only' ? ((($firstItem = reset($getBarangDataOnMega)) !== false) ? $firstItem->LOCCD : 'STX-I') : 'STX-I';
-                        $bsgrp = $this->mode === 'export_only' ? ((($firstItem = reset($getBarangDataOnMega)) !== false) ? $firstItem->BSGRP : 'LAIN NYA') : 'LAIN NYA';
-                        $doccd = $this->mode === 'export_only' ? ((($firstItem = reset($getBarangDataOnMega)) !== false) ? $firstItem->DOCCD : '') : '';
-                        $docno = $this->mode === 'export_only' ? ((($firstItem = reset($getBarangDataOnMega)) !== false) ? $firstItem->DOCNO : '') : '';
 
                         $processedBarang[] = [
                             'LOCCD' => $loccd,
@@ -398,7 +400,6 @@ class SyncBarang implements ShouldQueue
                 'current' => null,
             ])->onQueue('sync-itinventory');
         } catch (\Exception $e) {
-
             logger('checkBCDocOnMega failed : ' . $e->getMessage());
             $this->sendNotification([], null, 'Failed to synchronize data Barang', true, [], true);
         }
