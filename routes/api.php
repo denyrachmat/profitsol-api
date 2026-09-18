@@ -138,6 +138,9 @@ Route::group(['prefix' => 'fpmanager'], function () {
     Route::get('getMainConf', [FrontPageController::class, 'getMainConf']);
     Route::post('saveMainConf', [FrontPageController::class, 'saveMainConf']);
 
+    Route::get('getHeaderConf', [FrontPageController::class, 'getHeaderConf']);
+    Route::post('saveHeaderConf', [FrontPageController::class, 'saveHeaderConf']);
+
     Route::post('saveTags', [FrontPageController::class, 'saveTags']);
     Route::delete('removeTag/{id}/{tag}', [FrontPageController::class, 'removeTag']);
     Route::post('publishPost/{id}/{state?}', [FrontPageController::class, 'publishPost']);

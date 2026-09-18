@@ -1205,4 +1205,52 @@ class FrontPageController extends BaseController
 
         return response()->json(['success' => true, 'message' => 'Unsubscribed from push notifications successfully.'], 200);
     }
+
+    /**
+     * Get the per-domain frontpage header configuration.
+     * Stored under FP_HEADER_CONF / "HEADER_CONFIG" to keep it out of the
+     * regular FP_GENERAL_CONF settings list.
+     */
+    public function getHeaderConf()
+    {
+        $row = PortalGencode::where('pgm_code', 'FP_HEADER_CONF')
+            ->where('pgm_value', 'HEADER_CONFIG')
+            ->first();
+
+        $config = null;
+        if ($row && !empty($row->pgm_value2)) {
+            $decoded = json_decode($row->pgm_value2, true);
+            $config = json_last_error() === JSON_ERROR_NONE ? $decoded : null;
+        }
+
+        return $this->handleResponse($config, 'Header configuration retrieved successfully');
+    }
+
+    /**
+     * Save the per-domain frontpage header configuration.
+     */
+    public function saveHeaderConf(Request $request)
+    {
+        $config = $request->input('config', []);
+
+        if (!is_array($config)) {
+            return $this->handleError('Invalid header configuration', 400);
+        }
+
+        $row = PortalGencode::updateOrCreate(
+            [
+                'pgm_code' => 'FP_HEADER_CONF',
+                'pgm_value' => 'HEADER_CONFIG',
+            ],
+            [
+                'pgm_value2' => json_encode($config),
+                'pgm_desc' => 'Frontpage Header Configuration',
+            ]
+        );
+
+        return $this->handleResponse(
+            json_decode($row->pgm_value2, true),
+            'Header configuration saved successfully'
+        );
+    }
 }
