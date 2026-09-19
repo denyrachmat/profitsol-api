@@ -60,6 +60,24 @@ class AppController extends BaseController
     }
 
     /**
+     * Role ids that are assigned to an app code. Used at render time to gate
+     * portal-menu links by the viewer's role, so author-time restrictions
+     * cannot leak and later role changes take effect immediately.
+     */
+    public function appRoles($code)
+    {
+        $roleIds = PortalRoleAppMap::where('am_app_id', $code)
+            ->pluck('rm_role_id')
+            ->filter(fn ($id) => $id !== null && $id !== '')
+            ->map(fn ($id) => (string) $id)
+            ->unique()
+            ->values()
+            ->all();
+
+        return $this->handleResponse($roleIds, 'Data Found !');
+    }
+
+    /**
      * Show the form for editing the specified resource.
      *
      * @param  int  $id

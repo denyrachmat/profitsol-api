@@ -53,8 +53,22 @@ class FrontPageController extends BaseController
 
     private function clearNavMenuCache(): void
     {
-        Cache::forget('portal.nav_menu.default');
-        Cache::forget('portal.nav_menu.all');
+        Cache::forget('portal.nav_menu.default.all');
+        Cache::forget('portal.nav_menu.all.all');
+
+        foreach (Cache::get('portal.nav_menu.role_keys', []) as $key) {
+            Cache::forget($key);
+        }
+        Cache::forget('portal.nav_menu.role_keys');
+    }
+
+    private function trackNavMenuCacheKey(string $key): void
+    {
+        $keys = Cache::get('portal.nav_menu.role_keys', []);
+        if (!in_array($key, $keys, true)) {
+            $keys[] = $key;
+            Cache::put('portal.nav_menu.role_keys', $keys, now()->addMinutes(10));
+        }
     }
 
     function __construct()
@@ -117,7 +131,14 @@ class FrontPageController extends BaseController
 
     public function getNavMenuFromAPI($showAll = false)
     {
-        $cacheKey = 'portal.nav_menu.' . ($showAll ? 'all' : 'default');
+        $roleFilter = (bool) request()->query('rolefilter', false);
+        $requestRole = trim((string) request()?->header('roleid'));
+        $roleTag = $roleFilter ? ('role.' . ($requestRole !== '' ? $requestRole : 'none')) : 'all';
+        $cacheKey = 'portal.nav_menu.' . ($showAll ? 'all' : 'default') . '.' . $roleTag;
+
+        if ($roleFilter) {
+            $this->trackNavMenuCacheKey($cacheKey);
+        }
 
         return Cache::remember($cacheKey, now()->addMinutes(5), function () use ($showAll) {
             return $this->getNavMenu([], (bool) $showAll);
@@ -126,6 +147,8 @@ class FrontPageController extends BaseController
 
     public function getNavMenu($data = [], $showAll = false, $id = '')
     {
+        $requestRole = trim((string) request()?->header('roleid'));
+
         if (empty($data)) {
             $data = $this->getDataGencode('FP_NAV', !empty($id) ? ['id' => $id] : [], [
                 'idx' => 'id',
@@ -145,6 +168,31 @@ class FrontPageController extends BaseController
                 'pgm_order' => 'asc',
                 'id' => 'asc'
             ], false, true, $showAll);
+        }
+
+        if (!empty($data)) {
+            $rolesMap = $this->navRolesMap();
+
+            $withRoles = function ($items) use (&$withRoles, $rolesMap) {
+                foreach ($items as &$navItem) {
+                    $navId = (string) ($navItem['idx'] ?? ($navItem['value'] ?? ''));
+                    $navItem['roles'] = $navId !== '' ? ($rolesMap[$navId] ?? []) : [];
+
+                    if (isset($navItem['children']) && is_array($navItem['children'])) {
+                        $navItem['children'] = $withRoles($navItem['children']);
+                    }
+                }
+                unset($navItem);
+                return $items;
+            };
+            $data = $withRoles($data);
+
+            // Global filter: restricted menus only show for their assigned
+            // roles. Opt-in so management screens (which must see everything)
+            // keep working — they simply don't send ?rolefilter=1.
+            if (request()->query('rolefilter')) {
+                $data = $this->filterNavByRole($data, $requestRole !== '' ? $requestRole : null);
+            }
         }
 
         $pages = $this->getDataGencode('URL_PAGE_GEN', [], [
@@ -310,9 +358,113 @@ class FrontPageController extends BaseController
             ]
         );
 
+        // The role allowlist lives in a companion gencode row (FP_NAV_ROLES)
+        // because FP_NAV's own columns are all taken. Only touch it when the
+        // caller actually sent a `roles` field, so unrelated saves don't wipe it.
+        if ($request->has('roles')) {
+            $this->saveNavRoles($gencode->id, $request->input('roles'));
+        }
+
         $this->clearNavMenuCache();
 
         return $this->handleResponse($gencode, 'Navigation menu saved successfully');
+    }
+
+    /**
+     * Persist the global role allowlist of a nav item. An empty list removes the
+     * restriction (visible to everyone).
+     */
+    private function saveNavRoles($navId, $roles): void
+    {
+        $normalized = [];
+        if (is_array($roles)) {
+            foreach ($roles as $role) {
+                if (is_array($role)) {
+                    $role = $role['value'] ?? ($role['id'] ?? null);
+                }
+                $role = $role === null ? null : trim((string) $role);
+                if ($role !== null && $role !== '') {
+                    $normalized[$role] = $role;
+                }
+            }
+        }
+        $normalized = array_values($normalized);
+
+        if (empty($normalized)) {
+            PortalGencode::where('pgm_code', 'FP_NAV_ROLES')
+                ->whereRaw('CAST(pgm_value AS varchar(max)) = ?', [(string) $navId])
+                ->delete();
+            return;
+        }
+
+        PortalGencode::updateOrCreate(
+            ['pgm_code' => 'FP_NAV_ROLES', 'pgm_value' => (string) $navId],
+            [
+                'pgm_code' => 'FP_NAV_ROLES',
+                'pgm_value' => (string) $navId,
+                'pgm_value2' => json_encode($normalized),
+                'pgm_desc' => 'nav_roles',
+            ]
+        );
+    }
+
+    /**
+     * Map of nav id => role allowlist (list of role ids).
+     *
+     * @return array<string, string[]>
+     */
+    private function navRolesMap(): array
+    {
+        $rows = PortalGencode::where('pgm_code', 'FP_NAV_ROLES')->get();
+        $map = [];
+        foreach ($rows as $row) {
+            $decoded = json_decode((string) $row->pgm_value2, true);
+            $map[(string) $row->pgm_value] = is_array($decoded)
+                ? array_values(array_map('strval', $decoded))
+                : [];
+        }
+        return $map;
+    }
+
+    /**
+     * Keep only nav items whose role allowlist is empty (public) or contains the
+     * requester's role. Parents left without children are dropped only when they
+     * are pure section headers (no own link).
+     */
+    private function filterNavByRole($items, ?string $roleId): array
+    {
+        if (!is_array($items)) {
+            return [];
+        }
+
+        $roleId = $roleId === null ? '' : trim($roleId);
+        $out = [];
+
+        foreach ($items as $item) {
+            if (!is_array($item)) {
+                continue;
+            }
+
+            $roles = array_map('strval', $item['roles'] ?? []);
+            $allowed = empty($roles) || ($roleId !== '' && in_array($roleId, $roles, true));
+            if (!$allowed) {
+                continue;
+            }
+
+            $hadChildren = isset($item['children']) && is_array($item['children']) && count($item['children']) > 0;
+            if ($hadChildren) {
+                $item['children'] = $this->filterNavByRole($item['children'], $roleId);
+
+                $ownLink = (string) ($item['url'] ?? ($item['linkto'] ?? ''));
+                if (empty($item['children']) && $ownLink === '') {
+                    continue;
+                }
+            }
+
+            $out[] = $item;
+        }
+
+        return $out;
     }
     public function deleteNavMenu($id)
     {
@@ -322,8 +474,23 @@ class FrontPageController extends BaseController
         }
 
         // Also delete all children with pgm_parent = $id
+        $childIds = PortalGencode::where('pgm_code', 'FP_NAV')
+            ->where('pgm_parent', $id)
+            ->pluck('id')
+            ->map(fn ($childId) => (string) $childId)
+            ->all();
+
         PortalGencode::where('pgm_parent', $id)->delete();
         $gencode->delete();
+
+        PortalGencode::where('pgm_code', 'FP_NAV_ROLES')
+            ->where(function ($query) use ($id, $childIds) {
+                $query->whereRaw('CAST(pgm_value AS varchar(max)) = ?', [(string) $id]);
+                if (!empty($childIds)) {
+                    $query->orWhereIn('pgm_value', $childIds);
+                }
+            })
+            ->delete();
 
         $this->clearNavMenuCache();
 

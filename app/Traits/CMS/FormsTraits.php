@@ -920,7 +920,14 @@ trait FormsTraits
         $setupTrainingRes = [];
         foreach ($setupTraining as $k => $v) {
             if (is_string($v) && $this->isJson($v)) {
-                $setupTrainingRes[$k] = json_decode($v, true);
+                $decoded = json_decode($v, true);
+                // Role allowlists (arrays like ["1","2"]) must stay arrays,
+                // not be swallowed by the caster below.
+                if (is_array($decoded)) {
+                    $setupTrainingRes[$k] = $decoded;
+                    continue;
+                }
+                $setupTrainingRes[$k] = $decoded;
             } else {
                 // Explicitly cast "1"/"0", 1/0, "true"/"false" to boolean, else keep original
                 if ($v === "1" || $v === 1 || $v === true || $v === "true") {

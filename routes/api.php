@@ -97,8 +97,9 @@ Route::group(['prefix' => 'portal' /* , 'middleware' => ['auth:sanctum','verifie
 
     Route::resource('profiles', ProfilesController::class);
 
-    Route::resource('apps', AppController::class);
+    Route::resource('apps', AppController::class)->parameters(['apps' => 'app']);
     Route::get('appsParent', [AppController::class, 'indexParentOnly']);
+    Route::get('apps/{code}/roles', [AppController::class, 'appRoles']);
 
     Route::resource('roles', RoleController::class);
     Route::post('change-password', [AuthController::class, 'change_password']);
@@ -222,6 +223,7 @@ Route::group(['prefix' => 'cms'], function () {
     Route::post('storeAnswers', [FormController::class, 'storeAnswers']);
     Route::post('storeBulkAnswers', [FormController::class, 'storeBulkAnswers']);
     Route::post('cloneForm', [FormController::class, 'cloneForm']);
+    Route::post('aiPageBuild', [FormController::class, 'buildPageWithAi']);
     Route::get('completionStatus/{id}', [FormController::class, 'getCompletionStatus']);
     Route::delete('deleteAnswers/{id}/{batchID}', [FormController::class, 'destroyAnswers']);
     Route::post('deleteAnswersBulk', [FormController::class, 'destroyAnswersBulk']);

@@ -3,6 +3,7 @@
 return [
     'url' => env('NINEROUTER_URL'),
     'api_key' => env('NINEROUTER_API_KEY'),
+    'page_builder_model' => env('NINEROUTER_PAGE_BUILDER_MODEL', 'profitsol-document-extractor-combo'),
 ];
 
 // COPY THIS FILE TO THE LIVE SERVER  ->  config/ninerouter.php
