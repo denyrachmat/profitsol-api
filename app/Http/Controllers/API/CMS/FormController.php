@@ -1224,6 +1224,54 @@ class FormController extends BaseController
         }
     }
 
+    /**
+     * Delete many form answer batches in one request.
+     *
+     * Accepts either:
+     *   { items: [{ form_id, batch_id }, ...] }
+     *   { ids: ["formId:batchId", ...] }
+     */
+    public function destroyAnswersBulk(Request $request)
+    {
+        $items = $request->input('items', []);
+        $ids = $request->input('ids', []);
+
+        $pairs = [];
+
+        if (is_array($items)) {
+            foreach ($items as $item) {
+                if (is_array($item) && isset($item['form_id'], $item['batch_id'])) {
+                    $pairs[] = [(string) $item['form_id'], (string) $item['batch_id']];
+                }
+            }
+        }
+
+        if (empty($pairs) && is_array($ids)) {
+            foreach ($ids as $id) {
+                if (is_string($id) && strpos($id, ':') !== false) {
+                    [$formId, $batchId] = explode(':', $id, 2);
+                    $pairs[] = [(string) $formId, (string) $batchId];
+                }
+            }
+        }
+
+        if (empty($pairs)) {
+            return $this->handleError('No rows provided for deletion.', []);
+        }
+
+        $deleted = 0;
+        foreach ($pairs as [$formId, $batchId]) {
+            $deleted += FormAnswerUserDet::where('cfm_id', $formId)
+                ->where('cfaud_batch', $batchId)
+                ->delete();
+        }
+
+        return $this->handleResponse([
+            'deleted' => $deleted,
+            'requested' => count($pairs),
+        ], 'Form answers deleted successfully.');
+    }
+
     public function viewByLinkForm(Request $request, $link)
     {
         $getID = FormShareDet::where('cfsd_gen_link', $link)->first();

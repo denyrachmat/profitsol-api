@@ -224,6 +224,7 @@ Route::group(['prefix' => 'cms'], function () {
     Route::post('cloneForm', [FormController::class, 'cloneForm']);
     Route::get('completionStatus/{id}', [FormController::class, 'getCompletionStatus']);
     Route::delete('deleteAnswers/{id}/{batchID}', [FormController::class, 'destroyAnswers']);
+    Route::post('deleteAnswersBulk', [FormController::class, 'destroyAnswersBulk']);
     Route::get('getConnectedMRS/{id}', [FormController::class, 'getConnectedMRS']);
     Route::get('viewByLinkForm/{link}', [FormController::class, 'viewByLinkForm']);
     Route::get('viewByID/{id}', [FormController::class, 'viewByID']);
