@@ -36,13 +36,6 @@ class Installer
                 'default_driver' => 'sqlsrv',
                 'default_database' => 'STX_DMS',
             ],
-            'dms_old' => [
-                'label' => 'DMS (Legacy)',
-                'prefix' => 'DB_DMS_OLD_',
-                'connection' => 'sqlsrv_dms_old',
-                'default_driver' => 'sqlsrv',
-                'default_database' => 'DMS',
-            ],
             'cms' => [
                 'label' => 'CMS',
                 'prefix' => 'DB_CMS_',
