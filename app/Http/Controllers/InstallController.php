@@ -78,8 +78,8 @@ class InstallController extends Controller
             'app_env' => 'required|in:local,production',
         ];
         foreach ($groups as $key => $group) {
-            $rules["db.{$key}.connection"] = 'required|string|in:sqlsrv,mysql,pgsql,sqlite';
-            $rules["db.{$key}.host"] = 'required_unless:db.'.$key.'.connection,sqlite|string|max:255|nullable';
+            $rules["db.{$key}.driver"] = 'required|string|in:sqlsrv,mysql,pgsql,sqlite';
+            $rules["db.{$key}.host"] = 'required_unless:db.'.$key.'.driver,sqlite|string|max:255|nullable';
             $rules["db.{$key}.port"] = 'nullable|string|max:10';
             $rules["db.{$key}.database"] = 'required|string|max:255';
             $rules["db.{$key}.username"] = 'nullable|string|max:255';
@@ -99,7 +99,7 @@ class InstallController extends Controller
         foreach ($groups as $key => $group) {
             $cfg = $data['db'][$key];
             $result = Installer::testConnection(
-                $cfg['connection'],
+                $cfg['driver'],
                 $cfg['host'] ?? null,
                 $cfg['port'] ?? null,
                 $cfg['database'],
@@ -129,11 +129,12 @@ class InstallController extends Controller
         foreach ($groups as $key => $group) {
             $cfg = $data['db'][$key];
             $prefix = $group['prefix'];
-            $values[$prefix.'CONNECTION'] = $cfg['connection'];
+            $values[$prefix.'CONNECTION'] = $group['connection'];
+            $values[$prefix.'DRIVER'] = $cfg['driver'];
             $values[$prefix.'HOST'] = $cfg['host'] ?? '';
             $values[$prefix.'PORT'] = ($cfg['port'] !== null && $cfg['port'] !== '')
                 ? $cfg['port']
-                : ($defaultPorts[$cfg['connection']] ?? '');
+                : ($defaultPorts[$cfg['driver']] ?? '');
             $values[$prefix.'DATABASE'] = $cfg['database'];
             $values[$prefix.'USERNAME'] = $cfg['username'] ?? '';
             $values[$prefix.'PASSWORD'] = $cfg['password'] ?? '';
@@ -237,7 +238,21 @@ class InstallController extends Controller
 
         foreach (Installer::coreDatabases() as $group) {
             $p = $group['prefix'];
-            $env[$p.'CONNECTION'] = $env[$p.'CONNECTION'] ?? $group['default_connection'];
+
+            // Resolve the driver: prefer the explicit *_DRIVER key; fall back to
+            // the older installer that wrote the driver into *_CONNECTION; else default.
+            $driver = $env[$p.'DRIVER'] ?? null;
+            if (!$driver) {
+                $legacy = $env[$p.'CONNECTION'] ?? null;
+                $driver = in_array($legacy, Installer::supportedDrivers(), true)
+                    ? $legacy
+                    : $group['default_driver'];
+            }
+            $env[$p.'DRIVER'] = $driver;
+
+            // The connection name itself stays stable (hardcoded in the app).
+            $env[$p.'CONNECTION'] = $group['connection'];
+
             $env[$p.'HOST'] = $env[$p.'HOST'] ?? ($env['DB_HOST'] ?? '127.0.0.1');
             $env[$p.'PORT'] = $env[$p.'PORT'] ?? ($env['DB_PORT'] ?? '1433');
             $env[$p.'DATABASE'] = $env[$p.'DATABASE'] ?? $group['default_database'];

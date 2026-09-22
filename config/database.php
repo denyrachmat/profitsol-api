@@ -79,7 +79,7 @@ return [
         ],
 
         'sqlsrv' => [
-            'driver' => 'sqlsrv',
+            'driver' => env('DB_DRIVER', 'sqlsrv'),
             'url' => env('DATABASE_URL'),
             'host' => env('DB_HOST', 'localhost'),
             'port' => env('DB_PORT', '1433'),
@@ -92,7 +92,7 @@ return [
         ],
 
         'sqlsrv_dms' => [
-            'driver' => 'sqlsrv',
+            'driver' => env('DB_DMS_DRIVER', 'sqlsrv'),
             'url' => env('DATABASE_URL'),
             'host' => env('DB_DMS_HOST', 'localhost'),
             'port' => env('DB_DMS_PORT', '1433'),
@@ -105,7 +105,7 @@ return [
         ],
 
         'sqlsrv_ams' => [
-            'driver' => 'sqlsrv',
+            'driver' => env('DB_AMS_DRIVER', 'sqlsrv'),
             'url' => env('DATABASE_URL'),
             'host' => env('DB_AMS_HOST', 'localhost'),
             'port' => env('DB_AMS_PORT', '1433'),
@@ -118,7 +118,7 @@ return [
         ],
 
         'sqlsrv_dms_old' => [
-            'driver' => 'sqlsrv',
+            'driver' => env('DB_DMS_OLD_DRIVER', 'sqlsrv'),
             'url' => env('DATABASE_URL'),
             'host' => env('DB_DMS_OLD_HOST', 'localhost'),
             'port' => env('DB_DMS_OLD_PORT', '1433'),
@@ -131,7 +131,7 @@ return [
         ],
 
         'sqlsrv_cms' => [
-            'driver' => 'sqlsrv',
+            'driver' => env('DB_CMS_DRIVER', 'sqlsrv'),
             'url' => env('DATABASE_URL'),
             'host' => env('DB_CMS_HOST', 'localhost'),
             'port' => env('DB_CMS_PORT', '1433'),
@@ -144,7 +144,7 @@ return [
         ],
 
         'sqlsrv_mrs' => [
-            'driver' => 'sqlsrv',
+            'driver' => env('DB_MRS_DRIVER', 'sqlsrv'),
             'url' => env('DATABASE_URL'),
             'host' => env('DB_MRS_HOST', 'localhost'),
             'port' => env('DB_MRS_PORT', '1433'),
@@ -418,7 +418,7 @@ return [
         ],
 
         'sqlsrv_conn_dyn' => [
-            'driver' => 'sqlsrv',
+            'driver' => env('DB_CD_DRIVER', 'sqlsrv'),
             'url' => env('DATABASE_URL'),
             'host' => env('DB_CD_HOST', 'localhost'),
             'port' => env('DB_CD_PORT', '1433'),

@@ -6,7 +6,11 @@ class Installer
 {
     /**
      * Core database groups that MUST be configured by the wizard.
-     * Prefix maps to env keys, e.g. prefix DB_ => DB_CONNECTION, DB_HOST...
+     *
+     * `connection` is the stable Laravel connection name hardcoded in the
+     * application (config/database.php keys and DB::connection('...') calls)
+     * and must NOT change. `prefix` maps to the env keys, e.g. prefix DB_DMS_
+     * => DB_DMS_HOST, DB_DMS_DRIVER, DB_DMS_DATABASE...
      */
     public static function coreDatabases(): array
     {
@@ -14,43 +18,50 @@ class Installer
             'main' => [
                 'label' => 'Main Portal',
                 'prefix' => 'DB_',
-                'default_connection' => 'sqlsrv',
+                'connection' => 'sqlsrv',
+                'default_driver' => 'sqlsrv',
                 'default_database' => 'STX_PORTAL',
             ],
             'cd' => [
                 'label' => 'Connection Dynamic (CD)',
                 'prefix' => 'DB_CD_',
-                'default_connection' => 'sqlsrv_conn_dyn',
+                'connection' => 'sqlsrv_conn_dyn',
+                'default_driver' => 'sqlsrv',
                 'default_database' => 'STX_PORTAL',
             ],
             'dms' => [
                 'label' => 'DMS',
                 'prefix' => 'DB_DMS_',
-                'default_connection' => 'sqlsrv_dms',
+                'connection' => 'sqlsrv_dms',
+                'default_driver' => 'sqlsrv',
                 'default_database' => 'STX_DMS',
             ],
             'dms_old' => [
                 'label' => 'DMS (Legacy)',
                 'prefix' => 'DB_DMS_OLD_',
-                'default_connection' => 'sqlsrv_dms_old',
+                'connection' => 'sqlsrv_dms_old',
+                'default_driver' => 'sqlsrv',
                 'default_database' => 'DMS',
             ],
             'cms' => [
                 'label' => 'CMS',
                 'prefix' => 'DB_CMS_',
-                'default_connection' => 'sqlsrv_cms',
+                'connection' => 'sqlsrv_cms',
+                'default_driver' => 'sqlsrv',
                 'default_database' => 'STX_CMS',
             ],
             'mrs' => [
                 'label' => 'MRS',
                 'prefix' => 'DB_MRS_',
-                'default_connection' => 'sqlsrv_mrs',
+                'connection' => 'sqlsrv_mrs',
+                'default_driver' => 'sqlsrv',
                 'default_database' => 'STX_MRS',
             ],
             'ams' => [
                 'label' => 'AMS',
                 'prefix' => 'DB_AMS_',
-                'default_connection' => 'sqlsrv_ams',
+                'connection' => 'sqlsrv_ams',
+                'default_driver' => 'sqlsrv',
                 'default_database' => 'STX_AMS',
             ],
         ];

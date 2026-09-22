@@ -53,14 +53,17 @@
             <div class="row g-3">
                 <div class="col-md-3">
                     <label class="form-label">Driver</label>
-                    <select name="db[{{ $key }}][connection]" class="form-select driver-select">
+                    <select name="db[{{ $key }}][driver]" class="form-select driver-select">
                         @foreach($drivers as $driver)
                             <option value="{{ $driver }}"
-                                {{ old("db.$key.connection", $env[$p.'CONNECTION'] ?? '') === $driver ? 'selected' : '' }}>
+                                {{ old("db.$key.driver", $env[$p.'DRIVER'] ?? '') === $driver ? 'selected' : '' }}>
                                 {{ $driver }}</option>
                         @endforeach
                     </select>
-                    <div class="form-text"><code class="env-key">{{ $p }}CONNECTION</code></div>
+                    <div class="form-text">
+                        driver &rarr; <code class="env-key">{{ $p }}DRIVER</code><br>
+                        name &rarr; <code class="env-key">{{ $p }}CONNECTION={{ $group['connection'] }}</code>
+                    </div>
                 </div>
                 <div class="col-md-4">
                     <label class="form-label">Host</label>
