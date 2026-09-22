@@ -8,6 +8,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
+use App\Support\SqlDialect;
 
 class DatasetController extends BaseController
 {
@@ -319,14 +320,17 @@ class DatasetController extends BaseController
         // Cap rows BEFORE fetching. DB::select() materializes the whole
         // result set first, so PHP-side slicing alone still loads e.g. 137k
         // rows into memory and kills the worker (128M) with no log entry.
-        // TOP-injection is the primary cap (deterministic); SET ROWCOUNT +
-        // an early-break fetch loop are backstops for shapes TOP can't
-        // rewrite (CTEs, UNIONs, ...).
+        // SqlDialect::limit() applies the engine's row cap (TOP/LIMIT); the
+        // SET ROWCOUNT and the early-break fetch loop are backstops for
+        // shapes the rewrite can't handle (CTEs, UNIONs, ...).
         $cap = max(1, (int) $limit);
-        $sql = $this->injectTop((string) $query, $cap);
+        $sql = SqlDialect::limit((string) $query, $cap, $conn);
 
         $db = DB::connection($conn);
-        $db->statement('SET ROWCOUNT ' . $cap);
+        $useRowcount = SqlDialect::supportsSetRowcount($conn);
+        if ($useRowcount) {
+            $db->statement('SET ROWCOUNT ' . $cap);
+        }
         try {
             $stmt = $db->getPdo()->prepare($sql);
             $stmt->execute(array_values($bindings));
@@ -338,30 +342,16 @@ class DatasetController extends BaseController
         } catch (\Illuminate\Database\QueryException | \PDOException $e) {
             throw $this->sqlExecutionError($conn, $e);
         } finally {
-            try {
-                $db->statement('SET ROWCOUNT 0');
-            } catch (\Throwable $ignored) {
-                // Never mask the real result/exception.
+            if ($useRowcount) {
+                try {
+                    $db->statement('SET ROWCOUNT 0');
+                } catch (\Throwable $ignored) {
+                    // Never mask the real result/exception.
+                }
             }
         }
 
         return array_slice($rows, 0, $cap);
-    }
-
-    /**
-     * Rewrites `SELECT [DISTINCT] ...` to `SELECT [DISTINCT] TOP n ...`.
-     * Skipped when TOP is already present or the query isn't a plain SELECT
-     * (e.g. WITH... CTEs — those rely on the ROWCOUNT + fetch-loop backstop).
-     */
-    private function injectTop(string $sql, int $cap): string
-    {
-        if (preg_match('/^\s*SELECT\s+(?:DISTINCT\s+)?TOP\b/i', $sql)) {
-            return $sql;
-        }
-        if (preg_match('/^(\s*SELECT\s+(?:DISTINCT\s+)?)/i', $sql, $m)) {
-            return $m[1] . 'TOP ' . $cap . ' ' . substr($sql, strlen($m[1]));
-        }
-        return $sql;
     }
 
     /**

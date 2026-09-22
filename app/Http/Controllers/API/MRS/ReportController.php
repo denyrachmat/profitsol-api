@@ -22,6 +22,7 @@ use App\Traits\CMS\FormsTraits;
 use App\Traits\PORTAL\GencodeTraits;
 use App\Models\CMS\FormMasterTitle;
 use App\Models\PORTAL\PortalGencode;
+use App\Support\SqlDialect;
 
 class ReportController extends BaseController
 {
@@ -220,6 +221,16 @@ class ReportController extends BaseController
         $conn = $this->masterConn($request->id, $request->dbname);
 
         if ($request->type === 'sp') {
+            if (!SqlDialect::supportsStoredProcedures('sqlsrv_conn_dyn')) {
+                return [
+                    'cols' => [],
+                    'data' => [],
+                    'params' => [],
+                    'status' => false,
+                    'message' => 'Stored procedure reports are only available on SQL Server connections.',
+                ];
+            }
+
             // $data = $conn->fetchAllAssociative($request->code);
 
             $changeConn = $this->eloqConn($request->id, $request->dbname);
@@ -513,6 +524,10 @@ class ReportController extends BaseController
 
     protected function handleStoredProcedureReport($report, $request)
     {
+        if (!SqlDialect::supportsStoredProcedures('sqlsrv_conn_dyn')) {
+            return ['status' => false, 'message' => 'Stored procedure reports are only available on SQL Server connections.'];
+        }
+
         $changeConn = $this->eloqConn($report->mdm_id, $report->mrm_db);
         if (!$changeConn) {
             return ['status' => false, 'message' => 'Connection change failed!'];

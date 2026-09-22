@@ -16,6 +16,7 @@ use App\Jobs\PORTAL\StatamicGenerateQueue;
 use App\Traits\PORTAL\GencodeTraits;
 use App\Http\Controllers\API\PORTAL\BaseController;
 use App\Models\PORTAL\PortalGencode;
+use App\Support\SqlDialect;
 
 class DomainController extends BaseController
 {
@@ -281,6 +282,11 @@ class DomainController extends BaseController
 
     public function checkIfDatabaseExists($databaseName)
     {
+        if (!SqlDialect::supportsUseDatabase()) {
+            Log::warning("checkIfDatabaseExists('{$databaseName}') skipped: 'USE <database>' is not supported on the '".SqlDialect::driver()."' driver.");
+            return true;
+        }
+
         try {
             DB::connection()->getPdo()->exec("USE {$databaseName}");
             return true;
