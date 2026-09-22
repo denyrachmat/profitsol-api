@@ -23,6 +23,8 @@ use Illuminate\Support\Facades\Route;
 
 use App\Http\Controllers\API\CMS\FormController;
 use App\Http\Controllers\API\CMS\QuizController;
+use App\Http\Controllers\API\CMS\DatasetController;
+use App\Http\Controllers\API\CMS\DashboardController;
 use App\Http\Controllers\API\DMS\DocumentController;
 use App\Http\Controllers\API\DMS\FolderController;
 use App\Http\Controllers\API\MACROLIST\macroListController;
@@ -251,6 +253,14 @@ Route::group(['prefix' => 'cms'], function () {
     Route::post('uploadQuizTemplateAi', [QuizController::class, 'parseDocumentForAI']);
 
     Route::get('downloadTemplateBulk/{id}', [FormController::class, 'downloadTemplateBulk']);
+
+    Route::get('datasets/connections', [DatasetController::class, 'connections']);
+    Route::post('datasets/test', [DatasetController::class, 'test']);
+    Route::post('datasets/data/{code}', [DatasetController::class, 'data']);
+    Route::resource('datasets', DatasetController::class);
+
+    Route::get('dashboards/viewByCode/{code}', [DashboardController::class, 'viewByCode']);
+    Route::resource('dashboards', DashboardController::class);
 });
 
 Route::group(['prefix' => 'tos'], function () {

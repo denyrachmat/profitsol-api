@@ -1731,6 +1731,7 @@ RULES:
 9. Never include internal fields such as "id", "seq_name", "_dbId", "databases".
 10. Output COMPACT JSON: no indentation, no line breaks and no spaces outside strings. The response size is limited, so pretty-printing can truncate it and make it invalid.
 11. Use at most about 30 blocks in total (including nested ones). Prefer concise copy over many blocks.
+12. Every block may also carry "anchorId" (e.g. "hero", "agenda", "register"): a section name that buttons can scroll to via url "#<anchorId>". Give distinctive sections an anchorId and point buttons at "#<anchorId>" instead of "#". Keep ids unique per page.
 
 EXAMPLE — a valid response for "company gathering landing page" (copy this structure exactly):
 {
@@ -2300,6 +2301,9 @@ PROMPT;
     private function normalizeAiContent(string $type, array $content, int $depth, int &$count): array
     {
         $allowed = $this->aiBlockFieldWhitelist()[$type] ?? [];
+        // anchorId is deliberately not in the per-type whitelist; it is a
+        // builder-level field allowed on every block type (scroll targets).
+        $allowed[] = 'anchorId';
         $filtered = array_intersect_key($content, array_flip($allowed));
 
         // Nested block containers.
@@ -2387,18 +2391,34 @@ PROMPT;
                     if (!is_array($mi)) {
                         continue;
                     }
+                    $miType = $mi['type'] ?? 'url';
+                    if (!in_array($miType, ['url', 'section', 'portalApp'], true)) {
+                        $miType = 'url';
+                    }
+
                     $menuItems[] = [
-                        'type' => ($mi['type'] ?? 'url') === 'portalApp' ? 'portalApp' : 'url',
+                        'type' => $miType,
                         'label' => $this->sanitizePlainText($mi['label'] ?? ''),
                         'icon' => $this->sanitizePlainText($mi['icon'] ?? ''),
                         'url' => $this->sanitizeUrl($mi['url'] ?? ''),
                         'appCode' => $this->sanitizePlainText($mi['appCode'] ?? ''),
+                        'sectionId' => $this->sanitizePlainText($mi['sectionId'] ?? ''),
                     ];
                 }
                 $filtered['menuItems'] = $menuItems;
             }
         } elseif ($type === 'text' || $type === 'html') {
             $filtered['body'] = $this->sanitizeRichHtml($content['body'] ?? '');
+        }
+
+        // Section anchor, allowed on any block. Letters/numbers/-/_ only.
+        if (array_key_exists('anchorId', $filtered)) {
+            $anchor = preg_replace('/[^A-Za-z0-9_-]/', '', trim((string) $filtered['anchorId']));
+            if ($anchor !== '' && preg_match('/^[A-Za-z]/', $anchor)) {
+                $filtered['anchorId'] = $anchor;
+            } else {
+                unset($filtered['anchorId']);
+            }
         }
 
         // URL-bearing scalar fields.
